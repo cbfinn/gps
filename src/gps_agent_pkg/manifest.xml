@@ -1,0 +1,32 @@
+<package>
+  <description brief="gps_agent_pkg">
+     gps_agent_pkg
+  </description>
+  <author></author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="std_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="pr2_controller_interface"/>
+  <depend package="pr2_mechanism_model"/>
+  <depend package="pluginlib"/>
+  <depend package="roscpp"/>
+  <depend package="roslib"/>
+  <depend package="rospy"/>
+  <depend package="pr2_controllers_msgs"/>
+  <depend package="control_toolbox"/>
+  <depend package="realtime_tools"/>
+  <depend package="orocos_kdl"/>
+  <depend package="geometry_msgs"/>
+  <depend package="tf"/>
+  <depend package="pr2_controller_manager"/>
+
+  <rosdep name="eigen" />
+
+  <export>
+    <pr2_controller_interface plugin="${prefix}/controller_plugins.xml" />
+  </export>
+
+</package>
+
+

@@ -1,0 +1,7 @@
+For deploying onto website, run "make html", then copy the contents of _static/html/ to the server.
+
+Note that you might need to run the following to install packages for making:
+sudo pip install sphinx_bootstrap_theme
+sudo pip install recommonmark
+
+If you wish to update the hyperparams page, be sure to first run the autogenerate python script before running "make html".

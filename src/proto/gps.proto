@@ -1,0 +1,58 @@
+syntax = "proto2";
+
+package gps;
+
+// Enum for sample types
+enum SampleType {
+  ACTION = 0;
+  JOINT_ANGLES = 1;
+  JOINT_VELOCITIES = 2;
+  END_EFFECTOR_POINTS = 3;
+  END_EFFECTOR_POINT_VELOCITIES = 4;
+  END_EFFECTOR_POINT_JACOBIANS = 5;
+  END_EFFECTOR_POINT_ROT_JACOBIANS = 6;
+  END_EFFECTOR_POSITIONS = 7;
+  END_EFFECTOR_ROTATIONS = 8;
+  END_EFFECTOR_JACOBIANS = 9;
+  END_EFFECTOR_HESSIANS = 10;
+  RGB_IMAGE = 11;
+  DEPTH_IMAGE = 12;
+  TOTAL_DATA_TYPES = 13;
+  POSITION = 14;
+  LINEAR_VELOCITY = 15;
+}
+
+// Message containing the data for a single sample.
+message Sample {
+  // TODO - do we want this default here?
+  optional uint32 T = 1 [default = 100];  // sample length
+  optional uint32 dX = 2;  // dimension of state X
+  optional uint32 dU = 3;  // dimension of action U
+  optional uint32 dO = 4;  // dimension of observation
+
+  // Data arrays holding X, U, and obs.
+  repeated float X = 5 [packed = true];
+  repeated float U = 6 [packed = true];
+  repeated float obs = 7 [packed = true];
+}
+
+// Enum for actuator types (Specified in Relax/PositionCommand msgs)
+enum ActuatorType {
+  TRIAL_ARM = 0;
+  AUXILIARY_ARM = 1;
+  TOTAL_ACTUATOR_TYPES = 2;
+}
+
+// Enum for position control modes (sent in PositionCommand msg)
+enum PositionControlMode {
+  NO_CONTROL = 0;
+  JOINT_SPACE = 1;
+  TASK_SPACE = 2;
+  TOTAL_CONTROL_MODES = 3;
+}
+
+enum ControllerType {
+  LIN_GAUSS_CONTROLLER = 0;
+  CAFFE_CONTROLLER = 1;
+  TOTAL_CONTROLLER_TYPES = 2;
+}

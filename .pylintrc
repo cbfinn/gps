@@ -1,0 +1,23 @@
+[MESSAGES CONTROL]
+
+disable=too-few-public-methods,
+    no-member,
+    invalid-name,
+    too-many-instance-attributes,
+    too-many-locals,
+    too-many-arguments,
+    fixme,
+    unidiomatic-typecheck,
+    too-many-branches,
+    no-self-use,
+    attribute-defined-outside-init,
+    redefined-outer-name,
+    consider-using-enumerate,
+    too-many-boolean-expressions,
+    too-many-statements,
+    import-error,
+    unexpected-keyword-arg
+
+
+[FORMAT]
+max-line-length=80

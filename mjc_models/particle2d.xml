@@ -1,0 +1,23 @@
+<mujoco model="linearparticle">
+
+    <compiler inertiafromgeom="true" angle="radian" coordinate="local" />
+    <option timestep="0.01" gravity="0 0 0" iterations="20" integrator="Euler" />
+    <default>
+        <joint limited="false" damping="1" />
+        <geom contype="2" conaffinity="1" condim="1" friction=".5 .1 .1" density="1000" margin="0.002" />
+    </default>
+
+    <worldbody>
+        <body name="particle" pos="0 0 0">
+            <geom name="particle_geom" type="capsule" fromto="-0.01 0 0 0.01 0 0" size="0.05" />
+            <site name="particle_site" pos="0 0 0" size="0.01" />
+            <joint name="ball_x" type="slide" pos="0 0 0" axis="1 0 0" />
+            <joint name="ball_y" type="slide" pos="0 0 0" axis="0 1 0" />
+        </body>
+    </worldbody>
+
+    <actuator>
+        <motor joint="ball_x" />
+        <motor joint="ball_y" />
+    </actuator>
+</mujoco>

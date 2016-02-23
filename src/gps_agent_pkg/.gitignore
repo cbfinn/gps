@@ -1,0 +1,4 @@
+# Ignore msg files
+
+src/gps_agent_pkg/__init__.py
+src/gps_agent_pkg/msg/*

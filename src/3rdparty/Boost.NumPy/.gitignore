@@ -1,0 +1,16 @@
+config.log
+.sconf_temp
+.sconsign.dblite
+*.os
+*.succeeded
+libs/numpy/example/dtype
+libs/numpy/example/fromdata
+libs/numpy/example/ndarray
+libs/numpy/example/simple
+libs/numpy/example/ufunc
+libs/numpy/example/wrap
+build
+build-vc90
+build-vc100
+*~
+\#*\#
