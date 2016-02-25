@@ -9,7 +9,7 @@ from gps.algorithm.policy_opt import __file__ as policy_opt_path
 
 
 def example_tf_network(n_layers=3, dim_hidden=None, dim_input=27,
-                         dim_output=7, batch_size=25, phase=TRAIN):
+                       dim_output=7, batch_size=25, phase=TRAIN):
     """
     An example of how one might want to specify a network in tensorflow.
 
