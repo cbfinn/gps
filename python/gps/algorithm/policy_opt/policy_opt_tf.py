@@ -1,4 +1,4 @@
-""" This file defines policy optimization for a Caffe policy. """
+""" This file defines policy optimization for a tensorflow policy. """
 import copy
 import logging
 import tempfile
@@ -7,40 +7,30 @@ import numpy as np
 
 import tensorflow as tf
 
-from google.protobuf.text_format import MessageToString
-
-#from gps.algorithm.policy.tf_policy import TfPolicy
-#from gps.algorithm.policy_opt.policy_opt import PolicyOpt
-#from gps.algorithm.policy_opt.config import POLICY_OPT_Tf
+# from gps.algorithm.policy.tf_policy import TfPolicy
+# from gps.algorithm.policy_opt.policy_opt import PolicyOpt
+# from gps.algorithm.policy_opt.config import POLICY_OPT_Tf
 
 LOGGER = logging.getLogger(__name__)
 
 
-""" This file defines the base class for the policy. """
-import abc
-
-
 def init_weights(shape, name=None):
-        return tf.Variable(tf.random_normal(shape, stddev=0.01), name=name)
+    return tf.Variable(tf.random_normal(shape, stddev=0.01), name=name)
 
 
 def init_bias(shape, name=None):
-    #ToDo: This should be zeros.
-    return tf.Variable(tf.random_normal(shape, stddev=0.01), name=name)
+    return tf.Variable(tf.zeros(shape, dtype='float'), name=name)
 
 
 def euclidean_loss_layer(a, b, precision):
     return tf.matmul(tf.matmul(a-b, precision, transpose_a=True), a-b)
 
 
-def get_input_layer(phase, batch_size, dim_input, dim_output):
+def get_input_layer(dim_input, dim_output):
 
-    net_input = tf.placeholder("float", [batch_size, dim_input], name='nn_input')
-    action = None
-    precision = None
-    if phase == 'TRAIN':
-        action = tf.placeholder('float', [batch_size, dim_output])
-        precision = tf.placeholder('float', [batch_size, dim_output, dim_output])
+    net_input = tf.placeholder("float", [None, dim_input], name='nn_input')
+    action = tf.placeholder('float', [None, dim_output])
+    precision = tf.placeholder('float', [None, dim_output, dim_output])
 
     return net_input, action, precision
 
@@ -51,7 +41,7 @@ def get_mlp_layers(mlp_input, number_layers, dimension_hidden):
         in_shape = cur_top.get_shape.dims[1].value
         cur_weight = init_weights([in_shape, dimension_hidden[layer_step]], name='w' + str(layer_step))
         cur_bias = init_bias([dimension_hidden[layer_step]], name='b' + str(layer_step))
-        if layer_step != number_layers:  # final layer has no relu
+        if layer_step != number_layers:  # final layer has no RELU
             cur_top = tf.nn.relu(tf.matmul(cur_top, cur_weight) + cur_bias)
         else:
             cur_top = tf.matmul(cur_top, cur_weight) + cur_bias
@@ -59,19 +49,13 @@ def get_mlp_layers(mlp_input, number_layers, dimension_hidden):
     return cur_top
 
 
-def get_loss_layer(phase, mlp_out, action, precision):
+def get_loss_layer(mlp_out, action, precision):
     return euclidean_loss_layer(a=action, b=mlp_out, precision=precision)
-    #if phase == 'TRAIN':
-    #    out = euclidean_loss_layer(a=action, b=mlp_out, precision=precision)
-        #out = (action - mlp_out)*precision*(action-mlp_out)
-        #(u-uhat)'*A*(u-uhat)
-    #else:
-    #    out = mlp_out
-    #return out
+    #  out = (action - mlp_out)'*precision*(action-mlp_out)
+    #  (u-uhat)'*A*(u-uhat)
 
 
-def example_tf_network(n_layers=3, dim_hidden=None, dim_input=27,
-                       dim_output=7, batch_size=25, phase='TRAIN'):
+def example_tf_network(dim_input=27, dim_output=7, batch_size=25):
     """
     An example of how one might want to specify a network in tensorflow.
 
@@ -85,19 +69,15 @@ def example_tf_network(n_layers=3, dim_hidden=None, dim_input=27,
     Returns:
         a list containing inputs, outputs, and the current session.
     """
-    if dim_hidden is None:
-        dim_hidden = (n_layers - 1) * [42]
+    n_layers = 3
+    dim_hidden = (n_layers - 1) * [42]
     dim_hidden.append(dim_output)
 
-    nn_input, action, precision = get_input_layer(phase, batch_size, dim_input, dim_output)
+    nn_input, action, precision = get_input_layer(dim_input, dim_output)
     mlp_applied = get_mlp_layers(nn_input, n_layers, dim_hidden)
-    loss_out = get_loss_layer(phase=phase, mlp_out=mlp_applied, action=action, precision=precision)
+    loss_out = get_loss_layer(mlp_out=mlp_applied, action=action, precision=precision)
     return_dict = {'inputs': [nn_input, action, precision], 'outputs': [mlp_applied], 'loss': [loss_out]}
     return return_dict
-    #return [[nn_input, action, precision], loss_out]  #should this be checkpointed?
-
-    #return out.to_proto()
-
 
 POLICY_OPT_TF = {
     # Initialization.
@@ -114,11 +94,8 @@ POLICY_OPT_TF = {
     'gpu_id': 0,
     'solver_type': 'Adam',  # Solver type (e.g. 'SGD', 'Adam', etc.).
     # Other hyperparameters.
-    'network_model': example_tf_network,  # Either a filename string
-                                            # or a function to call to
-                                            # create NetParameter.
-    'network_arch_params': {},  # Arguments to pass to method above.
-    'weights_file_prefix': '',
+    'network_model': example_tf_network,  # should return a dictionary of inputs, outputs, and loss. See example.
+    'checkpoint_prefix': 'tf_policy',
 }
 
 
@@ -173,19 +150,6 @@ class TfPolicy(Policy):
         u = action_mean + self.chol_pol_covar.T.dot(noise)
         return u
 
-    def get_weights_string(self):
-        """ Return the weights of the neural network as a string. """
-        raise 'NotImplemented - not implemented in tf'
-
-    def get_net_param(self):
-        """ Return the weights of the neural network as a string. """
-        f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
-        self.deploy_net.share_with(self.net)
-        self.deploy_net.save(f.name)
-        f.close()
-        with open(f.name, 'rb') as temp_file:
-            weights_string = temp_file.read()
-        return weights_string
 
 
 
@@ -210,23 +174,39 @@ class PolicyOpt(object):
 
 class TfSolver:
     """ A container for holding solver hyperparams in tensorflow. Used to execute backwards pass. """
-    def __init__(self):
-        self.snapshot_prefix = None
-        self.base_lr = None
-        self.lr_policy = None
-        self.momentum = None
-        self.weight_decay = None
-        self.type = None
-        self.solver_tf_fun = self.get_solver_tf_fun()
+    def __init__(self, loss_op, solver_name='adam', snapshot_prefix=None, base_lr=None, lr_policy=None,
+                 momentum=None, weight_decay=None):
+        self.snapshot_prefix = snapshot_prefix
+        self.base_lr = base_lr
+        self.lr_policy = lr_policy
+        self.momentum = momentum
+        self.weight_decay = weight_decay
+        self.solver_name = solver_name
+        self.loss_op = loss_op
+        self.solver_op = self.get_solver_op()
 
-    def get_solver_fun(self):
-        pass
+    def get_solver_op(self):
+        solver = self.hash_solver(self.solver_name)
+        train_op = solver(self.base_lr, self.momentum).minimize(self.loss_op)
+        return train_op
 
     def hash_solver(self, solver_string='adam'):
-        pass
+        solver_string = solver_string.lower()
+        if solver_string is 'adam':
+            return tf.train.AdamOptimizer
+        elif solver_string is 'rmsprop':
+            return tf.train.RMSPropOptimizer
+        elif solver_string is 'momentum':
+            return tf.train.MomentumOptimizer
+        elif solver_string is 'adagrad':
+            return tf.train.AdagradOptimizer
+        elif solver_string is 'gd':
+            return tf.train.GradientDescentOptimizer
+        else:
+            raise NotImplementedError("Please select a valid optimizer.")
 
-    def __call__(self, *args, **kwargs):
-        pass
+    def __call__(self, feed_dict, sess):
+        sess.run(self.loss_op, feed_dict)
 
 
 class PolicyOptTf(PolicyOpt):
@@ -249,65 +229,33 @@ class PolicyOptTf(PolicyOpt):
         self.obs_tensor = None
         self.precision_tensor = None
         self.action_tensor = None
+        self.solver = None
         self.init_network()
         self.init_solver()
-        self.tf_iter = 0
         self.var = self._hyperparams['init_var'] * np.ones(dU)
         self.sess = tf.Session()
         self.policy = TfPolicy(self.obs_tensor, self.act_op, np.zeros(dU), self.sess)
 
     def init_network(self):
+        """ Helper method to initialize the tf networks used """
         tf_model = self._hyperparams['network_model']
-        model_dict = tf_model()
+        model_dict = tf_model(dim_input=self._dO, dim_output=self._dU, batch_size=None)
         self.obs_tensor = model_dict['inputs'][0]
-        self.precision_tensor = model_dict['inputs'][1]
-        self.action_tensor = model_dict['inputs'][2]
-        self.act_op = model_dict['outputs'][0]  # fix this
+        self.action_tensor = model_dict['inputs'][1]
+        self.precision_tensor = model_dict['inputs'][2]
+        self.act_op = model_dict['outputs'][0]
         self.loss_op = model_dict['loss'][0]
 
     def init_solver(self):
         """ Helper method to initialize the solver. """
-        solver_param = TfSolver()
-        solver_param.snapshot_prefix = self._hyperparams['weights_file_prefix']
-        solver_param.base_lr = self._hyperparams['lr']
-        solver_param.lr_policy = self._hyperparams['lr_policy']
-        solver_param.momentum = self._hyperparams['momentum']
-        solver_param.weight_decay = self._hyperparams['weight_decay']
-        solver_param.type = self._hyperparams['solver_type']
+        self.solver = TfSolver(loss_op=self.loss_op,
+                               solver_name=self._hyperparams['solver_type'],
+                               snapshot_prefix=self._hyperparams['weights_file_prefix'],
+                               base_lr=self._hyperparams['lr'],
+                               lr_policy=self._hyperparams['lr_policy'],
+                               momentum=self._hyperparams['momentum'],
+                               weight_decay=self._hyperparams['weight_decay'])
 
-        # Pass in net parameter either by filename or protostring.
-        if isinstance(self._hyperparams['network_model'], basestring):
-            self.solver = caffe.get_solver(self._hyperparams['network_model'])
-        else:
-            network_arch_params = self._hyperparams['network_arch_params']
-            network_arch_params['dim_input'] = self._dO
-            network_arch_params['dim_output'] = self._dU
-
-            network_arch_params['batch_size'] = self.batch_size
-            network_arch_params['phase'] = 'TRAIN'
-            solver_param.train_net_param.CopyFrom(
-                self._hyperparams['network_model'](**network_arch_params)
-            )
-
-            # For running forward in python.
-            network_arch_params['batch_size'] = 1
-            network_arch_params['phase'] = 'TEST'
-            solver_param.test_net_param.add().CopyFrom(
-                self._hyperparams['network_model'](**network_arch_params)
-            )
-
-            # For running forward on the robot.
-            network_arch_params['batch_size'] = 1
-            network_arch_params['phase'] = 'deploy'
-            solver_param.test_net_param.add().CopyFrom(
-                self._hyperparams['network_model'](**network_arch_params)
-            )
-
-            f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
-            f.write(MessageToString(solver_param))
-            f.close()
-
-            self.solver = caffe.get_solver(f.name)
 
     # TODO - This assumes that the obs is a vector being passed into the
     #        network in the same place.
@@ -370,37 +318,37 @@ class PolicyOptTf(PolicyOpt):
             start_idx = int(i * self.batch_size %
                             (batches_per_epoch * self.batch_size))
             idx_i = idx[start_idx:start_idx+self.batch_size]
-            self.solver.net.blobs[blob_names[0]].data[:] = obs[idx_i]
-            self.solver.net.blobs[blob_names[1]].data[:] = tgt_mu[idx_i]
-            self.solver.net.blobs[blob_names[2]].data[:] = tgt_prc[idx_i]
+            feed_dict = {self.obs_tensor: obs[idx_i],
+                         self.action_tensor: tgt_mu[idx_i],
+                         self.precision_tensor: tgt_prc[idx_i]}
+            self.solver(feed_dict, self.sess)
+            train_loss = self.sess.run(self.loss_op, feed_dict)
+            #self.solver.net.blobs[blob_names[0]].data[:] = obs[idx_i]
+            #self.solver.net.blobs[blob_names[1]].data[:] = tgt_mu[idx_i]
+            #self.solver.net.blobs[blob_names[2]].data[:] = tgt_prc[idx_i]
 
-            self.solver.step(1)
+            #self.solver.step(1)
 
             # To get the training loss:
-            train_loss = self.solver.net.blobs[blob_names[-1]].data
+            #train_loss = self.solver.net.blobs[blob_names[-1]].data
             average_loss += train_loss
             if i % 500 == 0 and i != 0:
-                LOGGER.debug('Caffe iteration %d, average loss %f',
+                LOGGER.debug('tensorflow iteration %d, average loss %f',
                              i, average_loss / 500)
                 average_loss = 0
 
-            # To run a test:
-            # if i % test_interval:
-            #     print 'Iteration', i, 'testing...'
-            #     solver.test_nets[0].forward()
-
-        # Keep track of Caffe iterations for loading solver states.
-        self.caffe_iter += self._hyperparams['iterations']
+        # Keep track of tensorflow iterations for loading solver states.
+        self.tf_iter += self._hyperparams['iterations']
 
         # Optimize variance.
         A = np.sum(tgt_prc_orig, 0) + 2 * N * T * \
-                self._hyperparams['ent_reg'] * np.ones((dU, dU))
+                                      self._hyperparams['ent_reg'] * np.ones((dU, dU))
         A = A / np.sum(tgt_wt)
 
         # TODO - Use dense covariance?
         self.var = 1 / np.diag(A)
 
-        self.policy.net.share_with(self.solver.net)
+        #self.policy.net.share_with(self.solver.net)
         return self.policy
 
     def prob(self, obs):
