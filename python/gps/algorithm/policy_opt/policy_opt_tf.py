@@ -22,8 +22,19 @@ def init_bias(shape, name=None):
     return tf.Variable(tf.zeros(shape, dtype='float'), name=name)
 
 
+def batched_matrix_vector_multiply(vector, matrix):
+    vector_batch_as_matricies = tf.expand_dims(vector, [1])
+    loss_result = tf.batch_matmul(vector_batch_as_matricies, matrix)
+    squeezed_loss = tf.squeeze(loss_result, [1])
+    return squeezed_loss
+
+
 def euclidean_loss_layer(a, b, precision):
-    return tf.matmul(tf.matmul(a-b, precision, transpose_a=True), a-b)
+    uP = batched_matrix_vector_multiply(a-b, precision)
+    uPu = tf.reduce_sum(uP*(a-b), [1])
+    loss = tf.reduce_mean(uPu)
+    return loss
+    #return tf.matmul(tf.matmul(a-b, precision, transpose_a=True), a-b)
 
 
 def get_input_layer(dim_input, dim_output):
@@ -67,7 +78,7 @@ def example_tf_network(dim_input=27, dim_output=7, batch_size=25):
         batch_size: Batch size.
         phase: 'TRAIN', 'TEST', or 'deploy'
     Returns:
-        a list containing inputs, outputs, and the current session.
+        a dictionary containing inputs, outputs, and the loss function which returns a scalar loss.
     """
     n_layers = 3
     dim_hidden = (n_layers - 1) * [42]
@@ -174,39 +185,46 @@ class PolicyOpt(object):
 
 class TfSolver:
     """ A container for holding solver hyperparams in tensorflow. Used to execute backwards pass. """
-    def __init__(self, loss_op, solver_name='adam', snapshot_prefix=None, base_lr=None, lr_policy=None,
+    def __init__(self, loss_scalar, solver_name='adam', snapshot_prefix=None, base_lr=None, lr_policy=None,
                  momentum=None, weight_decay=None):
         self.snapshot_prefix = snapshot_prefix
         self.base_lr = base_lr
         self.lr_policy = lr_policy
         self.momentum = momentum
-        self.weight_decay = weight_decay
         self.solver_name = solver_name
-        self.loss_op = loss_op
+        self.loss_scalar = loss_scalar
+
+        if self.lr_policy is not 'fixed':
+            raise NotImplemented('learning rate policies other than fixed are not implemented')
+
+        self.weight_decay = weight_decay
+        if weight_decay is not None:
+            trainable_vars = tf.trainable_variables()
+            loss_with_reg = self.loss_scalar
+            for var in trainable_vars:
+                loss_with_reg += self.weight_decay*tf.nn.l2_loss(var)
+            self.loss_scalar = loss_with_reg
+
         self.solver_op = self.get_solver_op()
 
     def get_solver_op(self):
-        solver = self.hash_solver(self.solver_name)
-        train_op = solver(self.base_lr, self.momentum).minimize(self.loss_op)
-        return train_op
-
-    def hash_solver(self, solver_string='adam'):
-        solver_string = solver_string.lower()
+        solver_string = self.solver_name.lower()
         if solver_string is 'adam':
-            return tf.train.AdamOptimizer
+            return tf.train.AdamOptimizer(learning_rate=self.base_lr).minimize(self.loss_scalar)
         elif solver_string is 'rmsprop':
-            return tf.train.RMSPropOptimizer
+            return tf.train.RMSPropOptimizer(learning_rate=self.base_lr, decay=self.momentum).minimize(self.loss_scalar)
         elif solver_string is 'momentum':
-            return tf.train.MomentumOptimizer
+            return tf.train.MomentumOptimizer(learning_rate=self.base_lr, momentum=self.momentum).minimize(self.loss_scalar)
         elif solver_string is 'adagrad':
-            return tf.train.AdagradOptimizer
+            return tf.train.AdagradOptimizer(learning_rate=self.base_lr, initial_accumulator_value=self.momentum)
         elif solver_string is 'gd':
-            return tf.train.GradientDescentOptimizer
+            return tf.train.GradientDescentOptimizer(learning_rate=self.base_lr)
         else:
             raise NotImplementedError("Please select a valid optimizer.")
 
-    def __call__(self, feed_dict, sess):
-        sess.run(self.loss_op, feed_dict)
+    def __call__(self, feed_dict, sess, device_string="/cpu:0"):
+        with tf.device(device_string):
+            sess.run(self.solver_op, feed_dict)
 
 
 class PolicyOptTf(PolicyOpt):
@@ -217,24 +235,24 @@ class PolicyOptTf(PolicyOpt):
 
         PolicyOpt.__init__(self, config, dO, dU)
 
+        self.tf_iter = 0
         self.batch_size = self._hyperparams['batch_size']
-
-        #if self._hyperparams['use_gpu']:
-        #    caffe.set_device(self._hyperparams['gpu_id'])
-        #    caffe.set_mode_gpu()
-        #else:
-        #    caffe.set_mode_cpu()
-        self.act_op = None
-        self.loss_op = None
+        self.device_string = "/cpu:0"
+        if self._hyperparams['use_gpu']:
+            self.gpu_device = self._hyperparams['gpu_id']
+            self.device_string = "/gpu:" + str(self.gpu_device)
+        self.act_op = None  # mu_hat
+        self.loss_scalar = None
         self.obs_tensor = None
         self.precision_tensor = None
-        self.action_tensor = None
+        self.action_tensor = None  # mu true
         self.solver = None
         self.init_network()
         self.init_solver()
         self.var = self._hyperparams['init_var'] * np.ones(dU)
         self.sess = tf.Session()
         self.policy = TfPolicy(self.obs_tensor, self.act_op, np.zeros(dU), self.sess)
+        tf.initialize_all_variables()
 
     def init_network(self):
         """ Helper method to initialize the tf networks used """
@@ -244,11 +262,11 @@ class PolicyOptTf(PolicyOpt):
         self.action_tensor = model_dict['inputs'][1]
         self.precision_tensor = model_dict['inputs'][2]
         self.act_op = model_dict['outputs'][0]
-        self.loss_op = model_dict['loss'][0]
+        self.loss_scalar = model_dict['loss'][0]
 
     def init_solver(self):
         """ Helper method to initialize the solver. """
-        self.solver = TfSolver(loss_op=self.loss_op,
+        self.solver = TfSolver(loss_scalar=self.loss_scalar,
                                solver_name=self._hyperparams['solver_type'],
                                snapshot_prefix=self._hyperparams['weights_file_prefix'],
                                base_lr=self._hyperparams['lr'],
@@ -306,8 +324,6 @@ class PolicyOptTf(PolicyOpt):
             self.policy.bias = -np.mean(obs.dot(self.policy.scale), axis=0)
         obs = obs.dot(self.policy.scale) + self.policy.bias
 
-        blob_names = self.solver.net.blobs.keys()
-
         # Assuming that N*T >= self.batch_size.
         batches_per_epoch = np.floor(N*T / self.batch_size)
         idx = range(N*T)
@@ -322,15 +338,9 @@ class PolicyOptTf(PolicyOpt):
                          self.action_tensor: tgt_mu[idx_i],
                          self.precision_tensor: tgt_prc[idx_i]}
             self.solver(feed_dict, self.sess)
-            train_loss = self.sess.run(self.loss_op, feed_dict)
-            #self.solver.net.blobs[blob_names[0]].data[:] = obs[idx_i]
-            #self.solver.net.blobs[blob_names[1]].data[:] = tgt_mu[idx_i]
-            #self.solver.net.blobs[blob_names[2]].data[:] = tgt_prc[idx_i]
+            with tf.device(self.device_string):
+                train_loss = self.sess.run(self.loss_scalar, feed_dict)
 
-            #self.solver.step(1)
-
-            # To get the training loss:
-            #train_loss = self.solver.net.blobs[blob_names[-1]].data
             average_loss += train_loss
             if i % 500 == 0 and i != 0:
                 LOGGER.debug('tensorflow iteration %d, average loss %f',
@@ -348,7 +358,6 @@ class PolicyOptTf(PolicyOpt):
         # TODO - Use dense covariance?
         self.var = 1 / np.diag(A)
 
-        #self.policy.net.share_with(self.solver.net)
         return self.policy
 
     def prob(self, obs):
@@ -369,19 +378,12 @@ class PolicyOptTf(PolicyOpt):
             pass  #TODO: Should prob be called before update?
 
         output = np.zeros((N, T, dU))
-        blob_names = self.solver.test_nets[0].blobs.keys()
-
-        self.solver.test_nets[0].share_with(self.solver.net)
 
         for i in range(N):
             for t in range(T):
                 # Feed in data.
-                self.solver.test_nets[0].blobs[blob_names[0]].data[:] = \
-                        obs[i, t]
-
-                # Assume that the first output blob is what we want.
-                output[i, t, :] = \
-                        self.solver.test_nets[0].forward().values()[0][0]
+                feed_dict = {self.obs_tensor: obs[i, t]}
+                output[i, t, :] = self.sess.run(self.act_op, feed_dict=feed_dict)
 
         pol_sigma = np.tile(np.diag(self.var), [N, T, 1, 1])
         pol_prec = np.tile(np.diag(1.0 / self.var), [N, T, 1, 1])
@@ -402,7 +404,7 @@ class PolicyOptTf(PolicyOpt):
             'dU': self._dU,
             'scale': self.policy.scale,
             'bias': self.policy.bias,
-            'caffe_iter': self.caffe_iter,
+            'tf_iter': self.tf_iter,
         }
 
     # For unpickling.

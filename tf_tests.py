@@ -21,7 +21,6 @@ def make_net():
             #weights.append(init_weights(dimension_hidden[layer_step]))
             #biases.append(init_weights(dimension_hidden[layer_step]))
             t = cur_top.get_shape()
-            llkkllk
             cur_weight = init_weights([cur_top._shape.dims[1].value, dimension_hidden[layer_step]], name='w' + str(layer_step))
             cur_bias = init_weights([dimension_hidden[layer_step]], name='b' + str(layer_step))
             cur_top = tf.nn.relu(tf.matmul(cur_top, cur_weight) + cur_bias)
@@ -44,14 +43,49 @@ def make_net():
     return X, Y, y_pred
 
 
-def main():
+def batched_matrix_vector_multiply(vector, matrix):
+    vector_batch_as_matricies = tf.expand_dims(vector, [1])
+    loss_result = tf.batch_matmul(vector_batch_as_matricies, matrix)
+    squeezed_loss = tf.squeeze(loss_result, [1])
+    return squeezed_loss
+
+
+def euclidean_loss_layer(a, b, precision):
+    uP = batched_matrix_vector_multiply(a-b, precision)
+    uPu = tf.reduce_sum(uP*(a-b), [1])
+    loss = tf.reduce_mean(uPu)
+    return loss
+
+
+def test_euclidean_loss():
+    dim_output = 50
+    action = tf.placeholder('float', [None, dim_output])
+    action_hat = tf.placeholder('float', [None, dim_output])
+    precision = tf.placeholder('float', [None, dim_output, dim_output])
+    out = euclidean_loss_layer(action, action_hat, precision)
+
+    sess = tf.Session()
+    init = tf.initialize_all_variables() # you need to initialize variables (in this case just variable W)
+    sess.run(init)
+
+    ACTION = np.random.randn(128, dim_output)
+    ACTION_HAT = np.random.randn(128, dim_output)
+    PRECISION = np.random.randn(128, dim_output, dim_output)
+    final_out = sess.run(out, feed_dict={action: ACTION, action_hat: ACTION_HAT, precision: PRECISION})
+    print final_out
+
+def test_mlp():
     trX = np.random.randn(128, 42)
     trY = np.random.randn(128, 10) #2 * trX + np.random.randn(42) * 0.33 # create a y value which is approximately linear but with some random noise
     X, Y, y_model = make_net()
     cost = (tf.pow(Y-y_model, 2)) # use sqr error for cost function
     cost_true = tf.reduce_mean((tf.pow(Y-y_model, 2)))
-    train_op = tf.train.GradientDescentOptimizer(0.01).minimize(cost) # construct an optimizer to minimize cost and fit line to my data
-
+    #train_op = tf.train.GradientDescentOptimizer(0.01).minimize(cost) # construct an optimizer to minimize cost and fit line to my data
+    trainable_vars = tf.trainable_variables()
+    for var in trainable_vars:
+        print 'adding reg'
+        cost += 0.05*tf.nn.l2_loss(var)
+    train_op = tf.train.GradientDescentOptimizer(0.01).minimize(cost)
     sess = tf.Session()
     init = tf.initialize_all_variables() # you need to initialize variables (in this case just variable W)
     sess.run(init)
@@ -64,6 +98,10 @@ def main():
             t = sess.run(cost_true, feed_dict={X: x_batch, Y: y_batch})
             print t
     #print(sess.run(w))  # something around 2
+
+def main():
+    #test_euclidean_loss()
+    test_mlp()
 
 if __name__ == '__main__':
     main()
