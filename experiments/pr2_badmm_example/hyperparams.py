@@ -79,6 +79,9 @@ for i in xrange(common['conditions']):
         get_ee_points(EE_POINTS, ee_pos_tgt, ee_rot_tgt).T
     )
 
+    aux_x0 = np.zeros(7)
+    aux_x0[:] = ja_aux
+
     reset_condition = {
         TRIAL_ARM: {
             'mode': JOINT_SPACE,
