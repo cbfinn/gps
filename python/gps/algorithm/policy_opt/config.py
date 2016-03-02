@@ -41,9 +41,6 @@ POLICY_OPT_TF = {
     'gpu_id': 0,
     'solver_type': 'Adam',  # Solver type (e.g. 'SGD', 'Adam', etc.).
     # Other hyperparameters.
-    'network_model': example_tf_network,  # Either a filename string
-                                            # or a function to call to
-                                            # create NetParameter.
-    #'network_arch_params': {},  # Arguments to pass to method above.
-    #'weights_file_prefix': '',
+    'network_model': example_tf_network,  # should return a dictionary of inputs, outputs, and loss. See example.
+    'checkpoint_prefix': 'tf_policy',
 }
