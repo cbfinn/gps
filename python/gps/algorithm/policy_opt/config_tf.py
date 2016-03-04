@@ -1,7 +1,7 @@
 from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 import os
 cur_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                        '..', 'policy_opt/tf_checkpoints/policy_checkpoint.ckpt'))
+                                        '..', 'policy_opt/tf_checkpoint/policy_checkpoint.ckpt'))
 
 POLICY_OPT_TF = {
     # Initialization.
