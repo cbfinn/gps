@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from gps.algorithm.policy.tf_policy import TfPolicy
 from gps.algorithm.policy_opt.policy_opt import PolicyOpt
-from gps.algorithm.policy_opt.config import POLICY_OPT_TF
+from gps.algorithm.policy_opt.config_tf import POLICY_OPT_TF
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,16 +39,19 @@ class TfSolver:
 
     def get_solver_op(self):
         solver_string = self.solver_name.lower()
-        if solver_string is 'adam':
+        if solver_string == 'adam':
             return tf.train.AdamOptimizer(learning_rate=self.base_lr).minimize(self.loss_scalar)
-        elif solver_string is 'rmsprop':
-            return tf.train.RMSPropOptimizer(learning_rate=self.base_lr, decay=self.momentum).minimize(self.loss_scalar)
-        elif solver_string is 'momentum':
-            return tf.train.MomentumOptimizer(learning_rate=self.base_lr, momentum=self.momentum).minimize(self.loss_scalar)
-        elif solver_string is 'adagrad':
-            return tf.train.AdagradOptimizer(learning_rate=self.base_lr, initial_accumulator_value=self.momentum)
-        elif solver_string is 'gd':
-            return tf.train.GradientDescentOptimizer(learning_rate=self.base_lr)
+        elif solver_string == 'rmsprop':
+            return tf.train.RMSPropOptimizer(learning_rate=self.base_lr,
+                                             decay=self.momentum).minimize(self.loss_scalar)
+        elif solver_string == 'momentum':
+            return tf.train.MomentumOptimizer(learning_rate=self.base_lr,
+                                              momentum=self.momentum).minimize(self.loss_scalar)
+        elif solver_string == 'adagrad':
+            return tf.train.AdagradOptimizer(learning_rate=self.base_lr,
+                                             initial_accumulator_value=self.momentum).minimize(self.loss_scalar)
+        elif solver_string == 'gd':
+            return tf.train.GradientDescentOptimizer(learning_rate=self.base_lr).minimize(self.loss_scalar)
         else:
             raise NotImplementedError("Please select a valid optimizer.")
 
@@ -69,7 +72,7 @@ class PolicyOptTf(PolicyOpt):
         self.checkpoint_file = self._hyperparams['checkpoint_prefix']
         self.batch_size = self._hyperparams['batch_size']
         self.device_string = "/cpu:0"
-        if self._hyperparams['use_gpu']:
+        if self._hyperparams['use_gpu'] is True:
             self.gpu_device = self._hyperparams['gpu_id']
             self.device_string = "/gpu:" + str(self.gpu_device)
         self.act_op = None  # mu_hat
@@ -82,8 +85,9 @@ class PolicyOptTf(PolicyOpt):
         self.init_solver()
         self.var = self._hyperparams['init_var'] * np.ones(dU)
         self.sess = tf.Session()
-        self.policy = TfPolicy(self.obs_tensor, self.act_op, np.zeros(dU), self.sess)
-        tf.initialize_all_variables()
+        self.policy = TfPolicy(self.obs_tensor, self.act_op, np.zeros(dU), self.sess, self.device_string)
+        init_op = tf.initialize_all_variables()
+        self.sess.run(init_op)
 
     def init_network(self):
         """ Helper method to initialize the tf networks used """
@@ -99,7 +103,7 @@ class PolicyOptTf(PolicyOpt):
         """ Helper method to initialize the solver. """
         self.solver = TfSolver(loss_scalar=self.loss_scalar,
                                solver_name=self._hyperparams['solver_type'],
-                               snapshot_prefix=self._hyperparams['weights_file_prefix'],
+                               snapshot_prefix=self._hyperparams['checkpoint_prefix'],
                                base_lr=self._hyperparams['lr'],
                                lr_policy=self._hyperparams['lr_policy'],
                                momentum=self._hyperparams['momentum'],
@@ -117,7 +121,7 @@ class PolicyOptTf(PolicyOpt):
             tgt_prc: Numpy array of precision matrices, N x T x dU x dU.
             tgt_wt: Numpy array of weights, N x T.
         Returns:
-            A CaffePolicy object with updated weights.
+            A tensorflow object with updated weights.
         """
         N, T = obs.shape[:2]
         dU, dO = self._dU, self._dO
@@ -159,6 +163,8 @@ class PolicyOptTf(PolicyOpt):
         idx = range(N*T)
         average_loss = 0
         np.random.shuffle(idx)
+
+        # actual training.
         for i in range(self._hyperparams['iterations']):
             # Load in data for this batch.
             start_idx = int(i * self.batch_size %
@@ -202,8 +208,7 @@ class PolicyOptTf(PolicyOpt):
         # Normalize obs.
         try:
             for n in range(N):
-                obs[n, :, :] = obs[n, :, :].dot(self.policy.scale) + \
-                        self.policy.bias
+                obs[n, :, :] = obs[n, :, :].dot(self.policy.scale) + self.policy.bias
         except AttributeError:
             pass  #TODO: Should prob be called before update?
 
@@ -212,8 +217,9 @@ class PolicyOptTf(PolicyOpt):
         for i in range(N):
             for t in range(T):
                 # Feed in data.
-                feed_dict = {self.obs_tensor: obs[i, t]}
-                output[i, t, :] = self.sess.run(self.act_op, feed_dict=feed_dict)
+                feed_dict = {self.obs_tensor: np.expand_dims(obs[i, t], axis=0)}
+                with tf.device(self.device_string):
+                    output[i, t, :] = self.sess.run(self.act_op, feed_dict=feed_dict)
 
         pol_sigma = np.tile(np.diag(self.var), [N, T, 1, 1])
         pol_prec = np.tile(np.diag(1.0 / self.var), [N, T, 1, 1])
@@ -228,7 +234,7 @@ class PolicyOptTf(PolicyOpt):
     # For pickling.
     def __getstate__(self):
         saver = tf.train.Saver()
-        saver.save(self.sess, save_path=self.checkpoint_file)
+        saver.save(self.sess, self.checkpoint_file)
         return {
             'hyperparams': self._hyperparams,
             'dO': self._dO,
@@ -240,14 +246,14 @@ class PolicyOptTf(PolicyOpt):
 
     # For unpickling.
     def __setstate__(self, state):
+        from tensorflow.python.framework import ops
+        ops.reset_default_graph()  # we need to destroy the default graph before re_init or checkpoint won't restore.
         self.__init__(state['hyperparams'], state['dO'], state['dU'])
         self.policy.scale = state['scale']
         self.policy.bias = state['bias']
         self.tf_iter = state['tf_iter']
 
         saver = tf.train.Saver()
-        ckpt = tf.train.get_checkpoint_state(self.checkpoint_file)
-        if ckpt and ckpt.model_checkpoint_path:
-            saver.restore(self.sess, ckpt.model_checkpoint_path)
-        else:
-            raise IOError('checkpoint file not found.')
+        check_file = self.checkpoint_file
+        saver.restore(self.sess, check_file)
+

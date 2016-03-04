@@ -27,17 +27,17 @@ def euclidean_loss_layer(a, b, precision):
 
 def get_input_layer(dim_input, dim_output):
     net_input = tf.placeholder("float", [None, dim_input], name='nn_input')
-    action = tf.placeholder('float', [None, dim_output])
-    precision = tf.placeholder('float', [None, dim_output, dim_output])
+    action = tf.placeholder('float', [None, dim_output], name='action')
+    precision = tf.placeholder('float', [None, dim_output, dim_output], name='precision')
     return net_input, action, precision
 
 
 def get_mlp_layers(mlp_input, number_layers, dimension_hidden):
     cur_top = mlp_input
     for layer_step in range(0, number_layers):
-        in_shape = cur_top.get_shape.dims[1].value
-        cur_weight = init_weights([in_shape, dimension_hidden[layer_step]], name='w' + str(layer_step))
-        cur_bias = init_bias([dimension_hidden[layer_step]], name='b' + str(layer_step))
+        in_shape = cur_top.get_shape().dims[1].value
+        cur_weight = init_weights([in_shape, dimension_hidden[layer_step]], name='w_' + str(layer_step))
+        cur_bias = init_bias([dimension_hidden[layer_step]], name='b_' + str(layer_step))
         if layer_step != number_layers:  # final layer has no RELU
             cur_top = tf.nn.relu(tf.matmul(cur_top, cur_weight) + cur_bias)
         else:
