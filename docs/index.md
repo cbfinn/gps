@@ -3,7 +3,7 @@ Guided Policy Search
 ===
 
 This code is a reimplementation of the guided policy search algorithm and LQG-based trajectory optimization, meant to help others understand, reuse, and build upon existing work.
-It includes a complete robot controller and sensor interface for the PR2 robot via ROS, and an interface for simulated agents in Box2D and Mujoco.
+It includes a complete robot controller and sensor interface for the PR2 robot via ROS, and an interface for simulated agents in Box2D and MuJoCo.
 Source code is available on [GitHub](https://github.com/cbfinn/gps).
 
 While the core functionality is fully implemented and tested, the codebase is **a work in progress**. See the [FAQ](faq.html) for information on planned future additions to the code.
@@ -38,7 +38,7 @@ The following are required
 One or more of the following agent interfaces is required. Set up instructions for each are below.
 * [Box2D](https://github.com/pybox2d/pybox2d)
 * [ROS](http://ros.org)
-* [Mujoco](https://www.roboti.us/)
+* [MuJoCo](https://www.roboti.us/)
 
 One of the following neural network libraries is required for the full guided policy search algorithm
 * [Caffe](http://caffe.berkeleyvision.org/) (master branch as of 11/2015, with pycaffe compiled, python layer enabled, PYTHONPATH configured)
@@ -86,12 +86,12 @@ Here are the instructions for setting up [Pybox2D](https://github.com/pybox2d/py
     sudo python setup.py install
     ```
 
-**Mujoco Setup** (optional)
+**MuJoCo Setup** (optional)
 
-In addition to the dependencies listed above, [OpenSceneGraph](http://www.openscenegraph.org/)(v3.0.1+) is also needed.
+In addition to the dependencies listed above, [OpenSceneGraph](http://www.openscenegraph.org/)(v3.0.1+) is also needed. It can be installed by running `sudo apt-get install openscenegraph libopenscenegraph-dev`.
 
-1. [Install Mujoco](https://www.roboti.us/) (v1.22+) and place the downloaded `mjpro` directory into `gps/src/3rdparty`.
-Mujoco is a high-quality physics engine and requires requires a license.
+1. [Install MuJoCo](https://www.roboti.us/) (v1.22+) and place the downloaded `mjpro` directory into `gps/src/3rdparty`.
+MuJoCo is a high-quality physics engine and requires requires a license.
 Obtain a key, which should be named `mjkey.txt`, and place the key into the `mjpro` directory.
 
 2. Build `gps/src/3rdparty` by running:
@@ -103,8 +103,8 @@ Obtain a key, which should be named `mjkey.txt`, and place the key into the `mjp
 
 3. Set up paths by adding the following to your `~/.bashrc` file:
     ```sh
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:gps/build/lib
-    export PYTHONPATH=$PYTHONPATH:gps/build/lib
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/gps/build/lib
+    export PYTHONPATH=$PYTHONPATH:/path/to/gps/build/lib
     ```
     Don't forget to run `source ~/.bashrc` afterward.
 
@@ -186,9 +186,9 @@ The arm should start reaching the visualized goal after around 6 iterations.
 All settings for these examples are located in `experiments/box2d_[name]_example/hyperparams.py`,
 which can be modified to input different target positions and change various hyperparameters of the algorihtm.
 
-#### Mujoco example
+#### MuJoCo example
 
-To run the mujoco example, be sure to first [set up Mujoco](#setup).
+To run the mujoco example, be sure to first [set up MuJoCo](#setup).
 
 The first example is using trajectory optimizing for peg insertion. To try it, run the following from the gps directory:
 ```
