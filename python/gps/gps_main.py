@@ -1,5 +1,8 @@
 """ This file defines the main object that runs experiments. """
 
+import matplotlib as mpl
+mpl.use('Qt4Agg')
+
 import logging
 import imp
 import os
