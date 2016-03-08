@@ -60,7 +60,7 @@ agent = {
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],
-    'obs_include': [],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
 }
 
 algorithm = {
@@ -143,7 +143,7 @@ config = {
     'verbose_policy_trials': 1,
     'common': common,
     'agent': agent,
-    'gui_on': False,
+    'gui_on': True,
     'algorithm': algorithm,
 }
 
