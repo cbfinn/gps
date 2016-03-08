@@ -60,21 +60,19 @@ class AgentMuJoCo(Agent):
             self._world.set_data(data)
             self._world.kinematics()
 
-        # Initialize x0.
-        self._data = self._world.get_data()
-        eepts = self._data['site_xpos'].flatten()
-
         self._joint_idx = list(range(self._model[0]['nq']))
         self._vel_idx = [i + self._model[0]['nq'] for i in self._joint_idx]
 
+        # Initialize x0.
         self.x0 = []
-        for x0 in self._hyperparams['x0']:
+        for i in range(self._hyperparams['conditions']):
             if END_EFFECTOR_POINTS in self.x_data_types:
+                eepts = self._world[i].get_data()['site_xpos'].flatten()
                 self.x0.append(
-                    np.concatenate([x0, eepts, np.zeros_like(eepts)])
+                    np.concatenate([self._hyperparams['x0'][i], eepts, np.zeros_like(eepts)])
                 )
             else:
-                self.x0.append(x0)
+                self.x0.append(self._hyperparams['x0'][i])
 
         cam_pos = self._hyperparams['camera_pos']
         for i in range(self._hyperparams['conditions']):
