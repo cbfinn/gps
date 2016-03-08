@@ -1,0 +1,7 @@
+<launch>
+  <!-- Use the following for ROS hydro or later: <include file="$(find gazebo_ros)/launch/empty_world.launch"> -->
+  <include file="$(find gazebo_worlds)/launch/empty_world.launch">
+    </include>
+  <include file="$(find pr2_gazebo)/launch/pr2_no_controllers.launch" />
+
+</launch>

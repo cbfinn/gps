@@ -281,28 +281,6 @@ void PyMJCWorld2::SetData(bp::dict d) {
 
 }
 
-bp::dict PyMJCWorld2::GetImage() {
-    m_viewer->RenderOnce();
-    bp::dict out;
-    const unsigned char* tmp = static_cast<const unsigned char*>(m_viewer->m_image->getDataPointer());
-    //out["pixel_data"] = toNdarray1<unsigned char>(tmp, m_viewer->m_image->getTotalDataSize ());
-    out["num_pixels"] = m_viewer->m_image->getTotalDataSize();
-    out["width"] = m_viewer->m_image->s();
-    out["height"] = m_viewer->m_image->t();
-    int num_channels = 0;
-    if (m_viewer->m_image->getTotalDataSize() > 0)
-    {
-        num_channels = m_viewer->m_image->getTotalDataSize() / m_viewer->m_image->s() / m_viewer->m_image->t();
-    }
-    out["img"] = toNdarray3<unsigned char>(tmp, m_viewer->m_image->t(), m_viewer->m_image->s(), num_channels);
-    out["num_channels"] = num_channels;
-    return out;
-}
-
-void PyMJCWorld2::SetCamera(float x, float y, float z, float px, float py, float pz){
-    // place camera at (x,y,z) pointing to (px,py,pz)
-    m_viewer->SetCamera(x,y,z,px,py,pz);
-}
 
 BOOST_PYTHON_MODULE(mjcpy) {
     bn::initialize();

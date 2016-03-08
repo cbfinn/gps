@@ -279,11 +279,6 @@ MujocoOSGViewer::MujocoOSGViewer()
     m_root = new osg::Group;
     m_robot = new osg::Group;
     m_root->addChild(m_robot);
-
-    m_image = new osg::Image;
-    osg::ref_ptr<PhotoCallback> pcb = new PhotoCallback( m_image.get() );
-    m_viewer.getCamera()->setPostDrawCallback( pcb.get() );
-
     m_viewer.setSceneData(m_root.get());
     m_viewer.setUpViewInWindow(0, 0, 640, 480);
     m_viewer.realize();
