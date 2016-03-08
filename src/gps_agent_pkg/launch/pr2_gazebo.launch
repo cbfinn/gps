@@ -1,6 +1,0 @@
-<launch>
-
-	<include file="$(find gps_agent_pkg)/launch/pr2_gazebo_no_controller.launch" />
-	<include file="$(find gps_agent_pkg)/launch/pr2_only_controller.launch" />
-
-</launch>

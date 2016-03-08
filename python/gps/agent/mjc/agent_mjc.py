@@ -76,6 +76,11 @@ class AgentMuJoCo(Agent):
             else:
                 self.x0.append(x0)
 
+        cam_pos = self._hyperparams['camera_pos']
+        for i in range(self._hyperparams['conditions']):
+            self._world[i].init_cam(cam_pos[0], cam_pos[1], cam_pos[2],
+                                    cam_pos[3], cam_pos[4], cam_pos[5])
+
     def sample(self, policy, condition, verbose=True, save=True):
         """
         Runs a trial and constructs a new sample containing information
