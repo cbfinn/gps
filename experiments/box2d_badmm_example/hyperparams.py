@@ -16,6 +16,7 @@ from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
+from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, ACTION
 
