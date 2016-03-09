@@ -46,7 +46,7 @@ def policy_to_msg(policy, noise):
                 policy.K.reshape(policy.T * policy.dX * policy.dU).tolist()
         msg.lingauss.k_t = \
                 policy.fold_k(noise).reshape(policy.T * policy.dU).tolist()
-    elif NO_CAFFE == False and isinstance(policy, CaffePolicy):
+    elif NO_CAFFE is False and isinstance(policy, CaffePolicy):
         msg.controller_to_execute = CAFFE_CONTROLLER
         msg.caffe = CaffeParams()
         msg.caffe.net_param = policy.get_net_param()

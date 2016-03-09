@@ -1,6 +1,7 @@
 """ This file provides an example tensorflow network used to define a policy. """
 
 import tensorflow as tf
+from gps.algorithm.policy_opt.tf_utils import TfMap
 
 
 def init_weights(shape, name=None):
@@ -70,5 +71,5 @@ def example_tf_network(dim_input=27, dim_output=7, batch_size=25):
     nn_input, action, precision = get_input_layer(dim_input, dim_output)
     mlp_applied = get_mlp_layers(nn_input, n_layers, dim_hidden)
     loss_out = get_loss_layer(mlp_out=mlp_applied, action=action, precision=precision)
-    return_dict = {'inputs': [nn_input, action, precision], 'outputs': [mlp_applied], 'loss': [loss_out]}
-    return return_dict
+
+    return TfMap([nn_input, action, precision], [mlp_applied], [loss_out])

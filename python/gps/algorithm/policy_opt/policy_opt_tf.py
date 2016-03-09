@@ -9,55 +9,9 @@ import tensorflow as tf
 from gps.algorithm.policy.tf_policy import TfPolicy
 from gps.algorithm.policy_opt.policy_opt import PolicyOpt
 from gps.algorithm.policy_opt.config_tf import POLICY_OPT_TF
+from gps.algorithm.policy_opt.tf_utils import TfSolver
 
 LOGGER = logging.getLogger(__name__)
-
-
-class TfSolver:
-    """ A container for holding solver hyperparams in tensorflow. Used to execute backwards pass. """
-    def __init__(self, loss_scalar, solver_name='adam', snapshot_prefix=None, base_lr=None, lr_policy=None,
-                 momentum=None, weight_decay=None):
-        self.snapshot_prefix = snapshot_prefix
-        self.base_lr = base_lr
-        self.lr_policy = lr_policy
-        self.momentum = momentum
-        self.solver_name = solver_name
-        self.loss_scalar = loss_scalar
-
-        if self.lr_policy is not 'fixed':
-            raise NotImplemented('learning rate policies other than fixed are not implemented')
-
-        self.weight_decay = weight_decay
-        if weight_decay is not None:
-            trainable_vars = tf.trainable_variables()
-            loss_with_reg = self.loss_scalar
-            for var in trainable_vars:
-                loss_with_reg += self.weight_decay*tf.nn.l2_loss(var)
-            self.loss_scalar = loss_with_reg
-
-        self.solver_op = self.get_solver_op()
-
-    def get_solver_op(self):
-        solver_string = self.solver_name.lower()
-        if solver_string == 'adam':
-            return tf.train.AdamOptimizer(learning_rate=self.base_lr).minimize(self.loss_scalar)
-        elif solver_string == 'rmsprop':
-            return tf.train.RMSPropOptimizer(learning_rate=self.base_lr,
-                                             decay=self.momentum).minimize(self.loss_scalar)
-        elif solver_string == 'momentum':
-            return tf.train.MomentumOptimizer(learning_rate=self.base_lr,
-                                              momentum=self.momentum).minimize(self.loss_scalar)
-        elif solver_string == 'adagrad':
-            return tf.train.AdagradOptimizer(learning_rate=self.base_lr,
-                                             initial_accumulator_value=self.momentum).minimize(self.loss_scalar)
-        elif solver_string == 'gd':
-            return tf.train.GradientDescentOptimizer(learning_rate=self.base_lr).minimize(self.loss_scalar)
-        else:
-            raise NotImplementedError("Please select a valid optimizer.")
-
-    def __call__(self, feed_dict, sess, device_string="/cpu:0"):
-        with tf.device(device_string):
-            sess.run(self.solver_op, feed_dict)
 
 
 class PolicyOptTf(PolicyOpt):
@@ -91,19 +45,18 @@ class PolicyOptTf(PolicyOpt):
 
     def init_network(self):
         """ Helper method to initialize the tf networks used """
-        tf_model = self._hyperparams['network_model']
-        model_dict = tf_model(dim_input=self._dO, dim_output=self._dU, batch_size=None)
-        self.obs_tensor = model_dict['inputs'][0]
-        self.action_tensor = model_dict['inputs'][1]
-        self.precision_tensor = model_dict['inputs'][2]
-        self.act_op = model_dict['outputs'][0]
-        self.loss_scalar = model_dict['loss'][0]
+        tf_map_generator = self._hyperparams['network_model']
+        tf_map = tf_map_generator(dim_input=self._dO, dim_output=self._dU, batch_size=None)
+        self.obs_tensor = tf_map.get_input_tensor()
+        self.action_tensor = tf_map.get_act_tensor()
+        self.precision_tensor = tf_map.get_precision_tensor()
+        self.act_op = tf_map.get_act_op()
+        self.loss_scalar = tf_map.get_loss_op()
 
     def init_solver(self):
         """ Helper method to initialize the solver. """
         self.solver = TfSolver(loss_scalar=self.loss_scalar,
                                solver_name=self._hyperparams['solver_type'],
-                               snapshot_prefix=self._hyperparams['checkpoint_prefix'],
                                base_lr=self._hyperparams['lr'],
                                lr_policy=self._hyperparams['lr_policy'],
                                momentum=self._hyperparams['momentum'],
@@ -243,6 +196,24 @@ class PolicyOptTf(PolicyOpt):
             'bias': self.policy.bias,
             'tf_iter': self.tf_iter,
         }
+
+    # auto pickle including hyper params.
+    def __auto_save_state__(self, pickle_hyperparams_path=None):
+        saver = tf.train.Saver()
+        saver.save(self.sess, self.checkpoint_file)
+        return_dict = {
+            'hyperparams': self._hyperparams,
+            'dO': self._dO,
+            'dU': self._dU,
+            'scale': self.policy.scale,
+            'bias': self.policy.bias,
+            'tf_iter': self.tf_iter,
+        }
+
+        import pickle
+        if pickle_hyperparams_path is None:
+            pickle_hyperparams_path = self.checkpoint_file + '_hyperparams'
+        pickle.dump(return_dict, open(pickle_hyperparams_path, "wb"))
 
     # For unpickling.
     def __setstate__(self, state):

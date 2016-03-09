@@ -1,7 +1,7 @@
 from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 import os
-cur_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                        '..', 'policy_opt/tf_checkpoint/policy_checkpoint.ckpt'))
+checkpoint_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                               '..', 'policy_opt/tf_checkpoint/policy_checkpoint.ckpt'))
 
 POLICY_OPT_TF = {
     # Initialization.
@@ -18,6 +18,6 @@ POLICY_OPT_TF = {
     'gpu_id': 0,
     'solver_type': 'adam',  # Solver type (e.g. 'SGD', 'Adam', etc.).
     # Other hyperparameters.
-    'network_model': example_tf_network,  # should return a dictionary of inputs, outputs, and loss. See example.
-    'checkpoint_prefix': cur_path,
+    'network_model': example_tf_network,  # should return TfMap object. See example.
+    'checkpoint_prefix': checkpoint_path
 }

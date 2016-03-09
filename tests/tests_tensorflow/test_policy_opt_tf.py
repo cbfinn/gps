@@ -5,7 +5,7 @@ import sys
 import numpy as np
 
 # Add gps/python to path so that imports work.
-gps_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'python'))
+gps_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'python'))
 sys.path.append(gps_path)
 
 from gps.algorithm.policy.tf_policy import TfPolicy
@@ -87,6 +87,25 @@ def test_pickle():
     state = policy_opt.__getstate__()
 
 
+def test_auto_save_state():
+    hyper_params = POLICY_OPT_TF
+    deg_obs = 100
+    deg_action = 7
+    policy_opt = PolicyOptTf(hyper_params, deg_obs, deg_action)
+    policy_opt.__auto_save_state__()
+
+
+def test_load_from_auto_save():
+    import pickle
+    path_to_dict = gps_path + '/gps/algorithm/policy_opt/tf_checkpoint/policy_checkpoint.ckpt_hyperparams'
+    state = pickle.load(open(path_to_dict, "rb"))
+    hyper_params = state['hyperparams']
+    deg_obs = state['dO']
+    deg_action = state['dU']
+    policy_opt = PolicyOptTf(hyper_params, deg_obs, deg_action)
+    policy_opt.__setstate__(state)
+
+
 def test_unpickle():
     hyper_params = POLICY_OPT_TF
     deg_obs = 100
@@ -105,15 +124,45 @@ def test_unpickle():
                              'scale': policy_opt.policy.scale, 'bias': policy_opt.policy.bias, 'tf_iter': 100})
 
 
+def test_policy_save():
+    hyper_params = POLICY_OPT_TF
+    deg_obs = 100
+    deg_action = 7
+    policy_opt = PolicyOptTf(hyper_params, deg_obs, deg_action)
+    check_path = gps_path + '/gps/algorithm/policy_opt/tf_checkpoint/policy_checkpoint'
+    policy_opt.policy.pickle_policy(deg_obs, deg_action, check_path)
+
+
+def test_policy_load():
+    tf_map = POLICY_OPT_TF['network_model']
+    check_path = gps_path + '/gps/algorithm/policy_opt/tf_checkpoint/policy_checkpoint'
+    pol = TfPolicy.load_policy(check_path, tf_map)
+
+    deg_obs = 100
+    deg_action = 7
+    N = 20
+    T = 30
+    obs = np.random.randn(N, T, deg_obs)
+    obs_reshaped = np.reshape(obs, (N*T, deg_obs))
+    pol.scale = np.diag(1.0 / np.std(obs_reshaped, axis=0))
+    pol.bias = -np.mean(obs_reshaped.dot(pol.scale), axis=0)
+    noise = np.random.randn(deg_action)
+    pol.act(None, obs[0, 0], None, noise)
+
+
 def main():
-    print 'running tf tests '
+    print 'running tf policy opt tests'
     test_policy_opt_tf_init()
     test_policy_opt_tf_forward()
     test_policy_forward()
     test_policy_opt_backwards()
     test_pickle()
     test_unpickle()
-    print 'tf tests passed'
+    test_auto_save_state()
+    test_load_from_auto_save()
+    test_policy_save()
+    test_policy_load()
+    print 'tf policy opt tests passed'
 
 
 if __name__ == '__main__':
