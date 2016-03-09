@@ -49,7 +49,7 @@ class TfPolicy(Policy):
         We can save just the policy if we are only interested in running forward.
         """
         pickled_pol = {'deg_obs': deg_obs, 'deg_action': deg_action, 'chol_pol_covar': self.chol_pol_covar,
-                       'checkpoint_path_tf': checkpoint_path + 'tf_data', 'scale': self.scale, 'bias': self.bias,
+                       'checkpoint_path_tf': checkpoint_path + '_tf_data', 'scale': self.scale, 'bias': self.bias,
                        'device_string': self.device_string}
         pickle.dump(pickled_pol, open(checkpoint_path, "wb"))
         saver = tf.train.Saver()

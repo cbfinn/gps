@@ -147,19 +147,19 @@ def test_policy_load():
     pol.scale = np.diag(1.0 / np.std(obs_reshaped, axis=0))
     pol.bias = -np.mean(obs_reshaped.dot(pol.scale), axis=0)
     noise = np.random.randn(deg_action)
-    pol.act(None, obs[0, 0], None, noise)
+    pol.act(None, obs[0, 0], None, None)
 
 
 def main():
     print 'running tf policy opt tests'
-    test_policy_opt_tf_init()
-    test_policy_opt_tf_forward()
-    test_policy_forward()
-    test_policy_opt_backwards()
-    test_pickle()
-    test_unpickle()
-    test_auto_save_state()
-    test_load_from_auto_save()
+    #test_policy_opt_tf_init()
+    #test_policy_opt_tf_forward()
+    #test_policy_forward()
+    #test_policy_opt_backwards()
+    #test_pickle()
+    #test_unpickle()
+    #test_auto_save_state()
+    #test_load_from_auto_save()
     test_policy_save()
     test_policy_load()
     print 'tf policy opt tests passed'
