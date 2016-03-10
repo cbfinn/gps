@@ -13,8 +13,7 @@ TrialController::TrialController() : Controller()
 }
 
 // Destructor.
-TrialController::~TrialController()
-{
+TrialController::~TrialController() {
 }
 
 // Update the controller (take an action).

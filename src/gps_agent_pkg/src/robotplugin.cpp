@@ -5,6 +5,7 @@
 #include "gps_agent_pkg/lingausscontroller.h"
 #include "gps_agent_pkg/trialcontroller.h"
 #include "gps_agent_pkg/LinGaussParams.h"
+#include "gps_agent_pkg/tfcontroller.h"
 #include "gps_agent_pkg/ControllerParams.h"
 #include "gps_agent_pkg/util.h"
 #include "gps/proto/gps.pb.h"
@@ -64,6 +65,9 @@ void RobotPlugin::initialize_ros(ros::NodeHandle& n)
     test_sub_ = n.subscribe("/test_sub", 1, &RobotPlugin::test_callback, this);
     relax_subscriber_ = n.subscribe("/gps_controller_relax_command", 1, &RobotPlugin::relax_subscriber_callback, this);
     data_request_subscriber_ = n.subscribe("/gps_controller_data_request", 1, &RobotPlugin::data_request_subscriber_callback, this);
+
+    //for async tf controller.
+    action_subscriber_ = n.subscribe("/gps_controller_sent_robot_action", 1, &RobotPlugin::robot_action_command_callback, this);
 
     // Create publishers.
     report_publisher_.reset(new realtime_tools::RealtimePublisher<gps_agent_pkg::SampleResult>(n, "/gps_controller_report", 1));
@@ -416,6 +420,10 @@ void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::C
         trial_controller_->configure_controller(controller_params);
     }
 #endif
+    else if (msg->controller.controller_to_execute == gps::TF_CONTROLLER) {
+        trial_controller_.reset(new TensorflowController());
+        trial_controller_-> configure_controller(controller_params);
+    }
     else{
         ROS_ERROR("Unknown trial controller arm type and/or USE_CAFFE=0");
     }
@@ -454,6 +462,21 @@ void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::C
     configure_sensors(sensor_params);
 
     controller_initialized_ = true;
+}
+
+
+void RobotPlugin::robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg){
+    gps_agent_pkg::TfActionCommand tfAction = msg;
+    // Unpack the action vector
+    idx = 0;
+    Eigen::VectorXd latest_action_command;
+    for (int i = 0; i < dim_bias; ++i)
+    {
+        latest_action_command(i) = tfAction.action[idx];
+        idx++;
+    }
+    int last_command_id_received = tfAction.id;
+    TensorflowController::update_action_command(latest_action_command, last_command_id_received);
 }
 
 void RobotPlugin::test_callback(const std_msgs::Empty::ConstPtr& msg){

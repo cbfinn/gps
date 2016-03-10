@@ -130,6 +130,8 @@ public:
     virtual void relax_subscriber_callback(const gps_agent_pkg::RelaxCommand::ConstPtr& msg);
     // Data request callback.
     virtual void data_request_subscriber_callback(const gps_agent_pkg::DataRequest::ConstPtr& msg);
+    // tf action received callback
+    virtual void robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg);
 
     // Update functions.
     // Update the sensors at each time step.

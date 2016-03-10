@@ -2,24 +2,34 @@ import tensorflow as tf
 import time
 import pickle
 import numpy as np
+import rospy
 
 from gps.algorithm.policy.tf_policy import TfPolicy
 from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
 from gps.algorithm.policy_opt.config_tf import POLICY_OPT_TF
-#from gps_agent_pkg.msg import TfActionCommand
-#from gps_agent_pkg.msg import SampleResult
-#from gps.agent.ros.ros_utils import ServiceEmulator
-#from gps.sample.sample import Sample
+from gps_agent_pkg.msg import TfActionCommand
+from gps_agent_pkg.msg import SampleResult
+from gps.agent.ros.ros_utils import ServiceEmulator
+from gps.sample.sample import Sample
 
 
 class ForwardTfAgent:
-    def __init__(self, policy):
-        # default, you pass the policy and the noise in.
+    def __init__(self, policy, dU):
+        """
+        Default. You pass the policy in.
+        """
         self.policy = policy
         self.current_action_id = 0
+        self.dU = dU
         self.sess = policy.sess
-        #self.ross_service = ServiceEmulator('robot_action', TfActionCommand,
-        #                                    'robot_observation', )
+        self.ross_service = ServiceEmulator('robot_action', TfActionCommand,
+                                            'robot_observation', SampleResult)
+
+        self._pub = rospy.Publisher('robot_action', TfActionCommand)
+        self._sub = rospy.Subscriber('robot_observation', SampleResult, self._callback)
+
+        self._subscriber_msg = None
+        self.observations_stale = True
 
     @classmethod
     def init_from_saved_policy(cls, path_to_policy_checkpoint, tf_generator):
@@ -30,17 +40,27 @@ class ForwardTfAgent:
         pol = TfPolicy.load_policy(path_to_policy_checkpoint, tf_generator=tf_generator)
         return cls(pol)
 
-    def run_service(self, time_to_run=None):
+    def _callback(self, message):
+            self._subscriber_msg = message
+            self.observations_stale = False
+
+    def publish(self, pub_msg):
+        """ Publish a message without waiting for response. """
+        self._pub.publish(pub_msg)
+
+    def run_service(self, time_to_run=5):
         should_stop = False
-        action = policy_to_msg(np.zeros(self.dU))
         start_time = time.time()
         while should_stop is False:
-            ros_sample = msg_to_sample(self.ross_service.publish_and_wait(action, timeout=time_to_run))
             current_time = time.time()
             if current_time - start_time > time_to_run:
-                should_stop = True
-            else:
-                action = policy_to_msg(self._get_new_action(ros_sample), self.current_action_id)
+                    should_stop = True
+            elif self.observations_stale is False:
+                last_obs = msg_to_sample(self._subscriber_msg, None)
+                action = policy_to_msg(self.dU, self._get_new_action(last_obs), self.current_action_id)
+                self.publish(policy_to_msg(self.dU, action, self.current_action_id))
+                self.observations_stale = True
+                self.current_action_id += 1
 
     def _get_new_action(self, obs):
         self.current_action_id += 1
@@ -52,7 +72,7 @@ def policy_to_msg(deg_action, action, action_id):
     Convert an action to a TFActionCommand message.
     """
     msg = TfActionCommand()
-    msg.action = action
+    msg.action = action.tolist()
     msg.dU = deg_action
     msg.id = action_id
     return msg
