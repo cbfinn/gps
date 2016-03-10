@@ -38,7 +38,7 @@ void RobotPlugin::initialize(ros::NodeHandle& n)
     aux_data_request_waiting_ = false;
     sensors_initialized_ = false;
     controller_initialized_ = false;
-    use_tf = false;
+    use_tf_ = false;
 
     // Initialize all ROS communication infrastructure.
     initialize_ros(n);
@@ -71,8 +71,8 @@ void RobotPlugin::initialize_ros(ros::NodeHandle& n)
     report_publisher_.reset(new realtime_tools::RealtimePublisher<gps_agent_pkg::SampleResult>(n, "/gps_controller_report", 1));
 
     //for async tf controller.
-    action_subscriber_ = n.subscribe("/gps_controller_sent_robot_action", 1, &RobotPlugin::robot_action_command_callback, this);
-    tf_publisher_.reset(new realtime_tools::RealtimePublisher<gps_agent_pkg::SampleResult>(n, "/gps_tf_obs", 1));
+    action_subscriber_ = n.subscribe("/gps_controller_sent_robot_action_tf", 1, &RobotPlugin::tf_robot_action_command_callback, this);
+    tf_publisher_.reset(new realtime_tools::RealtimePublisher<gps_agent_pkg::TfObsData>(n, "/gps_obs_tf", 1));
 }
 
 // Initialize all sensors.
@@ -220,11 +220,11 @@ void RobotPlugin::update_controllers(ros::Time current_time, bool is_controller_
         return;
     }
     //if using tf controller, publish the observations.
-    if(use_tf == true){
+    if(use_tf_ == true){
         Eigen::VectorXd obs;
         sample->get_data(step_counter_, obs, datatype_obs_);
         tf_step_counter_ ++;
-        RobotPlugin::publish_tf_obs(obs);
+        RobotPlugin::tf_publish_obs(obs);
 
     }
     // If we have a trial controller, update that, otherwise update position controller.
@@ -433,7 +433,7 @@ void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::C
     else if (msg->controller.controller_to_execute == gps::TF_CONTROLLER) {
         trial_controller_.reset(new TensorflowController());
         trial_controller_-> configure_controller(controller_params);
-        use_tf = true;
+        use_tf_ = true;
     }
     else{
         ROS_ERROR("Unknown trial controller arm type and/or USE_CAFFE=0");
@@ -556,7 +556,7 @@ void RobotPlugin::get_fk_solver(boost::shared_ptr<KDL::ChainFkSolverPos> &fk_sol
 
 
 
-void RobotPlugin::robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg){
+void RobotPlugin::tf_robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg){
     gps_agent_pkg::TfActionCommand tfAction = msg;
     // Unpack the action vector
     idx = 0;
@@ -572,35 +572,10 @@ void RobotPlugin::robot_action_command_callback(const gps_agent_pkg::TfActionCom
 
 
 
-void RobotPlugin::publish_tf_obs(Eigen::VectorXd obs){
+void RobotPlugin::tf_publish_obs(Eigen::VectorXd obs){
     while(!tf_publisher_->trylock());
-    std::vector<gps::SampleType> dtypes;
-    //sample->get_available_dtypes(dtypes);
-
-    report_publisher_->msg_.sensor_data.resize(dtypes.size());
-    for(int d=0; d<dtypes.size(); d++){ //Fill in each sample type
-        report_publisher_->msg_.sensor_data[d].data_type = dtypes[d];
-        Eigen::VectorXd tmp_data;
-        sample->get_data(T, tmp_data, (gps::SampleType)dtypes[d]);
-        report_publisher_->msg_.sensor_data[d].data.resize(tmp_data.size());
-
-
-        std::vector<int> shape;
-        sample->get_shape((gps::SampleType)dtypes[d], shape);
-        shape.insert(shape.begin(), T);
-        report_publisher_->msg_.sensor_data[d].shape.resize(shape.size());
-        int total_expected_shape = 1;
-        for(int i=0; i< shape.size(); i++){
-            report_publisher_->msg_.sensor_data[d].shape[i] = shape[i];
-            total_expected_shape *= shape[i];
-        }
-        if(total_expected_shape != tmp_data.size()){
-            ROS_ERROR("Data stored in sample has different length than expected (%d vs %d)",
-            tmp_data.size(), total_expected_shape);
-        }
-        for(int i=0; i<tmp_data.size(); i++){
-            report_publisher_->msg_.sensor_data[d].data[i] = tmp_data[i];
-        }
+    for(int i=0; i<obs.size(); i++) {
+        tf_publisher_->msg_.data[i] = obs[i];
     }
-    report_publisher_->unlockAndPublish();
+    tf_publisher_->unlockAndPublish();
 }

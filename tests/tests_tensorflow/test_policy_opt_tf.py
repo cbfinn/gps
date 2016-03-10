@@ -153,15 +153,15 @@ def test_policy_load():
 def main():
     print 'running tf policy opt tests'
     #test_policy_opt_tf_init()
-    #test_policy_opt_tf_forward()
+    test_policy_opt_tf_forward()
     #test_policy_forward()
     #test_policy_opt_backwards()
     #test_pickle()
     #test_unpickle()
     #test_auto_save_state()
     #test_load_from_auto_save()
-    test_policy_save()
-    test_policy_load()
+    #test_policy_save()
+    #test_policy_load()
     print 'tf policy opt tests passed'
 
 

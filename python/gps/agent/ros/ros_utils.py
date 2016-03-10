@@ -4,7 +4,7 @@ import numpy as np
 import rospy
 
 from gps.algorithm.policy.lin_gauss_policy import LinearGaussianPolicy
-from gps_agent_pkg.msg import ControllerParams, LinGaussParams, CaffeParams
+from gps_agent_pkg.msg import ControllerParams, LinGaussParams, CaffeParams, TfActionCommand
 from gps.sample.sample import Sample
 from gps.proto.gps_pb2 import LIN_GAUSS_CONTROLLER, CAFFE_CONTROLLER
 import logging
@@ -57,6 +57,21 @@ def policy_to_msg(policy, noise):
     else:
         raise NotImplementedError("Caffe not imported or Unknown policy object: %s" % policy)
     return msg
+
+
+def tf_policy_to_action_msg(deg_action, action, action_id):
+        """
+        Convert an action to a TFActionCommand message.
+        """
+        msg = TfActionCommand()
+        msg.action = action.tolist()
+        msg.dU = deg_action
+        msg.id = action_id
+        return msg
+
+
+def tf_obs_msg_to_numpy(obs_message):
+    return np.array(obs_message)
 
 
 class TimeoutException(Exception):

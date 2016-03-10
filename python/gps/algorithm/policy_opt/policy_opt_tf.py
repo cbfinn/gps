@@ -161,7 +161,8 @@ class PolicyOptTf(PolicyOpt):
         # Normalize obs.
         try:
             for n in range(N):
-                obs[n, :, :] = obs[n, :, :].dot(self.policy.scale) + self.policy.bias
+                if self.policy.scale is not None and self.policy.bias is not None:
+                    obs[n, :, :] = obs[n, :, :].dot(self.policy.scale) + self.policy.bias
         except AttributeError:
             pass  #TODO: Should prob be called before update?
 
@@ -186,8 +187,8 @@ class PolicyOptTf(PolicyOpt):
 
     # For pickling.
     def __getstate__(self):
-        saver = tf.train.Saver()
-        saver.save(self.sess, self.checkpoint_file)
+        #saver = tf.train.Saver()
+        #saver.save(self.sess, self.checkpoint_file)
         return {
             'hyperparams': self._hyperparams,
             'dO': self._dO,
