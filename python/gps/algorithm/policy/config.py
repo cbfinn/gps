@@ -15,7 +15,7 @@ INIT_LG_LQR = {
     'init_var': 1.0,
     'stiffness': 1.0,
     'stiffness_vel': 0.5,
-    'final_weight': 0.5,
+    'final_weight': 1.0,
     # Parameters for guessing dynamics
     'init_acc': [],  # dU vector of accelerations, default zeros.
     'init_gains': [],  # dU vector of gains, default ones.

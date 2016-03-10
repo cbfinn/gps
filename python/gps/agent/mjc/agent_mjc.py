@@ -109,12 +109,13 @@ class AgentMuJoCo(Agent):
             mj_U = policy.act(X_t, obs_t, t, noise[t, :])
             U[t, :] = mj_U
             if verbose:
-                self._world.plot(mj_X)
+                self._world[condition].plot(mj_X)
+                # obs = self._world[condition].get_image()
             if (t + 1) < self.T:
                 for _ in range(self._hyperparams['substeps']):
                     mj_X, _ = self._world.step(mj_X, mj_U)
                 #TODO: Some hidden state stuff will go here.
-                self._data = self._world.get_data()
+                self._data = self._world[condition].get_data()
                 self._set_sample(new_sample, mj_X, t, condition)
         new_sample.set(ACTION, U)
         if save:
