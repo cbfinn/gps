@@ -9,7 +9,7 @@ from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
 from gps.algorithm.policy_opt.config_tf import POLICY_OPT_TF
 from gps_agent_pkg.msg import TfActionCommand
 from gps_agent_pkg.msg import SampleResult
-from gps.agent.ros.ros_utils import ServiceEmulator
+#from gps.agent.ros.ros_utils import ServiceEmulator
 from gps.sample.sample import Sample
 
 
@@ -22,8 +22,8 @@ class ForwardTfAgent:
         self.current_action_id = 0
         self.dU = dU
         self.sess = policy.sess
-        self.ross_service = ServiceEmulator('robot_action', TfActionCommand,
-                                            'robot_observation', SampleResult)
+        #self.ross_service = ServiceEmulator('robot_action', TfActionCommand,
+        #                                    'robot_observation', SampleResult)
 
         self._pub = rospy.Publisher('robot_action', TfActionCommand)
         self._sub = rospy.Subscriber('robot_observation', SampleResult, self._callback)
@@ -51,6 +51,9 @@ class ForwardTfAgent:
     def run_service(self, time_to_run=5):
         should_stop = False
         start_time = time.time()
+        action = policy_to_msg(self.dU, np.zeros(self.dU), self.current_action_id)
+        self.current_action_id += 1
+        self.publish(policy_to_msg(self.dU, action, self.current_action_id))
         while should_stop is False:
             current_time = time.time()
             if current_time - start_time > time_to_run:
@@ -62,7 +65,7 @@ class ForwardTfAgent:
                 self.observations_stale = True
                 self.current_action_id += 1
             else:
-                rospy.sleep(0.01)
+                rospy.sleep(0.005)
 
     def _get_new_action(self, obs):
         self.current_action_id += 1

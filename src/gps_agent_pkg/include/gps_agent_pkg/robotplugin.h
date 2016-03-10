@@ -97,6 +97,14 @@ protected:
     bool sensors_initialized_;
     // Is everything initialized for the trial controller?
     bool controller_initialized_;
+    // are we using a tf controller?
+    bool use_tf_;
+    //for sampling with tf controller.
+    std::vector<gps::SampleType> datatype_obs_;
+    //tf step counter
+    int tf_step_counter_ = 0;
+    //tf publisher
+    ros_publisher_ptr(gps_agent_pkg::SampleResult) tf_publisher_;
 public:
     // Constructor (this should do nothing).
     RobotPlugin();

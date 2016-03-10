@@ -38,6 +38,7 @@ void RobotPlugin::initialize(ros::NodeHandle& n)
     aux_data_request_waiting_ = false;
     sensors_initialized_ = false;
     controller_initialized_ = false;
+    use_tf = false;
 
     // Initialize all ROS communication infrastructure.
     initialize_ros(n);
@@ -66,11 +67,12 @@ void RobotPlugin::initialize_ros(ros::NodeHandle& n)
     relax_subscriber_ = n.subscribe("/gps_controller_relax_command", 1, &RobotPlugin::relax_subscriber_callback, this);
     data_request_subscriber_ = n.subscribe("/gps_controller_data_request", 1, &RobotPlugin::data_request_subscriber_callback, this);
 
-    //for async tf controller.
-    action_subscriber_ = n.subscribe("/gps_controller_sent_robot_action", 1, &RobotPlugin::robot_action_command_callback, this);
-
     // Create publishers.
     report_publisher_.reset(new realtime_tools::RealtimePublisher<gps_agent_pkg::SampleResult>(n, "/gps_controller_report", 1));
+
+    //for async tf controller.
+    action_subscriber_ = n.subscribe("/gps_controller_sent_robot_action", 1, &RobotPlugin::robot_action_command_callback, this);
+    tf_publisher_.reset(new realtime_tools::RealtimePublisher<gps_agent_pkg::SampleResult>(n, "/gps_tf_obs", 1));
 }
 
 // Initialize all sensors.
@@ -216,6 +218,14 @@ void RobotPlugin::update_controllers(ros::Time current_time, bool is_controller_
     bool trial_init = trial_controller_ != NULL && trial_controller_->is_configured() && controller_initialized_;
     if(!is_controller_step && trial_init){
         return;
+    }
+    //if using tf controller, publish the observations.
+    if(use_tf == true){
+        Eigen::VectorXd obs;
+        sample->get_data(step_counter_, obs, datatype_obs_);
+        tf_step_counter_ ++;
+        RobotPlugin::publish_tf_obs(obs);
+
     }
     // If we have a trial controller, update that, otherwise update position controller.
     if (trial_init) trial_controller_->update(this, current_time, current_time_step_sample_, active_arm_torques_);
@@ -423,6 +433,7 @@ void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::C
     else if (msg->controller.controller_to_execute == gps::TF_CONTROLLER) {
         trial_controller_.reset(new TensorflowController());
         trial_controller_-> configure_controller(controller_params);
+        use_tf = true;
     }
     else{
         ROS_ERROR("Unknown trial controller arm type and/or USE_CAFFE=0");
@@ -464,20 +475,6 @@ void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::C
     controller_initialized_ = true;
 }
 
-
-void RobotPlugin::robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg){
-    gps_agent_pkg::TfActionCommand tfAction = msg;
-    // Unpack the action vector
-    idx = 0;
-    Eigen::VectorXd latest_action_command;
-    for (int i = 0; i < dim_bias; ++i)
-    {
-        latest_action_command(i) = tfAction.action[idx];
-        idx++;
-    }
-    int last_command_id_received = tfAction.id;
-    TensorflowController::update_action_command(latest_action_command, last_command_id_received);
-}
 
 void RobotPlugin::test_callback(const std_msgs::Empty::ConstPtr& msg){
     ROS_INFO_STREAM("Received test message");
@@ -554,4 +551,56 @@ void RobotPlugin::get_fk_solver(boost::shared_ptr<KDL::ChainFkSolverPos> &fk_sol
     {
         ROS_ERROR("Unknown ArmType %i requested for joint encoder readings!",arm);
     }
+}
+
+
+
+
+void RobotPlugin::robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg){
+    gps_agent_pkg::TfActionCommand tfAction = msg;
+    // Unpack the action vector
+    idx = 0;
+    Eigen::VectorXd latest_action_command;
+    for (int i = 0; i < dim_bias; ++i)
+    {
+        latest_action_command(i) = tfAction.action[idx];
+        idx++;
+    }
+    int last_command_id_received = tfAction.id;
+    TensorflowController::update_action_command(latest_action_command, last_command_id_received);
+}
+
+
+
+void RobotPlugin::publish_tf_obs(Eigen::VectorXd obs){
+    while(!tf_publisher_->trylock());
+    std::vector<gps::SampleType> dtypes;
+    //sample->get_available_dtypes(dtypes);
+
+    report_publisher_->msg_.sensor_data.resize(dtypes.size());
+    for(int d=0; d<dtypes.size(); d++){ //Fill in each sample type
+        report_publisher_->msg_.sensor_data[d].data_type = dtypes[d];
+        Eigen::VectorXd tmp_data;
+        sample->get_data(T, tmp_data, (gps::SampleType)dtypes[d]);
+        report_publisher_->msg_.sensor_data[d].data.resize(tmp_data.size());
+
+
+        std::vector<int> shape;
+        sample->get_shape((gps::SampleType)dtypes[d], shape);
+        shape.insert(shape.begin(), T);
+        report_publisher_->msg_.sensor_data[d].shape.resize(shape.size());
+        int total_expected_shape = 1;
+        for(int i=0; i< shape.size(); i++){
+            report_publisher_->msg_.sensor_data[d].shape[i] = shape[i];
+            total_expected_shape *= shape[i];
+        }
+        if(total_expected_shape != tmp_data.size()){
+            ROS_ERROR("Data stored in sample has different length than expected (%d vs %d)",
+            tmp_data.size(), total_expected_shape);
+        }
+        for(int i=0; i<tmp_data.size(); i++){
+            report_publisher_->msg_.sensor_data[d].data[i] = tmp_data[i];
+        }
+    }
+    report_publisher_->unlockAndPublish();
 }
