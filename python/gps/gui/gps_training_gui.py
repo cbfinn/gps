@@ -31,6 +31,7 @@ from gps.gui.output_axis import OutputAxis
 from gps.gui.mean_plotter import MeanPlotter
 from gps.gui.plotter_3d import Plotter3D
 from gps.gui.image_visualizer import ImageVisualizer
+from gps.gui.util import buffered_axis_limits
 
 from gps.gui.target_setup_gui import load_data_from_npz
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
@@ -252,6 +253,8 @@ class GPSTrainingGUI(object):
                 itr_data += ' %8.2f %8.2f' % (kl_div_i, kl_div_f)
         self.append_output_text(itr_data)
 
+        # TODO(xinyutan) - this assumes that END_EFFECTOR_POINTS are in the
+        # sample, which is not true for box2d. quick fix is above.
         if END_EFFECTOR_POINTS not in agent.x_data_types:
             # Skip plotting samples.
             self._traj_visualizer.draw()    # this must be called explicitly
@@ -259,10 +262,6 @@ class GPSTrainingGUI(object):
             self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
             return
 
-
-
-        # TODO(xinyutan) - this assumes that END_EFFECTOR_POINTS are in the
-        # sample, which is not true for box2d. quick fix is above.
         # Calculate xlim, ylim, zlim for 3D visualizations from traj_sample_lists and pol_sample_lists
         # (this clips off LQG means/distributions that are not in the area of interest)
         all_eept = np.empty((0, 3))
@@ -275,7 +274,9 @@ class GPSTrainingGUI(object):
                     all_eept = np.r_[all_eept, ee_pt_i]
         min_xyz = np.amin(all_eept, axis=0)
         max_xyz = np.amax(all_eept, axis=0)
-        xlim, ylim, zlim = (min_xyz[0], max_xyz[0]), (min_xyz[1], max_xyz[1]), (min_xyz[2], max_xyz[2])
+        xlim = buffered_axis_limits(min_xyz[0], max_xyz[0], buffer_factor=1.25)
+        ylim = buffered_axis_limits(min_xyz[1], max_xyz[1], buffer_factor=1.25)
+        zlim = buffered_axis_limits(min_xyz[2], max_xyz[2], buffer_factor=1.25)
 
         # Plot 3D Visualizations
         for m in range(algorithm.M):

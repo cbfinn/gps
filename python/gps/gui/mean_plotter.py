@@ -6,6 +6,7 @@ import numpy as np
 
 import matplotlib.pylab as plt
 import matplotlib.gridspec as gridspec
+from gps.gui.util import buffered_axis_limits
 
 
 class MeanPlotter:
@@ -70,13 +71,10 @@ class MeanPlotter:
             self._plots[i].set_data(self._ts, self._data[i, :])
         self._plots_mean.set_data(self._ts, self._data_mean[0, :])
 
-        y_min, y_max = np.amin(self._data), np.amax(self._data)
-        precision = np.power(10, np.floor(np.log10(np.amax(np.abs((y_min, y_max)) + 1e-100))) - 1)
-        y_lim_min = np.floor(y_min/precision) * precision
-        y_lim_max = np.ceil(y_max/precision) * precision
-
         self._ax.set_xlim(self._ts[0, 0]-0.5, max(self._ts[-1, 0], self._min_itr)+0.5)
-        self._ax.set_ylim((y_lim_min, y_lim_max))
+
+        y_min, y_max = np.amin(self._data), np.amax(self._data)
+        self._ax.set_ylim(buffered_axis_limits(y_min, y_max, buffer_factor=1.1)
         self.draw()
 
     def draw(self):
