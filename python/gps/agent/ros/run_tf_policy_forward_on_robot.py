@@ -61,6 +61,8 @@ class ForwardTfAgent:
                 self.publish(policy_to_msg(self.dU, action, self.current_action_id))
                 self.observations_stale = True
                 self.current_action_id += 1
+            else:
+                rospy.sleep(0.01)
 
     def _get_new_action(self, obs):
         self.current_action_id += 1
