@@ -74,7 +74,7 @@ class MeanPlotter:
         self._ax.set_xlim(self._ts[0, 0]-0.5, max(self._ts[-1, 0], self._min_itr)+0.5)
 
         y_min, y_max = np.amin(self._data), np.amax(self._data)
-        self._ax.set_ylim(buffered_axis_limits(y_min, y_max, buffer_factor=1.1)
+        self._ax.set_ylim(buffered_axis_limits(y_min, y_max, buffer_factor=1.1))
         self.draw()
 
     def draw(self):
