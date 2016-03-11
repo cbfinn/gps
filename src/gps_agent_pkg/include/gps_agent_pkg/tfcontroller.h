@@ -29,7 +29,7 @@ namespace gps_control
         // Configure the controller.
         virtual void configure_controller(OptionsMap &options);
         // receive new actions from subscriber.
-        virtual void update_action_command(const gps_agent_pkg::TfActionCommand::ConstPtr& msg);
+        virtual void update_action_command(int id, const Eigen::VectorXd &command);
     };
 
 }

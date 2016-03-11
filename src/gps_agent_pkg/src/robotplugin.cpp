@@ -564,11 +564,12 @@ void RobotPlugin::tf_robot_action_command_callback(const gps_agent_pkg::TfAction
     Eigen::VectorXd latest_action_command;
     for (int i = 0; i < dU; ++i)
     {
-        latest_action_command(i) = msg->action[i];//tfAction.action[idx];
+        latest_action_command[i] = msg->action[i];//tfAction.action[idx];
         idx++;
     }
     int last_command_id_received = msg ->id;
-    TensorflowController::update_action_command(latest_action_command, last_command_id_received);
+    //TensorflowController::update_action_command(last_command_id_received, latest_action_command);
+    trial_controller_->update_action_command(last_command_id_received, latest_action_command);
 }
 
 

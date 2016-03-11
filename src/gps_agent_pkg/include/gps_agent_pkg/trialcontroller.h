@@ -59,6 +59,8 @@ public:
     virtual int get_trial_length();
     // Called when controller is turned on
     virtual void reset(ros::Time update_time);
+    //for tf controller to update actions. 
+    virtual void update_action_command(int id, const Eigen::VectorXd &command);
 
     const bool is_configured(){
         return is_configured_;
