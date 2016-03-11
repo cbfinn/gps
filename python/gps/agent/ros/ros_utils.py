@@ -74,7 +74,8 @@ def tf_policy_to_action_msg(deg_action, action, action_id):
 
 
 def tf_obs_msg_to_numpy(obs_message):
-    return np.array(obs_message)
+    # ToDo: Reshape this.
+    return np.array(obs_message.data)
 
 
 class TimeoutException(Exception):

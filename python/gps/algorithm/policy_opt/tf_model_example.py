@@ -24,9 +24,6 @@ def euclidean_loss_layer(a, b, precision, batch_size):
     uP = batched_matrix_vector_multiply(a-b, precision)
     uPu = tf.reduce_sum(uP*(a-b), [1])
     loss = tf.reduce_sum(uPu)
-    #tf.reduce_mean(uPu)
-    #batch_size = a.get_shape().dims[0].value
-    #loss = loss/(2*batch_size)
     scale_factor = tf.constant(2*batch_size, dtype='float')
     return loss/scale_factor
     #loss = None
@@ -77,8 +74,8 @@ def example_tf_network(dim_input=27, dim_output=7, batch_size=25):
     Returns:
         a dictionary containing inputs, outputs, and the loss function representing scalar loss.
     """
-    n_layers = 3
-    dim_hidden = (n_layers - 1) * [42]
+    n_layers = 2
+    dim_hidden = (n_layers - 1) * [20]
     dim_hidden.append(dim_output)
 
     nn_input, action, precision = get_input_layer(dim_input, dim_output)

@@ -10,7 +10,7 @@ POLICY_OPT_TF = {
     # Solver hyperparameters.
     'iterations': 200,  # Number of iterations per inner iteration.
     'batch_size': 25,
-    'lr': 0.01,  # Base learning rate (by default it's fixed).
+    'lr': 0.001,  # Base learning rate (by default it's fixed).
     'lr_policy': 'fixed',  # Learning rate policy.
     'momentum': 0.9,  # Momentum.
     'weight_decay': None,  # Weight decay.

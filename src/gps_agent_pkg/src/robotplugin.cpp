@@ -431,7 +431,7 @@ void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::C
     }
 #endif
     else if (msg->controller.controller_to_execute == gps::TF_CONTROLLER) {
-        trial_controller_.reset(new TensorflowController());
+        trial_controller_.reset(new TfController());
         trial_controller_-> configure_controller(controller_params);
         use_tf_ = true;
     }

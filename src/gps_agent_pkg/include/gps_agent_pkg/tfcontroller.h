@@ -13,23 +13,24 @@ Controller that executes a trial using a neural network policy using tf.
 namespace gps_control
 {
 
-    class TensorflowController : public TrialController
+    class TfController : public TrialController
     {
-    private:
-        int last_command_id_received = 0;
-        int last_command_id_acted_upon = 0;
-        Eigen::VectorXd last_action_command_received;
+
     public:
         // Constructor.
-        TensorflowController();
+        TfController();
         // Destructor.
-        virtual ~TensorflowController();
+        virtual ~TfController();
         // Compute the action at the current time step.
         virtual void get_action(int t, const Eigen::VectorXd &X, const Eigen::VectorXd &obs, Eigen::VectorXd &U);
         // Configure the controller.
         virtual void configure_controller(OptionsMap &options);
         // receive new actions from subscriber.
         virtual void update_action_command(int id, const Eigen::VectorXd &command);
+
+        int last_command_id_received = 0;
+        int last_command_id_acted_upon = 0;
+        Eigen::VectorXd last_action_command_received;
     };
 
 }

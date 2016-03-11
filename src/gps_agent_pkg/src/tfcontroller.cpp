@@ -1,11 +1,12 @@
 
 #include "gps_agent_pkg/robotplugin.h"
 #include "gps_agent_pkg/util.h"
+#include "gps_agent_pkg/tfcontroller.h"
 
 using namespace gps_control;
 
 // Constructor.
-TensorflowController::TensorflowController()
+TfController::TfController()
 : TrialController()
 {
     is_configured_ = false;
@@ -14,15 +15,15 @@ TensorflowController::TensorflowController()
 
 
 // Destructor.
-TensorflowController::~TensorflowController() {
+TfController::~TfController() {
 }
 
-void TensorflowController::update_action_command(int id, const Eigen::VectorXd &command) {
+void TfController::update_action_command(int id, const Eigen::VectorXd &command) {
     last_command_id_received = id;
     last_action_command_received = command;
 }
 
-void TensorflowController::get_action(int t, const Eigen::VectorXd &X, const Eigen::VectorXd &obs, Eigen::VectorXd &U){
+void TfController::get_action(int t, const Eigen::VectorXd &X, const Eigen::VectorXd &obs, Eigen::VectorXd &U){
     if (is_configured_) {
         if(last_command_id_acted_upon < last_command_id_received){
             last_command_id_acted_upon = last_command_id_received;
@@ -35,7 +36,7 @@ void TensorflowController::get_action(int t, const Eigen::VectorXd &X, const Eig
 }
 
 // Configure the controller.
-void TensorflowController::configure_controller(OptionsMap &options)
+void TfController::configure_controller(OptionsMap &options)
 {
     //ros::NodeHandle& n;
     //action_topic_name_ = "robot_action";

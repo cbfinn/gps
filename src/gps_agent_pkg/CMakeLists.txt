@@ -46,6 +46,7 @@ set(DDP_FILES src/robotplugin.cpp
               src/sample.cpp
               src/sensor.cpp
               src/neuralnetwork.cpp
+              src/tfcontroller.cpp
               src/controller.cpp
               src/lingausscontroller.cpp
               src/camerasensor.cpp
