@@ -87,3 +87,7 @@ void TrialController::reset(ros::Time time)
     trial_end_step_ = 1;
 }
 
+void TrialController::update_action_command(int id, const Eigen::VectorXd &command){
+
+}
+

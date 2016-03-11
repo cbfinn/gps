@@ -27,7 +27,6 @@ namespace gps_control
         virtual void configure_controller(OptionsMap &options);
         // receive new actions from subscriber.
         virtual void update_action_command(int id, const Eigen::VectorXd &command);
-
         int last_command_id_received = 0;
         int last_command_id_acted_upon = 0;
         Eigen::VectorXd last_action_command_received;
