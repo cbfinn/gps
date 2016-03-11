@@ -138,8 +138,8 @@ algorithm['policy_prior'] = {
 
 config = {
     'iterations': 10,
-    'num_samples': 2,
-    'verbose_trials': 2,
+    'num_samples': 5,
+    'verbose_trials': 5,
     'verbose_policy_trials': 1,
     'common': common,
     'agent': agent,

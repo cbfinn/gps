@@ -21,19 +21,25 @@ def batched_matrix_vector_multiply(vector, matrix):
 
 def euclidean_loss_layer(a, b, precision, batch_size):
     #return tf.reduce_sum(tf.pow(a-b, 2))
+    scale_factor = tf.constant(2*batch_size, dtype='float')
     uP = batched_matrix_vector_multiply(a-b, precision)
     uPu = tf.reduce_sum(uP*(a-b), [1])
     loss = tf.reduce_sum(uPu)
-    scale_factor = tf.constant(2*batch_size, dtype='float')
     return loss/scale_factor
     #loss = None
     #diff = a-b
     #for i in range(batch_size):
+    #    slice_tf = tf.gather(diff, tf.constant(i))
+    #    slice_prec = tf.gather(precision, tf.constant(i))
+    #    mat_vec = tf.expand_dims(slice_tf, [1])
+    #    l = tf.matmul(mat_vec, slice_prec)
     #    if loss is None:
-    #        pass
-    #   else:
-    #        loss += diff[i].dot(precision.data[i].dot(self.diff_[i]))
-    #    top[0].data[...] = loss / 2.0 / batch_size
+    #        loss = l
+    #    else:
+    #       loss += l
+    #    return loss/scale_factor
+        #loss += diff[i].dot(precision.data[i].dot(self.diff_[i]))
+        #top[0].data[...] = loss / 2.0 / batch_size
 
 
 def get_input_layer(dim_input, dim_output):
@@ -74,8 +80,8 @@ def example_tf_network(dim_input=27, dim_output=7, batch_size=25):
     Returns:
         a dictionary containing inputs, outputs, and the loss function representing scalar loss.
     """
-    n_layers = 2
-    dim_hidden = (n_layers - 1) * [20]
+    n_layers = 3
+    dim_hidden = (n_layers - 1) * [42]
     dim_hidden.append(dim_output)
 
     nn_input, action, precision = get_input_layer(dim_input, dim_output)
