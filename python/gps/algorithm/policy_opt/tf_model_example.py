@@ -27,7 +27,7 @@ def euclidean_loss_layer(a, b, precision, batch_size):
     #tf.reduce_mean(uPu)
     #batch_size = a.get_shape().dims[0].value
     #loss = loss/(2*batch_size)
-    scale_factor = tf.constant(2*25, dtype='float')
+    scale_factor = tf.constant(2*batch_size, dtype='float')
     return loss/scale_factor
     #loss = None
     #diff = a-b

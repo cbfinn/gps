@@ -222,7 +222,7 @@ void RobotPlugin::update_controllers(ros::Time current_time, bool is_controller_
     //if using tf controller, publish the observations.
     if(use_tf_ == true){
         Eigen::VectorXd obs;
-        sample->get_data(step_counter_, obs, datatype_obs_);
+        current_time_step_sample_->get_data(tf_step_counter_, obs, datatype_obs_);
         tf_step_counter_ ++;
         RobotPlugin::tf_publish_obs(obs);
 
@@ -557,17 +557,17 @@ void RobotPlugin::get_fk_solver(boost::shared_ptr<KDL::ChainFkSolverPos> &fk_sol
 
 
 void RobotPlugin::tf_robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg){
-    gps_agent_pkg::TfActionCommand tfAction = msg;
+    //gps_agent_pkg::TfActionCommand tfAction = msg;
     // Unpack the action vector
     int idx = 0;
-    int dU = tfAction.dU;
+    int dU = msg->dU; //tfAction.dU;
     Eigen::VectorXd latest_action_command;
     for (int i = 0; i < dU; ++i)
     {
-        latest_action_command(i) = tfAction.action[idx];
+        latest_action_command(i) = msg->action[i];//tfAction.action[idx];
         idx++;
     }
-    int last_command_id_received = tfAction.id;
+    int last_command_id_received = msg ->id;
     TensorflowController::update_action_command(latest_action_command, last_command_id_received);
 }
 
