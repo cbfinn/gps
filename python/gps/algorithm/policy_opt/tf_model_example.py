@@ -19,11 +19,24 @@ def batched_matrix_vector_multiply(vector, matrix):
     return squeezed_result
 
 
-def euclidean_loss_layer(a, b, precision):
+def euclidean_loss_layer(a, b, precision, batch_size):
+    #return tf.reduce_sum(tf.pow(a-b, 2))
     uP = batched_matrix_vector_multiply(a-b, precision)
     uPu = tf.reduce_sum(uP*(a-b), [1])
-    loss = tf.reduce_mean(uPu)
-    return loss
+    loss = tf.reduce_sum(uPu)
+    #tf.reduce_mean(uPu)
+    #batch_size = a.get_shape().dims[0].value
+    #loss = loss/(2*batch_size)
+    scale_factor = tf.constant(2*25, dtype='float')
+    return loss/scale_factor
+    #loss = None
+    #diff = a-b
+    #for i in range(batch_size):
+    #    if loss is None:
+    #        pass
+    #   else:
+    #        loss += diff[i].dot(precision.data[i].dot(self.diff_[i]))
+    #    top[0].data[...] = loss / 2.0 / batch_size
 
 
 def get_input_layer(dim_input, dim_output):
@@ -47,8 +60,8 @@ def get_mlp_layers(mlp_input, number_layers, dimension_hidden):
     return cur_top
 
 
-def get_loss_layer(mlp_out, action, precision):
-    return euclidean_loss_layer(a=action, b=mlp_out, precision=precision)
+def get_loss_layer(mlp_out, action, precision, batch_size):
+    return euclidean_loss_layer(a=action, b=mlp_out, precision=precision, batch_size=batch_size)
     #  out = (action - mlp_out)'*precision*(action-mlp_out)
     #  (u-uhat)'*A*(u-uhat)
 
@@ -70,6 +83,6 @@ def example_tf_network(dim_input=27, dim_output=7, batch_size=25):
 
     nn_input, action, precision = get_input_layer(dim_input, dim_output)
     mlp_applied = get_mlp_layers(nn_input, n_layers, dim_hidden)
-    loss_out = get_loss_layer(mlp_out=mlp_applied, action=action, precision=precision)
+    loss_out = get_loss_layer(mlp_out=mlp_applied, action=action, precision=precision, batch_size=batch_size)
 
     return TfMap([nn_input, action, precision], [mlp_applied], [loss_out])

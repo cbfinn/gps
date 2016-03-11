@@ -21,6 +21,8 @@ with the robot.
 #include "gps_agent_pkg/RelaxCommand.h"
 #include "gps_agent_pkg/SampleResult.h"
 #include "gps_agent_pkg/DataRequest.h"
+#include "gps_agent_pkg/TfActionCommand.h"
+#include "gps_agent_pkg/TfObsData.h"
 #include "gps_agent_pkg/sensor.h"
 #include "gps_agent_pkg/controller.h"
 #include "gps_agent_pkg/positioncontroller.h"
@@ -140,6 +142,8 @@ public:
     virtual void relax_subscriber_callback(const gps_agent_pkg::RelaxCommand::ConstPtr& msg);
     // Data request callback.
     virtual void data_request_subscriber_callback(const gps_agent_pkg::DataRequest::ConstPtr& msg);
+    //tf callback
+    virtual void tf_robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg);
 
     // Update functions.
     // Update the sensors at each time step.
@@ -160,7 +164,7 @@ public:
     //tf publish observation command.
     virtual void tf_publish_obs(Eigen::VectorXd obs);
     // tf action received callback
-    virtual void tf_robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg);
+
 };
 
 }
