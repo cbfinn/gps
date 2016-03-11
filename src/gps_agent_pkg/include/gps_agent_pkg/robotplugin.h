@@ -104,7 +104,9 @@ protected:
     //tf step counter
     int tf_step_counter_ = 0;
     //tf publisher
-    ros_publisher_ptr(gps_agent_pkg::SampleResult) tf_publisher_;
+    ros_publisher_ptr(gps_agent_pkg::TfObsData) tf_publisher_;
+    //tf action subscriber
+    ros::Subscriber action_subscriber_tf_;
 public:
     // Constructor (this should do nothing).
     RobotPlugin();

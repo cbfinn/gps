@@ -71,7 +71,7 @@ void RobotPlugin::initialize_ros(ros::NodeHandle& n)
     report_publisher_.reset(new realtime_tools::RealtimePublisher<gps_agent_pkg::SampleResult>(n, "/gps_controller_report", 1));
 
     //for async tf controller.
-    action_subscriber_ = n.subscribe("/gps_controller_sent_robot_action_tf", 1, &RobotPlugin::tf_robot_action_command_callback, this);
+    action_subscriber_tf_ = n.subscribe("/gps_controller_sent_robot_action_tf", 1, &RobotPlugin::tf_robot_action_command_callback, this);
     tf_publisher_.reset(new realtime_tools::RealtimePublisher<gps_agent_pkg::TfObsData>(n, "/gps_obs_tf", 1));
 }
 

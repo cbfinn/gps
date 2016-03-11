@@ -217,6 +217,6 @@ class AgentROS(Agent):
         if self.use_tf is False:  # init pub and sub if this init has not been called before.
             self._pub = rospy.Publisher('/gps_controller_sent_robot_action_tf', TfActionCommand)
             self._sub = rospy.Subscriber('/gps_obs_tf', SampleResult, self._tf_callback)
-            r = rospy.Rate(1)
+            r = rospy.Rate(0.5)
             r.sleep()
         self.use_tf = True
