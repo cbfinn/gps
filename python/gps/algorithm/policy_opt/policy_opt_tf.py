@@ -48,9 +48,9 @@ class PolicyOptTf(PolicyOpt):
         tf_map_generator = self._hyperparams['network_model']
         tf_map = tf_map_generator(dim_input=self._dO, dim_output=self._dU, batch_size=self.batch_size)
         self.obs_tensor = tf_map.get_input_tensor()
-        self.action_tensor = tf_map.get_act_tensor()
+        self.action_tensor = tf_map.get_target_output_tensor()
         self.precision_tensor = tf_map.get_precision_tensor()
-        self.act_op = tf_map.get_act_op()
+        self.act_op = tf_map.get_output_op()
         self.loss_scalar = tf_map.get_loss_op()
 
     def init_solver(self):
@@ -189,6 +189,7 @@ class PolicyOptTf(PolicyOpt):
     def __getstate__(self):
         #saver = tf.train.Saver()
         #saver.save(self.sess, self.checkpoint_file)
+        #why does this break everything?
         return {
             'hyperparams': self._hyperparams,
             'dO': self._dO,
@@ -218,6 +219,7 @@ class PolicyOptTf(PolicyOpt):
 
     # For unpickling.
     def __setstate__(self, state):
+        raise NotImplementedError('fuck you')
         from tensorflow.python.framework import ops
         ops.reset_default_graph()  # we need to destroy the default graph before re_init or checkpoint won't restore.
         self.__init__(state['hyperparams'], state['dO'], state['dU'])

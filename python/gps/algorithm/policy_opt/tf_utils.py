@@ -10,34 +10,52 @@ def check_list_and_convert(the_object):
 class TfMap:
     """ a container for inputs, outputs, and loss in a tf graph. This object exists only
     to make well-defined the tf inputs, outputs, and losses used in the policy_opt_tf class."""
-    def __init__(self, inputs, outputs, loss):
-        self.inputs = check_list_and_convert(inputs)
-        self.outputs = check_list_and_convert(outputs)
-        self.loss = check_list_and_convert(loss)
 
-    def add_input(self, input_to_add):
-        self.inputs.append(input_to_add)
+    def __init__(self, input_tensor, target_output_tensor, precision_tensor, output_op, loss_op):
+        self.input_tensor = input_tensor
+        self.target_output_tensor = target_output_tensor
+        self.precision_tensor = precision_tensor
+        self.output_op = output_op
+        self.loss_op = loss_op
 
-    def add_output(self, output_to_add):
-        self.outputs.append(output_to_add)
-
-    def add_loss(self, loss_to_add):
-        self.loss.append(loss_to_add)
+    @classmethod
+    def init_from_lists(cls, inputs, outputs, loss):
+        inputs = check_list_and_convert(inputs)
+        outputs = check_list_and_convert(outputs)
+        loss = check_list_and_convert(loss)
+        if len(inputs) < 3:  # pad for the constructor if needed.
+            inputs += [None]*(3 - len(inputs))
+        return cls(inputs[0], inputs[1], inputs[2], outputs[0], loss[0])
 
     def get_input_tensor(self):
-        return self.inputs[0]
+        return self.input_tensor
 
-    def get_act_tensor(self):
-        return self.inputs[1]
+    def set_input_tensor(self, input_tensor):
+        self.input_tensor = input_tensor
+
+    def get_target_output_tensor(self):
+        return self.target_output_tensor
+
+    def set_target_output_tensor(self, target_output_tensor):
+        self.target_output_tensor = target_output_tensor
 
     def get_precision_tensor(self):
-        return self.inputs[2]
+        return self.precision_tensor
 
-    def get_act_op(self):
-        return self.outputs[0]
+    def set_precision_tensor(self, precision_tensor):
+        self.precision_tensor = precision_tensor
+
+    def get_output_op(self):
+        return self.output_op
+
+    def set_output_op(self, output_op):
+        self.output_op = output_op
 
     def get_loss_op(self):
-        return self.loss[0]
+        return self.loss_op
+
+    def set_loss_op(self, loss_op):
+        self.loss_op = loss_op
 
 
 class TfSolver:
@@ -49,9 +67,7 @@ class TfSolver:
         self.momentum = momentum
         self.solver_name = solver_name
         self.loss_scalar = loss_scalar
-
         if self.lr_policy != 'fixed':
-            print self.lr_policy
             raise NotImplementedError('learning rate policies other than fixed are not implemented')
 
         self.weight_decay = weight_decay
@@ -67,7 +83,8 @@ class TfSolver:
     def get_solver_op(self):
         solver_string = self.solver_name.lower()
         if solver_string == 'adam':
-            return tf.train.AdamOptimizer(learning_rate=self.base_lr).minimize(self.loss_scalar)
+            return tf.train.AdamOptimizer(learning_rate=self.base_lr,
+                                          beta1=self.momentum).minimize(self.loss_scalar)
         elif solver_string == 'rmsprop':
             return tf.train.RMSPropOptimizer(learning_rate=self.base_lr,
                                              decay=self.momentum).minimize(self.loss_scalar)

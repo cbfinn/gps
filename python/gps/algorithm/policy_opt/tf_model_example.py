@@ -5,7 +5,7 @@ from gps.algorithm.policy_opt.tf_utils import TfMap
 
 
 def init_weights(shape, name=None):
-    return tf.Variable(tf.random_normal(shape, stddev=0.01), name=name)
+    return tf.Variable(tf.random_normal(shape, stddev=0.1), name=name)
 
 
 def init_bias(shape, name=None):
@@ -23,23 +23,8 @@ def euclidean_loss_layer(a, b, precision, batch_size):
     #return tf.reduce_sum(tf.pow(a-b, 2))
     scale_factor = tf.constant(2*batch_size, dtype='float')
     uP = batched_matrix_vector_multiply(a-b, precision)
-    uPu = tf.reduce_sum(uP*(a-b), [1])
-    loss = tf.reduce_sum(uPu)
-    return loss/scale_factor
-    #loss = None
-    #diff = a-b
-    #for i in range(batch_size):
-    #    slice_tf = tf.gather(diff, tf.constant(i))
-    #    slice_prec = tf.gather(precision, tf.constant(i))
-    #    mat_vec = tf.expand_dims(slice_tf, [1])
-    #    l = tf.matmul(mat_vec, slice_prec)
-    #    if loss is None:
-    #        loss = l
-    #    else:
-    #       loss += l
-    #    return loss/scale_factor
-        #loss += diff[i].dot(precision.data[i].dot(self.diff_[i]))
-        #top[0].data[...] = loss / 2.0 / batch_size
+    uPu = tf.reduce_sum(uP*(a-b))
+    return uPu/scale_factor
 
 
 def get_input_layer(dim_input, dim_output):
@@ -55,7 +40,7 @@ def get_mlp_layers(mlp_input, number_layers, dimension_hidden):
         in_shape = cur_top.get_shape().dims[1].value
         cur_weight = init_weights([in_shape, dimension_hidden[layer_step]], name='w_' + str(layer_step))
         cur_bias = init_bias([dimension_hidden[layer_step]], name='b_' + str(layer_step))
-        if layer_step != number_layers:  # final layer has no RELU
+        if layer_step != number_layers-1:  # final layer has no RELU
             cur_top = tf.nn.relu(tf.matmul(cur_top, cur_weight) + cur_bias)
         else:
             cur_top = tf.matmul(cur_top, cur_weight) + cur_bias
@@ -78,9 +63,9 @@ def example_tf_network(dim_input=27, dim_output=7, batch_size=25):
         dim_output: Dimensionality of the output.
         batch_size: Batch size.
     Returns:
-        a dictionary containing inputs, outputs, and the loss function representing scalar loss.
+        a TfMap object used to serialize, inputs, outputs, and loss.
     """
-    n_layers = 3
+    n_layers = 1
     dim_hidden = (n_layers - 1) * [42]
     dim_hidden.append(dim_output)
 
@@ -88,4 +73,4 @@ def example_tf_network(dim_input=27, dim_output=7, batch_size=25):
     mlp_applied = get_mlp_layers(nn_input, n_layers, dim_hidden)
     loss_out = get_loss_layer(mlp_out=mlp_applied, action=action, precision=precision, batch_size=batch_size)
 
-    return TfMap([nn_input, action, precision], [mlp_applied], [loss_out])
+    return TfMap.init_from_lists([nn_input, action, precision], [mlp_applied], [loss_out])

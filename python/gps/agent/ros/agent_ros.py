@@ -174,8 +174,11 @@ class AgentROS(Agent):
             return sample
         else:
             self._trial_service.publish(trial_command, timeout=self._hyperparams['trial_timeout'])
-            self.run_trial_tf(policy, time_to_run=self._hyperparams['trial_timeout'])
-            return None
+            sample_mag = self.run_trial_tf(policy, time_to_run=self._hyperparams['trial_timeout'])
+            sample = msg_to_sample(sample_mag)
+            if save:
+                self._samples[condition].append(sample)
+                return sample
 
     def run_trial_tf(self, policy, time_to_run=5):
         should_stop = False
@@ -186,7 +189,7 @@ class AgentROS(Agent):
         while should_stop is False:
             current_time = time.time()
             if current_time - start_time > time_to_run:
-                    should_stop = True
+                    return self._trial_service._subscriber_message
             elif self.observations_stale is False:
                 last_obs = tf_obs_msg_to_numpy(self._subscriber_msg)
                 action = tf_policy_to_action_msg(self.dU, self._get_new_action(policy, last_obs),
@@ -195,7 +198,7 @@ class AgentROS(Agent):
                 self.observations_stale = True
                 self.current_action_id += 1
             else:
-                rospy.sleep(0.005)
+                rospy.sleep(0.001)
 
     def _get_new_action(self, policy, obs):
         self.current_action_id += 1
@@ -220,3 +223,4 @@ class AgentROS(Agent):
             r = rospy.Rate(0.5)
             r.sleep()
         self.use_tf = True
+        self.observations_stale = True

@@ -13,11 +13,11 @@ POLICY_OPT_TF = {
     'lr': 0.001,  # Base learning rate (by default it's fixed).
     'lr_policy': 'fixed',  # Learning rate policy.
     'momentum': 0.9,  # Momentum.
-    'weight_decay': None,  # Weight decay.
+    'weight_decay': 0.005,  # Weight decay.
     'use_gpu': False,  # Whether or not to use the GPU for caffe training.
     'gpu_id': 0,
     'solver_type': 'adam',  # Solver type (e.g. 'SGD', 'Adam', etc.).
     # Other hyperparameters.
-    'network_model': example_tf_network,  # should return TfMap object. See example.
+    'network_model': example_tf_network,  # should return TfMap object from tf_utils. See example.
     'checkpoint_prefix': checkpoint_path
 }
