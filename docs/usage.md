@@ -47,3 +47,13 @@ For your reference, your experiments folder contains the following:
   * `log.txt` - the log text of output from the Target Setup GUI and the GPS Training GUI.
   * `targets.npz` - the initial and target state used for this experiment (ROS agent only -- set for other agents in hyperparams.py)
 
+To shorten gps commands, we suggest that you create an alias in your bashrc:
+```sh
+echo "alias gps='python python/gps/gps_main.py'" >> ~/.bashrc
+cd /path/to/gps
+gps -h                      # help
+gps <EXPERIMENT_NAME> -n    # new experiment
+gps <EXPERIMENT_NAME> -     # target setup
+gps <EXPERIMENT_NAME>       # run training
+gps <EXPERIMENT_NAME> -r N  # resume training
+```
