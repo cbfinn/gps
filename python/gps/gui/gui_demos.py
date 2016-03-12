@@ -17,6 +17,11 @@ from gps.gui.mean_plotter import MeanPlotter
 from gps.gui.plotter_3d import Plotter3D
 
 
+def run_demo(demo_func):
+    demo_thread = threading.Thread(target=demo_func)
+    demo_thread.daemon = True
+    demo_thread.start()
+
 fig = plt.figure()
 gs = gridspec.GridSpec(2, 3)
 
@@ -50,9 +55,7 @@ def demo_output_axis():
         time.sleep(1)
 
 output_axis = OutputAxis(fig, gs[1], max_display_size=10, log_filename=None)
-output_axis_thread = threading.Thread(target=demo_output_axis)
-output_axis_thread.daemon = True
-output_axis_thread.start()
+run_demo(demo_output_axis)
 
 # Image Visualizer
 def demo_image_visualizer():
@@ -66,9 +69,7 @@ def demo_image_visualizer():
         time.sleep(5e-3)
 
 image_visualizer = ImageVisualizer(fig, gs[2], cropsize=(3, 3))
-image_visualizer_thread = threading.Thread(target=demo_image_visualizer)
-image_visualizer_thread.daemon = True
-image_visualizer_thread.start()
+run_demo(demo_image_visualizer)
 
 # Real Time Plotter
 def demo_real_time_plotter():
@@ -84,9 +85,7 @@ def demo_real_time_plotter():
 real_time_plotter = RealTimePlotter(fig, gs[3],
         labels=['i', 'j', 'i+j', 'i-j', 'mean'],
         alphas=[0.15, 0.15, 0.15, 0.15, 1.0])
-real_time_plotter_thread = threading.Thread(target=demo_real_time_plotter)
-real_time_plotter_thread.daemon = True
-real_time_plotter_thread.start()
+run_demo(demo_real_time_plotter)
 
 # Mean Plotter
 def demo_mean_plotter():
@@ -99,9 +98,7 @@ def demo_mean_plotter():
         time.sleep(1)
 
 mean_plotter = MeanPlotter(fig, gs[4])
-mean_plotter_thread = threading.Thread(target=demo_mean_plotter)
-mean_plotter_thread.daemon = True
-mean_plotter_thread.start()
+run_demo(demo_mean_plotter)
 
 # Plotter 3D
 def demo_plotter_3d():
@@ -116,9 +113,7 @@ def demo_plotter_3d():
         time.sleep(1)
 
 plotter_3d = Plotter3D(fig, gs[5], num_plots=1, rows=1, cols=1)
-plotter_3d_thread = threading.Thread(target=demo_plotter_3d)
-plotter_3d_thread.daemon = True
-plotter_3d_thread.start()
+run_demo(demo_plotter_3d)
 
 
 plt.show()
