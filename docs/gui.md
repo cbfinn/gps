@@ -46,6 +46,7 @@ The Target Setup GUI is composed of four parts:
 **The Action Panel**: Consists of 12 actions which can be performed by clicking the button, pressing the keyboard shortcut, or using the PS3 Controller shortcut:
 * `prev_target_number` - switch to the previous target number (0-9)
 * `next_target_number` - switch to the next target number (0-9)
+* `prev_actuator_type` - switch to the previous actuator type (TRIAL_ARM, AUXILIARY_ARM)
 * `next_actuator_type` - switch to the next actuator type (TRIAL_ARM, AUXILIARY_ARM)
 * `set_initial_position` - set the initial position (manually move the robot to the desired position and then press set)
 * `set_target_position` - set the target position (manually move the robot to the desired position and then press set)

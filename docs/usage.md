@@ -29,7 +29,7 @@ Usage:
 
 * `python python/gps/gps_main.py <EXPERIMENT_NAME>`
 
-  Opens the GPS Training GUI and runs the guided policy search algorithm for your specific experiment hyperparams. See the [Training GUI](gui.html#gps-training-gui) section for details.
+  Opens the GPS Training GUI and runs the guided policy search algorithm for your specific experiment hyperparams. See the [GPS Training GUI](gui.html#gps-training-gui) section for details.
 
 * `python python/gps/gps_main.py <EXPERIMENT_NAME> -r N`
 
