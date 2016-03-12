@@ -215,12 +215,8 @@ class GPSTrainingGUI(object):
 
     def update(self, itr, algorithm, agent, traj_sample_lists, pol_sample_lists):
         # Plot Costs
-        if algorithm.M == 1:
-            # Update plot with each sample's cost (summed over time).
-            costs = np.sum(algorithm.prev[0].cs, axis=1)
-        else:
-            # Update plot with each condition's mean sample cost (summed over time).
-            costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
+        # Update plot with each condition's mean sample cost (summed over time).
+        costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
         self._cost_plotter.update(costs, t=itr)
 
         # Setup iteration data column titles and 3D visualization plot titles and legend
