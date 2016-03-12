@@ -103,23 +103,3 @@ class Plotter3D:
         [[self._axarr[i].draw_artist(plot) for plot in self._plots[i]] for i in range(len(self._plots))]
         self._fig.canvas.update()
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
-
-if __name__ == "__main__":
-    import time
-    import matplotlib.gridspec as gridspec
-
-
-    plt.ion()
-    fig = plt.figure()
-    gs = gridspec.GridSpec(1, 1)
-    plotter = Plotter3D(fig, gs[0], num_plots=5, rows=2, cols=3)
-
-    xyzs = np.zeros((3, 1))
-    while True:
-        xyz = np.random.randint(-10, 10, size=3).reshape((3,1))
-        xyzs = np.append(xyzs, xyz, axis=1)
-        xs, ys, zs = xyzs
-        plotter.plot(1, xs, ys, zs)
-        plotter.draw()  # this must be called explicitly
-        time.sleep(1)
-        plotter.clear_all()

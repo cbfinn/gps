@@ -149,21 +149,3 @@ class ImageVisualizer(object):
         self._ax_image.draw_artist(self._overlay_plot_target)
         self._fig.canvas.update()
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
-
-if __name__ == "__main__":
-    import matplotlib.gridspec as gridspec
-
-
-    plt.ion()
-    fig = plt.figure()
-    gs = gridspec.GridSpec(1, 1)
-    visualizer = ImageVisualizer(fig, gs[0], cropsize=(3, 3))
-
-    im = np.zeros((5, 5, 3))
-    while True:
-        i = random.randint(0, im.shape[0] - 1)
-        j = random.randint(0, im.shape[1] - 1)
-        k = random.randint(0, im.shape[2] - 1)
-        im[i, j, k] = (im[i, j, k] + random.randint(0, 255)) % 256
-        visualizer.update(im)
-        time.sleep(5e-3)

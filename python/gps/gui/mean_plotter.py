@@ -92,21 +92,3 @@ class MeanPlotter:
         [self._ax.draw_artist(item) for item in self._ax.get_xticklabels() + self._ax.get_yticklabels()]
         self._fig.canvas.update()
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
-
-if __name__ == "__main__":
-    import matplotlib.gridspec as gridspec
-
-
-    plt.ion()
-    fig = plt.figure()
-    gs = gridspec.GridSpec(1, 1)
-
-    plotter = MeanPlotter(fig, gs[0])
-
-    i, j = 0, 0
-    while True:
-        i += random.randint(-10, 10)
-        j += random.randint(-10, 10)
-        data = [i, j, i + j, i - j]
-        plotter.update(data)
-        time.sleep(1)

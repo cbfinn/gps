@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.widgets import Button
 
-from gps.gui.action import Action
 from gps.gui.config import common as gui_config_common
 
 
@@ -120,39 +119,3 @@ class ActionAxis:
                     buttons_pressed[0] == self._ps3_button['rear_right_2']))):
                 LOGGER.debug('Unrecognized ps3 controller input:\n%s',
                         str([self.inverted_ps3_button[b] for b in buttons_pressed]))
-
-if __name__ == "__main__":
-    number = 0
-
-    def plus_1(event=None):
-        global number
-        number = number + 1
-
-    def plus_2(event=None):
-        global number
-        number = number + 2
-
-    def print_number(event=None):
-        print number
-
-    actions_arr = [
-        Action('print', 'print', print_number, axis_pos=0, keyboard_binding='p', ps3_binding=None),
-        Action('plus1', 'plus1', plus_1, axis_pos=1, keyboard_binding='1', ps3_binding=None),
-        Action('plus2', 'plus2', plus_2, axis_pos=2, keyboard_binding='2', ps3_binding=None),
-    ]
-
-    actions = {action._key: action for action in actions_arr}
-
-    plt.ion()
-    fig = plt.figure(figsize=(10, 10))
-    gs = gridspec.GridSpec(1, 1)
-    gs_action = gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=gs[0])
-    axarr_action = [plt.subplot(gs_action[i]) for i in range(3)]
-
-    ps3_process_rate = gui_config_common['ps3_process_rate']
-    ps3_topic = gui_config_common['ps3_topic']
-
-    action_axis = ActionAxis(actions, axarr_action, ps3_process_rate, ps3_topic)
-
-    plt.ioff()
-    plt.show()

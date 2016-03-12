@@ -67,23 +67,3 @@ class OutputAxis:
         self._ax.draw_artist(self._text_box)
         self._fig.canvas.update()
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
-
-
-if __name__ == "__main__":
-    import matplotlib.gridspec as gridspec
-
-
-    plt.ion()
-    fig = plt.figure()
-    gs = gridspec.GridSpec(1, 1)
-    output_axis = OutputAxis(fig, gs[0], max_display_size=10, log_filename=None)
-
-    max_i = 20
-    for i in range(max_i):
-        output_axis.append_text(str(i))
-        c = 0.5 + 0.5*i/max_i
-        output_axis.set_bgcolor((c, c, c))
-        time.sleep(1)
-
-    plt.ioff()
-    plt.show()

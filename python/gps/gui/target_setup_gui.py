@@ -410,16 +410,3 @@ def load_from_npz(filename, key, default=None):
         # print 'error loading %s from %s' % (key, filename), e
         pass
     return default
-
-
-if __name__ == "__main__":
-    hyperparams = imp.load_source(
-        'hyperparams', 'experiments/default_pr2_experiment/hyperparams.py'
-    )
-
-    rospy.init_node('target_setup_gui')
-    agent = AgentROS(hyperparams.config['agent'], init_node=False)
-    target_setup_gui = TargetSetupGUI(agent, hyperparams.config['common'])
-
-    plt.ioff()
-    plt.show()

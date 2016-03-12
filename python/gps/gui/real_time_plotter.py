@@ -5,6 +5,7 @@ import time
 import numpy as np
 
 import matplotlib.pylab as plt
+import matplotlib.gridspec as gridspec
 from gps.gui.util import buffered_axis_limits
 
 
@@ -79,24 +80,3 @@ class RealTimePlotter(object):
         [self._ax.draw_artist(plot) for plot in self._plots]
         self._fig.canvas.update()
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
-
-
-if __name__ == "__main__":
-    import matplotlib.gridspec as gridspec
-
-
-    plt.ion()
-    fig = plt.figure()
-    gs = gridspec.GridSpec(1, 1)
-    plotter = RealTimePlotter(fig, gs[0],
-        labels=['i', 'j', 'i+j', 'i-j', 'mean'],
-        alphas=[0.15, 0.15, 0.15, 0.15, 1.0])
-
-    i, j = 0, 0
-    while True:
-        i += random.randint(-10, 10)
-        j += random.randint(-10, 10)
-        data = [i, j, i + j, i - j]
-        mean = np.mean(data)
-        plotter.update(data + [mean])
-        time.sleep(5e-3)
