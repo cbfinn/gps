@@ -225,13 +225,33 @@ def main():
     hyperparams_file = exp_dir + 'hyperparams.py'
 
     if args.new:
+        from shutil import copy
+
         if os.path.exists(exp_dir):
             sys.exit("Experiment '%s' already exists.\nPlease remove '%s'." %
                      (exp_name, exp_dir))
         os.makedirs(exp_dir)
-        open(hyperparams_file, 'w')
-        sys.exit("Experiment '%s' created.\nhyperparams file: '%s'" %
-                 (exp_name, hyperparams_file))
+
+        prev_exp_file = '.previous_experiment'
+        prev_exp_dir = None
+        try:
+            with open(prev_exp_file, 'r') as f:
+                prev_exp_dir = f.readline()
+            copy(prev_exp_dir + 'hyperparams.py', exp_dir)
+            if os.path.exists(prev_exp_dir + 'targets.npz'):
+                copy(prev_exp_dir + 'targets.npz', exp_dir)
+        except IOError as e:
+            with open(hyperparams_file, 'w') as f:
+                f.write('# To get started, copy over hyperparams from another experiment.\n' + 
+                        '# Visit rll.berkeley.edu/gps/hyperparams.html for documentation.')
+        with open(prev_exp_file, 'w') as f:
+            f.write(exp_dir)
+
+        exit_msg = ("Experiment '%s' created.\nhyperparams file: '%s'" %
+                    (exp_name, hyperparams_file))
+        if prev_exp_dir and os.path.exists(prev_exp_dir):
+            exit_msg += "\ncopied from     : '%shyperparams.py'" % prev_exp_dir
+        sys.exit(exit_msg)
 
     if not os.path.exists(hyperparams_file):
         sys.exit("Experiment '%s' does not exist.\nDid you create '%s'?" %
