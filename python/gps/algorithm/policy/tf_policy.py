@@ -42,7 +42,7 @@ class TfPolicy(Policy):
             u = action_mean
         else:
             u = action_mean + self.chol_pol_covar.T.dot(noise)
-        return u
+        return u[0]  # this algorithm is batched by default. But here, we run with a batch size of one.
 
     def pickle_policy(self, deg_obs, deg_action, checkpoint_path):
         """
