@@ -231,9 +231,10 @@ class GPSTrainingGUI(object):
         for m in range(algorithm.M):
             self._traj_visualizer.clear(m)
             self._traj_visualizer.set_lim(i=m, xlim=xlim, ylim=ylim, zlim=zlim)
-            self._update_linear_gaussan_controller_plots(self, algorithm, agent, m)
-            self._update_samples_plots(self, traj_sample_lists, m, 'green', 'Trajectory Samples')
-            self._update_samples_plots(self, pol_sample_lists,  m, 'blue',  'Policy Samples')
+            self._update_linear_gaussian_controller_plots(algorithm, agent, m)
+            self._update_samples_plots(traj_sample_lists, m, 'green', 'Trajectory Samples')
+            if pol_sample_lists:
+                self._update_samples_plots(pol_sample_lists,  m, 'blue',  'Policy Samples')
         self._traj_visualizer.draw()    # this must be called explicitly
 
         # Redraw entire figure
@@ -283,7 +284,7 @@ class GPSTrainingGUI(object):
         zlim = buffered_axis_limits(min_xyz[2], max_xyz[2], buffer_factor=1.25)
         return xlim, ylim, zlim
 
-    def _update_linear_gaussan_controller_plots(self, algorithm, agent, m):
+    def _update_linear_gaussian_controller_plots(self, algorithm, agent, m):
         # Linear Gaussian Controller Distributions (Red)
         mu, sigma = algorithm.traj_opt.forward(algorithm.prev[m].traj_distr, algorithm.prev[m].traj_info)
         eept_idx = agent.get_idx_x(END_EFFECTOR_POINTS)

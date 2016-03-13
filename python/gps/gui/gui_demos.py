@@ -37,9 +37,7 @@ actions_arr = [
     Action('plus2', 'plus2', plus_2, axis_pos=1, keyboard_binding='2', ps3_binding=None),
     Action('print', 'print', mult_4, axis_pos=2, keyboard_binding='4', ps3_binding=None),
 ]
-actions = {action._key: action for action in actions_arr}
-
-action_panel = ActionPanel(fig, gs[0], 3, 1, actions)
+action_panel = ActionPanel(fig, gs[0], 3, 1, actions_arr)
 
 # Output Axis
 def demo_textbox():
