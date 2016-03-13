@@ -24,8 +24,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.mplot3d import Axes3D
 
-from gps.gui.config import common as common_config
-from gps.gui.config import gps_training as gps_training_config
+from gps.gui.config import config
 from gps.gui.action_panel import Action, ActionPanel
 from gps.gui.textbox import Textbox
 from gps.gui.mean_plotter import MeanPlotter
@@ -39,8 +38,7 @@ from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 class GPSTrainingGUI(object):
     """ GPS Training GUI class. """
     def __init__(self, hyperparams):
-        self._hyperparams = copy.deepcopy(common_config)
-        self._hyperparams.update(copy.deepcopy(gps_training_config))
+        self._hyperparams = copy.deepcopy(config)
         self._hyperparams.update(hyperparams)
 
         self._log_filename = self._hyperparams['log_filename']
@@ -99,11 +97,7 @@ class GPSTrainingGUI(object):
         self._gs_image_visualizer   = self._gs[8:16, 4:8]
 
         # Create GUI components.
-        self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 4, self._actions,
-                ps3_process_rate=self._hyperparams['ps3_process_rate'],
-                ps3_topic=self._hyperparams['ps3_topic'],
-                ps3_button=self._hyperparams['ps3_button'],
-                inverted_ps3_button=self._hyperparams['inverted_ps3_button'])
+        self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 4, self._actions)
         self._action_output = Textbox(self._fig, self._gs_action_output, border_on=True)
         self._status_output = Textbox(self._fig, self._gs_status_output, border_on=False)
         self._algthm_output = Textbox(self._fig, self._gs_algthm_output, max_display_size=15,

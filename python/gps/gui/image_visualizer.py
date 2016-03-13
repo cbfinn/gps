@@ -8,8 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-from gps.gui.action_axis import Action, ActionAxis
-from gps.gui.config import common as common_config
+from gps.gui.action_panel import Action, ActionPanel
+from gps.gui.config import config
 
 LOGGER = logging.getLogger(__name__)
 
@@ -43,23 +43,19 @@ class ImageVisualizer(object):
         ]
         self._actions = {action._key: action for action in actions_arr}
         for key, action in self._actions.iteritems():
-            if key in common_config['keyboard_bindings']:
-                action._kb = common_config['keyboard_bindings'][key]
-            if key in common_config['ps3_bindings']:
-                action._pb = common_config['ps3_bindings'][key]
+            if key in config['keyboard_bindings']:
+                action._kb = config['keyboard_bindings'][key]
+            if key in config['ps3_bindings']:
+                action._pb = config['ps3_bindings'][key]
 
         # GUI Components
         self._fig = fig
         self._gs = gridspec.GridSpecFromSubplotSpec(8, 1, subplot_spec=gs)
-        self._gs_action_axis = self._gs[0:1, 0]
+        self._gs_action_panel = self._gs[0:1, 0]
         self._gs_image_axis  = self._gs[1:8, 0]
 
         if show_overlay_buttons:
-            self._action_axis = ActionAxis(self._fig, self._gs_action_axis, 1, 2, self._actions,
-                    ps3_process_rate=common_config['ps3_process_rate'],
-                    ps3_topic=common_config['ps3_topic'],
-                    ps3_button=common_config['ps3_button'],
-                    inverted_ps3_button=common_config['inverted_ps3_button'])
+            self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 2, self._actions)
 
         self._ax_image = plt.subplot(self._gs_image_axis)
         self._ax_image.set_axis_off()

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.mplot3d import Axes3D
 
-from gps.gui.config import common as gui_config
+from gps.gui.config import config
 from gps.gui.action_panel import Action, ActionPanel
 from gps.gui.textbox import Textbox
 from gps.gui.image_visualizer import ImageVisualizer
@@ -39,11 +39,7 @@ actions_arr = [
 ]
 actions = {action._key: action for action in actions_arr}
 
-action_panel = ActionPanel(fig, gs[0], 3, 1, actions,
-        ps3_process_rate=gui_config['ps3_process_rate'],
-        ps3_topic=gui_config['ps3_topic'],
-        ps3_button=gui_config['ps3_button'],
-        inverted_ps3_button=gui_config['inverted_ps3_button'])
+action_panel = ActionPanel(fig, gs[0], 3, 1, actions)
 
 # Output Axis
 def demo_textbox():

@@ -32,8 +32,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-from gps.gui.config import common as common_config
-from gps.gui.config import target_setup as target_setup_config
+from gps.gui.config import config
 from gps.gui.action_panel import Action, ActionPanel
 from gps.gui.textbox import Textbox
 from gps.gui.image_visualizer import ImageVisualizer
@@ -52,8 +51,7 @@ except ImportError as e:
 class TargetSetupGUI(object):
     """ Target setup GUI class. """
     def __init__(self, hyperparams, agent):
-        self._hyperparams = copy.deepcopy(common_config)
-        self._hyperparams.update(copy.deepcopy(target_setup_config))
+        self._hyperparams = copy.deepcopy(config)
         self._hyperparams.update(hyperparams)
         self._agent = agent
 
@@ -121,11 +119,7 @@ class TargetSetupGUI(object):
         self._gs_image_visualizer           = self._gs[2:4, 2:4]
 
         # Create GUI components.
-        self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 3, 4, self._actions,
-                ps3_process_rate=self._hyperparams['ps3_process_rate'],
-                ps3_topic=self._hyperparams['ps3_topic'],
-                ps3_button=self._hyperparams['ps3_button'],
-                inverted_ps3_button=self._hyperparams['inverted_ps3_button'])
+        self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 3, 4, self._actions)
         self._target_output = Textbox(self._fig, self._gs_target_output,
                 log_filename=self._log_filename, fontsize=10)
         self._initial_image_visualizer = ImageVisualizer(self._fig, self._gs_initial_image_visualizer)

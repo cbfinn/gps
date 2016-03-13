@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.widgets import Button
 
-from gps.gui.config import common as gui_config_common
+from gps.gui.config import config
 
 
 LOGGER = logging.getLogger(__name__)
@@ -23,8 +23,7 @@ class Action:
         self._pb = ps3_binding
 
 class ActionPanel:
-    def __init__(self, fig, gs, rows, cols, actions, ps3_process_rate=20, ps3_topic='joy',
-            ps3_button=None, inverted_ps3_button=None):
+    def __init__(self, fig, gs, rows, cols, actions):
         """
         Constructs an ActionPanel assuming actions is a dictionary of
         fully initialized actions.
@@ -37,7 +36,6 @@ class ActionPanel:
         self._gs = gridspec.GridSpecFromSubplotSpec(rows, cols, subplot_spec=gs)
         self._axarr = [plt.subplot(self._gs[i]) for i in range(len(actions))]
         self._actions = actions
-        self.inverted_ps3_button = inverted_ps3_button
 
         # Try to import ROS.
         ros_enabled = False
@@ -59,10 +57,10 @@ class ActionPanel:
         for key, action in self._actions.iteritems():
             if action._axis_pos is not None:
                 if ros_enabled:
-                    if (inverted_ps3_button is not None and
+                    if (config['inverted_ps3_button'] is not None and
                             action._pb is not None):
                         ps3_bindings_str = ',\n'.join([
-                            inverted_ps3_button[i] for i in action._pb
+                            config['inverted_ps3_button'][i] for i in action._pb
                         ])
                     else:
                         ps3_bindings_str = str(action._pb)
@@ -84,8 +82,6 @@ class ActionPanel:
 
         # PS3 Input using ROS.
         if ros_enabled:
-            self._ps3_button = ps3_button
-            self._inverted_ps3_button = inverted_ps3_button
             self._ps3_bindings = {}
             for key, action in self._actions.iteritems():
                 if action._pb is not None:
@@ -94,8 +90,8 @@ class ActionPanel:
                 for permuted_key in itertools.permutations(key, len(key)):
                     self._ps3_bindings[permuted_key] = value
             self._ps3_count = 0
-            self._ps3_process_rate = ps3_process_rate
-            rospy.Subscriber(ps3_topic, Joy, self.ps3_callback)
+            self._ps3_process_rate = config['ps3_process_rate']
+            rospy.Subscriber(config['ps3_topic'], Joy, self.ps3_callback)
 
     #TODO: Docstrings here.
     def on_key_press(self, event):
@@ -106,7 +102,7 @@ class ActionPanel:
 
     def ps3_callback(self, joy_msg):
         self._ps3_count += 1
-        if self._ps3_count % self._ps3_process_rate != 0:
+        if self._ps3_count % config['ps3_process_rate'] != 0:
             return
         buttons_pressed = tuple([
             i for i in range(len(joy_msg.buttons)) if joy_msg.buttons[i]
@@ -118,4 +114,4 @@ class ActionPanel:
                     (buttons_pressed[0] == self._ps3_button['rear_right_1'] or
                     buttons_pressed[0] == self._ps3_button['rear_right_2']))):
                 LOGGER.debug('Unrecognized ps3 controller input:\n%s',
-                        str([self.inverted_ps3_button[b] for b in buttons_pressed]))
+                        str([config['inverted_ps3_button'][b] for b in buttons_pressed]))
