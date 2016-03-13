@@ -99,12 +99,6 @@ protected:
     bool sensors_initialized_;
     // Is everything initialized for the trial controller?
     bool controller_initialized_;
-    // are we using a tf controller?
-    bool use_tf_;
-    //for sampling with tf controller.
-    std::vector<gps::SampleType> datatype_obs_;
-    //tf step counter
-    int tf_step_counter_ = 0;
     //tf publisher
     ros_publisher_ptr(gps_agent_pkg::TfObsData) tf_publisher_;
     //tf action subscriber
@@ -163,7 +157,6 @@ public:
     //tf controller commands.
     //tf publish observation command.
     virtual void tf_publish_obs(Eigen::VectorXd obs);
-    // tf action received callback
 
 };
 

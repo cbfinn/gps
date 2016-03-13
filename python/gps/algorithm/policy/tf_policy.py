@@ -12,8 +12,11 @@ class TfPolicy(Policy):
     taken to be the mean, and Gaussian noise is added on top of it.
     U = net.forward(obs) + noise, where noise ~ N(0, diag(var))
     Args:
-        test_net: Initialized tf network that can run forward.
+        obs_tensor: tensor representing tf observation. Used in feed dict for forward pass.
+        act_op: tf op to execute the forward pass. Use sess.run on this op.
         var: Du-dimensional noise variance vector.
+        sess: tf session.
+        device_string: tf device string for running on either gpu or cpu.
     """
     def __init__(self, obs_tensor, act_op, var, sess, device_string):
         Policy.__init__(self)
@@ -46,7 +49,8 @@ class TfPolicy(Policy):
 
     def pickle_policy(self, deg_obs, deg_action, checkpoint_path):
         """
-        We can save just the policy if we are only interested in running forward.
+        We can save just the policy if we are only interested in running forward at a later point
+        without needing a policy optimization class. Useful for debugging and deploying.
         """
         pickled_pol = {'deg_obs': deg_obs, 'deg_action': deg_action, 'chol_pol_covar': self.chol_pol_covar,
                        'checkpoint_path_tf': checkpoint_path + '_tf_data', 'scale': self.scale, 'bias': self.bias,
@@ -58,7 +62,7 @@ class TfPolicy(Policy):
     @classmethod
     def load_policy(cls, policy_dict_path, tf_generator):
         """
-        For when we only need the forward pass. For instance, to run on the robot from
+        For when we only need to load a policy for the forward pass. For instance, to run on the robot from
         a checkpointed policy.
         """
         from tensorflow.python.framework import ops

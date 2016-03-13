@@ -199,8 +199,8 @@ class PolicyOptTf(PolicyOpt):
             'tf_iter': self.tf_iter,
         }
 
-    # auto pickle including hyper params.
     def __auto_save_state__(self, pickle_hyperparams_path=None):
+        """ auto-pickle including hyper params. Useful for debugging. """
         saver = tf.train.Saver()
         saver.save(self.sess, self.checkpoint_file)
         return_dict = {
@@ -219,7 +219,6 @@ class PolicyOptTf(PolicyOpt):
 
     # For unpickling.
     def __setstate__(self, state):
-        raise NotImplementedError('fuck you')
         from tensorflow.python.framework import ops
         ops.reset_default_graph()  # we need to destroy the default graph before re_init or checkpoint won't restore.
         self.__init__(state['hyperparams'], state['dO'], state['dU'])

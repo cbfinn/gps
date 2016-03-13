@@ -38,7 +38,6 @@ void RobotPlugin::initialize(ros::NodeHandle& n)
     aux_data_request_waiting_ = false;
     sensors_initialized_ = false;
     controller_initialized_ = false;
-    use_tf_ = false;
 
     // Initialize all ROS communication infrastructure.
     initialize_ros(n);
@@ -219,14 +218,7 @@ void RobotPlugin::update_controllers(ros::Time current_time, bool is_controller_
     if(!is_controller_step && trial_init){
         return;
     }
-    //if using tf controller, publish the observations.
-    if(use_tf_ == true){
-        Eigen::VectorXd obs;
-        current_time_step_sample_->get_data(tf_step_counter_, obs, datatype_obs_);
-        tf_step_counter_ ++;
-        RobotPlugin::tf_publish_obs(obs);
 
-    }
     // If we have a trial controller, update that, otherwise update position controller.
     if (trial_init) trial_controller_->update(this, current_time, current_time_step_sample_, active_arm_torques_);
     else active_arm_controller_->update(this, current_time, current_time_step_sample_, active_arm_torques_);
@@ -433,7 +425,6 @@ void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::C
     else if (msg->controller.controller_to_execute == gps::TF_CONTROLLER) {
         trial_controller_.reset(new TfController());
         trial_controller_-> configure_controller(controller_params);
-        use_tf_ = true;
     }
     else{
         ROS_ERROR("Unknown trial controller arm type and/or USE_CAFFE=0");
@@ -557,18 +548,17 @@ void RobotPlugin::get_fk_solver(boost::shared_ptr<KDL::ChainFkSolverPos> &fk_sol
 
 
 void RobotPlugin::tf_robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg){
-    //gps_agent_pkg::TfActionCommand tfAction = msg;
+
     // Unpack the action vector
     int idx = 0;
-    int dU = msg->dU; //tfAction.dU;
+    int dU = msg->dU;
     Eigen::VectorXd latest_action_command;
     for (int i = 0; i < dU; ++i)
     {
-        latest_action_command[i] = msg->action[i];//tfAction.action[idx];
+        latest_action_command[i] = msg->action[i];
         idx++;
     }
     int last_command_id_received = msg ->id;
-    //TensorflowController::update_action_command(last_command_id_received, latest_action_command);
     trial_controller_->update_action_command(last_command_id_received, latest_action_command);
 }
 

@@ -61,6 +61,8 @@ public:
     virtual void reset(ros::Time update_time);
     //for tf controller to update actions.
     virtual void update_action_command(int id, const Eigen::VectorXd &command);
+    //for tf controller obs publishing
+    virtual void publish_obs(Eigen::VectorXd obs, RobotPlugin *plugin);
 
     const bool is_configured(){
         return is_configured_;

@@ -171,11 +171,9 @@ def test_euclidean_loss_layer():
     U = PREDICTED_ACTION - ACTION
     aleph_null = sess.run(mat_vec_prod, feed_dict={predicted_action: PREDICTED_ACTION,
                                                    precision: PRECISION, action: ACTION})
-    print aleph_null.shape
 
     aleph_one = sess.run(loss, feed_dict={predicted_action: PREDICTED_ACTION,
                                           precision: PRECISION, action: ACTION})
-    print aleph_one.shape
 
     euclidean_numpy = 0
     scale_factor = 2*batch_size
@@ -184,13 +182,10 @@ def test_euclidean_loss_layer():
         assert np.allclose(mat_vec_numpy, aleph_null[iter_step])
         euclidean_numpy += mat_vec_numpy.dot(U[iter_step])
 
-    print euclidean_numpy
-    print aleph_one
     assert np.allclose(aleph_one, euclidean_numpy/scale_factor)
 
 
 def test_policy_opt_live():
-    import tensorflow as tf
     pwd = '/Users/TheMaster/Desktop/Current_Work/gps/tests/tests_tensorflow/'
     obs = np.load(pwd + 'obs.npy')
     tgt_mu = np.load(pwd + 'tgt_mu.npy')
@@ -201,17 +196,14 @@ def test_policy_opt_live():
     deg_obs = 4
     deg_action = 2
 
-    #nn = POLICY_OPT_TF['network_model']
     policy = PolicyOptTf(hyper_params, deg_obs, deg_action)
     policy.policy.scale = scale
     policy.policy.bias = bias
 
     iterations = 200
     batch_size = 32
-    N, T = obs.shape[:2]
     batches_per_epoch = np.floor(800 / batch_size)
     idx = range(800)
-    average_loss = 0
     np.random.shuffle(idx)
 
     for i in range(iterations):
@@ -225,8 +217,6 @@ def test_policy_opt_live():
         t = policy.sess.run(policy.act_op, feed_dict={policy.obs_tensor: np.expand_dims(obs[idx_i][0], 0)})
         print t
         policy.solver(feed_dict, policy.sess)
-        #self.sess.run(self.solver.solver_op, feed_dict)
-        #train_loss = policy.sess.run(policy.loss_scalar, feed_dict)
 
 
 
