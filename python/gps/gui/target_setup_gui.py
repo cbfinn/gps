@@ -34,8 +34,8 @@ import matplotlib.gridspec as gridspec
 
 from gps.gui.config import common as common_config
 from gps.gui.config import target_setup as target_setup_config
-from gps.gui.action_axis import Action, ActionAxis
-from gps.gui.output_axis import OutputAxis
+from gps.gui.action_panel import Action, ActionPanel
+from gps.gui.textbox import Textbox
 from gps.gui.image_visualizer import ImageVisualizer
 from gps.proto.gps_pb2 import END_EFFECTOR_POSITIONS, END_EFFECTOR_ROTATIONS, \
         JOINT_ANGLES, JOINT_SPACE
@@ -113,7 +113,7 @@ class TargetSetupGUI(object):
 
         # Assign GUI component locations.
         self._gs = gridspec.GridSpec(4, 4)
-        self._gs_action_axis                = self._gs[0:1, 0:4]
+        self._gs_action_panel                = self._gs[0:1, 0:4]
         self._gs_target_output              = self._gs[1:3, 0:2]
         self._gs_initial_image_visualizer   = self._gs[3:4, 0:1]
         self._gs_target_image_visualizer    = self._gs[3:4, 1:2]
@@ -121,16 +121,16 @@ class TargetSetupGUI(object):
         self._gs_image_visualizer           = self._gs[2:4, 2:4]
 
         # Create GUI components.
-        self._action_axis = ActionAxis(self._fig, self._gs_action_axis, 3, 4, self._actions,
+        self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 3, 4, self._actions,
                 ps3_process_rate=self._hyperparams['ps3_process_rate'],
                 ps3_topic=self._hyperparams['ps3_topic'],
                 ps3_button=self._hyperparams['ps3_button'],
                 inverted_ps3_button=self._hyperparams['inverted_ps3_button'])
-        self._target_output = OutputAxis(self._fig, self._gs_target_output,
+        self._target_output = Textbox(self._fig, self._gs_target_output,
                 log_filename=self._log_filename, fontsize=10)
         self._initial_image_visualizer = ImageVisualizer(self._fig, self._gs_initial_image_visualizer)
         self._target_image_visualizer = ImageVisualizer(self._fig, self._gs_target_image_visualizer)
-        self._action_output = OutputAxis(self._fig, self._gs_action_output)
+        self._action_output = Textbox(self._fig, self._gs_action_output)
         self._image_visualizer = ImageVisualizer(self._fig, self._gs_image_visualizer,
                 cropsize=(240, 240), rostopic=self._hyperparams['image_topic'], show_overlay_buttons=True)
 

@@ -9,10 +9,10 @@ import matplotlib.gridspec as gridspec
 from mpl_toolkits.mplot3d import Axes3D
 
 from gps.gui.config import common as gui_config
-from gps.gui.action_axis import Action, ActionAxis
-from gps.gui.output_axis import OutputAxis
+from gps.gui.action_panel import Action, ActionPanel
+from gps.gui.textbox import Textbox
 from gps.gui.image_visualizer import ImageVisualizer
-from gps.gui.real_time_plotter import RealTimePlotter
+from gps.gui.realtime_plotter import RealtimePlotter
 from gps.gui.mean_plotter import MeanPlotter
 from gps.gui.plotter_3d import Plotter3D
 
@@ -39,23 +39,23 @@ actions_arr = [
 ]
 actions = {action._key: action for action in actions_arr}
 
-action_axis = ActionAxis(fig, gs[0], 3, 1, actions,
+action_panel = ActionPanel(fig, gs[0], 3, 1, actions,
         ps3_process_rate=gui_config['ps3_process_rate'],
         ps3_topic=gui_config['ps3_topic'],
         ps3_button=gui_config['ps3_button'],
         inverted_ps3_button=gui_config['inverted_ps3_button'])
 
 # Output Axis
-def demo_output_axis():
+def demo_textbox():
     max_i = 20
     for i in range(max_i):
-        output_axis.append_text(str(i))
+        textbox.append_text(str(i))
         c = 0.5 + 0.5*i/max_i
-        output_axis.set_bgcolor((c, c, c))
+        textbox.set_bgcolor((c, c, c))
         time.sleep(1)
 
-output_axis = OutputAxis(fig, gs[1], max_display_size=10, log_filename=None)
-run_demo(demo_output_axis)
+textbox = Textbox(fig, gs[1], max_display_size=10, log_filename=None)
+run_demo(demo_textbox)
 
 # Image Visualizer
 def demo_image_visualizer():
@@ -72,20 +72,20 @@ image_visualizer = ImageVisualizer(fig, gs[2], cropsize=(3, 3))
 run_demo(demo_image_visualizer)
 
 # Real Time Plotter
-def demo_real_time_plotter():
+def demo_realtime_plotter():
     i, j = 0, 0
     while True:
         i += random.randint(-10, 10)
         j += random.randint(-10, 10)
         data = [i, j, i + j, i - j]
         mean = np.mean(data)
-        real_time_plotter.update(data + [mean])
+        realtime_plotter.update(data + [mean])
         time.sleep(5e-3)
 
-real_time_plotter = RealTimePlotter(fig, gs[3],
+realtime_plotter = RealtimePlotter(fig, gs[3],
         labels=['i', 'j', 'i+j', 'i-j', 'mean'],
         alphas=[0.15, 0.15, 0.15, 0.15, 1.0])
-run_demo(demo_real_time_plotter)
+run_demo(demo_realtime_plotter)
 
 # Mean Plotter
 def demo_mean_plotter():

@@ -7,7 +7,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.colors import ColorConverter
 
 
-class OutputAxis:
+class Textbox:
     def __init__(self, fig, gs, log_filename=None, max_display_size=10,
         border_on=False, bgcolor=mpl.rcParams['figure.facecolor'], bgalpha=1.0,
         fontsize=12, font_family='sans-serif'):

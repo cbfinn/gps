@@ -22,16 +22,16 @@ class Action:
         self._kb = keyboard_binding
         self._pb = ps3_binding
 
-class ActionAxis:
+class ActionPanel:
     def __init__(self, fig, gs, rows, cols, actions, ps3_process_rate=20, ps3_topic='joy',
             ps3_button=None, inverted_ps3_button=None):
         """
-        Constructs an ActionAxis assuming actions is a dictionary of
+        Constructs an ActionPanel assuming actions is a dictionary of
         fully initialized actions.
         Each action must have: key, name, func.
         Each action can have: axis_pos, keyboard_binding, ps3_binding.
         """
-        assert(len(actions) <= rows*cols, 'Too many actions to put into gridspec.')
+        assert len(actions) <= rows*cols, 'Too many actions to put into gridspec.'
 
         self._fig = fig
         self._gs = gridspec.GridSpecFromSubplotSpec(rows, cols, subplot_spec=gs)

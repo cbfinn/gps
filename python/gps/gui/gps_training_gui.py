@@ -26,8 +26,8 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from gps.gui.config import common as common_config
 from gps.gui.config import gps_training as gps_training_config
-from gps.gui.action_axis import Action, ActionAxis
-from gps.gui.output_axis import OutputAxis
+from gps.gui.action_panel import Action, ActionPanel
+from gps.gui.textbox import Textbox
 from gps.gui.mean_plotter import MeanPlotter
 from gps.gui.plotter_3d import Plotter3D
 from gps.gui.image_visualizer import ImageVisualizer
@@ -90,7 +90,7 @@ class GPSTrainingGUI(object):
 
         # Assign GUI component locations.
         self._gs = gridspec.GridSpec(16, 8)
-        self._gs_action_axis        = self._gs[0:2,  0:8]
+        self._gs_action_panel        = self._gs[0:2,  0:8]
         self._gs_action_output      = self._gs[2:3,  0:4]
         self._gs_status_output      = self._gs[3:4,  0:4]
         self._gs_cost_plotter       = self._gs[2:4,  4:8]
@@ -99,14 +99,14 @@ class GPSTrainingGUI(object):
         self._gs_image_visualizer   = self._gs[8:16, 4:8]
 
         # Create GUI components.
-        self._action_axis = ActionAxis(self._fig, self._gs_action_axis, 1, 4, self._actions,
+        self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 4, self._actions,
                 ps3_process_rate=self._hyperparams['ps3_process_rate'],
                 ps3_topic=self._hyperparams['ps3_topic'],
                 ps3_button=self._hyperparams['ps3_button'],
                 inverted_ps3_button=self._hyperparams['inverted_ps3_button'])
-        self._action_output = OutputAxis(self._fig, self._gs_action_output, border_on=True)
-        self._status_output = OutputAxis(self._fig, self._gs_status_output, border_on=False)
-        self._algthm_output = OutputAxis(self._fig, self._gs_algthm_output, max_display_size=15,
+        self._action_output = Textbox(self._fig, self._gs_action_output, border_on=True)
+        self._status_output = Textbox(self._fig, self._gs_status_output, border_on=False)
+        self._algthm_output = Textbox(self._fig, self._gs_algthm_output, max_display_size=15,
                 log_filename=self._log_filename, fontsize=10, font_family='monospace')
         self._cost_plotter = MeanPlotter(self._fig, self._gs_cost_plotter, color='blue', label='mean cost')
         self._traj_visualizer = Plotter3D(self._fig, self._gs_traj_visualizer, num_plots=self._hyperparams['conditions'])

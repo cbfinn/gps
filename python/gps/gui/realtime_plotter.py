@@ -9,7 +9,7 @@ import matplotlib.gridspec as gridspec
 from gps.gui.util import buffered_axis_limits
 
 
-class RealTimePlotter(object):
+class RealtimePlotter(object):
     """ Real time plotter class. """
     def __init__(self, fig, gs, time_window=500, labels=None, alphas=None):
         self._fig = fig
