@@ -41,12 +41,6 @@ class ImageVisualizer(object):
             Action('oii', 'overlay_initial_image', self.toggle_initial_image_overlay, axis_pos=0),
             Action('oti', 'overlay_target_image',  self.toggle_target_image_overlay,  axis_pos=1),
         ]
-        self._actions = {action._key: action for action in actions_arr}
-        for key, action in self._actions.iteritems():
-            if key in config['keyboard_bindings']:
-                action._kb = config['keyboard_bindings'][key]
-            if key in config['ps3_bindings']:
-                action._pb = config['ps3_bindings'][key]
 
         # GUI Components
         self._fig = fig
@@ -55,7 +49,7 @@ class ImageVisualizer(object):
         self._gs_image_axis  = self._gs[1:8, 0]
 
         if show_overlay_buttons:
-            self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 2, self._actions)
+            self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 2, actions_arr)
 
         self._ax_image = plt.subplot(self._gs_image_axis)
         self._ax_image.set_axis_off()

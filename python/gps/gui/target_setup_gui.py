@@ -91,27 +91,18 @@ class TargetSetupGUI(object):
             Action('rc', 'relax_controller', self.relax_controller, axis_pos=10),
             Action('mm', 'mannequin_mode', self.mannequin_mode, axis_pos=11),
         ]
-        #TODO: Is it possible to merge this code with
-        #      GPSTrainingGUI.__init__?
-        self._actions = {action._key: action for action in actions_arr}
-        for key, action in self._actions.iteritems():
-            if key in self._hyperparams['keyboard_bindings']:
-                action._kb = self._hyperparams['keyboard_bindings'][key]
-            if key in self._hyperparams['ps3_bindings']:
-                action._pb = self._hyperparams['ps3_bindings'][key]
 
         # GUI Components.
         plt.ion()
         plt.rcParams['toolbar'] = 'None'
-        # Remove 's' keyboard shortcut for saving.
-        plt.rcParams['keymap.save'] = ''
+        plt.rcParams['keymap.save'] = ''    # Remove 's' keyboard shortcut for saving.
 
         self._fig = plt.figure(figsize=(12, 12))
         self._fig.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0, hspace=0)
 
         # Assign GUI component locations.
         self._gs = gridspec.GridSpec(4, 4)
-        self._gs_action_panel                = self._gs[0:1, 0:4]
+        self._gs_action_panel               = self._gs[0:1, 0:4]
         self._gs_target_output              = self._gs[1:3, 0:2]
         self._gs_initial_image_visualizer   = self._gs[3:4, 0:1]
         self._gs_target_image_visualizer    = self._gs[3:4, 1:2]
@@ -119,7 +110,7 @@ class TargetSetupGUI(object):
         self._gs_image_visualizer           = self._gs[2:4, 2:4]
 
         # Create GUI components.
-        self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 3, 4, self._actions)
+        self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 3, 4, actions_arr)
         self._target_output = Textbox(self._fig, self._gs_target_output,
                 log_filename=self._log_filename, fontsize=10)
         self._initial_image_visualizer = ImageVisualizer(self._fig, self._gs_initial_image_visualizer)

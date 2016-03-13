@@ -23,19 +23,25 @@ class Action:
         self._pb = ps3_binding
 
 class ActionPanel:
-    def __init__(self, fig, gs, rows, cols, actions):
+    def __init__(self, fig, gs, rows, cols, actions_arr):
         """
         Constructs an ActionPanel assuming actions is a dictionary of
         fully initialized actions.
         Each action must have: key, name, func.
         Each action can have: axis_pos, keyboard_binding, ps3_binding.
         """
-        assert len(actions) <= rows*cols, 'Too many actions to put into gridspec.'
+        assert len(actions_arr) <= rows*cols, 'Too many actions to put into gridspec.'
 
         self._fig = fig
         self._gs = gridspec.GridSpecFromSubplotSpec(rows, cols, subplot_spec=gs)
-        self._axarr = [plt.subplot(self._gs[i]) for i in range(len(actions))]
-        self._actions = actions
+        self._axarr = [plt.subplot(self._gs[i]) for i in range(len(actions_arr))]
+        
+        self._actions = {action._key: action for action in actions_arr}
+        for key, action in self._actions.iteritems():
+            if key in config['keyboard_bindings']:
+                action._kb = config['keyboard_bindings'][key]
+            if key in config['ps3_bindings']:
+                action._pb = config['ps3_bindings'][key]
 
         # Try to import ROS.
         ros_enabled = False

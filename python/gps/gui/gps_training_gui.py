@@ -45,11 +45,11 @@ class GPSTrainingGUI(object):
         if 'target_filename' in self._hyperparams:
             self._target_filename = self._hyperparams['target_filename']
         else:
-            self._target_filename = ''
+            self._target_filename = None
 
         # GPS Training Status.
-        self.mode = 'run'  # Modes: run, wait, end, request, process.
-        self.request = None  # Requests: stop, reset, go, fail, None.
+        self.mode = 'run'   # Modes: run, wait, end, request, process.
+        self.request = None # Requests: stop, reset, go, fail, None.
         self.err_msg = None
         self._colors = {
             'run': 'cyan',
@@ -70,25 +70,18 @@ class GPSTrainingGUI(object):
             Action('go', 'go', self.request_go, axis_pos=2),
             Action('fail', 'fail', self.request_fail, axis_pos=3),
         ]
-        self._actions = {action._key: action for action in actions_arr}
-        for key, action in self._actions.iteritems():
-            if key in self._hyperparams['keyboard_bindings']:
-                action._kb = self._hyperparams['keyboard_bindings'][key]
-            if key in self._hyperparams['ps3_bindings']:
-                action._pb = self._hyperparams['ps3_bindings'][key]
 
         # GUI Components.
         plt.ion()
         plt.rcParams['toolbar'] = 'None'
-        # Remove 's' keyboard shortcut for saving.
-        plt.rcParams['keymap.save'] = ''
+        plt.rcParams['keymap.save'] = ''    # Remove 's' keyboard shortcut for saving.
 
         self._fig = plt.figure(figsize=(12, 12))
         self._fig.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0, hspace=0)
 
         # Assign GUI component locations.
         self._gs = gridspec.GridSpec(16, 8)
-        self._gs_action_panel        = self._gs[0:2,  0:8]
+        self._gs_action_panel       = self._gs[0:2,  0:8]
         self._gs_action_output      = self._gs[2:3,  0:4]
         self._gs_status_output      = self._gs[3:4,  0:4]
         self._gs_cost_plotter       = self._gs[2:4,  4:8]
@@ -97,7 +90,7 @@ class GPSTrainingGUI(object):
         self._gs_image_visualizer   = self._gs[8:16, 4:8]
 
         # Create GUI components.
-        self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 4, self._actions)
+        self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 4, actions_arr)
         self._action_output = Textbox(self._fig, self._gs_action_output, border_on=True)
         self._status_output = Textbox(self._fig, self._gs_status_output, border_on=False)
         self._algthm_output = Textbox(self._fig, self._gs_algthm_output, max_display_size=15,
@@ -198,12 +191,12 @@ class GPSTrainingGUI(object):
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
 
     def set_image_overlays(self, condition):
-        if len(self._target_filename) == 0:
+        if not self._target_filename:
             return
         initial_image = load_data_from_npz(self._target_filename, self._hyperparams['image_actuator'], str(condition),
-                'initial', 'image', default=np.zeros((1,1,3)))
+                'initial', 'image', default=None)
         target_image  = load_data_from_npz(self._target_filename, self._hyperparams['image_actuator'], str(condition),
-                'target',  'image', default=np.zeros((1,1,3)))
+                'target',  'image', default=None)
         self._image_visualizer.set_initial_image(initial_image, alpha=0.3)
         self._image_visualizer.set_target_image(target_image, alpha=0.3)
 
@@ -215,21 +208,52 @@ class GPSTrainingGUI(object):
 
         # Setup iteration data column titles and 3D visualization plot titles and legend
         if self._first_update:
-            self.set_output_text(self._hyperparams['experiment_name'])
-            condition_titles = '%3s | %8s' % ('', '')
-            itr_data_fields  = '%3s | %8s' % ('itr', 'avg_cost')
-            for m in range(algorithm.M):
-                condition_titles += ' | %8s %9s %-7d' % ('', 'condition', m)
-                itr_data_fields  += ' | %8s %8s %8s' % ('  cost  ', '  step  ', 'entropy ')
-                if algorithm.prev[0].pol_info is not None:
-                    condition_titles += ' %8s %8s' % ('', '')
-                    itr_data_fields  += ' %8s %8s' % ('kl_div_i', 'kl_div_f')
-            self.append_output_text(condition_titles)
-            self.append_output_text(itr_data_fields)
-
+            self._output_column_titles(algorithm)
             self._first_update = False
 
         # Print Iteration Data
+        self._update_iteration_data(itr, algorithm, costs)
+
+        # TODO(xinyutan) - this assumes that END_EFFECTOR_POINTS are in the
+        # sample, which is not true for box2d. quick fix is above.
+        if END_EFFECTOR_POINTS not in agent.x_data_types:
+            # Skip plotting samples.
+            self._traj_visualizer.draw()    # this must be called explicitly
+            self._fig.canvas.draw()
+            self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
+            return
+
+        # Calculate xlim, ylim, zlim for 3D visualizations from traj_sample_lists and pol_sample_lists
+        # (this clips off LQG means/distributions that are not in the area of interest)
+        xlim, ylim, zlim = self._calculate_3d_axis_limits(traj_sample_lists, pol_sample_lists)
+
+        # Plot 3D Visualizations
+        for m in range(algorithm.M):
+            self._traj_visualizer.clear(m)
+            self._traj_visualizer.set_lim(i=m, xlim=xlim, ylim=ylim, zlim=zlim)
+            self._update_linear_gaussan_controller_plots(self, algorithm, agent, m)
+            self._update_samples_plots(self, traj_sample_lists, m, 'green', 'Trajectory Samples')
+            self._update_samples_plots(self, pol_sample_lists,  m, 'blue',  'Policy Samples')
+        self._traj_visualizer.draw()    # this must be called explicitly
+
+        # Redraw entire figure
+        self._fig.canvas.draw()
+        self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
+
+    def _output_column_titles(self, algorithm):
+        self.set_output_text(self._hyperparams['experiment_name'])
+        condition_titles = '%3s | %8s' % ('', '')
+        itr_data_fields  = '%3s | %8s' % ('itr', 'avg_cost')
+        for m in range(algorithm.M):
+            condition_titles += ' | %8s %9s %-7d' % ('', 'condition', m)
+            itr_data_fields  += ' | %8s %8s %8s' % ('  cost  ', '  step  ', 'entropy ')
+            if algorithm.prev[0].pol_info is not None:
+                condition_titles += ' %8s %8s' % ('', '')
+                itr_data_fields  += ' %8s %8s' % ('kl_div_i', 'kl_div_f')
+        self.append_output_text(condition_titles)
+        self.append_output_text(itr_data_fields)
+
+    def _update_iteration_data(self, itr, algorithm, costs):
         avg_cost = np.mean(costs)
         itr_data = '%3d | %8.2f' % (itr, avg_cost)
         for m in range(algorithm.M):
@@ -243,17 +267,7 @@ class GPSTrainingGUI(object):
                 itr_data += ' %8.2f %8.2f' % (kl_div_i, kl_div_f)
         self.append_output_text(itr_data)
 
-        # TODO(xinyutan) - this assumes that END_EFFECTOR_POINTS are in the
-        # sample, which is not true for box2d. quick fix is above.
-        if END_EFFECTOR_POINTS not in agent.x_data_types:
-            # Skip plotting samples.
-            self._traj_visualizer.draw()    # this must be called explicitly
-            self._fig.canvas.draw()
-            self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
-            return
-
-        # Calculate xlim, ylim, zlim for 3D visualizations from traj_sample_lists and pol_sample_lists
-        # (this clips off LQG means/distributions that are not in the area of interest)
+    def _calculate_3d_axis_limits(self, traj_sample_lists, pol_sample_lists):
         all_eept = np.empty((0, 3))
         sample_lists = traj_sample_lists + pol_sample_lists if pol_sample_lists else traj_sample_lists
         for sample_list in sample_lists:
@@ -267,47 +281,32 @@ class GPSTrainingGUI(object):
         xlim = buffered_axis_limits(min_xyz[0], max_xyz[0], buffer_factor=1.25)
         ylim = buffered_axis_limits(min_xyz[1], max_xyz[1], buffer_factor=1.25)
         zlim = buffered_axis_limits(min_xyz[2], max_xyz[2], buffer_factor=1.25)
+        return xlim, ylim, zlim
 
-        # Plot 3D Visualizations
-        for m in range(algorithm.M):
-            # Clear previous plots
-            self._traj_visualizer.clear(m)
-            self._traj_visualizer.set_lim(i=m, xlim=xlim, ylim=ylim, zlim=zlim)
+    def _update_linear_gaussan_controller_plots(self, algorithm, agent, m):
+        # Linear Gaussian Controller Distributions (Red)
+        mu, sigma = algorithm.traj_opt.forward(algorithm.prev[m].traj_distr, algorithm.prev[m].traj_info)
+        eept_idx = agent.get_idx_x(END_EFFECTOR_POINTS)
+        start, end = eept_idx[0], eept_idx[-1]
+        mu_eept, sigma_eept = mu[:, start:end+1], sigma[:, start:end+1, start:end+1]
 
-            # Linear Gaussian Controller Distributions (Red)
-            mu, sigma = algorithm.traj_opt.forward(algorithm.prev[m].traj_distr, algorithm.prev[m].traj_info)
-            eept_idx = agent.get_idx_x(END_EFFECTOR_POINTS)
-            start, end = eept_idx[0], eept_idx[-1]
-            mu_eept, sigma_eept = mu[:, start:end+1], sigma[:, start:end+1, start:end+1]
+        for i in range(mu_eept.shape[1]/3):
+            mu, sigma = mu_eept[:, 3*i+0:3*i+3], sigma_eept[:, 3*i+0:3*i+3, 3*i+0:3*i+3]
+            self._traj_visualizer.plot_3d_gaussian(i=m, mu=mu, sigma=sigma, edges=100, linestyle='-', linewidth=1.0, color='red', alpha=0.15, label='LG Controller Distributions')
 
-            for i in range(mu_eept.shape[1]/3):
-                mu, sigma = mu_eept[:, 3*i+0:3*i+3], sigma_eept[:, 3*i+0:3*i+3, 3*i+0:3*i+3]
-                self._traj_visualizer.plot_3d_gaussian(i=m, mu=mu, sigma=sigma, edges=100, linestyle='-', linewidth=1.0, color='red', alpha=0.15, label='LG Controller Distributions')
+        # Linear Gaussian Controller Means (Dark Red)
+        for i in range(mu_eept.shape[1]/3):
+            mu = mu_eept[:, 3*i+0:3*i+3]
+            self._traj_visualizer.plot_3d_points(i=m, points=mu, linestyle='None', marker='x', markersize=5.0, markeredgewidth=1.0, color=(0.5, 0, 0), alpha=1.0, label='LG Controller Means')
 
-            # Linear Gaussian Controller Means (Dark Red)
-            for i in range(mu_eept.shape[1]/3):
-                mu = mu_eept[:, 3*i+0:3*i+3]
-                self._traj_visualizer.plot_3d_points(i=m, points=mu, linestyle='None', marker='x', markersize=5.0, markeredgewidth=1.0, color=(0.5, 0, 0), alpha=1.0, label='LG Controller Means')
-
-            # Trajectory Samples (Green)
-            traj_samples = traj_sample_lists[m].get_samples()
-            for sample in traj_samples:
-                ee_pt = sample.get(END_EFFECTOR_POINTS)
-                for i in range(ee_pt.shape[1]/3):
-                    ee_pt_i = ee_pt[:, 3*i+0:3*i+3]
-                    self._traj_visualizer.plot_3d_points(m, ee_pt_i, color='green', label='Trajectory Samples')
-
-            # Policy Samples (Blue)
-            if pol_sample_lists is not None:
-                pol_samples = pol_sample_lists[m].get_samples()
-                for sample in pol_samples:
-                    ee_pt = sample.get(END_EFFECTOR_POINTS)
-                    for i in range(ee_pt.shape[1]/3):
-                        ee_pt_i = ee_pt[:, 3*i+0:3*i+3]
-                        self._traj_visualizer.plot_3d_points(m, ee_pt_i, color='blue', label='Policy Samples')
-        self._traj_visualizer.draw()    # this must be called explicitly
-        self._fig.canvas.draw()
-        self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
+    def _update_samples_plots(self, sample_lists, m, color, label):
+        samples = sample_lists[m].get_samples()
+        for sample in samples:
+            ee_pt = sample.get(END_EFFECTOR_POINTS)
+            for i in range(ee_pt.shape[1]/3):
+                ee_pt_i = ee_pt[:, 3*i+0:3*i+3]
+                self._traj_visualizer.plot_3d_points(m, ee_pt_i, color=color, label=label)
 
     def save_figure(self, filename):
+        # This is called by gps_main at the end of each iteration.
         self._fig.savefig(filename)
