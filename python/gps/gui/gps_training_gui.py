@@ -74,7 +74,9 @@ class GPSTrainingGUI(object):
         # GUI Components.
         plt.ion()
         plt.rcParams['toolbar'] = 'None'
-        plt.rcParams['keymap.save'] = ''    # Remove 's' keyboard shortcut for saving.
+        for key in plt.rcParams:
+            if key.startswith('keymap.'):
+                plt.rcParams[key] = ''
 
         self._fig = plt.figure(figsize=(12, 12))
         self._fig.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0, hspace=0)
