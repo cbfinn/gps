@@ -77,6 +77,7 @@ class PointMassWorld(Framework):
                 self.body.linearVelocity = (action[0], action[1])
             self.world.Step(1.0 / fwSettings.hz, fwSettings.velocityIterations,
                             fwSettings.positionIterations)
+
     def Step(self, settings, action):
         """Called upon every step. """
         self.body.linearVelocity = (action[0], action[1])
