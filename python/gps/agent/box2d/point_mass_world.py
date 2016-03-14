@@ -5,6 +5,7 @@ from framework import Framework
 
 from gps.agent.box2d.settings import fwSettings
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES
+
 class PointMassWorld(Framework):
     """ This class defines the point mass and its environment."""
     name = "PointMass"
@@ -92,7 +93,7 @@ class PointMassWorld(Framework):
 
     def get_state(self):
         """ This retrieves the state of the point mass"""
-        state = {END_EFFECTOR_POINTS: np.append(np.array(self.body.position),[0]),
-                 END_EFFECTOR_POINT_VELOCITIES: np.append(np.array(self.body.linearVelocity),[0])}
+        state = {END_EFFECTOR_POINTS: np.append(np.array(self.body.position), [0]),
+                 END_EFFECTOR_POINT_VELOCITIES: np.append(np.array(self.body.linearVelocity), [0])}
 
         return state
