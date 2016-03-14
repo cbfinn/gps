@@ -8,6 +8,7 @@ from gps.proto.gps_pb2 import ACTION
 from gps.sample.sample import Sample
 
 
+
 class AgentBox2D(Agent):
     """
     All communication between the algorithms and Box2D is done through
@@ -19,7 +20,7 @@ class AgentBox2D(Agent):
         Agent.__init__(self, config)
 
         self._setup_conditions()
-        self._setup_world(hyperparams["world"], hyperparams["target_state"])
+        self._setup_world(hyperparams["world"], hyperparams["target_state"], hyperparams["render"])
 
     def _setup_conditions(self):
         """
@@ -31,12 +32,12 @@ class AgentBox2D(Agent):
                 'noisy_body_idx', 'noisy_body_var'):
             self._hyperparams[field] = setup(self._hyperparams[field], conds)
 
-    def _setup_world(self, world, target):
+    def _setup_world(self, world, target, render):
         """
         Helper method for handling setup of the Box2D world.
         """
         self.x0 = self._hyperparams["x0"]
-        self._worlds = [world(self.x0[i], target)
+        self._worlds = [world(self.x0[i], target, render)
                         for i in range(self._hyperparams['conditions'])]
 
 

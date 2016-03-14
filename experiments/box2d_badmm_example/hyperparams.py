@@ -18,11 +18,12 @@ from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_lqr
-from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, ACTION
+from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, ACTION
 
 SENSOR_DIMS = {
     JOINT_ANGLES: 2,
     JOINT_VELOCITIES: 2,
+    END_EFFECTOR_POINTS: 3,
     ACTION: 2
 }
 
@@ -46,10 +47,10 @@ agent = {
     'type': AgentBox2D,
     'target_state' : np.array([0, 0]),
     "world" : ArmWorld,
-    'x0': [np.array([0.5*np.pi, 0, 0, 0]),
-           np.array([0.75*np.pi, 0.5*np.pi, 0, 0]),
-           np.array([np.pi, -0.5*np.pi, 0, 0]),
-           np.array([1.25*np.pi, 0, 0, 0]),
+    'x0': [np.array([0.5*np.pi, 0, 0, 0, 0, 0, 0]),
+           np.array([0.75*np.pi, 0.5*np.pi, 0, 0, 0, 0, 0]),
+           np.array([np.pi, -0.5*np.pi, 0, 0, 0, 0, 0]),
+           np.array([1.25*np.pi, 0, 0, 0, 0, 0, 0]),
           ],
     'rk': 0,
     'dt': 0.05,
@@ -59,8 +60,8 @@ agent = {
     'pos_body_offset': np.array([]),
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
-    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],
-    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS],
 }
 
 algorithm = {

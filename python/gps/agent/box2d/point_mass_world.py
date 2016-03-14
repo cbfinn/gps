@@ -2,13 +2,18 @@
 import numpy as np
 import Box2D as b2
 from framework import Framework
-from gps.proto.gps_pb2 import POSITION, LINEAR_VELOCITY
 
+from gps.agent.box2d.settings import fwSettings
+from gps.proto.gps_pb2 import END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES
 class PointMassWorld(Framework):
     """ This class defines the point mass and its environment."""
     name = "PointMass"
-    def __init__(self, x0, target):
-        super(PointMassWorld, self).__init__()
+    def __init__(self, x0, target, render):
+        self.render = render
+        if self.render:
+            super(PointMassWorld, self).__init__()
+        else:
+            self.world = b2.b2World(gravity=(0, -10), doSleep=True)
         self.world.gravity = (0.0, 0.0)
         self.initial_position = (x0[0], x0[1])
         self.initial_angle = b2.b2_pi
@@ -45,7 +50,7 @@ class PointMassWorld(Framework):
             shapeFixture=b2.b2FixtureDef(density=1.0),
         )
         self.target = self.world.CreateStaticBody(
-            position=target,
+            position=target[:2],
             angle=self.initial_angle,
             shapes=[b2.b2PolygonShape(vertices=[xf1*(-1, 0), xf1*(1, 0),
                                                 xf1*(0, .5)]),
@@ -54,6 +59,23 @@ class PointMassWorld(Framework):
         )
         self.target.active = False
 
+    def run(self):
+        """Initiates the first time step
+        """
+        if self.render:
+            super(PointMassWorld, self).run()
+        else:
+            self.run_next(None)
+
+    def run_next(self, action):
+        """Moves forward in time one step. Calls the renderer if applicable."""
+        if self.render:
+            super(PointMassWorld, self).run_next(action)
+        else:
+            if action is not None:
+                self.body.linearVelocity = (action[0], action[1])
+            self.world.Step(1.0 / fwSettings.hz, fwSettings.velocityIterations,
+                            fwSettings.positionIterations)
     def Step(self, settings, action):
         """Called upon every step. """
         self.body.linearVelocity = (action[0], action[1])
@@ -70,7 +92,7 @@ class PointMassWorld(Framework):
 
     def get_state(self):
         """ This retrieves the state of the point mass"""
-        state = {POSITION : np.array(self.body.position),
-                 LINEAR_VELOCITY : np.array(self.body.linearVelocity)}
+        state = {END_EFFECTOR_POINTS: np.append(np.array(self.body.position),[0]),
+                 END_EFFECTOR_POINT_VELOCITIES: np.append(np.array(self.body.linearVelocity),[0])}
 
         return state
