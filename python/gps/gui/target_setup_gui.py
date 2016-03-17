@@ -102,21 +102,26 @@ class TargetSetupGUI(object):
         # Assign GUI component locations.
         self._gs = gridspec.GridSpec(4, 4)
         self._gs_action_panel               = self._gs[0:1, 0:4]
-        self._gs_target_output              = self._gs[1:3, 0:2]
-        self._gs_initial_image_visualizer   = self._gs[3:4, 0:1]
-        self._gs_target_image_visualizer    = self._gs[3:4, 1:2]
-        self._gs_action_output              = self._gs[1:2, 2:4]
-        self._gs_image_visualizer           = self._gs[2:4, 2:4]
+        if config['display_images']:
+            self._gs_target_output              = self._gs[1:3, 0:2]
+            self._gs_initial_image_visualizer   = self._gs[3:4, 0:1]
+            self._gs_target_image_visualizer    = self._gs[3:4, 1:2]
+            self._gs_action_output              = self._gs[1:2, 2:4]
+            self._gs_image_visualizer           = self._gs[2:4, 2:4]
+        else:
+            self._gs_target_output              = self._gs[1:4, 0:2]
+            self._gs_action_output              = self._gs[1:4, 2:4]
 
         # Create GUI components.
         self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 3, 4, actions_arr)
         self._target_output = Textbox(self._fig, self._gs_target_output,
                 log_filename=self._log_filename, fontsize=config['target_output_fontsize'])
-        self._initial_image_visualizer = ImageVisualizer(self._fig, self._gs_initial_image_visualizer)
-        self._target_image_visualizer = ImageVisualizer(self._fig, self._gs_target_image_visualizer)
         self._action_output = Textbox(self._fig, self._gs_action_output)
-        self._image_visualizer = ImageVisualizer(self._fig, self._gs_image_visualizer,
-                cropsize=config['image_size'], rostopic=config['image_topic'], show_overlay_buttons=True)
+        if config['display_images']:
+            self._initial_image_visualizer = ImageVisualizer(self._fig, self._gs_initial_image_visualizer)
+            self._target_image_visualizer = ImageVisualizer(self._fig, self._gs_target_image_visualizer)
+            self._image_visualizer = ImageVisualizer(self._fig, self._gs_image_visualizer,
+                    cropsize=config['image_size'], rostopic=config['image_topic'], show_overlay_buttons=True)
 
         # Setup GUI components.
         self.reload_positions()
@@ -281,10 +286,11 @@ class TargetSetupGUI(object):
         )
         self._target_output.set_text(text)
 
-        self._initial_image_visualizer.update(self._initial_image)
-        self._target_image_visualizer.update(self._target_image)
-        self._image_visualizer.set_initial_image(self._initial_image, alpha=0.3)
-        self._image_visualizer.set_target_image(self._target_image, alpha=0.3)
+        if config['display_images']:
+            self._initial_image_visualizer.update(self._initial_image)
+            self._target_image_visualizer.update(self._target_image)
+            self._image_visualizer.set_initial_image(self._initial_image, alpha=0.3)
+            self._image_visualizer.set_target_image(self._target_image, alpha=0.3)
 
     def position_to_str(self, position):
         np.set_printoptions(precision=3, suppress=True)

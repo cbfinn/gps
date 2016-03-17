@@ -84,8 +84,11 @@ class GPSTrainingGUI(object):
         self._gs_status_output      = self._gs[3:4,  0:4]
         self._gs_cost_plotter       = self._gs[2:4,  4:8]
         self._gs_algthm_output      = self._gs[4:8,  0:8]
-        self._gs_traj_visualizer    = self._gs[8:16, 0:4]
-        self._gs_image_visualizer   = self._gs[8:16, 4:8]
+        if config['display_images']:
+            self._gs_traj_visualizer    = self._gs[8:16, 0:4]
+            self._gs_image_visualizer   = self._gs[8:16, 4:8]
+        else:
+            self._gs_traj_visualizer    = self._gs[8:16, 0:8]
 
         # Create GUI components.
         self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 4, actions_arr)
@@ -95,8 +98,9 @@ class GPSTrainingGUI(object):
                 log_filename=self._log_filename, fontsize=config['algthm_output_fontsize'], font_family='monospace')
         self._cost_plotter = MeanPlotter(self._fig, self._gs_cost_plotter, color='blue', label='mean cost')
         self._traj_visualizer = Plotter3D(self._fig, self._gs_traj_visualizer, num_plots=self._hyperparams['conditions'])
-        self._image_visualizer = ImageVisualizer(self._fig, self._gs_image_visualizer,
-                cropsize=config['image_size'], rostopic=config['image_topic'], show_overlay_buttons=True)
+        if config['display_images']:
+            self._image_visualizer = ImageVisualizer(self._fig, self._gs_image_visualizer,
+                    cropsize=config['image_size'], rostopic=config['image_topic'], show_overlay_buttons=True)
 
         # Setup GUI components.
         self._algthm_output.log_text('\n')
@@ -189,7 +193,7 @@ class GPSTrainingGUI(object):
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
 
     def set_image_overlays(self, condition):
-        if not self._target_filename:
+        if not config['display_images'] or not self._target_filename:
             return
         initial_image = load_data_from_npz(self._target_filename, config['image_overlay_actuator'], str(condition),
                 'initial', 'image', default=None)
