@@ -1,3 +1,4 @@
+import os
 import numpy as np
 
 def buffered_axis_limits(amin, amax, buffer_factor=1.0):
@@ -16,3 +17,75 @@ def buffered_axis_limits(amin, amax, buffer_factor=1.0):
     amin = np.floor(amin/precision) * precision
     amax = np.ceil (amax/precision) * precision
     return (amin, amax)
+
+def save_pose_to_npz(filename, actuator_name, target_number, data_time, values):
+    ja, ee_pos, ee_rot = values
+    save_data_to_npz(filename, actuator_name, target_number, data_time,
+                     'ja', ja)
+    save_data_to_npz(filename, actuator_name, target_number, data_time,
+                     'ee_pos', ee_pos)
+    save_data_to_npz(filename, actuator_name, target_number, data_time,
+                     'ee_rot', ee_rot)
+
+
+def save_data_to_npz(filename, actuator_name, target_number, data_time,
+                     data_name, value):
+    """
+    Save data to the specified file with key
+    (actuator_name, target_number, data_time, data_name).
+    """
+    key = '_'.join((actuator_name, target_number, data_time, data_name))
+    save_to_npz(filename, key, value)
+
+
+def save_to_npz(filename, key, value):
+    """
+    Save a (key,value) pair to a npz dictionary.
+    Args:
+        filename: The file containing the npz dictionary.
+        key: The key (string).
+        value: The value (numpy array).
+    """
+    tmp = {}
+    if os.path.exists(filename):
+        with np.load(filename) as f:
+            tmp = dict(f)
+    tmp[key] = value
+    np.savez(filename, **tmp)
+
+
+def load_pose_from_npz(filename, actuator_name, target_number, data_time):
+    ja = load_data_from_npz(filename, actuator_name, target_number, data_time,
+                            'ja', default=np.zeros(7))
+    ee_pos = load_data_from_npz(filename, actuator_name, target_number,
+                                data_time, 'ee_pos', default=np.zeros(3))
+    ee_rot = load_data_from_npz(filename, actuator_name, target_number,
+                                data_time, 'ee_rot', default=np.zeros((3, 3)))
+    return (ja, ee_pos, ee_rot)
+
+
+def load_data_from_npz(filename, actuator_name, target_number, data_time,
+                       data_name, default=None):
+    """
+    Load data from the specified file with key
+    (actuator_name, target_number, data_time, data_name).
+    """
+    key = '_'.join((actuator_name, target_number, data_time, data_name))
+    return load_from_npz(filename, key, default)
+
+
+def load_from_npz(filename, key, default=None):
+    """
+    Load a (key,value) pair from a npz dictionary.
+    Args:
+        filename: The file containing the npz dictionary.
+        key: The key (string).
+        value: The default value to return, if key or file not found.
+    """
+    try:
+        with np.load(filename) as f:
+            return f[key]
+    except (IOError, KeyError) as e:
+        # print 'error loading %s from %s' % (key, filename), e
+        pass
+    return default

@@ -22,8 +22,6 @@ Image Visualizer
 """
 
 
-import imp
-import os.path
 import subprocess
 
 import numpy as np
@@ -38,6 +36,7 @@ from gps.gui.image_visualizer import ImageVisualizer
 from gps.proto.gps_pb2 import END_EFFECTOR_POSITIONS, END_EFFECTOR_ROTATIONS, \
         JOINT_ANGLES, JOINT_SPACE
 
+from gps.gui.util import load_pose_from_npz, load_data_from_npz, save_pose_to_npz, save_data_to_npz
 from gps.proto.gps_pb2 import END_EFFECTOR_POSITIONS, END_EFFECTOR_ROTATIONS, JOINT_ANGLES, TRIAL_ARM, AUXILIARY_ARM, TASK_SPACE, JOINT_SPACE
 
 try:
@@ -97,7 +96,7 @@ class TargetSetupGUI(object):
             if key.startswith('keymap.'):
                 plt.rcParams[key] = ''
 
-        self._fig = plt.figure(config['figsize'])
+        self._fig = plt.figure(figsize=config['figsize'])
         self._fig.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0, hspace=0)
 
         # Assign GUI component locations.
@@ -321,76 +320,3 @@ class TargetSetupGUI(object):
                 str(self._target_number), 'initial', 'image', default=None)
         self._target_image     = load_data_from_npz(self._target_filename, self._actuator_name,
                 str(self._target_number), 'target',  'image', default=None)
-
-
-def save_pose_to_npz(filename, actuator_name, target_number, data_time, values):
-    ja, ee_pos, ee_rot = values
-    save_data_to_npz(filename, actuator_name, target_number, data_time,
-                     'ja', ja)
-    save_data_to_npz(filename, actuator_name, target_number, data_time,
-                     'ee_pos', ee_pos)
-    save_data_to_npz(filename, actuator_name, target_number, data_time,
-                     'ee_rot', ee_rot)
-
-
-def save_data_to_npz(filename, actuator_name, target_number, data_time,
-                     data_name, value):
-    """
-    Save data to the specified file with key
-    (actuator_name, target_number, data_time, data_name).
-    """
-    key = '_'.join((actuator_name, target_number, data_time, data_name))
-    save_to_npz(filename, key, value)
-
-
-def save_to_npz(filename, key, value):
-    """
-    Save a (key,value) pair to a npz dictionary.
-    Args:
-        filename: The file containing the npz dictionary.
-        key: The key (string).
-        value: The value (numpy array).
-    """
-    tmp = {}
-    if os.path.exists(filename):
-        with np.load(filename) as f:
-            tmp = dict(f)
-    tmp[key] = value
-    np.savez(filename, **tmp)
-
-
-def load_pose_from_npz(filename, actuator_name, target_number, data_time):
-    ja = load_data_from_npz(filename, actuator_name, target_number, data_time,
-                            'ja', default=np.zeros(7))
-    ee_pos = load_data_from_npz(filename, actuator_name, target_number,
-                                data_time, 'ee_pos', default=np.zeros(3))
-    ee_rot = load_data_from_npz(filename, actuator_name, target_number,
-                                data_time, 'ee_rot', default=np.zeros((3, 3)))
-    return (ja, ee_pos, ee_rot)
-
-
-def load_data_from_npz(filename, actuator_name, target_number, data_time,
-                       data_name, default=None):
-    """
-    Load data from the specified file with key
-    (actuator_name, target_number, data_time, data_name).
-    """
-    key = '_'.join((actuator_name, target_number, data_time, data_name))
-    return load_from_npz(filename, key, default)
-
-
-def load_from_npz(filename, key, default=None):
-    """
-    Load a (key,value) pair from a npz dictionary.
-    Args:
-        filename: The file containing the npz dictionary.
-        key: The key (string).
-        value: The default value to return, if key or file not found.
-    """
-    try:
-        with np.load(filename) as f:
-            return f[key]
-    except (IOError, KeyError) as e:
-        # print 'error loading %s from %s' % (key, filename), e
-        pass
-    return default

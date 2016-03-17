@@ -29,9 +29,8 @@ from gps.gui.textbox import Textbox
 from gps.gui.mean_plotter import MeanPlotter
 from gps.gui.plotter_3d import Plotter3D
 from gps.gui.image_visualizer import ImageVisualizer
-from gps.gui.util import buffered_axis_limits
-
-from gps.gui.target_setup_gui import load_data_from_npz
+from gps.gui.util import buffered_axis_limits, load_data_from_npz
+ 
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 
 class GPSTrainingGUI(object):
@@ -45,7 +44,7 @@ class GPSTrainingGUI(object):
             self._target_filename = None
 
         # GPS Training Status.
-        self.mode = config['inital_mode']   # Modes: run, wait, end, request, process.
+        self.mode = config['initial_mode']   # Modes: run, wait, end, request, process.
         self.request = None                 # Requests: stop, reset, go, fail, None.
         self.err_msg = None
         self._colors = {
