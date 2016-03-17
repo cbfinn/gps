@@ -242,14 +242,14 @@ class TargetSetupGUI(object):
     def move_to_initial(self, event=None):
         ja = self._initial_position[0]
         self.set_action_status_message('move_to_initial', 'requested')
-        self._agent.reset_arm(self._actuator_type, JOINT_SPACE, ja)
+        self._agent.reset_arm(self._actuator_type, JOINT_SPACE, ja.T)
         self.set_action_status_message('move_to_initial', 'completed',
                 message='initial position: %s' % str(ja))
 
     def move_to_target(self, event=None):
         ja = self._target_position[0]
         self.set_action_status_message('move_to_target', 'requested')
-        self._agent.reset_arm(self._actuator_type, JOINT_SPACE, ja)
+        self._agent.reset_arm(self._actuator_type, JOINT_SPACE, ja.T)
         self.set_action_status_message('move_to_target', 'completed',
                 message='target position: %s' % str(ja))
 
