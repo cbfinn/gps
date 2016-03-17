@@ -13,15 +13,15 @@ keyboard_bindings = {
     'pat': 'down',
     'nat': 'up',
 
-    'sip': 'j',
-    'stp': 'k',
-    'sii': 'l',
-    'sti': ';',
+    'sip': 'i',
+    'stp': 't',
+    'sii': 'p',
+    'sti': 'a',
 
-    'mti': 'u',
-    'mtt': 'i',
-    'rc': 'o',
-    'mm': 'p',
+    'mti': 'm',
+    'mtt': 'g',
+    'rc': 'r',
+    'mm': 'q',
 
     # GPS Training.
     'stop' : 's',
