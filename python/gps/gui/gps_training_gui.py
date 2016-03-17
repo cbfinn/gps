@@ -15,7 +15,6 @@ Image Visualizer
     - visualize hidden states?
     - create movie from image visualizations
 """
-import copy
 import time
 
 import numpy as np
@@ -38,9 +37,7 @@ from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 class GPSTrainingGUI(object):
     """ GPS Training GUI class. """
     def __init__(self, hyperparams):
-        self._hyperparams = copy.deepcopy(config)
-        self._hyperparams.update(hyperparams)
-
+        self._hyperparams = hyperparams
         self._log_filename = self._hyperparams['log_filename']
         if 'target_filename' in self._hyperparams:
             self._target_filename = self._hyperparams['target_filename']
@@ -48,8 +45,8 @@ class GPSTrainingGUI(object):
             self._target_filename = None
 
         # GPS Training Status.
-        self.mode = 'run'   # Modes: run, wait, end, request, process.
-        self.request = None # Requests: stop, reset, go, fail, None.
+        self.mode = config['inital_mode']   # Modes: run, wait, end, request, process.
+        self.request = None                 # Requests: stop, reset, go, fail, None.
         self.err_msg = None
         self._colors = {
             'run': 'cyan',
@@ -78,7 +75,7 @@ class GPSTrainingGUI(object):
             if key.startswith('keymap.'):
                 plt.rcParams[key] = ''
 
-        self._fig = plt.figure(figsize=(12, 12))
+        self._fig = plt.figure(figsize=config['figsize'])
         self._fig.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0, hspace=0)
 
         # Assign GUI component locations.
@@ -95,12 +92,12 @@ class GPSTrainingGUI(object):
         self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 4, actions_arr)
         self._action_output = Textbox(self._fig, self._gs_action_output, border_on=True)
         self._status_output = Textbox(self._fig, self._gs_status_output, border_on=False)
-        self._algthm_output = Textbox(self._fig, self._gs_algthm_output, max_display_size=15,
-                log_filename=self._log_filename, fontsize=10, font_family='monospace')
+        self._algthm_output = Textbox(self._fig, self._gs_algthm_output, max_display_size=config['algthm_output_max_display_size'],
+                log_filename=self._log_filename, fontsize=config['algthm_output_fontsize'], font_family='monospace')
         self._cost_plotter = MeanPlotter(self._fig, self._gs_cost_plotter, color='blue', label='mean cost')
         self._traj_visualizer = Plotter3D(self._fig, self._gs_traj_visualizer, num_plots=self._hyperparams['conditions'])
         self._image_visualizer = ImageVisualizer(self._fig, self._gs_image_visualizer,
-                cropsize=(240, 240), rostopic=self._hyperparams['image_topic'], show_overlay_buttons=True)
+                cropsize=config['image_size'], rostopic=config['image_topic'], show_overlay_buttons=True)
 
         # Setup GUI components.
         self._algthm_output.log_text('\n')
@@ -195,12 +192,12 @@ class GPSTrainingGUI(object):
     def set_image_overlays(self, condition):
         if not self._target_filename:
             return
-        initial_image = load_data_from_npz(self._target_filename, self._hyperparams['image_actuator'], str(condition),
+        initial_image = load_data_from_npz(self._target_filename, config['image_overlay_actuator'], str(condition),
                 'initial', 'image', default=None)
-        target_image  = load_data_from_npz(self._target_filename, self._hyperparams['image_actuator'], str(condition),
+        target_image  = load_data_from_npz(self._target_filename, config['image_overlay_actuator'], str(condition),
                 'target',  'image', default=None)
-        self._image_visualizer.set_initial_image(initial_image, alpha=0.3)
-        self._image_visualizer.set_target_image(target_image, alpha=0.3)
+        self._image_visualizer.set_initial_image(initial_image, alpha=config['image_overlay_alpha'])
+        self._image_visualizer.set_target_image(target_image, alpha=config['image_overlay_alpha'])
 
     def update(self, itr, algorithm, agent, traj_sample_lists, pol_sample_lists):
         # Plot Costs

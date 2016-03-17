@@ -83,10 +83,19 @@ config = {
     'inverted_ps3_bindings': inverted_ps3_bindings,
     'permuted_inverted_ps3_bindings': permuted_inverted_ps3_bindings,
 
+    'image_topic': '/camera/rgb/image_color',
+    'image_size': (240, 240),
+    'image_overlay_actuator': 'trial_arm',
+    'image_overlay_alpha': 0.3,
+
+    # Target Setup
     'num_targets': 10,
     'actuator_types': [TRIAL_ARM, AUXILIARY_ARM],
     'actuator_names': ['trial_arm', 'auxiliary_arm'],
 
-    'image_topic': '/camera/rgb/image_color',
-    'image_actuator': 'trial_arm',
+    # GPS Training
+    'initial_mode': 'run',
+    'figsize': (12, 12),
+    'algthm_output_max_display_size': 15,
+    'algthm_output_fontsize': 10,
 }
