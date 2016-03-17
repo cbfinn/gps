@@ -22,7 +22,6 @@ Image Visualizer
 """
 
 
-import copy
 import imp
 import os.path
 import subprocess
@@ -51,16 +50,15 @@ except ImportError as e:
 class TargetSetupGUI(object):
     """ Target setup GUI class. """
     def __init__(self, hyperparams, agent):
-        self._hyperparams = copy.deepcopy(config)
-        self._hyperparams.update(hyperparams)
+        self._hyperparams = hyperparams
         self._agent = agent
 
         self._log_filename = self._hyperparams['log_filename']
         self._target_filename = self._hyperparams['target_filename']
 
-        self._num_targets = self._hyperparams['num_targets']
-        self._actuator_types = self._hyperparams['actuator_types']
-        self._actuator_names = self._hyperparams['actuator_names']
+        self._num_targets = config['num_targets']
+        self._actuator_types = config['actuator_types']
+        self._actuator_names = config['actuator_names']
         self._num_actuators = len(self._actuator_types)
 
         # Target Setup Status.
@@ -99,7 +97,7 @@ class TargetSetupGUI(object):
             if key.startswith('keymap.'):
                 plt.rcParams[key] = ''
 
-        self._fig = plt.figure(figsize=(12, 12))
+        self._fig = plt.figure(config['figsize'])
         self._fig.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0, hspace=0)
 
         # Assign GUI component locations.
@@ -114,12 +112,12 @@ class TargetSetupGUI(object):
         # Create GUI components.
         self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 3, 4, actions_arr)
         self._target_output = Textbox(self._fig, self._gs_target_output,
-                log_filename=self._log_filename, fontsize=10)
+                log_filename=self._log_filename, fontsize=config['target_output_fontsize'])
         self._initial_image_visualizer = ImageVisualizer(self._fig, self._gs_initial_image_visualizer)
         self._target_image_visualizer = ImageVisualizer(self._fig, self._gs_target_image_visualizer)
         self._action_output = Textbox(self._fig, self._gs_action_output)
         self._image_visualizer = ImageVisualizer(self._fig, self._gs_image_visualizer,
-                cropsize=(240, 240), rostopic=self._hyperparams['image_topic'], show_overlay_buttons=True)
+                cropsize=config['image_size'], rostopic=config['image_topic'], show_overlay_buttons=True)
 
         # Setup GUI components.
         self.reload_positions()
@@ -192,7 +190,6 @@ class TargetSetupGUI(object):
 
     def set_target_position(self, event=None):
         self.set_action_status_message('set_target_position', 'requested')
-        self.set_action_bgcolor('green', alpha=0.2)
         try:
             sample = self._agent.get_data(arm=self._actuator_type)
         except TimeoutException as e:

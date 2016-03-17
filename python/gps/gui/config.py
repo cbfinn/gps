@@ -88,14 +88,16 @@ config = {
     'image_overlay_actuator': 'trial_arm',
     'image_overlay_alpha': 0.3,
 
+    'figsize': (12, 12),
+
     # Target Setup
     'num_targets': 10,
     'actuator_types': [TRIAL_ARM, AUXILIARY_ARM],
     'actuator_names': ['trial_arm', 'auxiliary_arm'],
+    'target_output_fontsize': 10,
 
     # GPS Training
     'initial_mode': 'run',
-    'figsize': (12, 12),
     'algthm_output_max_display_size': 15,
     'algthm_output_fontsize': 10,
 }
