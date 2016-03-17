@@ -11,7 +11,21 @@ import matplotlib.gridspec as gridspec
 from gps.gui.action_panel import Action, ActionPanel
 from gps.gui.config import config
 
+
 LOGGER = logging.getLogger(__name__)
+ros_enabled = False
+try:
+    import rospkg
+    import rospy
+    import roslib
+    from sensor_msgs.msg import Image
+
+    roslib.load_manifest('gps_agent_pkg')
+    ros_enabled = True
+except ImportError as e:
+    LOGGER.debug('Import ROS failed: %s', e)
+except rospkg.common.ResourceNotFound as e:
+    LOGGER.debug('No gps_agent_pkg: %s', e)
 
 
 class ImageVisualizer(object):
@@ -61,20 +75,9 @@ class ImageVisualizer(object):
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
 
         # ROS subscriber for PS3 controller
-        if rostopic is not None:
-            try:
-                import rospkg
-                import rospy
-                import roslib
-                from sensor_msgs.msg import Image
-
-                roslib.load_manifest('gps_agent_pkg')
-                rospy.Subscriber(rostopic, Image, self.update_ros, queue_size=1,
-                                 buff_size=2**24)
-            except ImportError as e:
-                LOGGER.debug('rostopic image visualization not enabled: %s', e)
-            except rospkg.common.ResourceNotFound as e:
-                LOGGER.debug('No gps_agent_pkg: %s', e)
+        if rostopic and ros_enabled:
+            rospy.Subscriber(rostopic, Image, self.update_ros, queue_size=1,
+                             buff_size=2**24)
 
     def update(self, image):
         """ Update images. """

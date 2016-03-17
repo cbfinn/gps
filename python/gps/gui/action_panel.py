@@ -1,4 +1,5 @@
 """ This file defines the action axis class. """
+import logging
 import itertools
 import numpy as np
 
@@ -9,6 +10,8 @@ from matplotlib.widgets import Button
 
 from gps.gui.config import config
 
+
+LOGGER = logging.getLogger(__name__)
 ros_enabled = False
 try:
     import rospkg
