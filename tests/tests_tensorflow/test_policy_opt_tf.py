@@ -185,7 +185,7 @@ def test_euclidean_loss_layer():
 
 
 def test_policy_opt_live():
-    test_dir = os.path.dirname(__file__) + '/test_data/'#'/Users/TheMaster/Desktop/Current_Work/gps/tests/tests_tensorflow/'
+    test_dir = os.path.dirname(__file__) + '/test_data/'
     obs = np.load(test_dir + 'obs.npy')
     tgt_mu = np.load(test_dir + 'tgt_mu.npy')
     tgt_prc = np.load(test_dir + 'tgt_prc.npy')
