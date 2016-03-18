@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from gps.algorithm.policy.tf_policy import TfPolicy
 from gps.algorithm.policy_opt.policy_opt import PolicyOpt
-from gps.algorithm.policy_opt.config_tf import POLICY_OPT_TF
+from gps.algorithm.policy_opt.config import POLICY_OPT_TF
 from gps.algorithm.policy_opt.tf_utils import TfSolver
 
 LOGGER = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class PolicyOptTf(PolicyOpt):
         self.checkpoint_file = self._hyperparams['checkpoint_prefix']
         self.batch_size = self._hyperparams['batch_size']
         self.device_string = "/cpu:0"
-        if self._hyperparams['use_gpu'] is True:
+        if self._hyperparams['use_gpu'] == 1:
             self.gpu_device = self._hyperparams['gpu_id']
             self.device_string = "/gpu:" + str(self.gpu_device)
         self.act_op = None  # mu_hat

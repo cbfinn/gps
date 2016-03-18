@@ -13,7 +13,10 @@ from gps.agent.ros.ros_utils import ServiceEmulator, msg_to_sample, \
 from gps.proto.gps_pb2 import TRIAL_ARM, AUXILIARY_ARM
 from gps_agent_pkg.msg import TrialCommand, SampleResult, PositionCommand, \
         RelaxCommand, DataRequest, TfActionCommand, TfObsData
-from gps.algorithm.policy.tf_policy import TfPolicy
+try:
+    from gps.algorithm.policy.tf_policy import TfPolicy
+except ImportError:  # user does not have tf installed.
+    TfPolicy = None
 
 
 
@@ -144,8 +147,9 @@ class AgentROS(Agent):
         Returns:
             sample: A Sample object.
         """
-        if isinstance(policy, TfPolicy):
-            self._init_tf(policy.dU)
+        if TfPolicy is not None:  # user has tf installed.
+            if isinstance(policy, TfPolicy):
+                self._init_tf(policy.dU)
 
         self.reset(condition)
         # Generate noise.
@@ -211,8 +215,8 @@ class AgentROS(Agent):
         return policy.act(None, obs, None, None)
 
     def _tf_callback(self, message):
-            self._tf_subscriber_msg = message
-            self.observations_stale = False
+        self._tf_subscriber_msg = message
+        self.observations_stale = False
 
     def _tf_publish(self, pub_msg):
         """ Publish a message without waiting for response. """

@@ -24,7 +24,7 @@ class TfPolicy(Policy):
         self.obs_tensor = obs_tensor
         self.act_op = act_op
         self.sess = sess
-        self.device_string = device_string  # is it even worth running this on the gpu? Won't comm time dominate?
+        self.device_string = device_string
         self.chol_pol_covar = np.diag(np.sqrt(var))
         self.scale = None  # must be set from elsewhere based on observations
         self.bias = None
