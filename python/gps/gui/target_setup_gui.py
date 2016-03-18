@@ -23,6 +23,9 @@ Image Visualizer
 
 
 import subprocess
+import signal
+import os
+DEVNULL = open(os.devnull, 'wb')
 
 import numpy as np
 
@@ -262,13 +265,15 @@ class TargetSetupGUI(object):
     def mannequin_mode(self, event=None):
         if not self._mannequin_mode:
             self.set_action_status_message('mannequin_mode', 'requested')
-            subprocess.call(['roslaunch', 'pr2_mannequin_mode', 'pr2_mannequin_mode.launch'])
+            subprocess.Popen(['rosrun', 'pr2_controller_manager', 'pr2_controller_manager', 'stop', 'GPSPR2Plugin'], stdout=DEVNULL)
+            self._mm_process = subprocess.Popen(['roslaunch', 'pr2_mannequin_mode', 'pr2_mannequin_mode.launch'], stdout=DEVNULL)
             self._mannequin_mode = True
             self.set_action_status_message('mannequin_mode', 'completed',
                     message='mannequin mode toggled on')
         else:
             self.set_action_status_message('mannequin_mode', 'requested')
-            subprocess.call(['roslaunch', 'gps_agent_pkg', 'pr2_real.launch'])
+            self._mm_process.send_signal(signal.SIGINT)
+            subprocess.Popen(['rosrun', 'pr2_controller_manager', 'pr2_controller_manager', 'start', 'GPSPR2Plugin'], stdout=DEVNULL)
             self._mannequin_mode = False
             self.set_action_status_message('mannequin_mode', 'completed',
                     message='mannequin mode toggled off')
