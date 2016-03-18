@@ -116,7 +116,7 @@ config = {
     'verbose_trials': 5,
     'common': common,
     'agent': agent,
-    'gui_on': False,
+    'gui_on': True,
     'algorithm': algorithm,
 }
 
