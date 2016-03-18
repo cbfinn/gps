@@ -175,13 +175,15 @@ class AgentROS(Agent):
             return sample
         else:
             self._trial_service.publish(trial_command)
-            sample_mag = self.run_trial_tf(policy, time_to_run=self._hyperparams['trial_timeout'])
-            sample = msg_to_sample(sample_mag, self)
+            sample_msg = self.run_trial_tf(policy, time_to_run=self._hyperparams['trial_timeout'])
+            sample = msg_to_sample(sample_msg, self)
             if save:
                 self._samples[condition].append(sample)
             return sample
 
     def run_trial_tf(self, policy, time_to_run=5):
+        """ Run an async controller from a policy. The async controller receives observations from ROS subscribers
+         and then uses them to publish actions."""
         should_stop = False
         consecutive_failures = 0
         start_time = time.time()
@@ -199,6 +201,7 @@ class AgentROS(Agent):
                 rospy.sleep(0.01)
                 consecutive_failures += 1
                 if time.time() - start_time > time_to_run and consecutive_failures > 5:
+                    # we only stop when we have run for the trial time and are no longer receiving obs.
                     should_stop = True
         rospy.sleep(0.25)  # wait for finished trial to come in.
         result = self._trial_service._subscriber_msg
@@ -219,11 +222,11 @@ class AgentROS(Agent):
         self._tf_subscriber_msg = None
         self.observations_stale = True
         self.current_action_id = 1
-        self.dU = dU  # how to I set this??
+        self.dU = dU
         if self.use_tf is False:  # init pub and sub if this init has not been called before.
             self._pub = rospy.Publisher('/gps_controller_sent_robot_action_tf', TfActionCommand)
             self._sub = rospy.Subscriber('/gps_obs_tf', TfObsData, self._tf_callback)
-            r = rospy.Rate(0.5)
+            r = rospy.Rate(0.5)  # wait for publisher/subscriber to kick on.
             r.sleep()
         self.use_tf = True
         self.observations_stale = True
