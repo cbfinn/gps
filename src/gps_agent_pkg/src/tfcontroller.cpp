@@ -25,9 +25,14 @@ void TfController::update_action_command(int id, const Eigen::VectorXd &command)
 
 void TfController::get_action(int t, const Eigen::VectorXd &X, const Eigen::VectorXd &obs, Eigen::VectorXd &U){
     if (is_configured_) {
-        if(last_command_id_acted_upon < last_command_id_received + 3){ //this would allow acting on stale actions...maybe a bad idea?
+        if(last_command_id_acted_upon < last_command_id_received){
             last_command_id_acted_upon = last_command_id_received;
+            failed_attempts = 0;
             U = last_action_command_received;
+        }
+        else if(failed_attempts < 3){ //this would allow acting on stale actions...maybe a bad idea?
+            U = last_action_command_received;
+            failed_attempts++;
         }
         else{
             ROS_FATAL("no new action command received. Can not act on stale actions.");
@@ -38,6 +43,13 @@ void TfController::get_action(int t, const Eigen::VectorXd &X, const Eigen::Vect
 // Configure the controller.
 void TfController::configure_controller(OptionsMap &options)
 {
+    last_command_id_received = 0;
+    last_command_id_acted_upon = 0;
+    failed_attempts = 0;
+    for (int i = 0; i < 7; ++i)
+    {
+        last_action_command_received[i] = 0;
+    }
     //Call superclass
     TrialController::configure_controller(options);
     ROS_INFO_STREAM("Set Tensorflow network parameters");

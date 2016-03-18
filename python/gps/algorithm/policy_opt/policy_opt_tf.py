@@ -103,7 +103,7 @@ class PolicyOptTf(PolicyOpt):
         # Fold weights into tgt_prc.
         tgt_prc = tgt_wt * tgt_prc
 
-        #TODO: Find entries with very low weights?
+        # TODO: Find entries with very low weights?
 
         # Normalize obs, but only compute normalzation at the beginning.
         if itr == 0 and inner_itr == 1:
@@ -164,7 +164,7 @@ class PolicyOptTf(PolicyOpt):
                 if self.policy.scale is not None and self.policy.bias is not None:
                     obs[n, :, :] = obs[n, :, :].dot(self.policy.scale) + self.policy.bias
         except AttributeError:
-            pass  #TODO: Should prob be called before update?
+            pass  # TODO: Should prob be called before update?
 
         output = np.zeros((N, T, dU))
 
@@ -185,22 +185,9 @@ class PolicyOptTf(PolicyOpt):
         """ Set the entropy regularization. """
         self._hyperparams['ent_reg'] = ent_reg
 
-    # For pickling.
-    def __getstate__(self):
-        #saver = tf.train.Saver()
-        #saver.save(self.sess, self.checkpoint_file)
-        #why does this break everything?
-        return {
-            'hyperparams': self._hyperparams,
-            'dO': self._dO,
-            'dU': self._dU,
-            'scale': self.policy.scale,
-            'bias': self.policy.bias,
-            'tf_iter': self.tf_iter,
-        }
-
-    def __auto_save_state__(self, pickle_hyperparams_path=None):
+    def auto_save_state(self, pickle_hyperparams_path=None):
         """ auto-pickle including hyper params. Useful for debugging. """
+
         saver = tf.train.Saver()
         saver.save(self.sess, self.checkpoint_file)
         return_dict = {
@@ -217,6 +204,17 @@ class PolicyOptTf(PolicyOpt):
             pickle_hyperparams_path = self.checkpoint_file + '_hyperparams'
         pickle.dump(return_dict, open(pickle_hyperparams_path, "wb"))
 
+    # For pickling.
+    def __getstate__(self):
+        return {
+            'hyperparams': self._hyperparams,
+            'dO': self._dO,
+            'dU': self._dU,
+            'scale': self.policy.scale,
+            'bias': self.policy.bias,
+            'tf_iter': self.tf_iter,
+        }
+
     # For unpickling.
     def __setstate__(self, state):
         from tensorflow.python.framework import ops
@@ -229,4 +227,3 @@ class PolicyOptTf(PolicyOpt):
         saver = tf.train.Saver()
         check_file = self.checkpoint_file
         saver.restore(self.sess, check_file)
-

@@ -68,7 +68,7 @@ class TfPolicy(Policy):
         from tensorflow.python.framework import ops
         ops.reset_default_graph()  # we need to destroy the default graph before re_init or checkpoint won't restore.
         pol_dict = pickle.load(open(policy_dict_path, "rb"))
-        tf_map = tf_generator(dim_input=pol_dict['deg_obs'], dim_output=pol_dict['deg_action'], batch_size=None)
+        tf_map = tf_generator(dim_input=pol_dict['deg_obs'], dim_output=pol_dict['deg_action'], batch_size=1)
 
         sess = tf.Session()
         init_op = tf.initialize_all_variables()
@@ -79,7 +79,7 @@ class TfPolicy(Policy):
 
         device_string = pol_dict['device_string']
 
-        cls_init = cls(tf_map.get_input_tensor(), tf_map.get_act_op(), np.zeros((1,)), sess, device_string)
+        cls_init = cls(tf_map.get_input_tensor(), tf_map.get_output_op(), np.zeros((1,)), sess, device_string)
         cls_init.chol_pol_covar = pol_dict['chol_pol_covar']
         return cls_init
 

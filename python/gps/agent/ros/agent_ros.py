@@ -12,7 +12,7 @@ from gps.agent.ros.ros_utils import ServiceEmulator, msg_to_sample, \
         policy_to_msg, tf_policy_to_action_msg, tf_obs_msg_to_numpy
 from gps.proto.gps_pb2 import TRIAL_ARM, AUXILIARY_ARM
 from gps_agent_pkg.msg import TrialCommand, SampleResult, PositionCommand, \
-        RelaxCommand, DataRequest, TfActionCommand
+        RelaxCommand, DataRequest, TfActionCommand, TfObsData
 from gps.algorithm.policy.tf_policy import TfPolicy
 
 
@@ -49,6 +49,7 @@ class AgentROS(Agent):
         r.sleep()
 
         self.use_tf = False
+        self.observations_stale = True
 
     def _init_pubs_and_subs(self):
         self._trial_service = ServiceEmulator(
@@ -173,7 +174,10 @@ class AgentROS(Agent):
                 self._samples[condition].append(sample)
             return sample
         else:
-            self._trial_service.publish(trial_command, timeout=self._hyperparams['trial_timeout'])
+            #action = np.zeros(self.dU)
+            #self._tf_publish(tf_policy_to_action_msg(self.dU, action, self.current_action_id))
+            #self._trial_service.publish(trial_command)
+            self.current_action_id += 1
             sample_mag = self.run_trial_tf(policy, time_to_run=self._hyperparams['trial_timeout'])
             sample = msg_to_sample(sample_mag)
             if save:
@@ -183,25 +187,21 @@ class AgentROS(Agent):
     def run_trial_tf(self, policy, time_to_run=5):
         should_stop = False
         start_time = time.time()
-        action = policy_to_msg(self.dU, np.zeros(self.dU), self.current_action_id)
-        self.current_action_id += 1
-        self._tf_publish(policy_to_msg(self.dU, action, self.current_action_id))
         while should_stop is False:
             current_time = time.time()
             if current_time - start_time > time_to_run:
-                    return self._trial_service._subscriber_message
+                    return self._trial_service._subscriber_message # the trial has completed. Here is its message.
             elif self.observations_stale is False:
-                last_obs = tf_obs_msg_to_numpy(self._subscriber_msg)
+                last_obs = tf_obs_msg_to_numpy(self._tf_subscriber_msg)
                 action = tf_policy_to_action_msg(self.dU, self._get_new_action(policy, last_obs),
                                                  self.current_action_id)
-                self._tf_publish(policy_to_msg(self.dU, action, self.current_action_id))
+                self._tf_publish(self._tf_action_to_message(self.dU, action, self.current_action_id))
                 self.observations_stale = True
                 self.current_action_id += 1
             else:
                 rospy.sleep(0.001)
 
     def _get_new_action(self, policy, obs):
-        self.current_action_id += 1
         return policy.act(None, obs, None, None)
 
     def _tf_callback(self, message):
@@ -215,11 +215,11 @@ class AgentROS(Agent):
     def _init_tf(self):
         self._tf_subscriber_msg = None
         self.observations_stale = True
-        self.current_action_id = 0
+        self.current_action_id = 1
         self.dU = 7  # how to I set this??
         if self.use_tf is False:  # init pub and sub if this init has not been called before.
             self._pub = rospy.Publisher('/gps_controller_sent_robot_action_tf', TfActionCommand)
-            self._sub = rospy.Subscriber('/gps_obs_tf', SampleResult, self._tf_callback)
+            self._sub = rospy.Subscriber('/gps_obs_tf', TfObsData, self._tf_callback)
             r = rospy.Rate(0.5)
             r.sleep()
         self.use_tf = True

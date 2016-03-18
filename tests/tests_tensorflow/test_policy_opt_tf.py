@@ -3,6 +3,7 @@ import os
 import os.path
 import sys
 import numpy as np
+import tensorflow as tf
 
 # Add gps/python to path so that imports work.
 gps_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'python'))
@@ -94,7 +95,7 @@ def test_auto_save_state():
     deg_obs = 100
     deg_action = 7
     policy_opt = PolicyOptTf(hyper_params, deg_obs, deg_action)
-    policy_opt.__auto_save_state__()
+    policy_opt.auto_save_state()
 
 
 def test_load_from_auto_save():
@@ -153,8 +154,6 @@ def test_policy_load():
 
 
 def test_euclidean_loss_layer():
-    import tensorflow as tf
-
     dim_output = 4
     batch_size = 3
     predicted_action = tf.placeholder("float", [None, dim_output], name='nn_input')
@@ -186,12 +185,12 @@ def test_euclidean_loss_layer():
 
 
 def test_policy_opt_live():
-    pwd = '/Users/TheMaster/Desktop/Current_Work/gps/tests/tests_tensorflow/'
-    obs = np.load(pwd + 'obs.npy')
-    tgt_mu = np.load(pwd + 'tgt_mu.npy')
-    tgt_prc = np.load(pwd + 'tgt_prc.npy')
-    scale = np.load(pwd + 'scale_npy.npy')
-    bias = np.load(pwd + 'bias_npy.npy')
+    test_dir = os.path.dirname(__file__) + '/test_data/'#'/Users/TheMaster/Desktop/Current_Work/gps/tests/tests_tensorflow/'
+    obs = np.load(test_dir + 'obs.npy')
+    tgt_mu = np.load(test_dir + 'tgt_mu.npy')
+    tgt_prc = np.load(test_dir + 'tgt_prc.npy')
+    scale = np.load(test_dir + 'scale_npy.npy')
+    bias = np.load(test_dir + 'bias_npy.npy')
     hyper_params = POLICY_OPT_TF
     deg_obs = 4
     deg_action = 2
@@ -215,26 +214,22 @@ def test_policy_opt_live():
                      policy.action_tensor: tgt_mu[idx_i],
                      policy.precision_tensor: tgt_prc[idx_i]}
         t = policy.sess.run(policy.act_op, feed_dict={policy.obs_tensor: np.expand_dims(obs[idx_i][0], 0)})
-        print t
         policy.solver(feed_dict, policy.sess)
-
-
-
 
 
 def main():
     print 'running tf policy opt tests'
-    #test_policy_opt_tf_init()
-    #test_policy_opt_tf_forward()
-    #test_policy_forward()
-    #test_policy_opt_backwards()
-    #test_pickle()
-    #test_unpickle()
-    #test_auto_save_state()
-    #test_load_from_auto_save()
-    #test_policy_save()
-    #test_policy_load()
-    #test_euclidean_loss_layer()
+    test_policy_opt_tf_init()
+    test_policy_opt_tf_forward()
+    test_policy_forward()
+    test_policy_opt_backwards()
+    test_pickle()
+    test_unpickle()
+    test_auto_save_state()
+    test_load_from_auto_save()
+    test_policy_save()
+    test_policy_load()
+    test_euclidean_loss_layer()
     test_policy_opt_live()
     print 'tf policy opt tests passed'
 

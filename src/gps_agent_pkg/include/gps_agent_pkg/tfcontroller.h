@@ -31,6 +31,7 @@ namespace gps_control
         virtual void publish_obs(Eigen::VectorXd obs, RobotPlugin *plugin);
         int last_command_id_received = 0;
         int last_command_id_acted_upon = 0;
+        int failed_attempts = 0;
         Eigen::VectorXd last_action_command_received;
     };
 
