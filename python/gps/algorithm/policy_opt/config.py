@@ -2,7 +2,6 @@
 from gps.algorithm.policy_opt.policy_opt_utils import construct_fc_network
 
 
-
 POLICY_OPT_CAFFE = {
     # Initialization.
     'init_var': 0.1,  # Initial policy variance.
@@ -24,6 +23,3 @@ POLICY_OPT_CAFFE = {
     'network_arch_params': {},  # Arguments to pass to method above.
     'weights_file_prefix': '',
 }
-
-
-
