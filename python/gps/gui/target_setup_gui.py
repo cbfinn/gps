@@ -21,14 +21,12 @@ Image Visualizer
     - create movie from image visualizations
 """
 
-
+import os
 import subprocess
 import signal
-import os
 DEVNULL = open(os.devnull, 'wb')
 
 import numpy as np
-
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
@@ -36,18 +34,23 @@ from gps.gui.config import config
 from gps.gui.action_panel import Action, ActionPanel
 from gps.gui.textbox import Textbox
 from gps.gui.image_visualizer import ImageVisualizer
-from gps.proto.gps_pb2 import END_EFFECTOR_POSITIONS, END_EFFECTOR_ROTATIONS, \
-        JOINT_ANGLES, JOINT_SPACE
-
 from gps.gui.util import load_pose_from_npz, load_data_from_npz, save_pose_to_npz, save_data_to_npz
+
 from gps.proto.gps_pb2 import END_EFFECTOR_POSITIONS, END_EFFECTOR_ROTATIONS, JOINT_ANGLES, TRIAL_ARM, AUXILIARY_ARM, TASK_SPACE, JOINT_SPACE
 
+import logging
+LOGGER = logging.getLogger(__name__)
+ros_enabled = False
 try:
-    import rospy
-    from gps.agent.ros.agent_ros import AgentROS
+    import rospkg
     from gps.agent.ros.ros_utils import TimeoutException
+
+    ros_enabled = True
 except ImportError as e:
-    print('Skipping ROS imports.')
+    LOGGER.debug('Import ROS failed: %s', e)
+except rospkg.common.ResourceNotFound as e:
+    LOGGER.debug('No gps_agent_pkg: %s', e)
+
 
 class TargetSetupGUI(object):
     """ Target setup GUI class. """

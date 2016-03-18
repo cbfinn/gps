@@ -1,11 +1,8 @@
 """ This file defines the real time plotter class. """
-import random
-import time
-
 import numpy as np
-
 import matplotlib.pylab as plt
 import matplotlib.gridspec as gridspec
+
 from gps.gui.util import buffered_axis_limits
 
 

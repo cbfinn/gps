@@ -1,8 +1,6 @@
 """ This file defines the action axis class. """
-import logging
 import itertools
 import numpy as np
-
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -10,13 +8,13 @@ from matplotlib.widgets import Button
 
 from gps.gui.config import config
 
-
+import logging
 LOGGER = logging.getLogger(__name__)
 ros_enabled = False
 try:
     import rospkg
-    import rospy
     import roslib
+    import rospy
     from sensor_msgs.msg import Joy
 
     roslib.load_manifest('gps_agent_pkg')

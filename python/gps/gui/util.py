@@ -1,6 +1,7 @@
 import os
 import numpy as np
 
+
 def buffered_axis_limits(amin, amax, buffer_factor=1.0):
     """_aax
     Increases the range (amin, amax) by buffer_factor on each side

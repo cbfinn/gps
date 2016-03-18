@@ -1,6 +1,4 @@
 """ This file defines the output axis. """
-import time
-
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
