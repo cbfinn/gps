@@ -23,6 +23,7 @@ with the robot.
 #include "gps_agent_pkg/DataRequest.h"
 #include "gps_agent_pkg/TfActionCommand.h"
 #include "gps_agent_pkg/TfObsData.h"
+#include "gps_agent_pkg/TfParams.h"
 #include "gps_agent_pkg/sensor.h"
 #include "gps_agent_pkg/controller.h"
 #include "gps_agent_pkg/positioncontroller.h"

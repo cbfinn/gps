@@ -91,7 +91,6 @@ void TrialController::reset(ros::Time time)
 }
 
 void TrialController::update_action_command(int id, const Eigen::VectorXd &command){
-
 }
 
 void TrialController::publish_obs(Eigen::VectorXd obs, RobotPlugin *plugin){

@@ -39,7 +39,7 @@ class PolicyOptTf(PolicyOpt):
         self.init_solver()
         self.var = self._hyperparams['init_var'] * np.ones(dU)
         self.sess = tf.Session()
-        self.policy = TfPolicy(self.obs_tensor, self.act_op, np.zeros(dU), self.sess, self.device_string)
+        self.policy = TfPolicy(dU, self.obs_tensor, self.act_op, np.zeros(dU), self.sess, self.device_string)
         init_op = tf.initialize_all_variables()
         self.sess.run(init_op)
 

@@ -6,6 +6,7 @@
 #include "gps_agent_pkg/trialcontroller.h"
 #include "gps_agent_pkg/LinGaussParams.h"
 #include "gps_agent_pkg/tfcontroller.h"
+#include "gps_agent_pkg/TfParams.h"
 #include "gps_agent_pkg/ControllerParams.h"
 #include "gps_agent_pkg/util.h"
 #include "gps/proto/gps.pb.h"
@@ -424,6 +425,10 @@ void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::C
 #endif
     else if (msg->controller.controller_to_execute == gps::TF_CONTROLLER) {
         trial_controller_.reset(new TfController());
+        controller_params["T"] = (int)msg->T;
+        gps_agent_pkg::TfParams tfparams = msg->controller.tf;
+        int dU = (int) tfparams.dU;
+        controller_params["dU"] = dU;
         trial_controller_-> configure_controller(controller_params);
     }
     else{
@@ -549,23 +554,30 @@ void RobotPlugin::get_fk_solver(boost::shared_ptr<KDL::ChainFkSolverPos> &fk_sol
 
 void RobotPlugin::tf_robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg){
 
-    // Unpack the action vector
-    int idx = 0;
-    int dU = msg->dU;
-    Eigen::VectorXd latest_action_command;
-    for (int i = 0; i < dU; ++i)
-    {
-        latest_action_command[i] = msg->action[i];
-        idx++;
+    bool trial_init = trial_controller_ != NULL && trial_controller_->is_configured();
+    if(trial_init){
+        // Unpack the action vector
+        int idx = 0;
+        int dU = (int)msg->dU;
+        Eigen::VectorXd latest_action_command;
+        latest_action_command.resize(dU);
+        for (int i = 0; i < dU; ++i)
+        {
+            latest_action_command[i] = msg->action[i];
+            idx++;
+        }
+        int last_command_id_received = msg ->id;
+        trial_controller_->update_action_command(last_command_id_received, latest_action_command);
+
     }
-    int last_command_id_received = msg ->id;
-    trial_controller_->update_action_command(last_command_id_received, latest_action_command);
+
 }
 
 
 
 void RobotPlugin::tf_publish_obs(Eigen::VectorXd obs){
     while(!tf_publisher_->trylock());
+    tf_publisher_->msg_.data.resize(obs.size());
     for(int i=0; i<obs.size(); i++) {
         tf_publisher_->msg_.data[i] = obs[i];
     }

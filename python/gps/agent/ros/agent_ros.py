@@ -145,7 +145,7 @@ class AgentROS(Agent):
             sample: A Sample object.
         """
         if isinstance(policy, TfPolicy):
-            self._init_tf()
+            self._init_tf(policy.dU)
 
         self.reset(condition)
         # Generate noise.
@@ -174,32 +174,35 @@ class AgentROS(Agent):
                 self._samples[condition].append(sample)
             return sample
         else:
-            #action = np.zeros(self.dU)
-            #self._tf_publish(tf_policy_to_action_msg(self.dU, action, self.current_action_id))
-            #self._trial_service.publish(trial_command)
-            self.current_action_id += 1
+            self._trial_service.publish(trial_command)
             sample_mag = self.run_trial_tf(policy, time_to_run=self._hyperparams['trial_timeout'])
-            sample = msg_to_sample(sample_mag)
+            sample = msg_to_sample(sample_mag, self)
             if save:
                 self._samples[condition].append(sample)
-                return sample
+            return sample
 
     def run_trial_tf(self, policy, time_to_run=5):
         should_stop = False
+        consecutive_failures = 0
         start_time = time.time()
         while should_stop is False:
-            current_time = time.time()
-            if current_time - start_time > time_to_run:
-                    return self._trial_service._subscriber_message # the trial has completed. Here is its message.
-            elif self.observations_stale is False:
+            if self.observations_stale is False:
+                consecutive_failures = 0
                 last_obs = tf_obs_msg_to_numpy(self._tf_subscriber_msg)
-                action = tf_policy_to_action_msg(self.dU, self._get_new_action(policy, last_obs),
-                                                 self.current_action_id)
-                self._tf_publish(self._tf_action_to_message(self.dU, action, self.current_action_id))
+                action_msg = tf_policy_to_action_msg(self.dU,
+                                                     self._get_new_action(policy, last_obs),
+                                                     self.current_action_id)
+                self._tf_publish(action_msg)
                 self.observations_stale = True
                 self.current_action_id += 1
             else:
-                rospy.sleep(0.001)
+                rospy.sleep(0.01)
+                consecutive_failures += 1
+                if time.time() - start_time > time_to_run and consecutive_failures > 5:
+                    should_stop = True
+        rospy.sleep(0.25)  # wait for finished trial to come in.
+        result = self._trial_service._subscriber_msg
+        return result  # the trial has completed. Here is its message.
 
     def _get_new_action(self, policy, obs):
         return policy.act(None, obs, None, None)
@@ -212,11 +215,11 @@ class AgentROS(Agent):
         """ Publish a message without waiting for response. """
         self._pub.publish(pub_msg)
 
-    def _init_tf(self):
+    def _init_tf(self, dU):
         self._tf_subscriber_msg = None
         self.observations_stale = True
         self.current_action_id = 1
-        self.dU = 7  # how to I set this??
+        self.dU = dU  # how to I set this??
         if self.use_tf is False:  # init pub and sub if this init has not been called before.
             self._pub = rospy.Publisher('/gps_controller_sent_robot_action_tf', TfActionCommand)
             self._sub = rospy.Subscriber('/gps_obs_tf', TfObsData, self._tf_callback)

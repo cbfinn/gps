@@ -18,13 +18,14 @@ class TfPolicy(Policy):
         sess: tf session.
         device_string: tf device string for running on either gpu or cpu.
     """
-    def __init__(self, obs_tensor, act_op, var, sess, device_string):
+    def __init__(self, dU, obs_tensor, act_op, var, sess, device_string):
         Policy.__init__(self)
-        self.chol_pol_covar = np.diag(np.sqrt(var))
+        self.dU = dU
         self.obs_tensor = obs_tensor
         self.act_op = act_op
         self.sess = sess
         self.device_string = device_string  # is it even worth running this on the gpu? Won't comm time dominate?
+        self.chol_pol_covar = np.diag(np.sqrt(var))
         self.scale = None  # must be set from elsewhere based on observations
         self.bias = None
 
@@ -79,7 +80,8 @@ class TfPolicy(Policy):
 
         device_string = pol_dict['device_string']
 
-        cls_init = cls(tf_map.get_input_tensor(), tf_map.get_output_op(), np.zeros((1,)), sess, device_string)
+        cls_init = cls(pol_dict['deg_action'], tf_map.get_input_tensor(), tf_map.get_output_op(), np.zeros((1,)),
+                       sess, device_string)
         cls_init.chol_pol_covar = pol_dict['chol_pol_covar']
         return cls_init
 
