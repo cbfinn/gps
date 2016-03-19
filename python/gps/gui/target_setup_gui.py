@@ -1,26 +1,21 @@
 """
-~~~ GUI Specifications ~~~
-Action Axis
-    - previous target number, next target number
-    - previous actuator type, next actuator type
-    - set initial position, set target position
-    - set initial features, set target features
-    - move to initial position, move to target position
-    - relax controller, mannequin mode
+Target Setup GUI
 
-Data Plotter
-    - algorithm training costs
-    - losses of feature points / end effector points
-    - joint states, feature point states, etc.
-    - save tracked data to file
+The Target Setup GUI is used to interact with the GPS algorithm before training.
+It contains the below four functionalities:
 
-Image Visualizer
-    - real-time image and feature points visualization
-    - overlay of initial and target feature points
-    - visualize hidden states?
-    - create movie from image visualizations
+Action Panel                contains buttons for:
+                            - switching target numbers,
+                            - switching actuator types
+                            - setting initial/target positions
+                            - setting initial/target images
+                            - moving to initial/target positions
+Action Status Textbox       displays action status
+Targets Textbox             displays targets values for current target/actuator
+Image Visualizer            displays images received from a rostopic
+
+For more detailed documentation, visit: rll.berkeley.edu/gps/gui
 """
-
 import os
 import subprocess
 import signal
@@ -89,10 +84,10 @@ class TargetSetupGUI(object):
             Action('sii', 'set_initial_image',    self.set_initial_image,    axis_pos=6),
             Action('sti', 'set_target_image',     self.set_target_image,     axis_pos=7),
 
-            Action('mti', 'move_to_initial', self.move_to_initial, axis_pos=8),
-            Action('mtt', 'move_to_target', self.move_to_target, axis_pos=9),
-            Action('rc', 'relax_controller', self.relax_controller, axis_pos=10),
-            Action('mm', 'mannequin_mode', self.mannequin_mode, axis_pos=11),
+            Action('mti', 'move_to_initial',  self.move_to_initial,  axis_pos=8),
+            Action('mtt', 'move_to_target',   self.move_to_target,   axis_pos=9),
+            Action('rc',  'relax_controller', self.relax_controller, axis_pos=10),
+            Action('mm',  'mannequin_mode',   self.mannequin_mode,   axis_pos=11),
         ]
 
         # GUI Components.
@@ -107,7 +102,7 @@ class TargetSetupGUI(object):
 
         # Assign GUI component locations.
         self._gs = gridspec.GridSpec(4, 4)
-        self._gs_action_panel               = self._gs[0:1, 0:4]
+        self._gs_action_panel                   = self._gs[0:1, 0:4]
         if config['display_images']:
             self._gs_target_output              = self._gs[1:3, 0:2]
             self._gs_initial_image_visualizer   = self._gs[3:4, 0:1]
@@ -138,7 +133,6 @@ class TargetSetupGUI(object):
         self._fig.canvas.draw()
 
     # Target Setup Functions.
-    # TODO: Add docstrings to these methods.
     def prev_target_number(self, event=None):
         self.set_action_status_message('prev_target_number', 'requested')
         self._target_number = (self._target_number - 1) % self._num_targets
@@ -326,6 +320,10 @@ class TargetSetupGUI(object):
         self._action_output.set_bgcolor(color, alpha)
 
     def reload_positions(self):
+        """
+        Reloads the initial/target positions and images.
+        This is called after the target number of actuator type have changed.
+        """
         self._initial_position = load_pose_from_npz(self._target_filename, self._actuator_name,
                 str(self._target_number), 'initial')
         self._target_position  = load_pose_from_npz(self._target_filename, self._actuator_name,

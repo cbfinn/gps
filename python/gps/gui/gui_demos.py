@@ -1,3 +1,15 @@
+"""
+GUI Demos
+
+Demos how to use the six different GUI elements:
+
+Action Panel
+Textbox
+Image Visualizer
+Realtime Plotter
+Mean Plotter
+Plotter 3D
+"""
 import time
 import random
 import threading
@@ -21,11 +33,11 @@ def run_demo(demo_func):
     demo_thread.daemon = True
     demo_thread.start()
 
+# Initialize Figure
 fig = plt.figure()
 gs = gridspec.GridSpec(2, 3)
 
-
-# Action Axis
+# Action Panel
 number = 0
 def plus_1(event=None): global number; number += 1; print(number)
 def plus_2(event=None): global number; number += 2; print(number)
@@ -38,7 +50,7 @@ actions_arr = [
 ]
 action_panel = ActionPanel(fig, gs[0], 3, 1, actions_arr)
 
-# Output Axis
+# Textbox
 def demo_textbox():
     max_i = 20
     for i in range(max_i):
@@ -64,7 +76,7 @@ def demo_image_visualizer():
 image_visualizer = ImageVisualizer(fig, gs[2], cropsize=(3, 3))
 run_demo(demo_image_visualizer)
 
-# Real Time Plotter
+# Realtime Plotter
 def demo_realtime_plotter():
     i, j = 0, 0
     while True:
@@ -108,5 +120,5 @@ def demo_plotter_3d():
 plotter_3d = Plotter3D(fig, gs[5], num_plots=1, rows=1, cols=1)
 run_demo(demo_plotter_3d)
 
-
+# Show Figure
 plt.show()
