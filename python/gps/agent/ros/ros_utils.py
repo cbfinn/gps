@@ -7,9 +7,7 @@ from gps.algorithm.policy.lin_gauss_policy import LinearGaussianPolicy
 from gps_agent_pkg.msg import ControllerParams, LinGaussParams, TfParams, CaffeParams, TfActionCommand
 from gps.sample.sample import Sample
 from gps.proto.gps_pb2 import LIN_GAUSS_CONTROLLER, CAFFE_CONTROLLER, TF_CONTROLLER
-from gps.algorithm.policy.tf_policy import TfPolicy
 import logging
-
 LOGGER = logging.getLogger(__name__)
 try:
     from gps.algorithm.policy.caffe_policy import CaffePolicy
@@ -17,7 +15,10 @@ try:
 except ImportError as e:
     NO_CAFFE = True
     LOGGER.info("Caffe not imported")
-
+try:
+    from gps.algorithm.policy.tf_policy import TfPolicy
+except ImportError:
+    TfPolicy = None
 
 
 def msg_to_sample(ros_msg, agent):

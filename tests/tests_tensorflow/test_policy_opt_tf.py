@@ -1,4 +1,4 @@
-""" This file defines policy optimization for a tensorflow policy. """
+""" This file defines tests for tensorflow policy optimization. """
 import os
 import os.path
 import sys

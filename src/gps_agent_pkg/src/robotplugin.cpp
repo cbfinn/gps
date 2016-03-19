@@ -549,9 +549,6 @@ void RobotPlugin::get_fk_solver(boost::shared_ptr<KDL::ChainFkSolverPos> &fk_sol
     }
 }
 
-
-
-
 void RobotPlugin::tf_robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg){
 
     bool trial_init = trial_controller_ != NULL && trial_controller_->is_configured();
@@ -572,8 +569,6 @@ void RobotPlugin::tf_robot_action_command_callback(const gps_agent_pkg::TfAction
     }
 
 }
-
-
 
 void RobotPlugin::tf_publish_obs(Eigen::VectorXd obs){
     while(!tf_publisher_->trylock());
