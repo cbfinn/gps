@@ -471,7 +471,6 @@ void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::C
     controller_initialized_ = true;
 }
 
-
 void RobotPlugin::test_callback(const std_msgs::Empty::ConstPtr& msg){
     ROS_INFO_STREAM("Received test message");
 }
