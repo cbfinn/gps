@@ -13,7 +13,6 @@ TfController::TfController()
 
 }
 
-
 // Destructor.
 TfController::~TfController() {
 }
