@@ -1,0 +1,16 @@
+sudo apt-get remove ros-*
+sudo apt-get remove gazebo4
+
+sudo apt-get install ros-indigo-gazebo-ros-pkgs ros-indigo-gazebo-ros-control
+sudo apt-get install libsdformat1
+sudo apt-get install gazebo2
+sudo apt-get install ros-indigo-pr2-gazebo
+sudo apt-get install ros-indigo-pr2-apps
+sudo apt-get install ros-indigo-pr2-teleop
+sudo apt-get install ros-indigo-image-view
+
+
+
+sudo apt-get install ros-indigo-convex-decomposition
+sudo apt-get install ros-indigo-ivcon
+export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:/home/bradly/gps/gps:/home/bradly/gps/gps/src/gps_agent_pkg
