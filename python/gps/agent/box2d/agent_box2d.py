@@ -36,8 +36,9 @@ class AgentBox2D(Agent):
         Helper method for handling setup of the Box2D world.
         """
         self.x0 = self._hyperparams["x0"]
-        self._world = world(self.x0[0], target)
-        self._world.run()
+        self._worlds = [world(self.x0[i], target)
+                        for i in range(self._hyperparams['conditions'])]
+
 
     def sample(self, policy, condition, verbose=False, save=True):
         """
@@ -49,8 +50,9 @@ class AgentBox2D(Agent):
             condition (int): Which condition setup to run.
             verbose (boolean): whether or not to plot the trial (not used here)
         """
-        self._world.reset_world()
-        b2d_X = self._world.get_state()
+        self._worlds[condition].run()
+        self._worlds[condition].reset_world()
+        b2d_X = self._worlds[condition].get_state()
         new_sample = self._init_sample(b2d_X)
         U = np.zeros([self.T, self.dU])
         noise = generate_noise(self.T, self.dU, self._hyperparams)
@@ -60,8 +62,8 @@ class AgentBox2D(Agent):
             U[t, :] = policy.act(X_t, obs_t, t, noise[t, :])
             if (t+1) < self.T:
                 for _ in range(self._hyperparams['substeps']):
-                    self._world.run_next(U[t, :])
-                b2d_X = self._world.get_state()
+                    self._worlds[condition].run_next(U[t, :])
+                b2d_X = self._worlds[condition].get_state()
                 self._set_sample(new_sample, b2d_X, t)
         new_sample.set(ACTION, U)
         if save:
