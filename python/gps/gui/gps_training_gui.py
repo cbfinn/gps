@@ -32,7 +32,7 @@ from gps.gui.util import buffered_axis_limits, load_data_from_npz
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 
 class GPSTrainingGUI(object):
-    """ GPS Training GUI class. """
+
     def __init__(self, hyperparams):
         self._hyperparams = hyperparams
         self._log_filename = self._hyperparams['log_filename']
@@ -144,7 +144,7 @@ class GPSTrainingGUI(object):
         """
         Completes the current request, after it is first read by gps_main.
         Displays visual confirmation that the request was processed,
-        displays any error messages, and then contains into mode 'run' or 'wait'.
+        displays any error messages, and then switches into mode 'run' or 'wait'.
         """
         self.mode = 'process'
         self.set_action_text(self.request + ' processed')

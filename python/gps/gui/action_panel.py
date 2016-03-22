@@ -1,4 +1,10 @@
-""" This file defines the action axis class. """
+"""
+Action Panel
+
+The Action Panel contains a set of Action's which can be activated through
+one of three methods: a clickable button, a keyboard shortcut, or a ps3
+controller binding (with ps3 controller button presses read through ROS).
+"""
 import itertools
 import numpy as np
 import matplotlib.gridspec as gridspec
@@ -26,6 +32,11 @@ except rospkg.common.ResourceNotFound as e:
 
 
 class Action:
+    """
+    An action is defined by a key (used to identify it), a name, and a function.
+    It is called by placing it on an matplotlib Axis object (as specified by
+    axis_pos), giving it a keyboard_binding, or giving it a ps3_binding.
+    """
     def __init__(self, key, name, func, axis_pos=None, keyboard_binding=None, ps3_binding=None):
         self._key = key
         self._name = name
@@ -35,9 +46,10 @@ class Action:
         self._pb = ps3_binding
 
 class ActionPanel:
+
     def __init__(self, fig, gs, rows, cols, actions_arr):
         """
-        Constructs an ActionPanel assuming actions is a dictionary of
+        Constructs an ActionPanel assuming actions_arr is an array of
         fully initialized actions.
         Each action must have: key, name, func.
         Each action can have: axis_pos, keyboard_binding, ps3_binding.
@@ -48,6 +60,7 @@ class ActionPanel:
         self._gs = gridspec.GridSpecFromSubplotSpec(rows, cols, subplot_spec=gs)
         self._axarr = [plt.subplot(self._gs[i]) for i in range(len(actions_arr))]
         
+        # Read keyboard_bindings and ps3_bindings from config
         self._actions = {action._key: action for action in actions_arr}
         for key, action in self._actions.iteritems():
             if key in config['keyboard_bindings']:
@@ -61,7 +74,6 @@ class ActionPanel:
             self._ps3_count = 0
             rospy.Subscriber(config['ps3_topic'], Joy, self.ps3_callback)
 
-    #TODO: Docstrings here.
     def _initialize_buttons(self):
         self._buttons = {}
         for key, action in self._actions.iteritems():

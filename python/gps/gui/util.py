@@ -3,7 +3,7 @@ import numpy as np
 
 
 def buffered_axis_limits(amin, amax, buffer_factor=1.0):
-    """_aax
+    """
     Increases the range (amin, amax) by buffer_factor on each side
     and then rounds to precision of 1/10th min or max.
     Used for generating good plotting limits.
@@ -19,8 +19,13 @@ def buffered_axis_limits(amin, amax, buffer_factor=1.0):
     amax = np.ceil (amax/precision) * precision
     return (amin, amax)
 
-def save_pose_to_npz(filename, actuator_name, target_number, data_time, values):
-    ja, ee_pos, ee_rot = values
+def save_pose_to_npz(filename, actuator_name, target_number, data_time, pose):
+    """
+    Saves a pose (i.e. a joint angle, end effector position, and end effector
+    rotation tuple) for the specified actuator name (TRIAL_ARM, AUXILIARY ARM, 
+    etc.), target number (0-9), and data_time (initial or final).
+    """
+    ja, ee_pos, ee_rot = pose
     save_data_to_npz(filename, actuator_name, target_number, data_time,
                      'ja', ja)
     save_data_to_npz(filename, actuator_name, target_number, data_time,
@@ -56,6 +61,11 @@ def save_to_npz(filename, key, value):
 
 
 def load_pose_from_npz(filename, actuator_name, target_number, data_time):
+    """
+    Loads a pose (i.e. a joint angle, end effector position, and end effector
+    rotation tuple) for the specified actuator name (TRIAL_ARM, AUXILIARY ARM, 
+    etc.), target number (0-9), and data_time (initial or final).
+    """
     ja = load_data_from_npz(filename, actuator_name, target_number, data_time,
                             'ja', default=np.zeros(7))
     ee_pos = load_data_from_npz(filename, actuator_name, target_number,
@@ -77,7 +87,7 @@ def load_data_from_npz(filename, actuator_name, target_number, data_time,
 
 def load_from_npz(filename, key, default=None):
     """
-    Load a (key,value) pair from a npz dictionary.
+    Load a (key,value) pair from a npz dictionary. Returns default if failed.
     Args:
         filename: The file containing the npz dictionary.
         key: The key (string).
@@ -87,6 +97,5 @@ def load_from_npz(filename, key, default=None):
         with np.load(filename) as f:
             return f[key]
     except (IOError, KeyError) as e:
-        # print 'error loading %s from %s' % (key, filename), e
         pass
     return default

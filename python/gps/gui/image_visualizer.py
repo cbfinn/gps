@@ -1,4 +1,14 @@
-""" This file defines the image visualizer class. """
+"""
+Image Visualizer
+
+The Image Visualizer class expects to be given images in real time (via the
+update function), and displays those images onto the screen. Optionally,
+images can be supplied via a rostopic.
+
+The Image Visualizer can also overlay an initial image or target image on top 
+of the realtime images. This is used for resetting the task space after each
+sample if the robot disturbed it during sampling.
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -24,12 +34,13 @@ except rospkg.common.ResourceNotFound as e:
 
 
 class ImageVisualizer(object):
-    """
-    If rostopic is given to constructor, then this will automatically
-    update with rostopic image. Else, the update method must be manually
-    called.
-    """
+
     def __init__(self, fig, gs, cropsize=None, rostopic=None, show_overlay_buttons=False):
+        """
+        If rostopic is given to this constructor, then the image visualizer will 
+        automatically update with rostopic image. Else, the update method must 
+        be manually called to supply images.
+        """
         # Real-time image
         self._t = 0
         self._data = []

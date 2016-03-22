@@ -1,4 +1,10 @@
-""" This file defines the real time plotter class. """
+"""
+Realtime Plotter
+
+The Realtime Plotter expects to be constantly given values to plot in realtime.
+It assumes the values are an array and plots different indices at different
+colors according to the spectral colormap.
+"""
 import numpy as np
 import matplotlib.pylab as plt
 import matplotlib.gridspec as gridspec
@@ -7,7 +13,7 @@ from gps.gui.util import buffered_axis_limits
 
 
 class RealtimePlotter(object):
-    """ Real time plotter class. """
+
     def __init__(self, fig, gs, time_window=500, labels=None, alphas=None):
         self._fig = fig
         self._gs = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=gs)
@@ -25,7 +31,9 @@ class RealtimePlotter(object):
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
 
     def init(self, data_len):
-        """ Initialize plots. """
+        """
+        Initialize plots based off the length of the data array.
+        """
         self._t = 0
         self._data_len = data_len
         self._data = np.empty((0, data_len))
@@ -45,9 +53,10 @@ class RealtimePlotter(object):
 
         self._init = True
 
-    #TODO: Any possible abstraction with MeanPlotter.update?
     def update(self, x):
-        """ Update plots. """
+        """
+        Update the plots with new data x. Assumes x is a one-dimensional array.
+        """
         x = np.ravel([x])
 
         if not self._init:

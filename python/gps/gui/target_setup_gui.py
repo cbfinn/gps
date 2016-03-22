@@ -48,7 +48,7 @@ except rospkg.common.ResourceNotFound as e:
 
 
 class TargetSetupGUI(object):
-    """ Target setup GUI class. """
+
     def __init__(self, hyperparams, agent):
         self._hyperparams = hyperparams
         self._agent = agent

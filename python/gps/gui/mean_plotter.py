@@ -1,4 +1,12 @@
-""" This file defines a mean data plotter. """
+"""
+Mean Plotter
+
+The Mean Plotter plots data along with its mean. The data is plotted as dots
+whereas the mean is a connected line.
+
+This is used to plot the mean cost after each iteration, along with the initial
+costs for each sample and condition.
+"""
 import numpy as np
 import matplotlib.pylab as plt
 import matplotlib.gridspec as gridspec
@@ -7,6 +15,7 @@ from gps.gui.util import buffered_axis_limits
 
 
 class MeanPlotter:
+
     def __init__(self, fig, gs, label='mean', color='black', alpha=1.0, min_itr=10):
         self._fig = fig
         self._gs = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=gs)
@@ -33,7 +42,9 @@ class MeanPlotter:
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
 
     def init(self, data_len):
-        """ Initialize plots. """
+        """
+        Initialize plots based off the length of the data array.
+        """
         self._t = 0
         self._data_len = data_len
         self._data = np.empty((data_len, 0))
@@ -45,7 +56,9 @@ class MeanPlotter:
         self._init = True
 
     def update(self, x, t=None):
-        """ Update plots. """
+        """
+        Update the plots with new data x. Assumes x is a one-dimensional array.
+        """
         x = np.ravel([x])
 
         if not self._init:
