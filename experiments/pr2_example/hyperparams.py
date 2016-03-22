@@ -193,4 +193,4 @@ config = {
     'num_samples': 5,
 }
 
-common['info'] = generate_config_info(config)
+common['info'] = generate_experiment_info(config)

@@ -27,7 +27,7 @@ from gps.gui.mean_plotter import MeanPlotter
 from gps.gui.plotter_3d import Plotter3D
 from gps.gui.image_visualizer import ImageVisualizer
 from gps.gui.util import buffered_axis_limits, load_data_from_npz
- 
+
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 
 class GPSTrainingGUI(object):
@@ -82,7 +82,7 @@ class GPSTrainingGUI(object):
         self._gs_status_output          = self._gs[3:4,  0:4]
         self._gs_cost_plotter           = self._gs[2:4,  4:8]
         self._gs_algthm_output          = self._gs[4:8,  0:8]
-        if config['display_images']:
+        if config['image_on']:
             self._gs_traj_visualizer    = self._gs[8:16, 0:4]
             self._gs_image_visualizer   = self._gs[8:16, 4:8]
         else:
@@ -101,7 +101,7 @@ class GPSTrainingGUI(object):
                 color='blue', label='mean cost')
         self._traj_visualizer = Plotter3D(self._fig, self._gs_traj_visualizer,
                 num_plots=self._hyperparams['conditions'])
-        if config['display_images']:
+        if config['image_on']:
             self._image_visualizer = ImageVisualizer(self._fig,
                     self._gs_image_visualizer, cropsize=config['image_size'],
                     rostopic=config['image_topic'], show_overlay_buttons=True)
@@ -217,7 +217,7 @@ class GPSTrainingGUI(object):
         Sets up the image visualizer with what images to overlay if
         "overlay_initial_image" or "overlay_target_image" is pressed.
         """
-        if not config['display_images'] or not self._target_filename:
+        if not config['image_on'] or not self._target_filename:
             return
         initial_image = load_data_from_npz(self._target_filename,
                 config['image_overlay_actuator'], str(condition),

@@ -72,23 +72,27 @@ for key, value in list(inverted_ps3_bindings.iteritems()):
         permuted_inverted_ps3_bindings[permuted_key] = value
 
 config = {
+    # Keyboard shortcuts bindings
+    'keyboard_bindings': keyboard_bindings,
+    'inverted_keyboard_bindings': inverted_keyboard_bindings,
+
+    # PS3 controller bindings
     'ps3_topic': 'joy',
     'ps3_process_rate': 20,  # Only process 1/20 of PS3 messages.
     'ps3_button': PS3_BUTTON,
     'inverted_ps3_button': INVERTED_PS3_BUTTON,
-
-    'keyboard_bindings': keyboard_bindings,
-    'inverted_keyboard_bindings': inverted_keyboard_bindings,
     'ps3_bindings': ps3_bindings,
     'inverted_ps3_bindings': inverted_ps3_bindings,
     'permuted_inverted_ps3_bindings': permuted_inverted_ps3_bindings,
 
-    'display_images': True,
+    # Images
+    'image_on': True,
     'image_topic': '/camera/rgb/image_color',
     'image_size': (240, 240),
     'image_overlay_actuator': 'trial_arm',
     'image_overlay_alpha': 0.3,
 
+    # Both GUIs
     'figsize': (12, 12),
 
     # Target Setup
@@ -99,6 +103,28 @@ config = {
 
     # GPS Training
     'initial_mode': 'run',
-    'algthm_output_max_display_size': 15,
     'algthm_output_fontsize': 10,
+    'algthm_output_max_display_size': 15,
 }
+
+def generate_experiment_info(config):
+    """
+    Generate experiment info, to be displayed by GPS Trainig GUI.
+    Assumes config is the config created in hyperparams.py
+    """
+    common = config['common']
+    algorithm = config['algorithm']
+
+    algorithm_cost_type = algorithm['cost']['type'].__name__
+    if (algorithm_cost_type) == 'CostSum':
+        algorithm_cost_type += '(%s)' % ', '.join(
+                map(lambda cost: cost['type'].__name__, algorithm['cost']['costs']))
+    return (
+        'exp_name:   ' + str(common['experiment_name'])              + '\n' +
+        'alg_type:   ' + str(algorithm['type'].__name__)             + '\n' +
+        'alg_dyn:    ' + str(algorithm['dynamics']['type'].__name__) + '\n' +
+        'alg_cost:   ' + str(algorithm_cost_type)                    + '\n' +
+        'iterations: ' + str(config['iterations'])                   + '\n' +
+        'conditions: ' + str(algorithm['conditions'])                + '\n' +
+        'samples:    ' + str(config['num_samples'])                  + '\n'
+    )

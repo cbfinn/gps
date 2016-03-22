@@ -21,7 +21,7 @@ optional arguments:
 Usage:
 * `python python/gps/gps_main.py <EXPERIMENT_NAME> -n`
 
-  Creates a new experiment folder at  `experiments/<EXPERIMENT_NAME>` with an empty hyperparams file `hyperparams.py`. Copy and paste your old `hyperparams.py` from your previous experiment and make any modifications.
+  Creates a new experiment folder at  `experiments/<EXPERIMENT_NAME>` with a hyperparams file `hyperparams.py` (and possibly a targets file `targets.npz`) copied from the previous experiment created. Change `hyperparams.py` to specify the new experiment.
 
 * `python python/gps/gps_main.py <EXPERIMENT_NAME> -t` (for ROS only)
 

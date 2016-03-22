@@ -20,7 +20,7 @@ from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
-from gps.utility.general_utils import generate_config_info
+from gps.gui.config import generate_experiment_info
 
 
 SENSOR_DIMS = {
@@ -153,4 +153,4 @@ config = {
     'algorithm': algorithm,
 }
 
-common['info'] = generate_config_info(config)
+common['info'] = generate_experiment_info(config)
