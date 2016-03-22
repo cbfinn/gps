@@ -14,11 +14,10 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
 from gps.gui.action_panel import Action, ActionPanel
-from gps.gui.config import config
 
 import logging
 LOGGER = logging.getLogger(__name__)
-ros_enabled = False
+ROS_ENABLED = False
 try:
     import rospkg
     import roslib
@@ -26,7 +25,7 @@ try:
     from sensor_msgs.msg import Image
 
     roslib.load_manifest('gps_agent_pkg')
-    ros_enabled = True
+    ROS_ENABLED = True
 except ImportError as e:
     LOGGER.debug('Import ROS failed: %s', e)
 except rospkg.common.ResourceNotFound as e:
@@ -81,7 +80,7 @@ class ImageVisualizer(object):
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
 
         # ROS subscriber for PS3 controller
-        if rostopic and ros_enabled:
+        if rostopic and ROS_ENABLED:
             rospy.Subscriber(rostopic, Image, self.update_ros, queue_size=1,
                              buff_size=2**24)
 
@@ -103,7 +102,7 @@ class ImageVisualizer(object):
         # Extract image.
         image = np.fromstring(image_msg.data, np.uint8)
         # Convert from ros image format to matplotlib image format.
-        image = image.reshape(image_msg.height, image_msg.width, 3)[:,:,::-1]
+        image = image.reshape(image_msg.height, image_msg.width, 3)[:, :, ::-1]
         image = 255 - image
         # Update visualizer.
         self.update(image)
@@ -127,16 +126,28 @@ class ImageVisualizer(object):
 
     def toggle_initial_image_overlay(self, event=None):
         self._initial_image_overlay_on = not self._initial_image_overlay_on
-        image = self._initial_image if (self._initial_image is not None and self._initial_image_overlay_on) else self._default_image
-        alpha = self._initial_alpha if (self._initial_alpha is not None and self._initial_image_overlay_on) else self._default_alpha
+        if self._initial_image is not None and self._initial_image_overlay_on:
+            image = self._initial_image
+        else:
+            image = self._default_image
+        if self._initial_alpha is not None and self._initial_image_overlay_on:
+            alpha = self._initial_alpha
+        else:
+            alpha = self._default_alpha
         self._overlay_plot_initial.set_array(image)
         self._overlay_plot_initial.set_alpha(alpha)
         self.draw()
 
     def toggle_target_image_overlay(self, event=None):
         self._target_image_overlay_on = not self._target_image_overlay_on
-        image = self._target_image if (self._target_image is not None and self._target_image_overlay_on) else self._default_image
-        alpha = self._target_alpha if (self._target_alpha is not None and self._target_image_overlay_on) else self._default_alpha
+        if self._target_image is not None and self._target_image_overlay_on:
+            image = self._target_image
+        else:
+            image = self._default_image
+        if self._target_alpha is not None and self._target_image_overlay_on:
+            alpha = self._target_alpha
+        else:
+            alpha = self._default_alpha
         self._overlay_plot_target.set_array(image)
         self._overlay_plot_target.set_alpha(alpha)
         self.draw()

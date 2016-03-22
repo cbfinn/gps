@@ -28,8 +28,8 @@ class MeanPlotter:
 
         self._ts = np.empty((1, 0))
         self._data_mean = np.empty((1, 0))
-        self._plots_mean = self._ax.plot([], [], '-x', markeredgewidth=1.0, color=self._color,
-                alpha=1.0, label=self._label)[0]
+        self._plots_mean = self._ax.plot([], [], '-x', markeredgewidth=1.0,
+                color=self._color, alpha=1.0, label=self._label)[0]
 
         self._ax.set_xlim(0-0.5, self._min_itr+0.5)
         self._ax.set_ylim(0, 1)
@@ -89,7 +89,8 @@ class MeanPlotter:
 
     def draw(self):
         self._ax.draw_artist(self._ax.patch)
-        [self._ax.draw_artist(plot) for plot in self._plots]
+        for plot in self._plots:
+            self._ax.draw_artist(plot)
         self._ax.draw_artist(self._plots_mean)
         self._fig.canvas.update()
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
@@ -99,6 +100,7 @@ class MeanPlotter:
         Redraws the ticklabels, for use when ticklabels are being drawn outside of the axis
         and need to be redrawn, since something else is drawing over them.
         """
-        [self._ax.draw_artist(item) for item in self._ax.get_xticklabels() + self._ax.get_yticklabels()]
+        for item in self._ax.get_xticklabels() + self._ax.get_yticklabels():
+            self._ax.draw_artist(item)
         self._fig.canvas.update()
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend

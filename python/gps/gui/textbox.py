@@ -22,8 +22,9 @@ class Textbox:
         self._ax = plt.subplot(self._gs[0])
         self._log_filename = log_filename
 
-        self._text_box = self._ax.text(0.01, 0.95, '', color='black', fontsize=fontsize,
-                va='top', ha='left', transform=self._ax.transAxes, family=font_family)
+        self._text_box = self._ax.text(0.01, 0.95, '', color='black',
+                va='top', ha='left', transform=self._ax.transAxes,
+                fontsize=fontsize, family=font_family)
         self._text_arr = []
         self._max_display_size = max_display_size
 

@@ -5,18 +5,16 @@ The Action Panel contains a set of Action's which can be activated through
 one of three methods: a clickable button, a keyboard shortcut, or a ps3
 controller binding (with ps3 controller button presses read through ROS).
 """
-import itertools
 import numpy as np
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
 from matplotlib.widgets import Button
 
 from gps.gui.config import config
 
 import logging
 LOGGER = logging.getLogger(__name__)
-ros_enabled = False
+ROS_ENABLED = False
 try:
     import rospkg
     import roslib
@@ -24,7 +22,7 @@ try:
     from sensor_msgs.msg import Joy
 
     roslib.load_manifest('gps_agent_pkg')
-    ros_enabled = True
+    ROS_ENABLED = True
 except ImportError as e:
     LOGGER.debug('Import ROS failed: %s', e)
 except rospkg.common.ResourceNotFound as e:
@@ -38,12 +36,12 @@ class Action:
     axis_pos), giving it a keyboard_binding, or giving it a ps3_binding.
     """
     def __init__(self, key, name, func, axis_pos=None, keyboard_binding=None, ps3_binding=None):
-        self._key = key
-        self._name = name
-        self._func = func
-        self._axis_pos = axis_pos
-        self._kb = keyboard_binding
-        self._pb = ps3_binding
+        self.key = key
+        self.name = name
+        self.func = func
+        self.axis_pos = axis_pos
+        self.kb = keyboard_binding
+        self.pb = ps3_binding
 
 class ActionPanel:
 
@@ -61,38 +59,39 @@ class ActionPanel:
         self._axarr = [plt.subplot(self._gs[i]) for i in range(len(actions_arr))]
         
         # Read keyboard_bindings and ps3_bindings from config
-        self._actions = {action._key: action for action in actions_arr}
+        self._actions = {action.key: action for action in actions_arr}
         for key, action in self._actions.iteritems():
             if key in config['keyboard_bindings']:
-                action._kb = config['keyboard_bindings'][key]
+                action.kb = config['keyboard_bindings'][key]
             if key in config['ps3_bindings']:
-                action._pb = config['ps3_bindings'][key]
+                action.pb = config['ps3_bindings'][key]
 
+        self._buttons = None
         self._initialize_buttons()
         self._cid = self._fig.canvas.mpl_connect('key_press_event', self.on_key_press)
-        if ros_enabled:
+        if ROS_ENABLED:
             self._ps3_count = 0
             rospy.Subscriber(config['ps3_topic'], Joy, self.ps3_callback)
 
     def _initialize_buttons(self):
         self._buttons = {}
         for key, action in self._actions.iteritems():
-            if action._axis_pos is None:
+            if action.axis_pos is None:
                 continue
             
-            button_name = '%s\n(%s)' % (action._name, action._kb)
-            if ros_enabled and action._pb:
-                ps3_buttons = [config['inverted_ps3_button'][i] for i in action._pb]
+            button_name = '%s\n(%s)' % (action.name, action.kb)
+            if ROS_ENABLED and action.pb:
+                ps3_buttons = [config['inverted_ps3_button'][i] for i in action.pb]
                 button_name += '\n(%s)' % ',\n'.join(ps3_buttons)
 
-            self._buttons[key] = Button(self._axarr[action._axis_pos], button_name)
-            self._buttons[key].on_clicked(action._func)
+            self._buttons[key] = Button(self._axarr[action.axis_pos], button_name)
+            self._buttons[key].on_clicked(action.func)
 
     def on_key_press(self, event):
         if event.key in config['inverted_keyboard_bindings']:
             key = config['inverted_keyboard_bindings'][event.key]
             if key in self._actions:
-                self._actions[key]._func()
+                self._actions[key].func()
         else:
             LOGGER.debug('Unrecognized keyboard input: %s', str(event.key))
 
@@ -103,10 +102,10 @@ class ActionPanel:
         
         buttons_pressed = tuple(np.nonzero(joy_msg.buttons)[0])
         if buttons_pressed in config['permuted_inverted_ps3_bindings']:
-            self._actions[config['permuted_inverted_ps3_bindings'][buttons_pressed]]._func()
+            self._actions[config['permuted_inverted_ps3_bindings'][buttons_pressed]].func()
         else:
             if ((len(buttons_pressed) == 1 and buttons_pressed[0] not in (
                 config['ps3_button']['rear_right_1'], config['ps3_button']['rear_right_1'])) 
-                or num_buttons >= 2):
+                or len(buttons_pressed) >= 2):
                 LOGGER.debug('Unrecognized ps3 controller input:\n%s',
                         str([config['inverted_ps3_button'][b] for b in buttons_pressed]))

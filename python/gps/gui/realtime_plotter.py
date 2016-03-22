@@ -83,6 +83,7 @@ class RealtimePlotter(object):
 
     def draw(self):
         self._ax.draw_artist(self._ax.patch)
-        [self._ax.draw_artist(plot) for plot in self._plots]
+        for plot in self._plots:
+            self._ax.draw_artist(plot)
         self._fig.canvas.update()
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend

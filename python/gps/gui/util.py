@@ -96,6 +96,6 @@ def load_from_npz(filename, key, default=None):
     try:
         with np.load(filename) as f:
             return f[key]
-    except (IOError, KeyError) as e:
+    except (IOError, KeyError):
         pass
     return default

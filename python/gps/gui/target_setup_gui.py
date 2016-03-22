@@ -29,18 +29,20 @@ from gps.gui.config import config
 from gps.gui.action_panel import Action, ActionPanel
 from gps.gui.textbox import Textbox
 from gps.gui.image_visualizer import ImageVisualizer
-from gps.gui.util import load_pose_from_npz, load_data_from_npz, save_pose_to_npz, save_data_to_npz
+from gps.gui.util import load_pose_from_npz, load_data_from_npz, \
+        save_pose_to_npz, save_data_to_npz
 
-from gps.proto.gps_pb2 import END_EFFECTOR_POSITIONS, END_EFFECTOR_ROTATIONS, JOINT_ANGLES, TRIAL_ARM, AUXILIARY_ARM, TASK_SPACE, JOINT_SPACE
+from gps.proto.gps_pb2 import END_EFFECTOR_POSITIONS, END_EFFECTOR_ROTATIONS, \
+        JOINT_ANGLES, JOINT_SPACE
 
 import logging
 LOGGER = logging.getLogger(__name__)
-ros_enabled = False
+ROS_ENABLED = False
 try:
     import rospkg
     from gps.agent.ros.ros_utils import TimeoutException
 
-    ros_enabled = True
+    ROS_ENABLED = True
 except ImportError as e:
     LOGGER.debug('Import ROS failed: %s', e)
 except rospkg.common.ResourceNotFound as e:
@@ -71,6 +73,7 @@ class TargetSetupGUI(object):
         self._initial_image = None
         self._target_image  = None
         self._mannequin_mode = False
+        self._mm_process = None
 
         # Actions.
         actions_arr = [
@@ -98,7 +101,8 @@ class TargetSetupGUI(object):
                 plt.rcParams[key] = ''
 
         self._fig = plt.figure(figsize=config['figsize'])
-        self._fig.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0, hspace=0)
+        self._fig.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99,
+                wspace=0, hspace=0)
 
         # Assign GUI component locations.
         self._gs = gridspec.GridSpec(4, 4)
@@ -116,13 +120,17 @@ class TargetSetupGUI(object):
         # Create GUI components.
         self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 3, 4, actions_arr)
         self._target_output = Textbox(self._fig, self._gs_target_output,
-                log_filename=self._log_filename, fontsize=config['target_output_fontsize'])
+                log_filename=self._log_filename,
+                fontsize=config['target_output_fontsize'])
         self._action_output = Textbox(self._fig, self._gs_action_output)
         if config['display_images']:
-            self._initial_image_visualizer = ImageVisualizer(self._fig, self._gs_initial_image_visualizer)
-            self._target_image_visualizer = ImageVisualizer(self._fig, self._gs_target_image_visualizer)
-            self._image_visualizer = ImageVisualizer(self._fig, self._gs_image_visualizer,
-                    cropsize=config['image_size'], rostopic=config['image_topic'], show_overlay_buttons=True)
+            self._initial_image_visualizer = ImageVisualizer(self._fig,
+                    self._gs_initial_image_visualizer)
+            self._target_image_visualizer = ImageVisualizer(self._fig,
+                    self._gs_target_image_visualizer)
+            self._image_visualizer = ImageVisualizer(self._fig, 
+                    self._gs_image_visualizer, cropsize=config['image_size'],
+                    rostopic=config['image_topic'], show_overlay_buttons=True)
 
         # Setup GUI components.
         self.reload_positions()
@@ -177,7 +185,7 @@ class TargetSetupGUI(object):
         self.set_action_status_message('set_initial_position', 'requested')
         try:
             sample = self._agent.get_data(arm=self._actuator_type)
-        except TimeoutException as e:
+        except TimeoutException:
             self.set_action_status_message('set_initial_position', 'failed',
                     message='TimeoutException while retrieving sample')
             return
@@ -185,18 +193,19 @@ class TargetSetupGUI(object):
         ee_pos = sample.get(END_EFFECTOR_POSITIONS)
         ee_rot = sample.get(END_EFFECTOR_ROTATIONS)
         self._initial_position = (ja, ee_pos, ee_rot)
-        save_pose_to_npz(self._target_filename, self._actuator_name, str(self._target_number),
-                'initial', self._initial_position)
+        save_pose_to_npz(self._target_filename, self._actuator_name,
+                str(self._target_number), 'initial', self._initial_position)
 
         self.update_target_text()
         self.set_action_status_message('set_initial_position', 'completed',
-                message='initial position =\n %s' % self.position_to_str(self._initial_position))
+                message='initial position =\n %s' % \
+                self.position_to_str(self._initial_position))
 
     def set_target_position(self, event=None):
         self.set_action_status_message('set_target_position', 'requested')
         try:
             sample = self._agent.get_data(arm=self._actuator_type)
-        except TimeoutException as e:
+        except TimeoutException:
             self.set_action_status_message('set_target_position', 'failed',
                     message='TimeoutException while retrieving sample')
             return
@@ -204,12 +213,13 @@ class TargetSetupGUI(object):
         ee_pos = sample.get(END_EFFECTOR_POSITIONS)
         ee_rot = sample.get(END_EFFECTOR_ROTATIONS)
         self._target_position = (ja, ee_pos, ee_rot)
-        save_pose_to_npz(self._target_filename, self._actuator_name, str(self._target_number),
-                'target', self._target_position)
+        save_pose_to_npz(self._target_filename, self._actuator_name,
+                str(self._target_number), 'target', self._target_position)
 
         self.update_target_text()
         self.set_action_status_message('set_target_position', 'completed',
-                message='target position =\n %s' % self.position_to_str(self._target_position))
+                message='target position =\n %s' % \
+                self.position_to_str(self._target_position))
 
     def set_initial_image(self, event=None):
         self.set_action_status_message('set_initial_image', 'requested')
@@ -218,8 +228,8 @@ class TargetSetupGUI(object):
             self.set_action_status_message('set_initial_image', 'failed',
                     message='no image available')
             return
-        save_data_to_npz(self._target_filename, self._actuator_name, str(self._target_number),
-                'initial', 'image', self._initial_image)
+        save_data_to_npz(self._target_filename, self._actuator_name,
+                str(self._target_number), 'initial', 'image', self._initial_image)
 
         self.update_target_text()
         self.set_action_status_message('set_initial_image', 'completed',
@@ -232,8 +242,8 @@ class TargetSetupGUI(object):
             self.set_action_status_message('set_target_image', 'failed',
                     message='no image available')
             return
-        save_data_to_npz(self._target_filename, self._actuator_name, str(self._target_number),
-                'target', 'image', self._target_image)
+        save_data_to_npz(self._target_filename, self._actuator_name,
+                str(self._target_number), 'target', 'image', self._target_image)
 
         self.update_target_text()
         self.set_action_status_message('set_target_image', 'completed',
@@ -262,15 +272,18 @@ class TargetSetupGUI(object):
     def mannequin_mode(self, event=None):
         if not self._mannequin_mode:
             self.set_action_status_message('mannequin_mode', 'requested')
-            subprocess.Popen(['rosrun', 'pr2_controller_manager', 'pr2_controller_manager', 'stop', 'GPSPR2Plugin'], stdout=DEVNULL)
-            self._mm_process = subprocess.Popen(['roslaunch', 'pr2_mannequin_mode', 'pr2_mannequin_mode.launch'], stdout=DEVNULL)
+            subprocess.Popen(['rosrun', 'pr2_controller_manager', 
+                    'pr2_controller_manager', 'stop', 'GPSPR2Plugin'], stdout=DEVNULL)
+            self._mm_process = subprocess.Popen(['roslaunch',
+                    'pr2_mannequin_mode', 'pr2_mannequin_mode.launch'], stdout=DEVNULL)
             self._mannequin_mode = True
             self.set_action_status_message('mannequin_mode', 'completed',
                     message='mannequin mode toggled on')
         else:
             self.set_action_status_message('mannequin_mode', 'requested')
             self._mm_process.send_signal(signal.SIGINT)
-            subprocess.Popen(['rosrun', 'pr2_controller_manager', 'pr2_controller_manager', 'start', 'GPSPR2Plugin'], stdout=DEVNULL)
+            subprocess.Popen(['rosrun', 'pr2_controller_manager',
+                    'pr2_controller_manager', 'start', 'GPSPR2Plugin'], stdout=DEVNULL)
             self._mannequin_mode = False
             self.set_action_status_message('mannequin_mode', 'completed',
                     message='mannequin mode toggled off')
@@ -324,11 +337,13 @@ class TargetSetupGUI(object):
         Reloads the initial/target positions and images.
         This is called after the target number of actuator type have changed.
         """
-        self._initial_position = load_pose_from_npz(self._target_filename, self._actuator_name,
-                str(self._target_number), 'initial')
-        self._target_position  = load_pose_from_npz(self._target_filename, self._actuator_name,
-                str(self._target_number), 'target')
-        self._initial_image    = load_data_from_npz(self._target_filename, self._actuator_name,
-                str(self._target_number), 'initial', 'image', default=None)
-        self._target_image     = load_data_from_npz(self._target_filename, self._actuator_name,
-                str(self._target_number), 'target',  'image', default=None)
+        self._initial_position = load_pose_from_npz(self._target_filename,
+                self._actuator_name, str(self._target_number), 'initial')
+        self._target_position  = load_pose_from_npz(self._target_filename,
+                self._actuator_name, str(self._target_number), 'target')
+        self._initial_image    = load_data_from_npz(self._target_filename,
+                self._actuator_name, str(self._target_number), 'initial',
+                'image', default=None)
+        self._target_image     = load_data_from_npz(self._target_filename,
+                self._actuator_name, str(self._target_number), 'target',
+                'image', default=None)
