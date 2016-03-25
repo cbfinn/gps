@@ -48,14 +48,20 @@ class TfPolicy(Policy):
             u = action_mean + self.chol_pol_covar.T.dot(noise)
         return u[0]  # this algorithm is batched by default. But here, we run with a batch size of one.
 
-    def pickle_policy(self, deg_obs, deg_action, checkpoint_path):
+    def pickle_policy(self, deg_obs, deg_action, checkpoint_path, goal_state=None):
         """
         We can save just the policy if we are only interested in running forward at a later point
         without needing a policy optimization class. Useful for debugging and deploying.
         """
+        import uuid
+        import os
+        hash_str = str(uuid.uuid4())
+        os.mkdir(checkpoint_path + hash_str + '/')
+        checkpoint_path += hash_str
+        checkpoint_path += '/_pol'
         pickled_pol = {'deg_obs': deg_obs, 'deg_action': deg_action, 'chol_pol_covar': self.chol_pol_covar,
                        'checkpoint_path_tf': checkpoint_path + '_tf_data', 'scale': self.scale, 'bias': self.bias,
-                       'device_string': self.device_string}
+                       'device_string': self.device_string, 'goal_state': goal_state}
         pickle.dump(pickled_pol, open(checkpoint_path, "wb"))
         saver = tf.train.Saver()
         saver.save(self.sess, checkpoint_path + '_tf_data')

@@ -59,7 +59,7 @@ agent = {
 algorithm = {
     'type': AlgorithmBADMM,
     'conditions': common['conditions'],
-    'iterations': 10,
+    'iterations': 7,
     'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-2]),
     'policy_dual_rate': 0.2,
     'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
@@ -84,7 +84,7 @@ algorithm['cost'] = {
     'data_types' : {
         JOINT_ANGLES: {
             'wp': np.ones(SENSOR_DIMS[ACTION]),
-            'target_state': np.array([0.5, 0.5]),
+            'target_state': np.array([0.2, 0.2]),
         },
     },
 }
@@ -121,7 +121,7 @@ config = {
     'verbose_policy_trials': 1,
     'common': common,
     'agent': agent,
-    'gui_on': True,
+    'gui_on': False,
     'algorithm': algorithm,
 }
 

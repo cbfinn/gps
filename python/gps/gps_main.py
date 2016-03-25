@@ -198,8 +198,13 @@ class GPSMain(object):
                 copy.copy(pol_sample_lists)
             )
 
+
     def _end(self):
         """ Finish running and exit. """
+        target = self._hyperparams['algorithm']['cost']['data_types'].values()[0]['target_state']
+        self.algorithm.policy_opt.policy.pickle_policy(self.agent.dO, self.agent.dU,
+                                                       self._data_files_dir + 'policies/',
+                                                       goal_state=target)
         if self.gui:
             self.gui.set_status_text('Training complete.')
             self.gui.end_mode()

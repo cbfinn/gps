@@ -13,4 +13,8 @@ sudo apt-get install ros-indigo-image-view
 
 sudo apt-get install ros-indigo-convex-decomposition
 sudo apt-get install ros-indigo-ivcon
+sudo apt-get install ros-indigo-rosboost-cfg
+sudo apt-get install ros-indigo-roslang
+sudo apt-get install ros-indigo-roslisp
+sudo apt-get install ros-indigo-roslint
 export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:/home/bradly/gps/gps:/home/bradly/gps/gps/src/gps_agent_pkg
