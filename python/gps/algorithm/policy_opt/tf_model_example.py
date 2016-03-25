@@ -73,8 +73,8 @@ def example_tf_network(dim_input=27, dim_output=7, batch_size=25):
     Returns:
         a TfMap object used to serialize, inputs, outputs, and loss.
     """
-    n_layers = 3
-    dim_hidden = (n_layers - 1) * [42]
+    n_layers = 2
+    dim_hidden = (n_layers - 1) * [20]
     dim_hidden.append(dim_output)
 
     nn_input, action, precision = get_input_layer(dim_input, dim_output)
