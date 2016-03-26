@@ -1,57 +1,67 @@
-import sys
 import os
 import numpy as np
-from gps.agent.mjc.agent_mjc import AgentMuJoCo
-from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, ACTION
-
-
-sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
+from keras.models import Sequential
+from keras.layers import Dense, Dropout, Activation, Merge
+from keras.optimizers import Adam
+policies_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..',
+                                             'experiments/mjc_pointmass_example/data_files/policies/'))
 
 
 def main():
-    gen_data()
+    #policy_folders = os.listdir(policies_path)
+    #policy_dict_path = policies_path + '/' + policy_folders[0] + '/_pol'
+    #pol_dict = pickle.load(open(policy_dict_path, "rb"))
+    #print pol_dict.keys()
     train_net()
-    run_net()
-
-
-def gen_data():
-    mjc_agent = init_mujoco_agent()
-    for folder in folders:
-        pol = get_policy_for_folder(folder)
-        conditions = [0, 1, 2, 3]
-        for cond in conditions:
-            one_sample = mjc_agent.sample(pol, cond, save=False)
-
-
-def get_policy_for_folder():
-    pass
+    #train_net()
+    #run_net()
 
 
 def train_net():
-    pass
+
+    the_data = np.load(policies_path + '/the_data.npy')
+    the_actions = np.load(policies_path + '/the_actions.npy')
+    the_goals = np.load(policies_path + '/the_goals.npy')
+    X_train_obs = the_data.reshape(the_data.shape[0]*the_data.shape[1], the_data.shape[2])
+    X_train_goals = the_goals.reshape(the_goals.shape[0]*the_goals.shape[1], the_goals.shape[2])
+    y_train = the_actions.reshape(the_actions.shape[0]*the_actions.shape[1], the_actions.shape[2])
+    obs_dims = (4,)
+    goal_dims = (2,)
+    dim_action = 2
+
+    goal_encoder = Sequential()
+    goal_encoder.add(Dense(10, input_shape=goal_dims, activation='relu'))
+
+    obs_encoder = Sequential()
+    obs_encoder.add(Dense(30, input_shape=obs_dims, activation='relu'))
+    obs_encoder.add(Dense(30, activation='relu'))
+
+    decoder = Sequential()
+    decoder.add(Merge([goal_encoder, obs_encoder], mode='concat'))
+    decoder.add(Dense(32, activation='relu'))
+    decoder.add(Dense(dim_action))
+
+    decoder.compile(loss='mse', optimizer='adam')
+
+    decoder.fit([X_train_goals, X_train_obs], y_train,
+                nb_epoch=20, batch_size=64,
+                show_accuracy=True, shuffle=True)
+    #score = model.evaluate(X_test, y_test, batch_size=16)
 
 
 def run_net():
     pass
 
-def init_mujoco_agent():
-    SENSOR_DIMS = {
-        JOINT_ANGLES: 2,
-        JOINT_VELOCITIES: 2,
-        ACTION: 2,
-    }
-    agent = {
-        'type': AgentMuJoCo,
-        'filename': './mjc_models/particle2d.xml',
-        'x0': [np.array([0., 0., 0., 0.]), np.array([0., 1., 0., 0.]),
-               np.array([1., 0., 0., 0.]), np.array([1., 1., 0., 0.])],
-        'dt': 0.05,
-        'substeps': 5,
-        'conditions': 4,
-        'T': 100,
-        'sensor_dims': SENSOR_DIMS,
-        'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],
-        'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
-    }
-    mjc_agent = agent['type'](agent)
-    return mjc_agent
+
+class KerasPolicy:
+    def __init__(self):
+        pass
+
+    def act(self):
+        pass
+
+
+if __name__ == '__main__':
+    main()
+
+

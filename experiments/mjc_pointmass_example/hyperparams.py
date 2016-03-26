@@ -59,7 +59,7 @@ agent = {
 algorithm = {
     'type': AlgorithmBADMM,
     'conditions': common['conditions'],
-    'iterations': 7,
+    'iterations': 2,
     'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-2]),
     'policy_dual_rate': 0.2,
     'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),

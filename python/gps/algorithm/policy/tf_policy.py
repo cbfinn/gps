@@ -89,5 +89,7 @@ class TfPolicy(Policy):
         cls_init = cls(pol_dict['deg_action'], tf_map.get_input_tensor(), tf_map.get_output_op(), np.zeros((1,)),
                        sess, device_string)
         cls_init.chol_pol_covar = pol_dict['chol_pol_covar']
+        cls_init.scale = pol_dict['scale']
+        cls_init.bias = pol_dict['bias']
         return cls_init
 
