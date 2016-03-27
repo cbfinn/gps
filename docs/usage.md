@@ -53,7 +53,7 @@ echo "alias gps='python python/gps/gps_main.py'" >> ~/.bashrc
 cd /path/to/gps
 gps -h                      # help
 gps <EXPERIMENT_NAME> -n    # new experiment
-gps <EXPERIMENT_NAME> -     # target setup
+gps <EXPERIMENT_NAME> -t    # target setup
 gps <EXPERIMENT_NAME>       # run training
 gps <EXPERIMENT_NAME> -r N  # resume training
 ```
