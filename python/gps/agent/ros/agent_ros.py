@@ -1,5 +1,7 @@
 """ This file defines an agent for the PR2 ROS environment. """
 import copy
+import time
+import numpy as np
 
 import rospy
 
@@ -7,10 +9,15 @@ from gps.agent.agent import Agent
 from gps.agent.agent_utils import generate_noise, setup
 from gps.agent.config import AGENT_ROS
 from gps.agent.ros.ros_utils import ServiceEmulator, msg_to_sample, \
-        policy_to_msg
+        policy_to_msg, tf_policy_to_action_msg, tf_obs_msg_to_numpy
 from gps.proto.gps_pb2 import TRIAL_ARM, AUXILIARY_ARM
 from gps_agent_pkg.msg import TrialCommand, SampleResult, PositionCommand, \
-        RelaxCommand, DataRequest
+        RelaxCommand, DataRequest, TfActionCommand, TfObsData
+try:
+    from gps.algorithm.policy.tf_policy import TfPolicy
+except ImportError:  # user does not have tf installed.
+    TfPolicy = None
+
 
 
 class AgentROS(Agent):
@@ -43,6 +50,9 @@ class AgentROS(Agent):
 
         r = rospy.Rate(1)
         r.sleep()
+
+        self.use_tf = False
+        self.observations_stale = True
 
     def _init_pubs_and_subs(self):
         self._trial_service = ServiceEmulator(
@@ -137,8 +147,11 @@ class AgentROS(Agent):
         Returns:
             sample: A Sample object.
         """
-        self.reset(condition)
+        if TfPolicy is not None:  # user has tf installed.
+            if isinstance(policy, TfPolicy):
+                self._init_tf(policy.dU)
 
+        self.reset(condition)
         # Generate noise.
         noise = generate_noise(self.T, self.dU, self._hyperparams)
 
@@ -155,11 +168,69 @@ class AgentROS(Agent):
                 self._hyperparams['ee_points_tgt'][condition].tolist()
         trial_command.state_datatypes = self._hyperparams['state_include']
         trial_command.obs_datatypes = self._hyperparams['state_include']
-        sample_msg = self._trial_service.publish_and_wait(
-            trial_command, timeout=self._hyperparams['trial_timeout']
-        )
 
-        sample = msg_to_sample(sample_msg, self)
-        if save:
-            self._samples[condition].append(sample)
-        return sample
+        if self.use_tf is False:
+            sample_msg = self._trial_service.publish_and_wait(
+                trial_command, timeout=self._hyperparams['trial_timeout']
+            )
+            sample = msg_to_sample(sample_msg, self)
+            if save:
+                self._samples[condition].append(sample)
+            return sample
+        else:
+            self._trial_service.publish(trial_command)
+            sample_msg = self.run_trial_tf(policy, time_to_run=self._hyperparams['trial_timeout'])
+            sample = msg_to_sample(sample_msg, self)
+            if save:
+                self._samples[condition].append(sample)
+            return sample
+
+    def run_trial_tf(self, policy, time_to_run=5):
+        """ Run an async controller from a policy. The async controller receives observations from ROS subscribers
+         and then uses them to publish actions."""
+        should_stop = False
+        consecutive_failures = 0
+        start_time = time.time()
+        while should_stop is False:
+            if self.observations_stale is False:
+                consecutive_failures = 0
+                last_obs = tf_obs_msg_to_numpy(self._tf_subscriber_msg)
+                action_msg = tf_policy_to_action_msg(self.dU,
+                                                     self._get_new_action(policy, last_obs),
+                                                     self.current_action_id)
+                self._tf_publish(action_msg)
+                self.observations_stale = True
+                self.current_action_id += 1
+            else:
+                rospy.sleep(0.01)
+                consecutive_failures += 1
+                if time.time() - start_time > time_to_run and consecutive_failures > 5:
+                    # we only stop when we have run for the trial time and are no longer receiving obs.
+                    should_stop = True
+        rospy.sleep(0.25)  # wait for finished trial to come in.
+        result = self._trial_service._subscriber_msg
+        return result  # the trial has completed. Here is its message.
+
+    def _get_new_action(self, policy, obs):
+        return policy.act(None, obs, None, None)
+
+    def _tf_callback(self, message):
+        self._tf_subscriber_msg = message
+        self.observations_stale = False
+
+    def _tf_publish(self, pub_msg):
+        """ Publish a message without waiting for response. """
+        self._pub.publish(pub_msg)
+
+    def _init_tf(self, dU):
+        self._tf_subscriber_msg = None
+        self.observations_stale = True
+        self.current_action_id = 1
+        self.dU = dU
+        if self.use_tf is False:  # init pub and sub if this init has not been called before.
+            self._pub = rospy.Publisher('/gps_controller_sent_robot_action_tf', TfActionCommand)
+            self._sub = rospy.Subscriber('/gps_obs_tf', TfObsData, self._tf_callback)
+            r = rospy.Rate(0.5)  # wait for publisher/subscriber to kick on.
+            r.sleep()
+        self.use_tf = True
+        self.observations_stale = True
