@@ -93,7 +93,7 @@ class TargetSetupGUI(object):
             Action('mm',  'mannequin_mode',   self.mannequin_mode,   axis_pos=11),
         ]
 
-        # GUI Components.
+        # Setup figure.
         plt.ion()
         plt.rcParams['toolbar'] = 'None'
         for key in plt.rcParams:
@@ -270,6 +270,10 @@ class TargetSetupGUI(object):
                 message='actuator name: %s' % self._actuator_name)
 
     def mannequin_mode(self, event=None):
+        """
+        Calls "roslaunch pr2_mannequin_mode pr2_mannequin_mode.launch"
+        (only works for the PR2 robot).
+        """
         if not self._mannequin_mode:
             self.set_action_status_message('mannequin_mode', 'requested')
             subprocess.Popen(['rosrun', 'pr2_controller_manager', 

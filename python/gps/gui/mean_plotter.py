@@ -48,10 +48,8 @@ class MeanPlotter:
         self._t = 0
         self._data_len = data_len
         self._data = np.empty((data_len, 0))
-        self._plots = [
-            self._ax.plot([], [], '.', markersize=4, color='black', alpha=self._alpha)[0]
-            for _ in range(data_len)
-        ]
+        self._plots = [self._ax.plot([], [], '.', markersize=4, color='black', 
+            alpha=self._alpha)[0] for _ in range(data_len)]
 
         self._init = True
 
@@ -97,8 +95,8 @@ class MeanPlotter:
 
     def draw_ticklabels(self):
         """
-        Redraws the ticklabels, for use when ticklabels are being drawn outside of the axis
-        and need to be redrawn, since something else is drawing over them.
+        Redraws the ticklabels. Used to redraw the ticklabels (since they are
+        outside the axis) when something else is drawn over them.
         """
         for item in self._ax.get_xticklabels() + self._ax.get_yticklabels():
             self._ax.draw_artist(item)

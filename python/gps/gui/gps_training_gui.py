@@ -64,7 +64,7 @@ class GPSTrainingGUI(object):
             Action('fail',  'fail',  self.request_fail,  axis_pos=3),
         ]
 
-        # GUI Components.
+        # Setup figure.
         plt.ion()
         plt.rcParams['toolbar'] = 'None'
         for key in plt.rcParams:

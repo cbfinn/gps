@@ -90,9 +90,8 @@ class Plotter3D:
         xy_ellipse = np.c_[np.cos(p), np.sin(p)]
         T = mu.shape[0]
 
-        mu_xy, sigma_xy = mu[:, 0:2], sigma[:, 0:2, 0:2]
+        sigma_xy = sigma[:, 0:2, 0:2]
         u, s, v = np.linalg.svd(sigma_xy)
-        mu_xyz = np.repeat(mu.reshape((T, 1, 3)), edges, axis=1)
 
         for t in range(T):
             xyz = np.repeat(mu[t, :].reshape((1, 3)), edges, axis=0)
