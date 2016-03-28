@@ -17,6 +17,7 @@ optional arguments:
   -n, --new          create new experiment
   -t, --targetsetup  run target setup
   -r N, --resume N   resume training from iter N
+  -p N, --policy N   take N policy samples (for BADMM only)
 ```
 Usage:
 * `python python/gps/gps_main.py <EXPERIMENT_NAME> -n`
@@ -34,6 +35,10 @@ Usage:
 * `python python/gps/gps_main.py <EXPERIMENT_NAME> -r N`
 
   Resumes the guided policy search algorithm, loading the algorithm state from iteration N. (The file `experiments/<EXPERIMENT_NAME>/data_files/algorithm_itr_<N>.pkl` must exist.)
+
+* `python python/gps/gps_main.py <EXPERIMENT_NAME> -p N`
+
+  Takes N policy samples from the most recent algorithm state, for testing the policy to see how it is behaving. (The file `experiments/<EXPERIMENT_NAME>/data_files/algorithm_itr_<N>.pkl` must exist.)
 
 
 For your reference, your experiments folder contains the following:
@@ -56,4 +61,5 @@ gps <EXPERIMENT_NAME> -n    # new experiment
 gps <EXPERIMENT_NAME> -t    # target setup
 gps <EXPERIMENT_NAME>       # run training
 gps <EXPERIMENT_NAME> -r N  # resume training
+gps <EXPERIMENT_NAME> -p N  # test policy
 ```
