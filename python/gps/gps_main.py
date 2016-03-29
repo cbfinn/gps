@@ -182,7 +182,10 @@ class GPSMain(object):
         """
         if self.gui:
             self.gui.set_status_text('Calculating.')
+            self.gui.start_display_calculating()
         self.algorithm.iteration(sample_lists)
+        if self.gui:
+            self.gui.stop_display_calculating()
 
     def _take_policy_samples(self, N=None):
         """

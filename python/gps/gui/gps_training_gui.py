@@ -15,6 +15,7 @@ Image Visualizer            displays images received from a rostopic
 For more detailed documentation, visit: rll.berkeley.edu/gps/gui
 """
 import time
+import threading
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -128,6 +129,27 @@ class GPSTrainingGUI(object):
 
         self._fig.canvas.draw()
 
+        # Display calculating thread
+        def display_calculating(delay, run_event):
+            while True:
+                if not run_event.is_set():
+                    run_event.wait()
+                if run_event.is_set():
+                    self.set_status_text('Calculating.')
+                    time.sleep(delay)
+                if run_event.is_set():
+                    self.set_status_text('Calculating..')
+                    time.sleep(delay)
+                if run_event.is_set():
+                    self.set_status_text('Calculating...')
+                    time.sleep(delay)
+
+        self._calculating_run = threading.Event()
+        self._calculating_thread = threading.Thread(target=display_calculating,
+                args=(1, self._calculating_run))
+        self._calculating_thread.daemon = True
+        self._calculating_thread.start()
+
     # GPS Training functions
     def request_stop(self, event=None):
         self.request_mode('stop')
@@ -211,6 +233,12 @@ class GPSTrainingGUI(object):
     def append_output_text(self, text):
         self._algthm_output.append_text(text)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+
+    def start_display_calculating(self):
+        self._calculating_run.set()
+
+    def stop_display_calculating(self):
+        self._calculating_run.clear()
 
     def set_image_overlays(self, condition):
         """
