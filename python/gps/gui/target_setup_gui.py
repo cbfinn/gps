@@ -107,7 +107,7 @@ class TargetSetupGUI(object):
         # Assign GUI component locations.
         self._gs = gridspec.GridSpec(4, 4)
         self._gs_action_panel                   = self._gs[0:1, 0:4]
-        if config['display_images']:
+        if config['image_on']:
             self._gs_target_output              = self._gs[1:3, 0:2]
             self._gs_initial_image_visualizer   = self._gs[3:4, 0:1]
             self._gs_target_image_visualizer    = self._gs[3:4, 1:2]
@@ -123,7 +123,7 @@ class TargetSetupGUI(object):
                 log_filename=self._log_filename,
                 fontsize=config['target_output_fontsize'])
         self._action_output = Textbox(self._fig, self._gs_action_output)
-        if config['display_images']:
+        if config['image_on']:
             self._initial_image_visualizer = ImageVisualizer(self._fig,
                     self._gs_initial_image_visualizer)
             self._target_image_visualizer = ImageVisualizer(self._fig,
@@ -305,7 +305,7 @@ class TargetSetupGUI(object):
         )
         self._target_output.set_text(text)
 
-        if config['display_images']:
+        if config['image_on']:
             self._initial_image_visualizer.update(self._initial_image)
             self._target_image_visualizer.update(self._target_image)
             self._image_visualizer.set_initial_image(self._initial_image, alpha=0.3)
