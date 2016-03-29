@@ -6,6 +6,7 @@ from gps.gui.ps3_config import PS3_BUTTON, INVERTED_PS3_BUTTON
 
 
 # Mappings from actions to their corresponding keyboard bindings.
+# WARNING: keybindings must be unique
 keyboard_bindings = {
     # Target Setup.
     'ptn': 'left',  # previous target number
@@ -15,12 +16,12 @@ keyboard_bindings = {
 
     'sip': 'i',     # set initial position
     'stp': 't',     # set target position
-    'sii': 'p',     # set initial image
-    'sti': 'a',     # set target image
+    'sii': 'z',     # set initial image
+    'sti': 'x',     # set target image
 
     'mti': 'm',     # move to initial
-    'mtt': 'g',     # move to target
-    'rc': 'r',      # relax controller
+    'mtt': 'n',     # move to target
+    'rc': 'c',      # relax controller
     'mm': 'q',      # mannequin mode
 
     # GPS Training.
@@ -31,7 +32,7 @@ keyboard_bindings = {
 
     # Image Visualizer
     'oii'  : 'o',   # overlay initial image
-    'oti'  : 'x',   # overlay target image
+    'oti'  : 'p',   # overlay target image
 }
 inverted_keyboard_bindings = {value: key
                               for key, value in keyboard_bindings.iteritems()}
