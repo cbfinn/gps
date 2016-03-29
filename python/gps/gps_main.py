@@ -56,8 +56,7 @@ class GPSMain(object):
                 for cond in range(self._conditions)
             ]
             self._take_iteration(itr, traj_sample_lists)
-            pol_sample_lists = self._take_policy_samples(
-                    self._hyperparams['verbose_policy_trials'])
+            pol_sample_lists = self._take_policy_samples()
             self._log_data(itr, traj_sample_lists, pol_sample_lists)
 
         self._end()
@@ -185,7 +184,7 @@ class GPSMain(object):
             self.gui.set_status_text('Calculating.')
         self.algorithm.iteration(sample_lists)
 
-    def _take_policy_samples(self, N):
+    def _take_policy_samples(self, N=None):
         """
         Take samples from the policy to see how it's doing.
         Args:
@@ -194,6 +193,8 @@ class GPSMain(object):
         """
         if 'verbose_policy_trials' not in self._hyperparams:
             return None
+        if not N:
+            N = self._hyperparams['verbose_policy_trials']
         if self.gui:
             self.gui.set_status_text('Taking policy samples.')
         pol_samples = [[None for _ in range(N)] for _ in range(self._conditions)]
