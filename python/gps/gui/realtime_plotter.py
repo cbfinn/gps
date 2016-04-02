@@ -1,14 +1,19 @@
-""" This file defines the real time plotter class. """
-import random
-import time
+"""
+Realtime Plotter
 
+The Realtime Plotter expects to be constantly given values to plot in realtime.
+It assumes the values are an array and plots different indices at different
+colors according to the spectral colormap.
+"""
 import numpy as np
-
 import matplotlib.pylab as plt
+import matplotlib.gridspec as gridspec
+
+from gps.gui.util import buffered_axis_limits
 
 
-class RealTimePlotter(object):
-    """ Real time plotter class. """
+class RealtimePlotter(object):
+
     def __init__(self, fig, gs, time_window=500, labels=None, alphas=None):
         self._fig = fig
         self._gs = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=gs)
@@ -26,7 +31,9 @@ class RealTimePlotter(object):
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
 
     def init(self, data_len):
-        """ Initialize plots. """
+        """
+        Initialize plots based off the length of the data array.
+        """
         self._t = 0
         self._data_len = data_len
         self._data = np.empty((0, data_len))
@@ -46,9 +53,10 @@ class RealTimePlotter(object):
 
         self._init = True
 
-    #TODO: Any possible abstraction with MeanPlotter.update?
     def update(self, x):
-        """ Update plots. """
+        """
+        Update the plots with new data x. Assumes x is a one-dimensional array.
+        """
         x = np.ravel([x])
 
         if not self._init:
@@ -69,41 +77,13 @@ class RealTimePlotter(object):
         self._ax.set_xlim(x_range)
 
         y_min, y_max = np.amin(self._data[t0:tf, :]), np.amax(self._data[t0:tf, :])
-        y_mid, y_dif = (y_min + y_max) / 2.0, (y_max - y_min) / 2.0
-        if y_dif == 0:
-            y_dif = 1  # Make sure y_range does not have size 0.
-        y_min, y_max = y_mid - 1.25 * y_dif, y_mid + 1.25 * y_dif
-        precision = np.power(10, np.floor(np.log10(np.amax(np.abs((y_min, y_max)) + 1e-100))) - 1)
-        y_lim_min = np.floor(y_min/precision) * precision
-        y_lim_max = np.ceil(y_max/precision) * precision
-
-        self._ax.set_ylim((y_lim_min, y_lim_max))
+        self._ax.set_ylim(buffered_axis_limits(y_min, y_max, buffer_factor=1.25))
 
         self.draw()
 
     def draw(self):
         self._ax.draw_artist(self._ax.patch)
-        [self._ax.draw_artist(plot) for plot in self._plots]
+        for plot in self._plots:
+            self._ax.draw_artist(plot)
         self._fig.canvas.update()
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
-
-
-if __name__ == "__main__":
-    import matplotlib.gridspec as gridspec
-
-
-    plt.ion()
-    fig = plt.figure()
-    gs = gridspec.GridSpec(1, 1)
-    plotter = RealTimePlotter(fig, gs[0],
-        labels=['i', 'j', 'i+j', 'i-j', 'mean'],
-        alphas=[0.15, 0.15, 0.15, 0.15, 1.0])
-
-    i, j = 0, 0
-    while True:
-        i += random.randint(-10, 10)
-        j += random.randint(-10, 10)
-        data = [i, j, i + j, i - j]
-        mean = np.mean(data)
-        plotter.update(data + [mean])
-        time.sleep(5e-3)

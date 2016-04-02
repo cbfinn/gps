@@ -24,6 +24,7 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION, \
         TRIAL_ARM, AUXILIARY_ARM, JOINT_SPACE
 from gps.utility.general_utils import get_ee_points
+from gps.gui.config import generate_experiment_info
 
 
 EE_POINTS = np.array([[0.02, -0.025, 0.05], [0.02, -0.025, 0.05],
@@ -221,12 +222,4 @@ config = {
     'num_samples': 5,
 }
 
-common['info'] = (
-    'exp_name: ' + str(common['experiment_name'])              + '\n'
-    'alg_type: ' + str(algorithm['type'].__name__)             + '\n'
-    'alg_dyn:  ' + str(algorithm['dynamics']['type'].__name__) + '\n'
-    'alg_cost: ' + str(algorithm['cost']['type'].__name__)     + '\n'
-    'iterations: ' + str(config['iterations'])                   + '\n'
-    'conditions: ' + str(algorithm['conditions'])                + '\n'
-    'samples:    ' + str(config['num_samples'])                  + '\n'
-)
+common['info'] = generate_experiment_info(config)

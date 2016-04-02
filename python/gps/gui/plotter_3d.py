@@ -1,3 +1,12 @@
+"""
+Plotter 3D
+
+The Plotter 3D plots data in 3D. It has options for setting a title and legend,
+plotting 3D points or 3D Gaussians, and clipping data based off axis limits.
+
+This is used to plot the 3D trajectories, including the trajectory samples,
+policy samples, and the linear Gaussian controllers.
+"""
 import numpy as np
 import matplotlib.pylab as plt
 import matplotlib.gridspec as gridspec
@@ -39,10 +48,12 @@ class Plotter3D:
         self._axarr[i].title.set_fontsize(10)
 
     def add_legend(self, linestyle, marker, color, label):
-        self._ax_legend.plot([], [], linestyle=linestyle, marker=marker, color=color, label=label)
+        self._ax_legend.plot([], [], linestyle=linestyle, marker=marker,
+                color=color, label=label)
         self._ax_legend.legend(ncol=2, mode='expand', fontsize=10)
 
-    def plot(self, i, xs, ys, zs, linestyle='-', linewidth=1.0, marker=None, markersize=5.0, markeredgewidth=1.0, color='black', alpha=1.0, label=''):
+    def plot(self, i, xs, ys, zs, linestyle='-', linewidth=1.0, marker=None,
+            markersize=5.0, markeredgewidth=1.0, color='black', alpha=1.0, label=''):
         # Manually clip at xlim, ylim, zlim (MPL doesn't support axis limits for 3D plots)
         if self._lims[i]:
             xlim, ylim, zlim = self._lims[i]
@@ -51,15 +62,25 @@ class Plotter3D:
             zs[np.any(np.c_[zs < zlim[0], zs > zlim[1]], axis=1)] = np.nan
 
         # Create and add plot
-        plot = self._axarr[i].plot(xs, ys, zs=zs, linestyle=linestyle, linewidth=linewidth, marker=marker, markersize=markersize, markeredgewidth=markeredgewidth, color=color, alpha=alpha, label=label)[0]
+        plot = self._axarr[i].plot(xs, ys, zs=zs, linestyle=linestyle,
+                linewidth=linewidth, marker=marker, markersize=markersize,
+                markeredgewidth=markeredgewidth, color=color, alpha=alpha,
+                label=label)[0]
         self._plots[i].append(plot)
 
-    def plot_3d_points(self, i, points, linestyle='-', linewidth=1.0, marker=None, markersize=5.0, markeredgewidth=1.0, color='black', alpha=1.0, label=''):
-        self.plot(i, points[:, 0], points[:, 1], points[:, 2], linestyle=linestyle, linewidth=linewidth, marker=marker, markersize=markersize, markeredgewidth=markeredgewidth, color=color, alpha=alpha, label=label)
+    def plot_3d_points(self, i, points, linestyle='-', linewidth=1.0,
+            marker=None, markersize=5.0, markeredgewidth=1.0, color='black',
+            alpha=1.0, label=''):
+        self.plot(i, points[:, 0], points[:, 1], points[:, 2],
+                linestyle=linestyle, linewidth=linewidth, marker=marker,
+                markersize=markersize, markeredgewidth=markeredgewidth,
+                color=color, alpha=alpha, label=label)
 
-    def plot_3d_gaussian(self, i, mu, sigma, edges=100, linestyle='-.', linewidth=1.0, color='black', alpha=0.1, label=''):
+    def plot_3d_gaussian(self, i, mu, sigma, edges=100, linestyle='-.',
+            linewidth=1.0, color='black', alpha=0.1, label=''):
         """
-        Plots ellipses in the xy plane representing the Gaussian distributions specified by mu and sigma.
+        Plots ellipses in the xy plane representing the Gaussian distributions 
+        specified by mu and sigma.
         Args:
             mu    - Tx3 mean vector for (x, y, z)
             sigma - Tx3x3 covariance matrix for (x, y, z)
@@ -69,14 +90,15 @@ class Plotter3D:
         xy_ellipse = np.c_[np.cos(p), np.sin(p)]
         T = mu.shape[0]
 
-        mu_xy, sigma_xy = mu[:,0:2], sigma[:,0:2,0:2]
+        sigma_xy = sigma[:, 0:2, 0:2]
         u, s, v = np.linalg.svd(sigma_xy)
-        mu_xyz = np.repeat(mu.reshape((T, 1, 3)), edges, axis=1)
 
         for t in range(T):
             xyz = np.repeat(mu[t, :].reshape((1, 3)), edges, axis=0)
-            xyz[:, 0:2] += np.dot(xy_ellipse, np.dot(np.diag(np.sqrt(s[t, :])), u[t, :, :].T))
-            self.plot_3d_points(i, xyz, linestyle=linestyle, linewidth=linewidth, color=color, alpha=alpha, label=label)
+            xyz[:, 0:2] += np.dot(xy_ellipse, np.dot(np.diag(
+                    np.sqrt(s[t, :])), u[t, :, :].T))
+            self.plot_3d_points(i, xyz, linestyle=linestyle,
+                    linewidth=linewidth, color=color, alpha=alpha, label=label)
 
     def set_lim(self, i, xlim, ylim, zlim):
         """
@@ -99,27 +121,10 @@ class Plotter3D:
             self.clear(i)
 
     def draw(self):
-        [ax.draw_artist(ax.patch) for ax in self._axarr]
-        [[self._axarr[i].draw_artist(plot) for plot in self._plots[i]] for i in range(len(self._plots))]
+        for ax in self._axarr:
+            ax.draw_artist(ax.patch)
+        for i in range(len(self._plots)):
+            for plot in self._plots[i]:
+                self._axarr[i].draw_artist(plot)
         self._fig.canvas.update()
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
-
-if __name__ == "__main__":
-    import time
-    import matplotlib.gridspec as gridspec
-
-
-    plt.ion()
-    fig = plt.figure()
-    gs = gridspec.GridSpec(1, 1)
-    plotter = Plotter3D(fig, gs[0], num_plots=5, rows=2, cols=3)
-
-    xyzs = np.zeros((3, 1))
-    while True:
-        xyz = np.random.randint(-10, 10, size=3).reshape((3,1))
-        xyzs = np.append(xyzs, xyz, axis=1)
-        xs, ys, zs = xyzs
-        plotter.plot(1, xs, ys, zs)
-        plotter.draw()  # this must be called explicitly
-        time.sleep(1)
-        plotter.clear_all()
