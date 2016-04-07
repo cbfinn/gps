@@ -8,7 +8,6 @@ import tensorflow as tf
 # Add gps/python to path so that imports work.
 gps_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', ''))
 sys.path.append(gps_path)
-print gps_path
 
 from gps.algorithm.policy.tf_policy import TfPolicy
 from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
