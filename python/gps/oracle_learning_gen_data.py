@@ -9,6 +9,8 @@ from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 
 policies_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..',
                                              'experiments/mjc_pointmass_example/data_files/policies/'))
+save_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..',
+                                         'experiments/mjc_pointmass_example/data_files/master_chief_model/'))
 
 
 def gen_data(num_samples=100):
@@ -22,6 +24,7 @@ def gen_data(num_samples=100):
     the_goals = np.zeros((num_samples*len(conditions)*len(policy_folders), t_steps, goal_state_dim))
     iter_count = 0
     for folder in policy_folders:
+        print folder
         pol_dict_path = policies_path + '/' + folder + '/_pol'
         pol = get_policy_for_folder(pol_dict_path)
         pol_dict = pickle.load(open(pol_dict_path, "rb"))
@@ -36,10 +39,10 @@ def gen_data(num_samples=100):
                 the_goals[iter_count] = goal_state
                 iter_count += 1
                 import time
-                time.sleep(1)
-    np.save(policies_path + '/the_data', the_data)
-    np.save(policies_path + '/the_actions', the_actions)
-    np.save(policies_path + '/the_goals', the_goals)
+                time.sleep(0.5)
+    np.save(save_path + '/the_data', the_data)
+    np.save(save_path + '/the_actions', the_actions)
+    np.save(save_path + '/the_goals', the_goals)
     print 'done bitch'
 
 
@@ -76,4 +79,4 @@ def init_mujoco_agent():
     return mjc_agent, dO, dU
 
 if __name__ == '__main__':
-    gen_data(num_samples=1)
+    gen_data(num_samples=5)
