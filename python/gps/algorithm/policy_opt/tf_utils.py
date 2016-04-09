@@ -101,4 +101,6 @@ class TfSolver:
 
     def __call__(self, feed_dict, sess, device_string="/cpu:0"):
         with tf.device(device_string):
-            sess.run(self.solver_op, feed_dict)
+            loss = sess.run([self.loss_scalar, self.solver_op], feed_dict)
+            return loss[0]
+
