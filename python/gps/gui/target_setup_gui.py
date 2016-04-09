@@ -1,68 +1,66 @@
 """
-~~~ GUI Specifications ~~~
-Action Axis
-    - previous target number, next target number
-    - previous actuator type, next actuator type
-    - set initial position, set target position
-    - set initial features, set target features
-    - move to initial position, move to target position
-    - relax controller, mannequin mode
+Target Setup GUI
 
-Data Plotter
-    - algorithm training costs
-    - losses of feature points / end effector points
-    - joint states, feature point states, etc.
-    - save tracked data to file
+The Target Setup GUI is used to interact with the GPS algorithm before training.
+It contains the below four functionalities:
 
-Image Visualizer
-    - real-time image and feature points visualization
-    - overlay of initial and target feature points
-    - visualize hidden states?
-    - create movie from image visualizations
+Action Panel                contains buttons for:
+                            - switching target numbers,
+                            - switching actuator types
+                            - setting initial/target positions
+                            - setting initial/target images
+                            - moving to initial/target positions
+Action Status Textbox       displays action status
+Targets Textbox             displays targets values for current target/actuator
+Image Visualizer            displays images received from a rostopic
+
+For more detailed documentation, visit: rll.berkeley.edu/gps/gui
 """
-
-
-import copy
-import imp
-import os.path
+import os
 import subprocess
+import signal
+DEVNULL = open(os.devnull, 'wb')
 
 import numpy as np
-
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-from gps.gui.config import common as common_config
-from gps.gui.config import target_setup as target_setup_config
-from gps.gui.action_axis import Action, ActionAxis
-from gps.gui.output_axis import OutputAxis
+from gps.gui.config import config
+from gps.gui.action_panel import Action, ActionPanel
+from gps.gui.textbox import Textbox
 from gps.gui.image_visualizer import ImageVisualizer
+from gps.gui.util import load_pose_from_npz, load_data_from_npz, \
+        save_pose_to_npz, save_data_to_npz
+
 from gps.proto.gps_pb2 import END_EFFECTOR_POSITIONS, END_EFFECTOR_ROTATIONS, \
         JOINT_ANGLES, JOINT_SPACE
 
-from gps.proto.gps_pb2 import END_EFFECTOR_POSITIONS, END_EFFECTOR_ROTATIONS, JOINT_ANGLES, TRIAL_ARM, AUXILIARY_ARM, TASK_SPACE, JOINT_SPACE
-
+import logging
+LOGGER = logging.getLogger(__name__)
+ROS_ENABLED = False
 try:
-    import rospy
-    from gps.agent.ros.agent_ros import AgentROS
+    import rospkg
     from gps.agent.ros.ros_utils import TimeoutException
+
+    ROS_ENABLED = True
 except ImportError as e:
-    print('Skipping ROS imports.')
+    LOGGER.debug('Import ROS failed: %s', e)
+except rospkg.common.ResourceNotFound as e:
+    LOGGER.debug('No gps_agent_pkg: %s', e)
+
 
 class TargetSetupGUI(object):
-    """ Target setup GUI class. """
+
     def __init__(self, hyperparams, agent):
-        self._hyperparams = copy.deepcopy(common_config)
-        self._hyperparams.update(copy.deepcopy(target_setup_config))
-        self._hyperparams.update(hyperparams)
+        self._hyperparams = hyperparams
         self._agent = agent
 
         self._log_filename = self._hyperparams['log_filename']
         self._target_filename = self._hyperparams['target_filename']
 
-        self._num_targets = self._hyperparams['num_targets']
-        self._actuator_types = self._hyperparams['actuator_types']
-        self._actuator_names = self._hyperparams['actuator_names']
+        self._num_targets = config['num_targets']
+        self._actuator_types = config['actuator_types']
+        self._actuator_names = config['actuator_names']
         self._num_actuators = len(self._actuator_types)
 
         # Target Setup Status.
@@ -75,6 +73,7 @@ class TargetSetupGUI(object):
         self._initial_image = None
         self._target_image  = None
         self._mannequin_mode = False
+        self._mm_process = None
 
         # Actions.
         actions_arr = [
@@ -88,51 +87,50 @@ class TargetSetupGUI(object):
             Action('sii', 'set_initial_image',    self.set_initial_image,    axis_pos=6),
             Action('sti', 'set_target_image',     self.set_target_image,     axis_pos=7),
 
-            Action('mti', 'move_to_initial', self.move_to_initial, axis_pos=8),
-            Action('mtt', 'move_to_target', self.move_to_target, axis_pos=9),
-            Action('rc', 'relax_controller', self.relax_controller, axis_pos=10),
-            Action('mm', 'mannequin_mode', self.mannequin_mode, axis_pos=11),
+            Action('mti', 'move_to_initial',  self.move_to_initial,  axis_pos=8),
+            Action('mtt', 'move_to_target',   self.move_to_target,   axis_pos=9),
+            Action('rc',  'relax_controller', self.relax_controller, axis_pos=10),
+            Action('mm',  'mannequin_mode',   self.mannequin_mode,   axis_pos=11),
         ]
-        #TODO: Is it possible to merge this code with
-        #      GPSTrainingGUI.__init__?
-        self._actions = {action._key: action for action in actions_arr}
-        for key, action in self._actions.iteritems():
-            if key in self._hyperparams['keyboard_bindings']:
-                action._kb = self._hyperparams['keyboard_bindings'][key]
-            if key in self._hyperparams['ps3_bindings']:
-                action._pb = self._hyperparams['ps3_bindings'][key]
 
-        # GUI Components.
+        # Setup figure.
         plt.ion()
         plt.rcParams['toolbar'] = 'None'
-        # Remove 's' keyboard shortcut for saving.
-        plt.rcParams['keymap.save'] = ''
+        for key in plt.rcParams:
+            if key.startswith('keymap.'):
+                plt.rcParams[key] = ''
 
-        self._fig = plt.figure(figsize=(12, 12))
-        self._fig.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99, wspace=0, hspace=0)
+        self._fig = plt.figure(figsize=config['figsize'])
+        self._fig.subplots_adjust(left=0.01, bottom=0.01, right=0.99, top=0.99,
+                wspace=0, hspace=0)
 
         # Assign GUI component locations.
         self._gs = gridspec.GridSpec(4, 4)
-        self._gs_action_axis                = self._gs[0:1, 0:4]
-        self._gs_target_output              = self._gs[1:3, 0:2]
-        self._gs_initial_image_visualizer   = self._gs[3:4, 0:1]
-        self._gs_target_image_visualizer    = self._gs[3:4, 1:2]
-        self._gs_action_output              = self._gs[1:2, 2:4]
-        self._gs_image_visualizer           = self._gs[2:4, 2:4]
+        self._gs_action_panel                   = self._gs[0:1, 0:4]
+        if config['image_on']:
+            self._gs_target_output              = self._gs[1:3, 0:2]
+            self._gs_initial_image_visualizer   = self._gs[3:4, 0:1]
+            self._gs_target_image_visualizer    = self._gs[3:4, 1:2]
+            self._gs_action_output              = self._gs[1:2, 2:4]
+            self._gs_image_visualizer           = self._gs[2:4, 2:4]
+        else:
+            self._gs_target_output              = self._gs[1:4, 0:2]
+            self._gs_action_output              = self._gs[1:4, 2:4]
 
         # Create GUI components.
-        self._action_axis = ActionAxis(self._fig, self._gs_action_axis, 3, 4, self._actions,
-                ps3_process_rate=self._hyperparams['ps3_process_rate'],
-                ps3_topic=self._hyperparams['ps3_topic'],
-                ps3_button=self._hyperparams['ps3_button'],
-                inverted_ps3_button=self._hyperparams['inverted_ps3_button'])
-        self._target_output = OutputAxis(self._fig, self._gs_target_output,
-                log_filename=self._log_filename, fontsize=10)
-        self._initial_image_visualizer = ImageVisualizer(self._fig, self._gs_initial_image_visualizer)
-        self._target_image_visualizer = ImageVisualizer(self._fig, self._gs_target_image_visualizer)
-        self._action_output = OutputAxis(self._fig, self._gs_action_output)
-        self._image_visualizer = ImageVisualizer(self._fig, self._gs_image_visualizer,
-                cropsize=(240, 240), rostopic=self._hyperparams['image_topic'], show_overlay_buttons=True)
+        self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 3, 4, actions_arr)
+        self._target_output = Textbox(self._fig, self._gs_target_output,
+                log_filename=self._log_filename,
+                fontsize=config['target_output_fontsize'])
+        self._action_output = Textbox(self._fig, self._gs_action_output)
+        if config['image_on']:
+            self._initial_image_visualizer = ImageVisualizer(self._fig,
+                    self._gs_initial_image_visualizer)
+            self._target_image_visualizer = ImageVisualizer(self._fig,
+                    self._gs_target_image_visualizer)
+            self._image_visualizer = ImageVisualizer(self._fig, 
+                    self._gs_image_visualizer, cropsize=config['image_size'],
+                    rostopic=config['image_topic'], show_overlay_buttons=True)
 
         # Setup GUI components.
         self.reload_positions()
@@ -143,7 +141,6 @@ class TargetSetupGUI(object):
         self._fig.canvas.draw()
 
     # Target Setup Functions.
-    # TODO: Add docstrings to these methods.
     def prev_target_number(self, event=None):
         self.set_action_status_message('prev_target_number', 'requested')
         self._target_number = (self._target_number - 1) % self._num_targets
@@ -188,7 +185,7 @@ class TargetSetupGUI(object):
         self.set_action_status_message('set_initial_position', 'requested')
         try:
             sample = self._agent.get_data(arm=self._actuator_type)
-        except TimeoutException as e:
+        except TimeoutException:
             self.set_action_status_message('set_initial_position', 'failed',
                     message='TimeoutException while retrieving sample')
             return
@@ -196,19 +193,19 @@ class TargetSetupGUI(object):
         ee_pos = sample.get(END_EFFECTOR_POSITIONS)
         ee_rot = sample.get(END_EFFECTOR_ROTATIONS)
         self._initial_position = (ja, ee_pos, ee_rot)
-        save_pose_to_npz(self._target_filename, self._actuator_name, str(self._target_number),
-                'initial', self._initial_position)
+        save_pose_to_npz(self._target_filename, self._actuator_name,
+                str(self._target_number), 'initial', self._initial_position)
 
         self.update_target_text()
         self.set_action_status_message('set_initial_position', 'completed',
-                message='initial position =\n %s' % self.position_to_str(self._initial_position))
+                message='initial position =\n %s' % \
+                self.position_to_str(self._initial_position))
 
     def set_target_position(self, event=None):
         self.set_action_status_message('set_target_position', 'requested')
-        self.set_action_bgcolor('green', alpha=0.2)
         try:
             sample = self._agent.get_data(arm=self._actuator_type)
-        except TimeoutException as e:
+        except TimeoutException:
             self.set_action_status_message('set_target_position', 'failed',
                     message='TimeoutException while retrieving sample')
             return
@@ -216,12 +213,13 @@ class TargetSetupGUI(object):
         ee_pos = sample.get(END_EFFECTOR_POSITIONS)
         ee_rot = sample.get(END_EFFECTOR_ROTATIONS)
         self._target_position = (ja, ee_pos, ee_rot)
-        save_pose_to_npz(self._target_filename, self._actuator_name, str(self._target_number),
-                'target', self._target_position)
+        save_pose_to_npz(self._target_filename, self._actuator_name,
+                str(self._target_number), 'target', self._target_position)
 
         self.update_target_text()
         self.set_action_status_message('set_target_position', 'completed',
-                message='target position =\n %s' % self.position_to_str(self._target_position))
+                message='target position =\n %s' % \
+                self.position_to_str(self._target_position))
 
     def set_initial_image(self, event=None):
         self.set_action_status_message('set_initial_image', 'requested')
@@ -230,8 +228,8 @@ class TargetSetupGUI(object):
             self.set_action_status_message('set_initial_image', 'failed',
                     message='no image available')
             return
-        save_data_to_npz(self._target_filename, self._actuator_name, str(self._target_number),
-                'initial', 'image', self._initial_image)
+        save_data_to_npz(self._target_filename, self._actuator_name,
+                str(self._target_number), 'initial', 'image', self._initial_image)
 
         self.update_target_text()
         self.set_action_status_message('set_initial_image', 'completed',
@@ -244,8 +242,8 @@ class TargetSetupGUI(object):
             self.set_action_status_message('set_target_image', 'failed',
                     message='no image available')
             return
-        save_data_to_npz(self._target_filename, self._actuator_name, str(self._target_number),
-                'target', 'image', self._target_image)
+        save_data_to_npz(self._target_filename, self._actuator_name,
+                str(self._target_number), 'target', 'image', self._target_image)
 
         self.update_target_text()
         self.set_action_status_message('set_target_image', 'completed',
@@ -254,14 +252,14 @@ class TargetSetupGUI(object):
     def move_to_initial(self, event=None):
         ja = self._initial_position[0]
         self.set_action_status_message('move_to_initial', 'requested')
-        self._agent.reset_arm(self._actuator_type, JOINT_SPACE, ja)
+        self._agent.reset_arm(self._actuator_type, JOINT_SPACE, ja.T)
         self.set_action_status_message('move_to_initial', 'completed',
                 message='initial position: %s' % str(ja))
 
     def move_to_target(self, event=None):
         ja = self._target_position[0]
         self.set_action_status_message('move_to_target', 'requested')
-        self._agent.reset_arm(self._actuator_type, JOINT_SPACE, ja)
+        self._agent.reset_arm(self._actuator_type, JOINT_SPACE, ja.T)
         self.set_action_status_message('move_to_target', 'completed',
                 message='target position: %s' % str(ja))
 
@@ -272,15 +270,24 @@ class TargetSetupGUI(object):
                 message='actuator name: %s' % self._actuator_name)
 
     def mannequin_mode(self, event=None):
+        """
+        Calls "roslaunch pr2_mannequin_mode pr2_mannequin_mode.launch"
+        (only works for the PR2 robot).
+        """
         if not self._mannequin_mode:
             self.set_action_status_message('mannequin_mode', 'requested')
-            subprocess.call(['roslaunch', 'pr2_mannequin_mode', 'pr2_mannequin_mode.launch'])
+            subprocess.Popen(['rosrun', 'pr2_controller_manager', 
+                    'pr2_controller_manager', 'stop', 'GPSPR2Plugin'], stdout=DEVNULL)
+            self._mm_process = subprocess.Popen(['roslaunch',
+                    'pr2_mannequin_mode', 'pr2_mannequin_mode.launch'], stdout=DEVNULL)
             self._mannequin_mode = True
             self.set_action_status_message('mannequin_mode', 'completed',
                     message='mannequin mode toggled on')
         else:
             self.set_action_status_message('mannequin_mode', 'requested')
-            subprocess.call(['roslaunch', 'gps_agent_pkg', 'pr2_real.launch'])
+            self._mm_process.send_signal(signal.SIGINT)
+            subprocess.Popen(['rosrun', 'pr2_controller_manager',
+                    'pr2_controller_manager', 'start', 'GPSPR2Plugin'], stdout=DEVNULL)
             self._mannequin_mode = False
             self.set_action_status_message('mannequin_mode', 'completed',
                     message='mannequin mode toggled off')
@@ -298,10 +305,11 @@ class TargetSetupGUI(object):
         )
         self._target_output.set_text(text)
 
-        self._initial_image_visualizer.update(self._initial_image)
-        self._target_image_visualizer.update(self._target_image)
-        self._image_visualizer.set_initial_image(self._initial_image, alpha=0.3)
-        self._image_visualizer.set_target_image(self._target_image, alpha=0.3)
+        if config['image_on']:
+            self._initial_image_visualizer.update(self._initial_image)
+            self._target_image_visualizer.update(self._target_image)
+            self._image_visualizer.set_initial_image(self._initial_image, alpha=0.3)
+            self._image_visualizer.set_target_image(self._target_image, alpha=0.3)
 
     def position_to_str(self, position):
         np.set_printoptions(precision=3, suppress=True)
@@ -329,97 +337,17 @@ class TargetSetupGUI(object):
         self._action_output.set_bgcolor(color, alpha)
 
     def reload_positions(self):
-        self._initial_position = load_pose_from_npz(self._target_filename, self._actuator_name,
-                str(self._target_number), 'initial')
-        self._target_position  = load_pose_from_npz(self._target_filename, self._actuator_name,
-                str(self._target_number), 'target')
-        self._initial_image    = load_data_from_npz(self._target_filename, self._actuator_name,
-                str(self._target_number), 'initial', 'image', default=None)
-        self._target_image     = load_data_from_npz(self._target_filename, self._actuator_name,
-                str(self._target_number), 'target',  'image', default=None)
-
-
-def save_pose_to_npz(filename, actuator_name, target_number, data_time, values):
-    ja, ee_pos, ee_rot = values
-    save_data_to_npz(filename, actuator_name, target_number, data_time,
-                     'ja', ja)
-    save_data_to_npz(filename, actuator_name, target_number, data_time,
-                     'ee_pos', ee_pos)
-    save_data_to_npz(filename, actuator_name, target_number, data_time,
-                     'ee_rot', ee_rot)
-
-
-def save_data_to_npz(filename, actuator_name, target_number, data_time,
-                     data_name, value):
-    """
-    Save data to the specified file with key
-    (actuator_name, target_number, data_time, data_name).
-    """
-    key = '_'.join((actuator_name, target_number, data_time, data_name))
-    save_to_npz(filename, key, value)
-
-
-def save_to_npz(filename, key, value):
-    """
-    Save a (key,value) pair to a npz dictionary.
-    Args:
-        filename: The file containing the npz dictionary.
-        key: The key (string).
-        value: The value (numpy array).
-    """
-    tmp = {}
-    if os.path.exists(filename):
-        with np.load(filename) as f:
-            tmp = dict(f)
-    tmp[key] = value
-    np.savez(filename, **tmp)
-
-
-def load_pose_from_npz(filename, actuator_name, target_number, data_time):
-    ja = load_data_from_npz(filename, actuator_name, target_number, data_time,
-                            'ja', default=np.zeros(7))
-    ee_pos = load_data_from_npz(filename, actuator_name, target_number,
-                                data_time, 'ee_pos', default=np.zeros(3))
-    ee_rot = load_data_from_npz(filename, actuator_name, target_number,
-                                data_time, 'ee_rot', default=np.zeros((3, 3)))
-    return (ja, ee_pos, ee_rot)
-
-
-def load_data_from_npz(filename, actuator_name, target_number, data_time,
-                       data_name, default=None):
-    """
-    Load data from the specified file with key
-    (actuator_name, target_number, data_time, data_name).
-    """
-    key = '_'.join((actuator_name, target_number, data_time, data_name))
-    return load_from_npz(filename, key, default)
-
-
-def load_from_npz(filename, key, default=None):
-    """
-    Load a (key,value) pair from a npz dictionary.
-    Args:
-        filename: The file containing the npz dictionary.
-        key: The key (string).
-        value: The default value to return, if key or file not found.
-    """
-    try:
-        with np.load(filename) as f:
-            return f[key]
-    except (IOError, KeyError) as e:
-        # print 'error loading %s from %s' % (key, filename), e
-        pass
-    return default
-
-
-if __name__ == "__main__":
-    hyperparams = imp.load_source(
-        'hyperparams', 'experiments/default_pr2_experiment/hyperparams.py'
-    )
-
-    rospy.init_node('target_setup_gui')
-    agent = AgentROS(hyperparams.config['agent'], init_node=False)
-    target_setup_gui = TargetSetupGUI(agent, hyperparams.config['common'])
-
-    plt.ioff()
-    plt.show()
+        """
+        Reloads the initial/target positions and images.
+        This is called after the target number of actuator type have changed.
+        """
+        self._initial_position = load_pose_from_npz(self._target_filename,
+                self._actuator_name, str(self._target_number), 'initial')
+        self._target_position  = load_pose_from_npz(self._target_filename,
+                self._actuator_name, str(self._target_number), 'target')
+        self._initial_image    = load_data_from_npz(self._target_filename,
+                self._actuator_name, str(self._target_number), 'initial',
+                'image', default=None)
+        self._target_image     = load_data_from_npz(self._target_filename,
+                self._actuator_name, str(self._target_number), 'target',
+                'image', default=None)

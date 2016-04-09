@@ -11,6 +11,9 @@ TfController::TfController()
 {
     is_configured_ = false;
 
+    last_command_id_received = 0;
+    last_command_id_acted_upon = 0;
+    failed_attempts = 0;
 }
 
 // Destructor.

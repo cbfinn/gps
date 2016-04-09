@@ -1,13 +1,19 @@
-""" This file defines the output axis. """
-import time
+"""
+Textbox
 
+A Textbox represents the standard textbox. It has basic capabilities for
+setting the text, appending text, or changing the background color.
+If a log filename is given, all text displayed by the Textbox is also placed
+within the log file.
+"""
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.colors import ColorConverter
 
 
-class OutputAxis:
+class Textbox:
+
     def __init__(self, fig, gs, log_filename=None, max_display_size=10,
         border_on=False, bgcolor=mpl.rcParams['figure.facecolor'], bgalpha=1.0,
         fontsize=12, font_family='sans-serif'):
@@ -16,8 +22,9 @@ class OutputAxis:
         self._ax = plt.subplot(self._gs[0])
         self._log_filename = log_filename
 
-        self._text_box = self._ax.text(0.01, 0.95, '', color='black', fontsize=fontsize,
-                va='top', ha='left', transform=self._ax.transAxes, family=font_family)
+        self._text_box = self._ax.text(0.01, 0.95, '', color='black',
+                va='top', ha='left', transform=self._ax.transAxes,
+                fontsize=fontsize, family=font_family)
         self._text_arr = []
         self._max_display_size = max_display_size
 
@@ -67,23 +74,3 @@ class OutputAxis:
         self._ax.draw_artist(self._text_box)
         self._fig.canvas.update()
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
-
-
-if __name__ == "__main__":
-    import matplotlib.gridspec as gridspec
-
-
-    plt.ion()
-    fig = plt.figure()
-    gs = gridspec.GridSpec(1, 1)
-    output_axis = OutputAxis(fig, gs[0], max_display_size=10, log_filename=None)
-
-    max_i = 20
-    for i in range(max_i):
-        output_axis.append_text(str(i))
-        c = 0.5 + 0.5*i/max_i
-        output_axis.set_bgcolor((c, c, c))
-        time.sleep(1)
-
-    plt.ioff()
-    plt.show()

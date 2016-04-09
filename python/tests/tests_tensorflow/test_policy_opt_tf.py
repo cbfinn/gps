@@ -6,12 +6,12 @@ import numpy as np
 import tensorflow as tf
 
 # Add gps/python to path so that imports work.
-gps_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', 'python'))
+gps_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..', ''))
 sys.path.append(gps_path)
 
 from gps.algorithm.policy.tf_policy import TfPolicy
 from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
-from gps.algorithm.policy_opt.config_tf import POLICY_OPT_TF
+from gps.algorithm.policy_opt.config import POLICY_OPT_TF
 from gps.algorithm.policy_opt.tf_model_example import euclidean_loss_layer, \
     batched_matrix_vector_multiply
 
@@ -185,7 +185,7 @@ def test_euclidean_loss_layer():
 
 
 def test_policy_opt_live():
-    test_dir = os.path.dirname(__file__) + '/test_data/'
+    test_dir = gps_path + '/tests/tests_tensorflow' + '/test_data/'
     obs = np.load(test_dir + 'obs.npy')
     tgt_mu = np.load(test_dir + 'tgt_mu.npy')
     tgt_prc = np.load(test_dir + 'tgt_prc.npy')
