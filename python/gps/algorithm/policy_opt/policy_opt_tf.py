@@ -126,9 +126,7 @@ class PolicyOptTf(PolicyOpt):
             feed_dict = {self.obs_tensor: obs[idx_i],
                          self.action_tensor: tgt_mu[idx_i],
                          self.precision_tensor: tgt_prc[idx_i]}
-            self.solver(feed_dict, self.sess)
-            with tf.device(self.device_string):
-                train_loss = self.sess.run(self.loss_scalar, feed_dict)
+            train_loss = self.solver(feed_dict, self.sess)
 
             average_loss += train_loss
             if i % 500 == 0 and i != 0:
