@@ -28,6 +28,7 @@ class TfPolicy(Policy):
         self.chol_pol_covar = np.diag(np.sqrt(var))
         self.scale = None  # must be set from elsewhere based on observations
         self.bias = None
+        self.st_idx = None
 
     def act(self, x, obs, t, noise):
         """
@@ -39,14 +40,27 @@ class TfPolicy(Policy):
             noise: Action noise. This will be scaled by the variance.
         """
         # Normalize obs.
-        obs = obs.dot(self.scale) + self.bias
+        #obs = obs.dot(self.scale) + self.bias
+        #with tf.device(self.device_string):
+        #    action_mean = self.sess.run(self.act_op, feed_dict={self.obs_tensor: np.expand_dims(obs, 0)})
+        #if noise is None:
+        #    u = action_mean
+        #else:
+        #    u = action_mean + self.chol_pol_covar.T.dot(noise)
+        #return u[0]  # this algorithm is batched by default. But here, we run with a batch size of one.
+
+        # Normalize obs.
+        if len(obs.shape) == 1:
+            obs = np.expand_dims(obs, axis=0)
+        obs[:, self.st_idx] = obs[:, self.st_idx].dot(self.scale) + self.bias
         with tf.device(self.device_string):
-            action_mean = self.sess.run(self.act_op, feed_dict={self.obs_tensor: np.expand_dims(obs, 0)})
+            action_mean = self.sess.run(self.act_op, feed_dict={self.obs_tensor: obs})
+        #action_mean = np.squeeze(action_mean)
         if noise is None:
             u = action_mean
         else:
             u = action_mean + self.chol_pol_covar.T.dot(noise)
-        return u[0]  # this algorithm is batched by default. But here, we run with a batch size of one.
+        return u[0]
 
     def pickle_policy(self, deg_obs, deg_action, checkpoint_path, goal_state=None):
         """

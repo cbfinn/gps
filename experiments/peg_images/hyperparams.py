@@ -16,13 +16,15 @@ from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 #from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
-from gps.algorithm.policy_opt.policy_opt_theano import PolicyOptTheano
+from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
 from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION, \
         RGB_IMAGE, RGB_IMAGE_SIZE
-from gps.algorithm.policy_opt.theano_basic_models import multi_modal_network
+#from gps.algorithm.policy_opt.theano_basic_models import multi_modal_network
+from gps.algorithm.policy_opt.tf_model_example import example_tf_network
+from gps.algorithm.policy_opt.tf_model_example import multi_modal_network
 IMAGE_WIDTH = 80#40
 IMAGE_HEIGHT = 64#32
 IMAGE_CHANNELS = 3
@@ -150,9 +152,7 @@ algorithm['traj_opt'] = {
 }
 
 algorithm['policy_opt'] = {
-    #'type': PolicyOptCaffe,
-    'type': PolicyOptTheano,
-    'network_model': multi_modal_network,
+    'type': PolicyOptTf,
     'network_params': {
         'dim_hidden': [10],
         'num_filters': [5, 10],
