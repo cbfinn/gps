@@ -28,8 +28,14 @@ class GPSMain(object):
         self._hyperparams = config
         self._conditions = config['common']['conditions']
         # TODO: add default
-        self._train_idx = config['common']['train_conditions']
-        self._test_idx = config['common']['test_conditions']
+        if 'train_conditions' in config['common']:
+            self._train_idx = config['common']['train_conditions']
+            self._test_idx = config['common']['test_conditions']
+        else:
+            self._train_idx = self._conditions
+            config['common']['train_conditions'] = config['common']['conditions']
+            self._hyperparams=config
+            self._test_idx = None
 
         self._data_files_dir = config['common']['data_files_dir']
 
@@ -79,7 +85,7 @@ class GPSMain(object):
                 self.gui.set_status_text('Press \'go\' to begin.')
             return 0
         else:
-            algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr_load
+            algorithm_file = self._data_files_dir + 'algorithm_i_%02d.pkl' % itr_load
             self.algorithm = self.data_logger.unpickle(algorithm_file)
             if self.algorithm is None:
                 print("Error: cannot find '%s.'" % algorithm_file)
