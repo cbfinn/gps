@@ -67,6 +67,7 @@ agent = {
                       END_EFFECTOR_POINT_VELOCITIES],
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                     END_EFFECTOR_POINT_VELOCITIES],
+    'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
 }
 
 algorithm = {
@@ -102,7 +103,7 @@ torque_cost = {
 
 fk_cost = {
     'type': CostFK,
-    'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
+    'target_end_effector': np.array([0.0, 1.3, -0.5, 0.0, 1.3, -0.2]),
     'wp': np.array([1, 1, 1, 1, 1, 1]),
     'l1': 0.1,
     'l2': 10.0,
@@ -132,6 +133,16 @@ algorithm['traj_opt'] = {
 
 algorithm['policy_opt'] = {
     'type': PolicyOptTf,
+    'network_params': {
+        'dim_hidden': [10],
+        'num_filters': [5, 10],
+        'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
+        'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES],
+        'obs_image_data': [],
+        'sensor_dims': SENSOR_DIMS,
+        'batch_size': 25,
+    },
+    'iterations': 1000,
     'weights_file_prefix': EXP_DIR + 'policy',
 }
 
