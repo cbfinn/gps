@@ -120,8 +120,6 @@ class PolicyOptTf(PolicyOpt):
             self.policy.st_idx = self.st_idx
             self.policy.scale = np.diag(1.0 / np.std(obs[:, self.st_idx], axis=0))
             self.policy.bias = -np.mean(obs[:, self.st_idx].dot(self.policy.scale), axis=0)
-            print self.policy.scale.shape
-            print self.policy.bias.shape
         obs[:, self.st_idx] = obs[:, self.st_idx].dot(self.policy.scale) + self.policy.bias
 
         # Assuming that N*T >= self.batch_size.
