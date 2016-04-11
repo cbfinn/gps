@@ -23,7 +23,9 @@ class Algorithm(object):
         config.update(hyperparams)
         self._hyperparams = config
 
-        self.M = hyperparams['conditions']
+        # self.M = hyperparams['conditions']
+        self._cond_idx = hyperparams['train_conditions']
+        self.M = len(self._cond_idx)
         self.iteration_count = 0
 
         # Grab a few values from the agent.
@@ -48,7 +50,7 @@ class Algorithm(object):
             dynamics = self._hyperparams['dynamics']
             self.cur[m].traj_info.dynamics = dynamics['type'](dynamics)
             init_traj_distr = extract_condition(
-                self._hyperparams['init_traj_distr'], m
+                self._hyperparams['init_traj_distr'], self._cond_idx[m]
             )
             self.cur[m].traj_distr = init_traj_distr['type'](init_traj_distr)
 

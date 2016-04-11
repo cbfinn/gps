@@ -17,6 +17,7 @@ class Sample(object):
         self.dX = agent.dX
         self.dU = agent.dU
         self.dO = agent.dO
+        self.dM = agent.dM
 
         # Dictionary containing the sample data from various sensors.
         self._data = {}
@@ -25,6 +26,8 @@ class Sample(object):
         self._X.fill(np.nan)
         self._obs = np.empty((self.T, self.dO))
         self._obs.fill(np.nan)
+        self._meta = np.empty(self.dM)
+        self._meta.fill(np.nan)
 
     def set(self, sensor_name, sensor_data, t=None):
         """ Set trajectory data for a particular sensor. """
@@ -32,6 +35,7 @@ class Sample(object):
             self._data[sensor_name] = sensor_data
             self._X.fill(np.nan)  # Invalidate existing X.
             self._obs.fill(np.nan)  # Invalidate existing obs.
+            self._meta.fill(np.nan)  # Invalidate existing meta data.
         else:
             if sensor_name not in self._data:
                 self._data[sensor_name] = \
@@ -69,10 +73,23 @@ class Sample(object):
             for data_type in self._data:
                 if data_type not in self.agent.obs_data_types:
                     continue
+                if data_type in self.agent.meta_data_types:
+                    continue
                 data = (self._data[data_type] if t is None
                         else self._data[data_type][t, :])
                 self.agent.pack_data_obs(obs, data, data_types=[data_type])
         return obs
+
+    def get_meta(self):
+        """ Get the meta data. Put it together if not precomputed. """
+        meta = self._meta
+        if np.any(np.isnan(meta)):
+            for data_type in self._data:
+                if data_type not in self.agent.meta_data_types:
+                    continue
+                data = self._data[data_type]
+                self.agent.pack_data_meta(meta, data, data_types=[data_type])
+        return meta
 
     # For pickling.
     def __getstate__(self):
