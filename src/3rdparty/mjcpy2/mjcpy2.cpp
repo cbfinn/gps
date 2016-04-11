@@ -150,13 +150,14 @@ bp::object PyMJCWorld2::Step(const bn::ndarray& x, const bn::ndarray& u) {
     // printf("after step+kin: %f\n", m_data->com[0]);
 
     long xdims[1] = {StateSize(m_model)};
-    long odims[1] = {1};  // oout is unused
+    long site_dims[2] = {m_model->nsite, 3};
     bn::ndarray xout = bn::empty(1, xdims, bn::dtype::get_builtin<mjtNum>());
-    bn::ndarray oout = bn::empty(1, odims, bn::dtype::get_builtin<mjtNum>());
+    bn::ndarray site_out = bn::empty(2, site_dims, bn::dtype::get_builtin<mjtNum>());
 
     GetState((mjtNum*)xout.get_data(), m_model, m_data);
+    mju_copy((mjtNum*)site_out.get_data(), m_data->site_xpos, 3*m_model->nsite);
 
-	return bp::make_tuple(xout, oout);
+	return bp::make_tuple(xout, site_out);
 }
 
 
