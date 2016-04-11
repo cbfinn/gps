@@ -26,7 +26,10 @@ class Agent(object):
 
         self.x_data_types = self._hyperparams['state_include']
         self.obs_data_types = self._hyperparams['obs_include']
-        self.meta_data_types = self._hyperparams['meta_include']
+        if 'meta_include' in self._hyperparams:
+            self.meta_data_types = self._hyperparams['meta_include']
+        else:
+            self.meta_data_types = []
 
         # List of indices for each data type in state X.
         self._state_idx, i = [], 0

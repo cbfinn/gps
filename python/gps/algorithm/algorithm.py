@@ -23,9 +23,11 @@ class Algorithm(object):
         config.update(hyperparams)
         self._hyperparams = config
 
-        # self.M = hyperparams['conditions']
-        self._cond_idx = hyperparams['train_conditions']
-        self.M = len(self._cond_idx)
+        if 'train_conditions' in hyperparams:
+            self._cond_idx = hyperparams['train_conditions']
+            self.M = len(self._cond_idx)
+        else:
+            self.M = hyperparams['conditions']
         self.iteration_count = 0
 
         # Grab a few values from the agent.

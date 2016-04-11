@@ -23,8 +23,6 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION, \
         RGB_IMAGE, RGB_IMAGE_SIZE
 #from gps.algorithm.policy_opt.theano_basic_models import multi_modal_network
-from gps.algorithm.policy_opt.tf_model_example import example_tf_network
-from gps.algorithm.policy_opt.tf_model_example import multi_modal_network
 IMAGE_WIDTH = 80#40
 IMAGE_HEIGHT = 64#32
 IMAGE_CHANNELS = 3
