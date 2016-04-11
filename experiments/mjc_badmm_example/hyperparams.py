@@ -133,6 +133,16 @@ algorithm['traj_opt'] = {
 
 algorithm['policy_opt'] = {
     'type': PolicyOptTf,
+    'network_params': {
+        'dim_hidden': [10],
+        'num_filters': [5, 10],
+        'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
+        'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES],
+        'obs_image_data': [],
+        'sensor_dims': SENSOR_DIMS,
+        'batch_size': 25,
+    },
+    'iterations': 1000,
     'weights_file_prefix': EXP_DIR + 'policy',
 }
 
