@@ -32,7 +32,7 @@ class GPSMain(object):
             self._train_idx = config['common']['train_conditions']
             self._test_idx = config['common']['test_conditions']
         else:
-            self._train_idx = self._conditions
+            self._train_idx = range(self._conditions)
             config['common']['train_conditions'] = config['common']['conditions']
             self._hyperparams=config
             self._test_idx = None

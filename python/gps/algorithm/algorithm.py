@@ -28,6 +28,7 @@ class Algorithm(object):
             self.M = len(self._cond_idx)
         else:
             self.M = hyperparams['conditions']
+            self._cond_idx = range(self.M)
         self.iteration_count = 0
 
         # Grab a few values from the agent.
