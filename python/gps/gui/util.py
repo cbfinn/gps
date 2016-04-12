@@ -21,9 +21,15 @@ def buffered_axis_limits(amin, amax, buffer_factor=1.0):
 
 def save_pose_to_npz(filename, actuator_name, target_number, data_time, pose):
     """
-    Saves a pose (i.e. a joint angle, end effector position, and end effector
-    rotation tuple) for the specified actuator name (TRIAL_ARM, AUXILIARY ARM, 
-    etc.), target number (0-9), and data_time (initial or final).
+    Saves a pose for the specified actuator name, target number, and data time.
+    Args:
+        filename - the target file ('../target.npz')
+        actuator_name - the actuator name ('trial_arm', 'auxiliary_arm', etc.)
+        target_number - the target number ('0', '1', '2', etc.)
+        data_time - either 'initial or 'final'
+        pose - (joint angle, end effector poition, end effector rotation) tuple
+    Return:
+        None
     """
     ja, ee_pos, ee_rot = pose
     save_data_to_npz(filename, actuator_name, target_number, data_time,
@@ -60,18 +66,25 @@ def save_to_npz(filename, key, value):
     np.savez(filename, **tmp)
 
 
-def load_pose_from_npz(filename, actuator_name, target_number, data_time):
+def load_pose_from_npz(filename, actuator_name, target_number, data_time,
+        default_ja=np.zeros(7), default_ee_pos=np.zeros(3),
+        default_ee_rot=np.zeros((3, 3))):
     """
-    Loads a pose (i.e. a joint angle, end effector position, and end effector
-    rotation tuple) for the specified actuator name (TRIAL_ARM, AUXILIARY ARM, 
-    etc.), target number (0-9), and data_time (initial or final).
+    Loads a pose for the specified actuator name, target number, and data time.
+    Args:
+        filename - the target file ('../target.npz')
+        actuator_name - the actuator name ('trial_arm', 'auxiliary_arm', etc.)
+        target_number - the target number ('0', '1', '2', etc.)
+        data_time - either 'initial or 'final'
+    Return:
+        pose - (joint angle, end effector poition, end effector rotation) tuple 
     """
     ja = load_data_from_npz(filename, actuator_name, target_number, data_time,
-                            'ja', default=np.zeros(7))
+                            'ja', default=default_ja)
     ee_pos = load_data_from_npz(filename, actuator_name, target_number,
-                                data_time, 'ee_pos', default=np.zeros(3))
+                                data_time, 'ee_pos', default=default_ee_pos)
     ee_rot = load_data_from_npz(filename, actuator_name, target_number,
-                                data_time, 'ee_rot', default=np.zeros((3, 3)))
+                                data_time, 'ee_rot', default=default_ee_rot)
     return (ja, ee_pos, ee_rot)
 
 
