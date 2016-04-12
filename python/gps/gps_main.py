@@ -264,6 +264,15 @@ def main():
     resume_training_itr = args.resume
     test_policy_N = args.policy
 
+    from gps import __file__ as gps_filepath
+    GPS_DIR = '/'.join(str.split(gps_filepath, '/')[:-3])
+    CWD = os.getcwd()
+    if CWD != GPS_DIR:
+        sys.exit('Error: GPS must be run from the top-level gps directory.\n' +
+                'Current directory:  ' + CWD + '\n' +
+                'Expected directory: ' + GPS_DIR)
+
+
     exp_dir = 'experiments/' + exp_name + '/'
     hyperparams_file = exp_dir + 'hyperparams.py'
 
