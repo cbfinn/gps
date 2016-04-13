@@ -54,7 +54,9 @@ public:
 
     PyMJCWorld2(const std::string& loadfile);
     bp::object Step(const bn::ndarray& x, const bn::ndarray& u);
-    void Plot(const bn::ndarray& x);    
+    void Plot(const bn::ndarray& x);
+    void InitCam(float cx,float cy,float cz,float px,float py,float pz);
+    void InitViewer(int width, int height, float cx,float cy,float cz,float px,float py,float pz);
     void Idle(const bn::ndarray& x);
     bn::ndarray GetCOMMulti(const bn::ndarray& x);
     bn::ndarray GetJacSite(int site);
@@ -63,14 +65,18 @@ public:
     void SetModel(bp::dict d);
     bp::dict GetData();
     void SetData(bp::dict d);
-    bn::ndarray GetImage(const bn::ndarray& x);
+    bp::dict GetImage();
+    bp::dict GetImageScaled(int width, int height);
     void SetNumSteps(int n) {m_numSteps=n;}
+    void SetCamera(float x, float y, float z, float px, float py, float pz);
 
     ~PyMJCWorld2();
 private:
     // PyMJCWorld(const PyMJCWorld&) {}
 
     void _PlotInit();
+    void _PlotInit(float x, float y, float z, float px, float py, float pz);
+    void _PlotInit(int width, int height, float x, float y, float z, float px, float py, float pz);
 
     // void _SetState(const mjtNum* xdata) {mju_copy(m_data->qpos, (xdata), NQ); mju_copy(m_data->qvel, (xdata)+NQ, NV); }
     // void _SetControl(const mjtNum* udata) {for (int i=0; i < m_actuatedDims.size(); ++i) m_u[m_actuatedDims[i]] = (udata)[i];}
@@ -214,12 +220,34 @@ void PyMJCWorld2::_PlotInit() {
     }
 }
 
+void PyMJCWorld2::_PlotInit(float x, float y, float z, float px, float py, float pz) {
+    if (m_viewer == NULL) {
+        m_viewer = new MujocoOSGViewer(osg::Vec3(x, y, z),osg::Vec3(px, py, pz));
+        m_viewer->SetModel(m_model);
+    }
+}
+
+void PyMJCWorld2::_PlotInit(int width, int height, float x, float y, float z, float px, float py, float pz) {
+    if (m_viewer == NULL) {
+        m_viewer = new MujocoOSGViewer(width, height, osg::Vec3(x, y, z),osg::Vec3(px, py, pz));
+        m_viewer->SetModel(m_model);
+    }
+}
+
 void PyMJCWorld2::Plot(const bn::ndarray& x) {
     FAIL_IF_FALSE(x.get_dtype() == MJTNUM_DTYPE && x.get_nd() == 1 && x.get_flags() & bn::ndarray::C_CONTIGUOUS);
     _PlotInit();
     SetState(reinterpret_cast<const mjtNum*>(x.get_data()),m_model,m_data);
 	m_viewer->SetData(m_data);
 	m_viewer->RenderOnce();
+}
+
+void PyMJCWorld2::InitCam(float cx, float cy, float cz, float px, float py, float pz) {
+    _PlotInit(cx, cy, cz, px, py, pz);
+}
+
+void PyMJCWorld2::InitViewer(int width, int height, float cx, float cy, float cz, float px, float py, float pz) {
+    _PlotInit(width, height, cx, cy, cz, px, py, pz);
 }
 
 void PyMJCWorld2::Idle(const bn::ndarray& x) {
@@ -282,6 +310,49 @@ void PyMJCWorld2::SetData(bp::dict d) {
 
 }
 
+// grabs current image, returns an array of shape [height, width, channels]
+bp::dict PyMJCWorld2::GetImage() {
+    m_viewer->RenderOnce();
+    bp::dict out;
+    const unsigned char* tmp = static_cast<const unsigned char*>(m_viewer->m_image->getDataPointer());
+    //out["pixel_data"] = toNdarray1<unsigned char>(tmp, m_viewer->m_image->getTotalDataSize ());
+    out["num_pixels"] = m_viewer->m_image->getTotalDataSize();
+    out["width"] = m_viewer->m_image->s();
+    out["height"] = m_viewer->m_image->t();
+    int num_channels = 0;
+    if (m_viewer->m_image->getTotalDataSize() > 0)
+    {
+        num_channels = m_viewer->m_image->getTotalDataSize() / m_viewer->m_image->s() / m_viewer->m_image->t();
+    }
+    out["img"] = toNdarray3<unsigned char>(tmp, m_viewer->m_image->t(), m_viewer->m_image->s(), num_channels);
+    out["num_channels"] = num_channels;
+    return out;
+}
+
+// grabs current image, returns an array of shape [height, width, channels]
+bp::dict PyMJCWorld2::GetImageScaled(int width, int height) {
+    m_viewer->RenderOnce();
+    m_viewer->m_image->scaleImage(width,height,m_viewer->m_image->r());
+    bp::dict out;
+    const unsigned char* tmp = static_cast<const unsigned char*>(m_viewer->m_image->getDataPointer());
+    //out["pixel_data"] = toNdarray1<unsigned char>(tmp, m_viewer->m_image->getTotalDataSize ());
+    out["num_pixels"] = m_viewer->m_image->getTotalDataSize();
+    out["width"] = m_viewer->m_image->s();
+    out["height"] = m_viewer->m_image->t();
+    int num_channels = 0;
+    if (m_viewer->m_image->getTotalDataSize() > 0)
+    {
+        num_channels = m_viewer->m_image->getTotalDataSize() / m_viewer->m_image->s() / m_viewer->m_image->t();
+    }
+    out["img"] = toNdarray3<unsigned char>(tmp, m_viewer->m_image->t(), m_viewer->m_image->s(), num_channels);
+    out["num_channels"] = num_channels;
+    return out;
+}
+
+void PyMJCWorld2::SetCamera(float x, float y, float z, float px, float py, float pz){
+    // place camera at (x,y,z) pointing to (px,py,pz)
+    m_viewer->SetCamera(x,y,z,px,py,pz);
+}
 
 BOOST_PYTHON_MODULE(mjcpy) {
     bn::initialize();
@@ -301,13 +372,17 @@ BOOST_PYTHON_MODULE(mjcpy) {
         .def("get_data",&PyMJCWorld2::GetData)
         .def("set_data",&PyMJCWorld2::SetData)
         .def("plot",&PyMJCWorld2::Plot)
+        .def("init_cam",&PyMJCWorld2::InitCam)
+        .def("init_viewer",&PyMJCWorld2::InitViewer)
         .def("idle",&PyMJCWorld2::Idle)
         .def("get_COM_multi",&PyMJCWorld2::GetCOMMulti)
         .def("get_jac_site",&PyMJCWorld2::GetJacSite)
         .def("kinematics",&PyMJCWorld2::Kinematics)
         // .def("SetModel",&PyMJCWorld::SetModel)
-        // .def("GetImage",&PyMJCWorld::GetImage)
+        .def("get_image",&PyMJCWorld2::GetImage)
+        .def("get_image_scaled",&PyMJCWorld2::GetImageScaled)
         .def("set_num_steps",&PyMJCWorld2::SetNumSteps)
+        .def("set_camera",&PyMJCWorld2::SetCamera)
         ;
 
 

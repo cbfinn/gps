@@ -2,6 +2,7 @@
 
 import tensorflow as tf
 from gps.algorithm.policy_opt.tf_utils import TfMap
+import numpy as np
 
 
 def init_weights(shape, name=None):
@@ -62,7 +63,7 @@ def get_loss_layer(mlp_out, action, precision, batch_size):
     return euclidean_loss_layer(a=action, b=mlp_out, precision=precision, batch_size=batch_size)
 
 
-def example_tf_network(dim_input=27, dim_output=7, batch_size=25):
+def example_tf_network(dim_input=27, dim_output=7, batch_size=25, network_config=None):
     """
     An example of how one might want to specify a network in tensorflow.
 
@@ -73,8 +74,8 @@ def example_tf_network(dim_input=27, dim_output=7, batch_size=25):
     Returns:
         a TfMap object used to serialize, inputs, outputs, and loss.
     """
-    n_layers = 3
-    dim_hidden = (n_layers - 1) * [42]
+    n_layers = 2
+    dim_hidden = (n_layers - 1) * [40]
     dim_hidden.append(dim_output)
 
     nn_input, action, precision = get_input_layer(dim_input, dim_output)
@@ -82,3 +83,104 @@ def example_tf_network(dim_input=27, dim_output=7, batch_size=25):
     loss_out = get_loss_layer(mlp_out=mlp_applied, action=action, precision=precision, batch_size=batch_size)
 
     return TfMap.init_from_lists([nn_input, action, precision], [mlp_applied], [loss_out])
+
+
+def multi_modal_network(dim_input=27, dim_output=7, batch_size=25, network_config=None):
+    """
+    An example a network in theano that has both state and image inputs.
+
+    Args:
+        dim_input: Dimensionality of input.
+        dim_output: Dimensionality of the output.
+        batch_size: Batch size.
+        network_config: dictionary of network structure parameters
+    Returns:
+        a dictionary containing inputs, outputs, and the loss function representing scalar loss.
+    """
+    # List of indices for state (vector) data and image (tensor) data in observation.
+    print 'making multi-modal-network'
+    st_idx, im_idx, i = [], [], 0
+    for sensor in network_config['obs_include']:
+        dim = network_config['sensor_dims'][sensor]
+        if sensor in network_config['obs_image_data']:
+            im_idx = im_idx + list(range(i, i+dim))
+        else:
+            st_idx = st_idx + list(range(i, i+dim))
+        i += dim
+
+    nn_input, action, precision = get_input_layer(dim_input, dim_output)
+
+    state_input = nn_input[:, 0:st_idx[-1]+1]
+    image_input = nn_input[:, st_idx[-1]+1:im_idx[-1]+1]
+
+    # image goes through 2 convnet layers
+    num_filters = network_config['num_filters']
+
+    im_height = network_config['image_height']
+    im_width = network_config['image_width']
+    num_channels = network_config['image_channels']
+    image_input = tf.reshape(image_input, [-1, im_width, im_height, num_channels])
+
+    dim_hidden = 10
+    pool_size = 2
+    filter_size = 3
+    # we pool twice, each time reducing the image size by a factor of 2.
+    conv_out_size = int(im_width/(2.0*pool_size)*im_height/(2.0*pool_size)*num_filters[1])
+    #print conv_out_size
+    #print len(st_idx)
+    print state_input.get_shape().dims[1].value
+    first_dense_size = conv_out_size + len(st_idx)  #state_input.get_shape().dims[1].value
+
+    # Store layers weight & bias
+    weights = {
+        'wc1': get_xavier_weights([filter_size, filter_size, num_channels, num_filters[0]], (pool_size, pool_size)), # 5x5 conv, 1 input, 32 outputs
+        'wc2': get_xavier_weights([filter_size, filter_size, num_filters[0], num_filters[1]], (pool_size, pool_size)), # 5x5 conv, 32 inputs, 64 outputs
+        'wd1': init_weights([first_dense_size, dim_hidden]),
+        'out': init_weights([dim_hidden, dim_output])
+    }
+
+    biases = {
+        'bc1': init_bias([num_filters[0]]),
+        'bc2': init_bias([num_filters[1]]),
+        'bd1': init_bias([dim_hidden]),
+        'out': init_bias([dim_output])
+    }
+
+    conv_layer_0 = conv2d(img=image_input, w=weights['wc1'], b=biases['bc1'])
+
+    conv_layer_0 = max_pool(conv_layer_0, k=pool_size)
+
+    conv_layer_1 = conv2d(img=conv_layer_0, w=weights['wc2'], b=biases['bc2'])
+
+    conv_layer_1 = max_pool(conv_layer_1, k=pool_size)
+
+    conv_out_flat = tf.reshape(conv_layer_1, [-1, conv_out_size])
+
+    fc_input = tf.concat(concat_dim=1, values=[conv_out_flat, state_input])
+
+    h_1 = tf.nn.relu(tf.matmul(fc_input, weights['wd1']) + biases['bd1'])
+    fc_output = tf.matmul(h_1, weights['out']) + biases['out']
+
+    loss = euclidean_loss_layer(a=action, b=fc_output, precision=precision, batch_size=batch_size)
+    return TfMap.init_from_lists([nn_input, action, precision], [fc_output], [loss])
+
+
+def conv2d(img, w, b):
+    #print img.get_shape().dims[3].value
+    return tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(img, w, strides=[1, 1, 1, 1], padding='SAME'), b))
+
+
+def max_pool(img, k):
+    return tf.nn.max_pool(img, ksize=[1, k, k, 1], strides=[1, k, k, 1], padding='SAME')
+
+
+def get_xavier_weights(filter_shape, poolsize=(2, 2)):
+    fan_in = np.prod(filter_shape[1:])
+    fan_out = (filter_shape[0] * np.prod(filter_shape[2:]) //
+               np.prod(poolsize))
+
+    low = -4*np.sqrt(6.0/(fan_in + fan_out)) # use 4 for sigmoid, 1 for tanh activation
+    high = 4*np.sqrt(6.0/(fan_in + fan_out))
+    return tf.Variable(tf.random_uniform(filter_shape, minval=low, maxval=high, dtype=tf.float32))
+
+

@@ -20,6 +20,9 @@ enum SampleType {
   TOTAL_DATA_TYPES = 13;
   POSITION = 14;
   LINEAR_VELOCITY = 15;
+  RGB_IMAGE_SIZE = 16;
+  DOMAIN_IMAGE = 17;
+  DOMAIN_IMAGE_SIZE = 18;
 }
 
 // Message containing the data for a single sample.
@@ -30,10 +33,11 @@ message Sample {
   optional uint32 dU = 3;  // dimension of action U
   optional uint32 dO = 4;  // dimension of observation
 
-  // Data arrays holding X, U, and obs.
+  // Data arrays holding X, U, obs, and meta data.
   repeated float X = 5 [packed = true];
   repeated float U = 6 [packed = true];
   repeated float obs = 7 [packed = true];
+  repeated float meta = 8 [packed = true];
 }
 
 // Enum for actuator types (Specified in Relax/PositionCommand msgs)

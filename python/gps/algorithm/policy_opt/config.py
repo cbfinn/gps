@@ -6,8 +6,10 @@ except ImportError:
 
 try:
     from gps.algorithm.policy_opt.tf_model_example import example_tf_network
+    from gps.algorithm.policy_opt.tf_model_example import multi_modal_network
 except ImportError:
     example_tf_network = None
+    multi_modal_network = None
 
 import os
 
@@ -17,7 +19,7 @@ GENERIC_CONFIG = {
     'init_var': 0.1,  # Initial policy variance.
     'ent_reg': 0.0,  # Entropy regularizer.
     # Solver hyperparameters.
-    'iterations': 20000,  # Number of iterations per inner iteration.
+    'iterations': 2000,  # Number of iterations per inner iteration.
     'batch_size': 25,
     'lr': 0.001,  # Base learning rate (by default it's fixed).
     'lr_policy': 'fixed',  # Learning rate policy.
@@ -46,7 +48,7 @@ checkpoint_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                '..', 'policy_opt/tf_checkpoint/policy_checkpoint.ckpt'))
 POLICY_OPT_TF = {
     # Other hyperparameters.
-    'network_model': example_tf_network,  # should return TfMap object from tf_utils. See example.
+    'network_model': example_tf_network, #multi_modal_network,  @chelsea..it really feels to me like this should be set in the hyperparams file. What do you think?
     'checkpoint_prefix': checkpoint_path
 }
 
