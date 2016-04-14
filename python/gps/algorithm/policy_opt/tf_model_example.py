@@ -95,10 +95,17 @@ def multi_modal_network(dim_input=27, dim_output=7, batch_size=25, network_confi
         batch_size: Batch size.
         network_config: dictionary of network structure parameters
     Returns:
-        a dictionary containing inputs, outputs, and the loss function representing scalar loss.
+        A tfMap object that stores inputs, outputs, and scalar loss.
     """
+
+    n_layers = 2
+    layer_size = 10
+    dim_hidden = (n_layers - 1)*[layer_size]
+    dim_hidden.append(dim_output)
+    pool_size = 2
+    filter_size = 3
+
     # List of indices for state (vector) data and image (tensor) data in observation.
-    print 'making multi-modal-network'
     st_idx, im_idx, i = [], [], 0
     for sensor in network_config['obs_include']:
         dim = network_config['sensor_dims'][sensor]
@@ -121,29 +128,19 @@ def multi_modal_network(dim_input=27, dim_output=7, batch_size=25, network_confi
     num_channels = network_config['image_channels']
     image_input = tf.reshape(image_input, [-1, im_width, im_height, num_channels])
 
-    dim_hidden = 10
-    pool_size = 2
-    filter_size = 3
     # we pool twice, each time reducing the image size by a factor of 2.
     conv_out_size = int(im_width/(2.0*pool_size)*im_height/(2.0*pool_size)*num_filters[1])
-    #print conv_out_size
-    #print len(st_idx)
-    print state_input.get_shape().dims[1].value
-    first_dense_size = conv_out_size + len(st_idx)  #state_input.get_shape().dims[1].value
+    first_dense_size = conv_out_size + len(st_idx)
 
     # Store layers weight & bias
     weights = {
         'wc1': get_xavier_weights([filter_size, filter_size, num_channels, num_filters[0]], (pool_size, pool_size)), # 5x5 conv, 1 input, 32 outputs
         'wc2': get_xavier_weights([filter_size, filter_size, num_filters[0], num_filters[1]], (pool_size, pool_size)), # 5x5 conv, 32 inputs, 64 outputs
-        'wd1': init_weights([first_dense_size, dim_hidden]),
-        'out': init_weights([dim_hidden, dim_output])
     }
 
     biases = {
         'bc1': init_bias([num_filters[0]]),
         'bc2': init_bias([num_filters[1]]),
-        'bd1': init_bias([dim_hidden]),
-        'out': init_bias([dim_output])
     }
 
     conv_layer_0 = conv2d(img=image_input, w=weights['wc1'], b=biases['bc1'])
@@ -158,15 +155,16 @@ def multi_modal_network(dim_input=27, dim_output=7, batch_size=25, network_confi
 
     fc_input = tf.concat(concat_dim=1, values=[conv_out_flat, state_input])
 
-    h_1 = tf.nn.relu(tf.matmul(fc_input, weights['wd1']) + biases['bd1'])
-    fc_output = tf.matmul(h_1, weights['out']) + biases['out']
+    fc_output = get_mlp_layers(fc_input, n_layers, dim_hidden)
+
+    #h_1 = tf.nn.relu(tf.matmul(fc_input, weights['wd1']) + biases['bd1'])
+    #fc_output = tf.matmul(h_1, weights['out']) + biases['out']
 
     loss = euclidean_loss_layer(a=action, b=fc_output, precision=precision, batch_size=batch_size)
     return TfMap.init_from_lists([nn_input, action, precision], [fc_output], [loss])
 
 
 def conv2d(img, w, b):
-    #print img.get_shape().dims[3].value
     return tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(img, w, strides=[1, 1, 1, 1], padding='SAME'), b))
 
 
