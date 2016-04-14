@@ -14,10 +14,29 @@ from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
 from gps.algorithm.policy_opt.config import POLICY_OPT_TF
 from gps.algorithm.policy_opt.tf_model_example import euclidean_loss_layer, \
     batched_matrix_vector_multiply
+from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
+        END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
+
+SENSOR_DIMS = {
+    JOINT_ANGLES: 7,
+    JOINT_VELOCITIES: 7,
+    END_EFFECTOR_POINTS: 6,
+    END_EFFECTOR_POINT_VELOCITIES: 6,
+    ACTION: 7,
+}
+
+network_params = {
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
+    'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES],
+    'obs_image_data': [],
+    'sensor_dims': SENSOR_DIMS,
+    'batch_size': 25,
+}
 
 
 def test_policy_opt_tf_init():
     hyper_params = POLICY_OPT_TF
+    hyper_params.update({'network_params': network_params})
     deg_obs = 100
     deg_action = 7
     PolicyOptTf(hyper_params, deg_obs, deg_action)
@@ -25,6 +44,7 @@ def test_policy_opt_tf_init():
 
 def test_policy_opt_tf_forward():
     hyper_params = POLICY_OPT_TF
+    hyper_params.update({'network_params': network_params})
     deg_obs = 100
     deg_action = 7
     policy_opt = PolicyOptTf(hyper_params, deg_obs, deg_action)
