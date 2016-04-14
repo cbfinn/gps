@@ -193,25 +193,6 @@ class PolicyOptTf(PolicyOpt):
         """ Set the entropy regularization. """
         self._hyperparams['ent_reg'] = ent_reg
 
-    def auto_save_state(self, pickle_hyperparams_path=None):
-        """ auto-pickle including hyper params. Useful for debugging. """
-
-        saver = tf.train.Saver()
-        saver.save(self.sess, self.checkpoint_file)
-        return_dict = {
-            'hyperparams': self._hyperparams,
-            'dO': self._dO,
-            'dU': self._dU,
-            'scale': self.policy.scale,
-            'bias': self.policy.bias,
-            'tf_iter': self.tf_iter,
-        }
-
-        import pickle
-        if pickle_hyperparams_path is None:
-            pickle_hyperparams_path = self.checkpoint_file + '_hyperparams'
-        pickle.dump(return_dict, open(pickle_hyperparams_path, "wb"))
-
     # For pickling.
     def __getstate__(self):
         return {

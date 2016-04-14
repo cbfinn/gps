@@ -45,7 +45,7 @@ def test_policy_opt_tf_init():
 def test_policy_opt_tf_forward():
     hyper_params = POLICY_OPT_TF
     hyper_params.update({'network_params': network_params})
-    deg_obs = 100
+    deg_obs = 14
     deg_action = 7
     policy_opt = PolicyOptTf(hyper_params, deg_obs, deg_action)
     N = 20
@@ -59,7 +59,7 @@ def test_policy_opt_tf_forward():
 
 def test_policy_opt_tf_backwards():
     hyper_params = POLICY_OPT_TF
-    deg_obs = 100
+    deg_obs = 14
     deg_action = 7
     policy_opt = PolicyOptTf(hyper_params, deg_obs, deg_action)
     N = 20
@@ -73,7 +73,7 @@ def test_policy_opt_tf_backwards():
 
 def test_policy_forward():
     hyper_params = POLICY_OPT_TF
-    deg_obs = 100
+    deg_obs = 14
     deg_action = 7
     policy_opt = PolicyOptTf(hyper_params, deg_obs, deg_action)
     N = 20
@@ -88,7 +88,7 @@ def test_policy_forward():
 
 def test_policy_opt_backwards():
     hyper_params = POLICY_OPT_TF
-    deg_obs = 20
+    deg_obs = 14
     deg_action = 7
     policy_opt = PolicyOptTf(hyper_params, deg_obs, deg_action)
     # pylint: disable=W0212
@@ -110,28 +110,9 @@ def test_pickle():
     state = policy_opt.__getstate__()
 
 
-def test_auto_save_state():
-    hyper_params = POLICY_OPT_TF
-    deg_obs = 100
-    deg_action = 7
-    policy_opt = PolicyOptTf(hyper_params, deg_obs, deg_action)
-    policy_opt.auto_save_state()
-
-
-def test_load_from_auto_save():
-    import pickle
-    path_to_dict = gps_path + '/gps/algorithm/policy_opt/tf_checkpoint/policy_checkpoint.ckpt_hyperparams'
-    state = pickle.load(open(path_to_dict, "rb"))
-    hyper_params = state['hyperparams']
-    deg_obs = state['dO']
-    deg_action = state['dU']
-    policy_opt = PolicyOptTf(hyper_params, deg_obs, deg_action)
-    policy_opt.__setstate__(state)
-
-
 def test_unpickle():
     hyper_params = POLICY_OPT_TF
-    deg_obs = 100
+    deg_obs = 14
     deg_action = 7
     policy_opt = PolicyOptTf(hyper_params, deg_obs, deg_action)
     N = 20
@@ -149,7 +130,8 @@ def test_unpickle():
 
 def test_policy_save():
     hyper_params = POLICY_OPT_TF
-    deg_obs = 100
+    hyper_params.update({'network_params': network_params})
+    deg_obs = 14
     deg_action = 7
     policy_opt = PolicyOptTf(hyper_params, deg_obs, deg_action)
     check_path = gps_path + '/gps/algorithm/policy_opt/tf_checkpoint/policy_checkpoint'
@@ -158,10 +140,10 @@ def test_policy_save():
 
 def test_policy_load():
     tf_map = POLICY_OPT_TF['network_model']
-    check_path = gps_path + '/gps/algorithm/policy_opt/tf_checkpoint/policy_checkpoint'
+    check_path = gps_path + '/gps/algorithm/policy_opt/tf_checkpoint/policy_checkpoint/_pol'
     pol = TfPolicy.load_policy(check_path, tf_map)
 
-    deg_obs = 100
+    deg_obs = 14
     deg_action = 7
     N = 20
     T = 30
@@ -239,14 +221,12 @@ def test_policy_opt_live():
 
 def main():
     print 'running tf policy opt tests'
+    test_policy_save()
+    test_policy_load()
     test_policy_opt_tf_init()
     test_policy_opt_tf_forward()
     test_policy_forward()
     test_policy_opt_backwards()
-    test_auto_save_state()
-    test_load_from_auto_save()
-    test_policy_save()
-    test_policy_load()
     test_euclidean_loss_layer()
     test_policy_opt_live()
     print 'tf policy opt tests passed'

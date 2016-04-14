@@ -52,16 +52,17 @@ class TfPolicy(Policy):
             u = action_mean + self.chol_pol_covar.T.dot(noise)
         return u[0]
 
-    def pickle_policy(self, deg_obs, deg_action, checkpoint_path, goal_state=None):
+    def pickle_policy(self, deg_obs, deg_action, checkpoint_path, goal_state=None, should_hash=False):
         """
         We can save just the policy if we are only interested in running forward at a later point
         without needing a policy optimization class. Useful for debugging and deploying.
         """
-        import uuid
+        if should_hash is True:
+            import uuid
+            hash_str = str(uuid.uuid4())
+            checkpoint_path += hash_str
         import os
-        hash_str = str(uuid.uuid4())
-        os.mkdir(checkpoint_path + hash_str + '/')
-        checkpoint_path += hash_str
+        os.mkdir(checkpoint_path + '/')
         checkpoint_path += '/_pol'
         pickled_pol = {'deg_obs': deg_obs, 'deg_action': deg_action, 'chol_pol_covar': self.chol_pol_covar,
                        'checkpoint_path_tf': checkpoint_path + '_tf_data', 'scale': self.scale, 'bias': self.bias,

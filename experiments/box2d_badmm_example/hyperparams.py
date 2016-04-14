@@ -19,6 +19,7 @@ from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
 from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, ACTION
+from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 
 SENSOR_DIMS = {
     JOINT_ANGLES: 2,
@@ -27,7 +28,7 @@ SENSOR_DIMS = {
 }
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/box2d_arm_badmm_example/'
+EXP_DIR = BASE_DIR + '/../experiments/box2d_badmm_example/'
 
 
 common = {
@@ -127,14 +128,12 @@ algorithm['traj_opt'] = {
 algorithm['policy_opt'] = {
     'type': PolicyOptTf,
     'network_params': {
-        'dim_hidden': [10],
-        'num_filters': [5, 10],
         'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
         'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES],
         'obs_image_data': [],
         'sensor_dims': SENSOR_DIMS,
-        'batch_size': 25,
     },
+    'network_model': example_tf_network,
     'iterations': 1000,
     'weights_file_prefix': EXP_DIR + 'policy',
 }
