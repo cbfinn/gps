@@ -1,6 +1,9 @@
 import os
 import numpy as np
 
+DEFAULT_JOINT_ANGLES = np.zeros(7)
+DEFAULT_END_EFFECTOR_POSITIONS = np.zeros(3)
+DEFAULT_END_EFFECTOR_ROTATIONS = np.zeros((3, 3))
 
 def buffered_axis_limits(amin, amax, buffer_factor=1.0):
     """
@@ -67,8 +70,9 @@ def save_to_npz(filename, key, value):
 
 
 def load_pose_from_npz(filename, actuator_name, target_number, data_time,
-        default_ja=np.zeros(7), default_ee_pos=np.zeros(3),
-        default_ee_rot=np.zeros((3, 3))):
+        default_ja=DEFAULT_JOINT_ANGLES,
+        default_ee_pos=DEFAULT_END_EFFECTOR_POSITIONS,
+        default_ee_rot=DEFAULT_END_EFFECTOR_ROTATIONS):
     """
     Loads a pose for the specified actuator name, target number, and data time.
     Args:
