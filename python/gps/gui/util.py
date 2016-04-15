@@ -30,7 +30,7 @@ def save_pose_to_npz(filename, actuator_name, target_number, data_time, pose):
         actuator_name - the actuator name ('trial_arm', 'auxiliary_arm', etc.)
         target_number - the target number ('0', '1', '2', etc.)
         data_time - either 'initial or 'final'
-        pose - (joint angle, end effector poition, end effector rotation) tuple
+        pose - (joint angle, end effector position, end effector rotation) tuple
     Return:
         None
     """
@@ -81,7 +81,7 @@ def load_pose_from_npz(filename, actuator_name, target_number, data_time,
         target_number - the target number ('0', '1', '2', etc.)
         data_time - either 'initial or 'final'
     Return:
-        pose - (joint angle, end effector poition, end effector rotation) tuple 
+        pose - (joint angle, end effector position, end effector rotation) tuple 
     """
     ja = load_data_from_npz(filename, actuator_name, target_number, data_time,
                             'ja', default=default_ja)
