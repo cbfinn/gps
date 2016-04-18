@@ -1,7 +1,7 @@
 <mujoco model="arm3d">
 
     <compiler inertiafromgeom="true" angle="radian" coordinate="local" />
-    <option timestep="0.01" gravity="0 0 0" iterations="20" integrator="Euler" />
+    <option timestep="0.01" gravity="0 0 0" iterations="20" integrator="RK4" />
     <default>
         <joint armature="0.04" damping="1" limited="true" />
         <geom friction=".5 .1 .1" margin="0.002" condim="1" contype="0" conaffinity="0" />

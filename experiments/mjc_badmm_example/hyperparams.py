@@ -12,12 +12,14 @@ from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
+from gps.algorithm.cost.cost_utils import RAMP_FINAL_ONLY
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
+from gps.algorithm.policy.policy_prior import PolicyPrior
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
 
@@ -58,8 +60,8 @@ agent = {
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
-    'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
-                        np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
+    'pos_body_offset': [np.array([0.06, 0.1, 0]), np.array([0.06, -0.1, 0]),
+                        np.array([-0.14, -0.1, 0]), np.array([-0.14, 0.1, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -71,25 +73,27 @@ agent = {
 algorithm = {
     'type': AlgorithmBADMM,
     'conditions': common['conditions'],
-    'iterations': 10,
+    'iterations': 12,
     'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-2]),
     'policy_dual_rate': 0.2,
     'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
     'fixed_lg_step': 3,
-    'kl_step': 5.0,
+    'kl_step': 2.0,
     'min_step_mult': 0.01,
     'max_step_mult': 1.0,
     'sample_decrease_var': 0.05,
     'sample_increase_var': 0.1,
+    'policy_sample_mode': 'replace'
 }
 
 algorithm['init_traj_distr'] = {
     'type': init_lqr,
     'init_gains':  1.0 / PR2_GAINS,
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-    'init_var': 1.0,
+    'init_var': 2.0,
     'stiffness': 1.0,
     'stiffness_vel': 0.5,
+    'final_weight': 50.0,
     'dt': agent['dt'],
     'T': agent['T'],
 }
@@ -108,10 +112,22 @@ fk_cost = {
     'alpha': 1e-5,
 }
 
+# Create second cost function for last step only.
+final_cost = {
+    'type': CostFK,
+    'ramp_option': RAMP_FINAL_ONLY,
+    'target_end_effector': fk_cost['target_end_effector'],
+    'wp': fk_cost['wp'],
+    'l1': 1.0,
+    'l2': 0.0,
+    'alpha': 1e-5,
+    'wp_final_multiplier': 10.0,
+}
+
 algorithm['cost'] = {
     'type': CostSum,
-    'costs': [torque_cost, fk_cost],
-    'weights': [1.0, 1.0],
+    'costs': [torque_cost, fk_cost, final_cost],
+    'weights': [1.0, 1.0, 1.0],
 }
 
 algorithm['dynamics'] = {
@@ -132,6 +148,7 @@ algorithm['traj_opt'] = {
 algorithm['policy_opt'] = {
     'type': PolicyOptCaffe,
     'weights_file_prefix': EXP_DIR + 'policy',
+    'iterations': 2000,
 }
 
 algorithm['policy_prior'] = {
