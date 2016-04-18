@@ -18,6 +18,7 @@ from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_lqr
+from gps.gui.config import generate_experiment_info
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, ACTION
 
 SENSOR_DIMS = {
@@ -46,7 +47,7 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentBox2D,
     'target_state' : np.array([0, 0]),
-    "world" : ArmWorld,
+    'world' : ArmWorld,
     'x0': [np.array([0.5*np.pi, 0, 0, 0, 0, 0, 0]),
            np.array([0.75*np.pi, 0.5*np.pi, 0, 0, 0, 0, 0]),
            np.array([np.pi, -0.5*np.pi, 0, 0, 0, 0, 0]),
@@ -148,13 +149,4 @@ config = {
     'algorithm': algorithm,
 }
 
-# Info for GUI
-common['info'] = (
-    'exp_name: ' + str(common['experiment_name'])              + '\n'
-    'alg_type: ' + str(algorithm['type'].__name__)             + '\n'
-    'alg_dyn:  ' + str(algorithm['dynamics']['type'].__name__) + '\n'
-    'alg_cost: ' + str(algorithm['cost']['type'].__name__)     + '\n'
-    'iterations: ' + str(config['iterations'])                   + '\n'
-    'conditions: ' + str(algorithm['conditions'])                + '\n'
-    'samples:    ' + str(config['num_samples'])                  + '\n'
-)
+common['info'] = generate_experiment_info(config)

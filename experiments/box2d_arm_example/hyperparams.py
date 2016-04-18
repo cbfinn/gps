@@ -16,8 +16,8 @@ from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy.lin_gauss_init import init_lqr
-from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, ACTION
 from gps.gui.config import generate_experiment_info
+from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, ACTION
 
 SENSOR_DIMS = {
     JOINT_ANGLES: 2,
@@ -45,7 +45,7 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentBox2D,
     'target_state' : np.array([0, 0]),
-    "world" : ArmWorld,
+    'world' : ArmWorld,
     'render' : True,
     'x0': np.array([0.75*np.pi, 0.5*np.pi, 0, 0, 0, 0, 0]),
     'rk': 0,

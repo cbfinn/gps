@@ -20,7 +20,9 @@ class AgentBox2D(Agent):
         Agent.__init__(self, config)
 
         self._setup_conditions()
-        self._setup_world(hyperparams["world"], hyperparams["target_state"], hyperparams["render"])
+        self._setup_world(self._hyperparams["world"],
+                          self._hyperparams["target_state"],
+                          self._hyperparams["render"])
 
     def _setup_conditions(self):
         """
@@ -28,8 +30,8 @@ class AgentBox2D(Agent):
         condition.
         """
         conds = self._hyperparams['conditions']
-        for field in ('x0', 'x0var', 'pos_body_idx', 'pos_body_offset', \
-                'noisy_body_idx', 'noisy_body_var'):
+        for field in ('x0', 'x0var', 'pos_body_idx', 'pos_body_offset',
+                      'noisy_body_idx', 'noisy_body_var'):
             self._hyperparams[field] = setup(self._hyperparams[field], conds)
 
     def _setup_world(self, world, target, render):
