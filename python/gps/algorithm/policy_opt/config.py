@@ -16,6 +16,7 @@ POLICY_OPT_CAFFE = {
     'use_gpu': 1,  # Whether or not to use the GPU for caffe training.
     'gpu_id': 0,
     'solver_type': 'Adam',  # Solver type (e.g. 'SGD', 'Adam', etc.).
+    'random_seed': 1,
     # Other hyperparameters.
     'network_model': construct_fc_network,  # Either a filename string
                                             # or a function to call to
