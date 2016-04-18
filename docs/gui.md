@@ -19,9 +19,9 @@ The GPS Training GUI is composed of seven parts:
 * `go` - start/restart the robot to collect samples (after using `stop`, `reset`, or `fail`), used to resume training after stop, reset or fail
 * `fail` - fail the current sample being collected and recollect that sample (after the current sample has completed), used to recollect a sample that was conducted under faulty conditions
 
-**The Action Status TextBox:** Indicates whether or not the actions were performed successfully or failed.
+**The Action Status Textbox:** Indicates whether or not the actions were performed successfully or failed.
 
-**The Algorithm Status TextBox:** Indicates the current status of the algorithm (sampling, calculating, logging data, etc.).
+**The Algorithm Status Textbox:** Indicates the current status of the algorithm (sampling, calculating, logging data, etc.).
 
 **The Cost Plot:** After each iteration, plots the cost per condition (as points) and the mean cost (as a connected line between iterations).
 
@@ -46,6 +46,7 @@ The Target Setup GUI is composed of four parts:
 **The Action Panel**: Consists of 12 actions which can be performed by clicking the button, pressing the keyboard shortcut, or using the PS3 Controller shortcut:
 * `prev_target_number` - switch to the previous target number (0-9)
 * `next_target_number` - switch to the next target number (0-9)
+* `prev_actuator_type` - switch to the previous actuator type (TRIAL_ARM, AUXILIARY_ARM)
 * `next_actuator_type` - switch to the next actuator type (TRIAL_ARM, AUXILIARY_ARM)
 * `set_initial_position` - set the initial position (manually move the robot to the desired position and then press set)
 * `set_target_position` - set the target position (manually move the robot to the desired position and then press set)
@@ -56,9 +57,9 @@ The Target Setup GUI is composed of four parts:
 * `relax_controller` - relaxes the robot controllers, so they can be moved again (after `move_to_initial` or `move_to_target` locks them in place)
 * `mannequin_mode` - toggles mannequin mode on or off (for the robot's arms to stay in place after physically moving them)
 
-**The Action Status TextBox**: Indicates whether or not the actions were performed successfully or failed.
+**The Action Status Textbox**: Indicates whether or not the actions were performed successfully or failed.
 
-**The Targets TextBox**: Displays the target values for the current target number and actuator type, including:
+**The Targets Textbox**: Displays the target values for the current target number and actuator type, including:
 * `target number` - the current target number
 * `actuator type` - the current actuator type
 * `initial pose` - the initial poses' `joint angles`, `end effector points`, and `end effector rotations`
@@ -72,15 +73,41 @@ The Target Setup GUI is composed of four parts:
 
 ## GUI FAQ
 
-**1. How do I turn off the GPS Training GUI?**
+**1. Where do I find the configuration options for the GUIs?**
 
-At the bottom of the `hyperparams.py` file, in the `config` dictionary set `gui_on` to `False`.
+GUI configuration options are located in `/path/to/gps/python/gps/gui/config.py`. You can change the following options:
+* `keyboard_bindings` - controls the keyboard shortcut bindings
+* `ps3_bindings` - controls the ps3 controller bindings
+* `image_on` - controls whether or not to display the image visualizer
+* `image_topic` - sets the rostopic from which to listen for images
+* `image_size` - sets the size of images, images above this size will be cropped
+* `figsize` - controls the default figure size for the GUIs
+* `target_output_fontsize` - controls the font size for the target output
+* `initial_mode` - starts the GPS Training GUI in this mode (`'run'` to run on start, `'wait'` to wait on start)`
+* `algthm_output_fontsize` - controls the font size for the algorithm output
+* `algthm_output_max_display_size` - controls the max display size (maximum number of lines) for the algorithm output
 
 **2. Why is the algorithm output text overflowing?**
 
-Matplotlib does not handle drawing text very smoothly. Either decrease the amount of iteration data printed (see the `update` function of `gps_training_gui.py`), the size at which is printed (see the `fontsize` parameter in the initialization of the `self._algthm_output` `OutputAxis` in `gps_trainin_gui.py`), or increase your window size.
+Matplotlib does not handle drawing text very smoothly. Here are some options:
+* Decrease the amount of iteration data printed (see the `_output_column_titles` and `_update_iteration_data` functions of `gps_training_gui.py`)
+* Decrease the algorithm output fontsize, `algthm_output_fontsize`
+* Decrease the algorithm output max display size, `algthm_output_max_display_size`
+* Increase the default figure size, `figsize`
+* Manually increase the figure size by resizing the window
 
-**3. How do I change the experiment information displayed at the start of learning?**
+**3. I am not using images. How do I turn off the Image Visualizer?**
 
-See what algorithm information is printed in the `info` key of the `common` dictionary in `hyperparams.py`.
+Set `image_on` to `False`.
 
+**4. How do I change the experiment information displayed at the start of training?**
+
+See the `generate_experiment_info` function at the bottom of the `gui/config.py` file.
+
+**5. How do I turn off the GPS Training GUI?**
+
+In the experiment `hyperparams.py` file, look for the `config` dictionary at the bottom of the file, and then set the `gui_on` field to `False`. GPS training will still run; however, you will be unable to interact with it through `stop`, `go`, `fail`, and `reset` or see any plots or visualizations.
+
+**6. I want to change the layout or content of the GUIs. How do I use the GUI components?**
+
+For basic examples of how to use the GUI components, see the GUI demos located at `/path/to/gps/python/tests/tests_gui/gui_demos.py`. The code in `gui/gps_training_gui.py` and `gui/target_setup_gui.py` is also designed to be reusable and reconfigurable.

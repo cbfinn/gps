@@ -76,8 +76,7 @@ python/gps/proto/
 *.pb.cc
 
 # MuJoCo
-src/3rdparty/mjc
-src/3rdparty/mjc2
+src/3rdparty/mjpro
 MUJOCO_LOG.TXT
 
 # Vim
@@ -94,3 +93,4 @@ MUJOCO_LOG.TXT
 # Experiment files
 experiments/*/data_files/
 experiments/*/log.txt
+.previous_experiment

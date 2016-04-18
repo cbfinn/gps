@@ -233,8 +233,10 @@ void RobotPlugin::update_controllers(ros::Time current_time, bool is_controller_
         trial_controller_->reset(current_time);
         trial_controller_.reset(NULL);
 
-        //Reset the active arm controller.
-        active_arm_controller_->reset(current_time);
+        // Set the active arm controller to NO_CONTROL.
+        OptionsMap options;
+        options["mode"] = gps::NO_CONTROL;
+        active_arm_controller_->configure_controller(options);
 
         // Switch the sensors to run at full frequency.
         for (int sensor = 0; sensor < TotalSensorTypes; sensor++)
