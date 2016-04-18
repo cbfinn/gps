@@ -1,84 +1,38 @@
 """ Default configuration and hyperparameter values for GUI objects. """
+import itertools
+
 from gps.proto.gps_pb2 import TRIAL_ARM, AUXILIARY_ARM
+from gps.gui.ps3_config import PS3_BUTTON, INVERTED_PS3_BUTTON
 
-#TODO: These should probably be all caps?
-
-# PS3 Joystick Buttons and Axes
-# (documentation: http://wiki.ros.org/ps3joy).
-# Mappings from PS3 buttons to their corresponding array indices.
-ps3_button = {
-    'select': 0,
-    'stick_left': 1,
-    'stick_right': 2,
-    'start': 3,
-    'cross_up': 4,
-    'cross_right': 5,
-    'cross_down': 6,
-    'cross_left': 7,
-    'rear_left_2': 8,
-    'rear_right_2': 9,
-    'rear_left_1': 10,
-    'rear_right_1': 11,
-    'action_triangle': 12,
-    'action_circle': 13,
-    'action_cross': 14,
-    'action_square': 15,
-    'pairing': 16,
-}
-inverted_ps3_button = {value: key for key, value in ps3_button.iteritems()}
-
-# Mappings from PS3 axes to their corresponding array indices.
-ps3_axis = {
-    'stick_left_leftwards': 0,
-    'stick_left_upwards': 1,
-    'stick_right_leftwards': 2,
-    'stick_right_upwards': 3,
-    'button_cross_up': 4,
-    'button_cross_right': 5,
-    'button_cross_down': 6,
-    'button_cross_left': 7,
-    'button_rear_left_2': 8,
-    'button_rear_right_2': 9,
-    'button_rear_left_1': 10,
-    'button_rear_right_1': 11,
-    'button_action_triangle': 12,
-    'button_action_circle': 13,
-    'button_action_cross': 14,
-    'button_action_square': 15,
-    'acceleratometer_left': 16,
-    'acceleratometer_forward': 17,
-    'acceleratometer_up': 18,
-    'gyro_yaw': 19,
-}
-inverted_ps3_axis = {value: key for key, value in ps3_axis.iteritems()}
 
 # Mappings from actions to their corresponding keyboard bindings.
+# WARNING: keybindings must be unique
 keyboard_bindings = {
     # Target Setup.
-    'ptn': 'left',
-    'ntn': 'right',
-    'pat': 'down',
-    'nat': 'up',
+    'ptn': 'left',  # previous target number
+    'ntn': 'right', # next target number
+    'pat': 'down',  # previous actuator type
+    'nat': 'up',    # next actuator type
 
-    'sip': 'j',
-    'stp': 'k',
-    'sii': 'l',
-    'sti': ';',
+    'sip': 'i',     # set initial position
+    'stp': 't',     # set target position
+    'sii': 'z',     # set initial image
+    'sti': 'x',     # set target image
 
-    'mti': 'u',
-    'mtt': 'i',
-    'rc': 'o',
-    'mm': 'p',
+    'mti': 'm',     # move to initial
+    'mtt': 'n',     # move to target
+    'rc': 'c',      # relax controller
+    'mm': 'q',      # mannequin mode
 
     # GPS Training.
-    'stop' : 's',
-    'reset': 'r',
-    'go'   : 'g',
-    'fail' : 'f',
+    'stop' : 's',   # stop
+    'reset': 'r',   # reset
+    'go'   : 'g',   # go
+    'fail' : 'f',   # fail
 
     # Image Visualizer
-    'oii'  : 'i',
-    'oti'  : 't',
+    'oii'  : 'o',   # overlay initial image
+    'oti'  : 'p',   # overlay target image
 }
 inverted_keyboard_bindings = {value: key
                               for key, value in keyboard_bindings.iteritems()}
@@ -86,59 +40,92 @@ inverted_keyboard_bindings = {value: key
 # Mappings from actions to their corresponding PS3 controller bindings.
 ps3_bindings = {
     # Target Setup
-    'ptn': (ps3_button['rear_right_1'], ps3_button['cross_left']),
-    'ntn': (ps3_button['rear_right_1'], ps3_button['cross_right']),
-    'pat': (ps3_button['rear_right_1'], ps3_button['cross_down']),
-    'nat': (ps3_button['rear_right_1'], ps3_button['cross_up']),
+    'ptn': (PS3_BUTTON['rear_right_1'], PS3_BUTTON['cross_left']),
+    'ntn': (PS3_BUTTON['rear_right_1'], PS3_BUTTON['cross_right']),
+    'pat': (PS3_BUTTON['rear_right_1'], PS3_BUTTON['cross_down']),
+    'nat': (PS3_BUTTON['rear_right_1'], PS3_BUTTON['cross_up']),
 
-    'sip': (ps3_button['rear_right_1'], ps3_button['action_square']),
-    'stp': (ps3_button['rear_right_1'], ps3_button['action_circle']),
-    'sii': (ps3_button['rear_right_1'], ps3_button['action_cross']),
-    'sti': (ps3_button['rear_right_1'], ps3_button['action_triangle']),
+    'sip': (PS3_BUTTON['rear_right_1'], PS3_BUTTON['action_square']),
+    'stp': (PS3_BUTTON['rear_right_1'], PS3_BUTTON['action_circle']),
+    'sii': (PS3_BUTTON['rear_right_1'], PS3_BUTTON['action_cross']),
+    'sti': (PS3_BUTTON['rear_right_1'], PS3_BUTTON['action_triangle']),
 
-    'mti': (ps3_button['rear_right_2'], ps3_button['cross_left']),
-    'mtt': (ps3_button['rear_right_2'], ps3_button['cross_right']),
-    'rc' : (ps3_button['rear_right_2'], ps3_button['cross_down']),
-    'mm' : (ps3_button['rear_right_2'], ps3_button['cross_up']),
+    'mti': (PS3_BUTTON['rear_right_2'], PS3_BUTTON['cross_left']),
+    'mtt': (PS3_BUTTON['rear_right_2'], PS3_BUTTON['cross_right']),
+    'rc' : (PS3_BUTTON['rear_right_2'], PS3_BUTTON['cross_down']),
+    'mm' : (PS3_BUTTON['rear_right_2'], PS3_BUTTON['cross_up']),
 
     # GPS Training
-    'stop' : (ps3_button['rear_right_2'], ps3_button['action_square']),
-    'reset': (ps3_button['rear_right_2'], ps3_button['action_triangle']),
-    'go'   : (ps3_button['rear_right_2'], ps3_button['action_circle']),
-    'fail' : (ps3_button['rear_right_2'], ps3_button['action_cross']),
+    'stop' : (PS3_BUTTON['rear_right_2'], PS3_BUTTON['action_square']),
+    'reset': (PS3_BUTTON['rear_right_2'], PS3_BUTTON['action_triangle']),
+    'go'   : (PS3_BUTTON['rear_right_2'], PS3_BUTTON['action_circle']),
+    'fail' : (PS3_BUTTON['rear_right_2'], PS3_BUTTON['action_cross']),
 
     # Image Visualizer
-    'oii'  : (ps3_button['cross_up']    ,),
-    'oti'  : (ps3_button['cross_down']  ,),
+    'oii'  : (PS3_BUTTON['cross_up']    ,),
+    'oti'  : (PS3_BUTTON['cross_down']  ,),
 }
 inverted_ps3_bindings = {value: key for key, value in ps3_bindings.iteritems()}
 
-common = {
-    'ps3_button': ps3_button,
-    'inverted_ps3_button': inverted_ps3_button,
-    'ps3_axis': ps3_axis,
-    'inverted_ps3_ax': inverted_ps3_axis,
+permuted_inverted_ps3_bindings = {}
+for key, value in list(inverted_ps3_bindings.iteritems()):
+    for permuted_key in itertools.permutations(key, len(key)):
+        permuted_inverted_ps3_bindings[permuted_key] = value
 
+config = {
+    # Keyboard shortcuts bindings
     'keyboard_bindings': keyboard_bindings,
     'inverted_keyboard_bindings': inverted_keyboard_bindings,
-    'ps3_bindings': ps3_bindings,
-    'inverted_ps3_bindings': inverted_ps3_bindings,
 
+    # PS3 controller bindings
     'ps3_topic': 'joy',
     'ps3_process_rate': 20,  # Only process 1/20 of PS3 messages.
+    'ps3_button': PS3_BUTTON,
+    'inverted_ps3_button': INVERTED_PS3_BUTTON,
+    'ps3_bindings': ps3_bindings,
+    'inverted_ps3_bindings': inverted_ps3_bindings,
+    'permuted_inverted_ps3_bindings': permuted_inverted_ps3_bindings,
 
+    # Images
+    'image_on': True,
     'image_topic': '/camera/rgb/image_color',
-}
+    'image_size': (240, 240),
+    'image_overlay_actuator': 'trial_arm',
+    'image_overlay_alpha': 0.3,
 
-target_setup = {
+    # Both GUIs
+    'figsize': (12, 12),
+
+    # Target Setup
     'num_targets': 10,
     'actuator_types': [TRIAL_ARM, AUXILIARY_ARM],
     'actuator_names': ['trial_arm', 'auxiliary_arm'],
+    'target_output_fontsize': 10,
 
-    'target_setup_log_filename': 'target_setup_log.txt',
+    # GPS Training
+    'initial_mode': 'run',
+    'algthm_output_fontsize': 10,
+    'algthm_output_max_display_size': 15,
 }
 
-gps_training = {
-    'gps_training_log_filename': 'gps_training_log.txt',
-    'image_actuator': target_setup['actuator_names'][0],    # which actuator to get initial and target images from
-}
+def generate_experiment_info(config):
+    """
+    Generate experiment info, to be displayed by GPS Trainig GUI.
+    Assumes config is the config created in hyperparams.py
+    """
+    common = config['common']
+    algorithm = config['algorithm']
+
+    algorithm_cost_type = algorithm['cost']['type'].__name__
+    if (algorithm_cost_type) == 'CostSum':
+        algorithm_cost_type += '(%s)' % ', '.join(
+                map(lambda cost: cost['type'].__name__, algorithm['cost']['costs']))
+    return (
+        'exp_name:   ' + str(common['experiment_name'])              + '\n' +
+        'alg_type:   ' + str(algorithm['type'].__name__)             + '\n' +
+        'alg_dyn:    ' + str(algorithm['dynamics']['type'].__name__) + '\n' +
+        'alg_cost:   ' + str(algorithm_cost_type)                    + '\n' +
+        'iterations: ' + str(config['iterations'])                   + '\n' +
+        'conditions: ' + str(algorithm['conditions'])                + '\n' +
+        'samples:    ' + str(config['num_samples'])                  + '\n'
+    )

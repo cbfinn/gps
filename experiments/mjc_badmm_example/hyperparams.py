@@ -22,6 +22,7 @@ from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.policy.policy_prior import PolicyPrior
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
+from gps.gui.config import generate_experiment_info
 
 
 SENSOR_DIMS = {
@@ -169,12 +170,4 @@ config = {
     'algorithm': algorithm,
 }
 
-common['info'] = (
-    'exp_name: ' + str(common['experiment_name'])              + '\n'
-    'alg_type: ' + str(algorithm['type'].__name__)             + '\n'
-    'alg_dyn:  ' + str(algorithm['dynamics']['type'].__name__) + '\n'
-    'alg_cost: ' + str(algorithm['cost']['type'].__name__)     + '\n'
-    'iterations: ' + str(config['iterations'])                   + '\n'
-    'conditions: ' + str(algorithm['conditions'])                + '\n'
-    'samples:    ' + str(config['num_samples'])                  + '\n'
-)
+common['info'] = generate_experiment_info(config)

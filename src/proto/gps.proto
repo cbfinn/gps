@@ -18,8 +18,6 @@ enum SampleType {
   RGB_IMAGE = 11;
   DEPTH_IMAGE = 12;
   TOTAL_DATA_TYPES = 13;
-  POSITION = 14;
-  LINEAR_VELOCITY = 15;
 }
 
 // Message containing the data for a single sample.
@@ -54,5 +52,6 @@ enum PositionControlMode {
 enum ControllerType {
   LIN_GAUSS_CONTROLLER = 0;
   CAFFE_CONTROLLER = 1;
-  TOTAL_CONTROLLER_TYPES = 2;
+  TF_CONTROLLER = 2;
+  TOTAL_CONTROLLER_TYPES = 3;
 }

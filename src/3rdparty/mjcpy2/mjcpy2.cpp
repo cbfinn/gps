@@ -40,7 +40,7 @@ bn::ndarray toNdarray3(const T* data, long dim0, long dim1, long dim2) {
 
 bool endswith(const std::string& fullString, const std::string& ending)
 {
-	return (fullString.length() >= ending.length()) && 
+	return (fullString.length() >= ending.length()) &&
 		(0 == fullString.compare(fullString.length() - ending.length(), ending.length(), ending));
 }
 
@@ -94,7 +94,7 @@ PyMJCWorld2::PyMJCWorld2(const std::string& loadfile) {
   	}
   	else {
   	    NOTIMPLEMENTED;
-  	}	
+  	}
     if (!m_model) PRINT_AND_THROW("couldn't load model: " + std::string(loadfile));
     m_data = mj_makeData(m_model);
     FAIL_IF_FALSE(!!m_data);
@@ -153,13 +153,14 @@ bp::object PyMJCWorld2::Step(const bn::ndarray& x, const bn::ndarray& u) {
     // printf("after step+kin: %f\n", m_data->com[0]);
 
     long xdims[1] = {StateSize(m_model)};
-    long odims[1] = {1};  // oout is unused
+    long site_dims[2] = {m_model->nsite, 3};
     bn::ndarray xout = bn::empty(1, xdims, bn::dtype::get_builtin<mjtNum>());
-    bn::ndarray oout = bn::empty(1, odims, bn::dtype::get_builtin<mjtNum>());
+    bn::ndarray site_out = bn::empty(2, site_dims, bn::dtype::get_builtin<mjtNum>());
 
     GetState((mjtNum*)xout.get_data(), m_model, m_data);
+    mju_copy((mjtNum*)site_out.get_data(), m_data->site_xpos, 3*m_model->nsite);
 
-	return bp::make_tuple(xout, oout);
+	return bp::make_tuple(xout, site_out);
 }
 
 
@@ -285,7 +286,7 @@ void PyMJCWorld2::SetModel(bp::dict d) {
 bp::dict PyMJCWorld2::GetData() {
     bp::dict out;
     #include "mjcpy2_getdata_autogen.i"
-    
+
     return out;
 }
 void PyMJCWorld2::SetData(bp::dict d) {
@@ -349,7 +350,7 @@ BOOST_PYTHON_MODULE(mjcpy) {
 
 
     bp::object main = bp::import("__main__");
-    main_namespace = main.attr("__dict__");    
+    main_namespace = main.attr("__dict__");
     bp::exec(
         "import numpy as np\n"
         "contact_dtype = np.dtype([('dim','i'), ('geom1','i'), ('geom2','i'),('flc_address','i'),('compliance','f8'),('timeconst','f8'),('dist','f8'),('mindist','f8'),('pos','f8',3),('frame','f8',9),('friction','f8',5)])\n"

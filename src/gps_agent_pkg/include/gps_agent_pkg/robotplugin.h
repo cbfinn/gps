@@ -21,6 +21,9 @@ with the robot.
 #include "gps_agent_pkg/RelaxCommand.h"
 #include "gps_agent_pkg/SampleResult.h"
 #include "gps_agent_pkg/DataRequest.h"
+#include "gps_agent_pkg/TfActionCommand.h"
+#include "gps_agent_pkg/TfObsData.h"
+#include "gps_agent_pkg/TfParams.h"
 #include "gps_agent_pkg/sensor.h"
 #include "gps_agent_pkg/controller.h"
 #include "gps_agent_pkg/positioncontroller.h"
@@ -97,6 +100,10 @@ protected:
     bool sensors_initialized_;
     // Is everything initialized for the trial controller?
     bool controller_initialized_;
+    //tf publisher
+    ros_publisher_ptr(gps_agent_pkg::TfObsData) tf_publisher_;
+    //tf action subscriber
+    ros::Subscriber action_subscriber_tf_;
 public:
     // Constructor (this should do nothing).
     RobotPlugin();
@@ -130,6 +137,8 @@ public:
     virtual void relax_subscriber_callback(const gps_agent_pkg::RelaxCommand::ConstPtr& msg);
     // Data request callback.
     virtual void data_request_subscriber_callback(const gps_agent_pkg::DataRequest::ConstPtr& msg);
+    //tf callback
+    virtual void tf_robot_action_command_callback(const gps_agent_pkg::TfActionCommand::ConstPtr& msg);
 
     // Update functions.
     // Update the sensors at each time step.
@@ -145,6 +154,11 @@ public:
     virtual void get_joint_encoder_readings(Eigen::VectorXd &angles, gps::ActuatorType arm) const = 0;
     // Get forward kinematics solver.
     virtual void get_fk_solver(boost::shared_ptr<KDL::ChainFkSolverPos> &fk_solver, boost::shared_ptr<KDL::ChainJntToJacSolver> &jac_solver, gps::ActuatorType arm);
+
+    //tf controller commands.
+    //tf publish observation command.
+    virtual void tf_publish_obs(Eigen::VectorXd obs);
+
 };
 
 }

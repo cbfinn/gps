@@ -17,7 +17,7 @@ from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
-
+from gps.gui.config import generate_experiment_info
 
 SENSOR_DIMS = {
     JOINT_ANGLES: 7,
@@ -128,12 +128,4 @@ config = {
     'algorithm': algorithm,
 }
 
-common['info'] = (
-    'exp_name: ' + str(common['experiment_name'])              + '\n'
-    'alg_type: ' + str(algorithm['type'].__name__)             + '\n'
-    'alg_dyn:  ' + str(algorithm['dynamics']['type'].__name__) + '\n'
-    'alg_cost: ' + str(algorithm['cost']['type'].__name__)     + '\n'
-    'iterations: ' + str(config['iterations'])                   + '\n'
-    'conditions: ' + str(algorithm['conditions'])                + '\n'
-    'samples:    ' + str(config['num_samples'])                  + '\n'
-)
+common['info'] = generate_experiment_info(config)
