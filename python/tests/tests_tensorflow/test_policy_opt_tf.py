@@ -16,6 +16,7 @@ from gps.algorithm.policy_opt.tf_model_example import euclidean_loss_layer, \
     batched_matrix_vector_multiply
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
+from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 
 SENSOR_DIMS = {
     JOINT_ANGLES: 7,
@@ -131,6 +132,7 @@ def test_unpickle():
 def test_policy_save():
     hyper_params = POLICY_OPT_TF
     hyper_params.update({'network_params': network_params})
+    hyper_params.update({'network_model': example_tf_network})
     deg_obs = 14
     deg_action = 7
     policy_opt = PolicyOptTf(hyper_params, deg_obs, deg_action)
