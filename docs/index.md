@@ -42,7 +42,7 @@ One or more of the following agent interfaces is required. Set up instructions f
 
 One of the following neural network libraries is required for the full guided policy search algorithm
 * [Caffe](http://caffe.berkeleyvision.org/) (master branch as of 11/2015, with pycaffe compiled, python layer enabled, PYTHONPATH configured)
-* [TensorFlow](http://tensorflow.org)
+* [TensorFlow](http://tensorflow.org) (Tested on versions 0.5-0.8. Works with and without GPU support on both Mac and Ubuntu).
 
 #### Setup
 
