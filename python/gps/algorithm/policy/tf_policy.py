@@ -1,4 +1,6 @@
 import pickle
+import os
+import uuid
 
 import numpy as np
 import tensorflow as tf
@@ -28,6 +30,7 @@ class TfPolicy(Policy):
         self.chol_pol_covar = np.diag(np.sqrt(var))
         self.scale = None  # must be set from elsewhere based on observations
         self.bias = None
+        self.x_idx = None
 
     def act(self, x, obs, t, noise):
         """
@@ -38,24 +41,32 @@ class TfPolicy(Policy):
             t: Time step.
             noise: Action noise. This will be scaled by the variance.
         """
+
         # Normalize obs.
-        obs = obs.dot(self.scale) + self.bias
+        if len(obs.shape) == 1:
+            obs = np.expand_dims(obs, axis=0)
+        obs[:, self.x_idx] = obs[:, self.x_idx].dot(self.scale) + self.bias
         with tf.device(self.device_string):
-            action_mean = self.sess.run(self.act_op, feed_dict={self.obs_tensor: np.expand_dims(obs, 0)})
+            action_mean = self.sess.run(self.act_op, feed_dict={self.obs_tensor: obs})
         if noise is None:
             u = action_mean
         else:
             u = action_mean + self.chol_pol_covar.T.dot(noise)
-        return u[0]  # this algorithm is batched by default. But here, we run with a batch size of one.
+        return u[0]  # the DAG computations are batched by default, but we use batch size 1.
 
-    def pickle_policy(self, deg_obs, deg_action, checkpoint_path):
+    def pickle_policy(self, deg_obs, deg_action, checkpoint_path, goal_state=None, should_hash=False):
         """
         We can save just the policy if we are only interested in running forward at a later point
         without needing a policy optimization class. Useful for debugging and deploying.
         """
+        if should_hash is True:
+            hash_str = str(uuid.uuid4())
+            checkpoint_path += hash_str
+        os.mkdir(checkpoint_path + '/')
+        checkpoint_path += '/_pol'
         pickled_pol = {'deg_obs': deg_obs, 'deg_action': deg_action, 'chol_pol_covar': self.chol_pol_covar,
                        'checkpoint_path_tf': checkpoint_path + '_tf_data', 'scale': self.scale, 'bias': self.bias,
-                       'device_string': self.device_string}
+                       'device_string': self.device_string, 'goal_state': goal_state}
         pickle.dump(pickled_pol, open(checkpoint_path, "wb"))
         saver = tf.train.Saver()
         saver.save(self.sess, checkpoint_path + '_tf_data')
@@ -83,5 +94,7 @@ class TfPolicy(Policy):
         cls_init = cls(pol_dict['deg_action'], tf_map.get_input_tensor(), tf_map.get_output_op(), np.zeros((1,)),
                        sess, device_string)
         cls_init.chol_pol_covar = pol_dict['chol_pol_covar']
+        cls_init.scale = pol_dict['scale']
+        cls_init.bias = pol_dict['bias']
         return cls_init
 

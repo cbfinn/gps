@@ -115,7 +115,7 @@
         <body name="w3" pos="0.0 0.516 -0.45">
             <geom name="w3" rgba="0.2 0.2 0.2 1" type="box" size="0.032 0.183 0.05" contype="1" conaffinity="1" />
         </body>
-
+        
         <body name="w4" pos="0.0 0.084 -0.45">
             <geom name="w4" rgba="0.2 0.2 0.2 1" type="box" size="0.032 0.183 0.05" contype="1" conaffinity="1" />
         </body>

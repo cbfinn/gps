@@ -50,7 +50,7 @@ protected:
 
 struct EventHandler : public osgGA::GUIEventHandler
 {
-    EventHandler( MujocoOSGViewer* parent ) : 
+    EventHandler( MujocoOSGViewer* parent ) :
     m_parent(parent),
     m_idling(false) {}
     bool handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa );
@@ -73,7 +73,7 @@ bool EventHandler::handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActionAdapt
             );
             return true;
         case 'p':
-            if (m_idling) 
+            if (m_idling)
             m_idling = false;
             return true;
         }
@@ -153,17 +153,17 @@ osg::Node* createGroundPlane(){
 
     osg::ref_ptr<osg::Texture2D> checkTexture = new osg::Texture2D;
     // protect from being optimized away as static state:
-    checkTexture->setDataVariance(osg::Object::DYNAMIC); 
+    checkTexture->setDataVariance(osg::Object::DYNAMIC);
     checkTexture->setImage( checkImage.get() );
 
     // Tell the texture to repeat
     checkTexture->setWrap( osg::Texture::WRAP_S, osg::Texture::REPEAT );
     checkTexture->setWrap( osg::Texture::WRAP_T, osg::Texture::REPEAT );
 
-    // Create a new StateSet with default settings: 
+    // Create a new StateSet with default settings:
     osg::ref_ptr<osg::StateSet> groundPlaneStateSet = new osg::StateSet();
 
-    // Assign texture unit 0 of our new StateSet to the texture 
+    // Assign texture unit 0 of our new StateSet to the texture
     // we just created and enable the texture.
     groundPlaneStateSet->setTextureAttributeAndModes(0,checkTexture.get(),osg::StateAttribute::ON);
 
@@ -188,7 +188,7 @@ osg::Node* createGroundPlane(){
 
     osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
     groundPlaneGeometry->setVertexArray( vertices.get() );
-    
+
     osg::ref_ptr<osg::Vec2Array> texCoords = new osg::Vec2Array;
     groundPlaneGeometry->setTexCoordArray( 0, texCoords.get() );
 
@@ -207,7 +207,7 @@ osg::Node* createGroundPlane(){
 //     groundPlaneGeometry->setColorArray(colors.get());
 //     groundPlaneGeometry->setColorBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET);
 
-    osg::ref_ptr<osg::DrawElementsUInt> quad = 
+    osg::ref_ptr<osg::DrawElementsUInt> quad =
         new osg::DrawElementsUInt(osg::PrimitiveSet::QUADS);
     for ( uint i=0; i < vertices->size(); i++ )
         quad->push_back( i );
@@ -231,13 +231,13 @@ osg::Node* createOSGNode(const mjModel* model, int i_geom) {
         case mjGEOM_SPHERE: {
             shape = new osg::Sphere();
             ((osg::Sphere*)shape)->setRadius(size[0]);
-            break;           
-        } 
+            break;
+        }
         case mjGEOM_CAPSULE: {
             shape = new osg::Capsule();
             ((osg::Capsule*)shape)->setRadius(size[0]);
             ((osg::Capsule*)shape)->setHeight(2*size[1]);
-            break;            
+            break;
         }
         #if 0
         case mjGEOM_ELLIPSOID: {
@@ -251,13 +251,13 @@ osg::Node* createOSGNode(const mjModel* model, int i_geom) {
             break;
         }
         #endif
-        case mjGEOM_CYLINDER: {            
+        case mjGEOM_CYLINDER: {
             shape = new osg::Cylinder();
             ((osg::Cylinder*)shape)->setRadius(size[0]);
             ((osg::Cylinder*)shape)->setHeight(size[1]*2);
             break;
         }
-            
+
         case mjGEOM_BOX: {
             shape = new osg::Box();
             ((osg::Box*)shape)->setHalfLengths(osg::Vec3(size[0],size[1],size[2]));
@@ -288,7 +288,7 @@ osg::Node* createOSGNode(const mjModel* model, int i_geom) {
             printf("unimplemented geom type: %i\n",geom);
             break;
     }
-    osg::Geode* geode = new osg::Geode;    
+    osg::Geode* geode = new osg::Geode;
     osg::ShapeDrawable* drawable = new osg::ShapeDrawable(shape);
     float* p = model->geom_rgba + i_geom*4;
     drawable->setColor(osg::Vec4(p[0],p[1],p[2],p[3]));
@@ -299,7 +299,7 @@ osg::Node* createOSGNode(const mjModel* model, int i_geom) {
 
 
 
-MujocoOSGViewer::MujocoOSGViewer() 
+MujocoOSGViewer::MujocoOSGViewer()
 : m_data(NULL), m_model(NULL)
 {
     m_root = new osg::Group;
@@ -322,9 +322,36 @@ MujocoOSGViewer::MujocoOSGViewer()
     m_viewer.addEventHandler(m_handler.get());
 }
 
+MujocoOSGViewer::MujocoOSGViewer(int width, int height, osg::Vec3 cam_pos, osg::Vec3 cam_target)
+: m_data(NULL), m_model(NULL)
+{
+    m_viewer.setThreadingModel(osgViewer::ViewerBase::SingleThreaded);
+
+    m_root = new osg::Group;
+    m_robot = new osg::Group;
+    m_root->addChild(m_robot);
+
+    m_image = new osg::Image;
+    osg::ref_ptr<PhotoCallback> pcb = new PhotoCallback( m_image.get() );
+    m_viewer.getCamera()->setPostDrawCallback( pcb.get() );
+
+    m_viewer.setSceneData(m_root.get());
+    m_viewer.setUpViewInWindow(0, 0, width, height);
+    m_viewer.realize();
+
+    osg::ref_ptr<osgGA::TrackballManipulator> man = new osgGA::TrackballManipulator;
+    man->setHomePosition(cam_pos, cam_target, cam_pos);
+    m_viewer.setCameraManipulator(man);
+
+    m_handler = new EventHandler(this);
+    m_viewer.addEventHandler(m_handler.get());
+}
+
 MujocoOSGViewer::MujocoOSGViewer(osg::Vec3 cam_pos, osg::Vec3 cam_target)
 : m_data(NULL), m_model(NULL)
 {
+    m_viewer.setThreadingModel(osgViewer::ViewerBase::SingleThreaded);
+
     m_root = new osg::Group;
     m_robot = new osg::Group;
     m_root->addChild(m_robot);
@@ -347,20 +374,20 @@ MujocoOSGViewer::MujocoOSGViewer(osg::Vec3 cam_pos, osg::Vec3 cam_target)
 
 void MujocoOSGViewer::SetCamera(float x, float y, float z, float px, float py, float pz){
     // place camera at (x,y,z) pointing to (px,py,pz)
-    m_viewer.getCameraManipulator()->setHomePosition(osg::Vec3(x, y, z), osg::Vec3(px, py, pz), osg::Vec3(-1, -1.5, 2),false);
+    m_viewer.getCameraManipulator()->setHomePosition(osg::Vec3(x, y, z), osg::Vec3(px, py, pz), osg::Vec3(x, y, z),false);
     //osg::ref_ptr<osgGA::CameraManipulator> man = m_viewer.getCameraManipulator();
     //man->setHomePosition(osg::Vec3(0.5, -1.5, 5), osg::Vec3(0.5, -1.5, 0), osg::Vec3(-1, -1.5, 2));
     //m_viewer.setCameraManipulator(man);
 }
 
-void MujocoOSGViewer::Idle() {    
+void MujocoOSGViewer::Idle() {
     EventHandler* handler = dynamic_cast<EventHandler*>(m_handler.get());
     handler->m_idling = true;
     mj_kinematics(m_model, m_data);
     _UpdateTransforms();
     while (handler->m_idling && !m_viewer.done()) {
         m_viewer.frame();
-        OpenThreads::Thread::microSleep(30000);   
+        OpenThreads::Thread::microSleep(30000);
     }
 }
 
@@ -379,7 +406,7 @@ void MujocoOSGViewer::_UpdateTransforms() {
     }
 #if PLOT_JOINTS
     for (int i=0; i < m_model->njnt; ++i) {
-        if (m_model->jnt_type[i] == mjJNT_HINGE) {        
+        if (m_model->jnt_type[i] == mjJNT_HINGE) {
             mjtNum* panchor = m_data->xanchor + 3*i,
                   * pax = m_data->xaxis + 3*i;
             osg::Vec3 anchor(panchor[0], panchor[1], panchor[2]);
@@ -399,7 +426,7 @@ void MujocoOSGViewer::HandleInput() {
 }
 
 void MujocoOSGViewer::StartAsyncRendering() {
-    
+
 }
 
 void MujocoOSGViewer::StopAsyncRendering() {
@@ -436,7 +463,7 @@ void MujocoOSGViewer::SetModel(const mjModel* m) {
             shape->setHeight(0.3);
             osg::ShapeDrawable* drawable = new osg::ShapeDrawable(shape);
             drawable->setColor(osg::Vec4(1,1,0,1));
-            osg::Geode* geode = new osg::Geode;    
+            osg::Geode* geode = new osg::Geode;
             geode->addDrawable(drawable);
             osg::MatrixTransform* tf = new osg::MatrixTransform;
             tf->addChild(geode);
@@ -459,4 +486,3 @@ void NewModelFromXML(const char* filename,mjModel*& model) {
         printf("%s\n",errmsg);
     }
 }
-
