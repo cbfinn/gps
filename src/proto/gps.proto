@@ -18,8 +18,6 @@ enum SampleType {
   RGB_IMAGE = 11;
   DEPTH_IMAGE = 12;
   TOTAL_DATA_TYPES = 13;
-  POSITION = 14;
-  LINEAR_VELOCITY = 15;
 }
 
 // Message containing the data for a single sample.

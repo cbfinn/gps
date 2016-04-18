@@ -122,7 +122,7 @@ class GPSTrainingGUI(object):
                 color='green', label='Trajectory Samples')
         self._traj_visualizer.add_legend(linestyle='-', marker='None',
                 color='blue', label='Policy Samples')
-        self._traj_visualizer.add_legend(linestyle='None', marker='x',   
+        self._traj_visualizer.add_legend(linestyle='None', marker='x',
                 color=(0.5, 0, 0), label='LG Controller Means')
         self._traj_visualizer.add_legend(linestyle='-', marker='None',
                 color='red', label='LG Controller Distributions')
@@ -272,7 +272,7 @@ class GPSTrainingGUI(object):
         self._update_iteration_data(itr, algorithm, costs)
         self._cost_plotter.update(costs, t=itr)
         if END_EFFECTOR_POINTS in agent.x_data_types:
-            self._update_trajectory_visualizations(algorithm, agent, 
+            self._update_trajectory_visualizations(algorithm, agent,
                     traj_sample_lists, pol_sample_lists)
 
         self._fig.canvas.draw()
@@ -306,7 +306,7 @@ class GPSTrainingGUI(object):
         itr_data = '%3d | %8.2f' % (itr, avg_cost)
         for m in range(algorithm.M):
             cost = costs[m]
-            step = algorithm.prev[m].step_mult
+            step = algorithm.prev[m].step_mult * algorithm.base_kl_step
             entropy = 2*np.sum(np.log(np.diagonal(algorithm.prev[m].traj_distr.chol_pol_covar,
                     axis1=1, axis2=2)))
             itr_data += ' | %8.2f %8.2f %8.2f' % (cost, step, entropy)

@@ -2,13 +2,18 @@
 import Box2D as b2
 import numpy as np
 from framework import Framework
-from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES
+from gps.agent.box2d.settings import fwSettings
+from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS
 
 class ArmWorld(Framework):
     """ This class defines the 2 Link Arm and its environment."""
     name = "2 Link Arm"
-    def __init__(self, x0, target):
-        super(ArmWorld, self).__init__()
+    def __init__(self, x0, target, render):
+        self.render = render
+        if self.render:
+            super(ArmWorld, self).__init__()
+        else:
+            self.world = b2.b2World(gravity=(0, -10), doSleep=True)
 
         self.world.gravity = (0.0, 0.0)
 
@@ -91,8 +96,28 @@ class ArmWorld(Framework):
         new_pos = body2.GetWorldPoint((0, 4.5))
         body2.position += pos - new_pos
 
+
+    def run(self):
+        """Initiates the first time step
+        """
+        if self.render:
+            super(ArmWorld, self).run()
+        else:
+            self.run_next(None)
+
+    def run_next(self, action):
+        """Moves forward in time one step. Calls the renderer if applicable."""
+        if self.render:
+            super(ArmWorld, self).run_next(action)
+        else:
+            if action is not None:
+                self.joint1.motorSpeed = action[0]
+                self.joint2.motorSpeed = action[1]
+            self.world.Step(1.0 / fwSettings.hz, fwSettings.velocityIterations,
+                            fwSettings.positionIterations)
+
     def Step(self, settings, action):
-        """Moves forward in time one step."""
+        """Moves forward in time one step. Called by the renderer"""
         self.joint1.motorSpeed = action[0]
         self.joint2.motorSpeed = action[1]
 
@@ -115,7 +140,8 @@ class ArmWorld(Framework):
         state = {JOINT_ANGLES: np.array([self.joint1.angle,
                                          self.joint2.angle]),
                  JOINT_VELOCITIES: np.array([self.joint1.speed,
-                                             self.joint2.speed])}
+                                             self.joint2.speed]),
+                 END_EFFECTOR_POINTS: np.append(np.array(self.body2.position),[0])}
 
         return state
 

@@ -1,50 +1,42 @@
-""" Hyperparameters for MJC peg insertion policy optimization. """
+""" Hyperparameters for Box2d Point Mass."""
 from __future__ import division
 
-from datetime import datetime
 import os.path
-
+from datetime import datetime
 import numpy as np
 
 from gps import __file__ as gps_filepath
-from gps.agent.mjc.agent_mjc import AgentMuJoCo
+from gps.agent.box2d.agent_box2d import AgentBox2D
+from gps.agent.box2d.arm_world import ArmWorld
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
-from gps.algorithm.cost.cost_fk import CostFK
+from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
-from gps.algorithm.cost.cost_utils import RAMP_FINAL_ONLY
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
+from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_lqr
-from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
-from gps.algorithm.policy.policy_prior import PolicyPrior
-from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
-        END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
 from gps.gui.config import generate_experiment_info
-
+from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, ACTION
 
 SENSOR_DIMS = {
-    JOINT_ANGLES: 7,
-    JOINT_VELOCITIES: 7,
-    END_EFFECTOR_POINTS: 6,
-    END_EFFECTOR_POINT_VELOCITIES: 6,
-    ACTION: 7,
+    JOINT_ANGLES: 2,
+    JOINT_VELOCITIES: 2,
+    END_EFFECTOR_POINTS: 3,
+    ACTION: 2
 }
 
-PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
-
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/mjc_badmm_example/'
+EXP_DIR = BASE_DIR + '/../experiments/box2d_arm_badmm_example/'
 
 
 common = {
-    'experiment_name': 'my_experiment' + '_' + \
+    'experiment_name': 'box2d_arm_badmm_example' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
     'data_files_dir': EXP_DIR + 'data_files/',
-    'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': 4,
 }
@@ -53,82 +45,70 @@ if not os.path.exists(common['data_files_dir']):
     os.makedirs(common['data_files_dir'])
 
 agent = {
-    'type': AgentMuJoCo,
-    'filename': './mjc_models/pr2_arm3d.xml',
-    'x0': np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
-                          np.zeros(7)]),
+    'type': AgentBox2D,
+    'target_state' : np.array([0, 0]),
+    'world' : ArmWorld,
+    'x0': [np.array([0.5*np.pi, 0, 0, 0, 0, 0, 0]),
+           np.array([0.75*np.pi, 0.5*np.pi, 0, 0, 0, 0, 0]),
+           np.array([np.pi, -0.5*np.pi, 0, 0, 0, 0, 0]),
+           np.array([1.25*np.pi, 0, 0, 0, 0, 0, 0]),
+          ],
+    'rk': 0,
     'dt': 0.05,
-    'substeps': 5,
+    'substeps': 1,
     'conditions': common['conditions'],
-    'pos_body_idx': np.array([1]),
-    'pos_body_offset': [np.array([0.0, 0.12, 0]), np.array([0.0, -0.08, 0]),
-                        np.array([-0.2, -0.08, 0]), np.array([-0.2, 0.12, 0])],
+    'pos_body_idx': np.array([]),
+    'pos_body_offset': np.array([]),
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
-    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-                      END_EFFECTOR_POINT_VELOCITIES],
-    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-                    END_EFFECTOR_POINT_VELOCITIES],
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS],
 }
 
 algorithm = {
     'type': AlgorithmBADMM,
     'conditions': common['conditions'],
-    'iterations': 12,
+    'iterations': 10,
     'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-2]),
     'policy_dual_rate': 0.2,
     'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
     'fixed_lg_step': 3,
-    'kl_step': 2.0,
+    'kl_step': 5.0,
     'min_step_mult': 0.01,
     'max_step_mult': 1.0,
     'sample_decrease_var': 0.05,
     'sample_increase_var': 0.1,
-    'policy_sample_mode': 'replace'
 }
 
 algorithm['init_traj_distr'] = {
     'type': init_lqr,
-    'init_gains':  1.0 / PR2_GAINS,
+    'init_gains': np.zeros(SENSOR_DIMS[ACTION]),
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-    'init_var': 1.0,
-    'stiffness': 1.0,
-    'stiffness_vel': 0.5,
-    'final_weight': 50.0,
+    'init_var': 0.1,
+    'stiffness': 0.01,
     'dt': agent['dt'],
     'T': agent['T'],
 }
 
-torque_cost = {
+action_cost = {
     'type': CostAction,
-    'wu': 5e-5 / PR2_GAINS,
+    'wu': np.array([1, 1])
 }
 
-fk_cost = {
-    'type': CostFK,
-    'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
-    'wp': np.array([1, 1, 1, 1, 1, 1]),
-    'l1': 0.1,
-    'l2': 10.0,
-    'alpha': 1e-5,
-}
-
-# Create second cost function for last step only.
-final_cost = {
-    'type': CostFK,
-    'ramp_option': RAMP_FINAL_ONLY,
-    'target_end_effector': fk_cost['target_end_effector'],
-    'wp': fk_cost['wp'],
-    'l1': 1.0,
-    'l2': 0.0,
-    'alpha': 1e-5,
-    'wp_final_multiplier': 10.0,
+state_cost = {
+    'type': CostState,
+    'data_types' : {
+        JOINT_ANGLES: {
+            'wp': np.array([1, 1]),
+            'target_state': agent["target_state"],
+        },
+    },
 }
 
 algorithm['cost'] = {
     'type': CostSum,
-    'costs': [torque_cost, fk_cost, final_cost],
-    'weights': [1.0, 1.0, 1.0],
+    'costs': [action_cost, state_cost],
+    'weights': [1e-5, 1.0],
 }
 
 algorithm['dynamics'] = {
@@ -149,7 +129,6 @@ algorithm['traj_opt'] = {
 algorithm['policy_opt'] = {
     'type': PolicyOptCaffe,
     'weights_file_prefix': EXP_DIR + 'policy',
-    'iterations': 2000,
 }
 
 algorithm['policy_prior'] = {
@@ -160,9 +139,9 @@ algorithm['policy_prior'] = {
 }
 
 config = {
-    'iterations': algorithm['iterations'],
+    'iterations': 10,
     'num_samples': 5,
-    'verbose_trials': 1,
+    'verbose_trials': 5,
     'verbose_policy_trials': 1,
     'common': common,
     'agent': agent,

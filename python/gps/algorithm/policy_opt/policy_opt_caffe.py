@@ -51,6 +51,7 @@ class PolicyOptCaffe(PolicyOpt):
         solver_param.momentum = self._hyperparams['momentum']
         solver_param.weight_decay = self._hyperparams['weight_decay']
         solver_param.type = self._hyperparams['solver_type']
+        solver_param.random_seed = self._hyperparams['random_seed']
 
         # Pass in net parameter either by filename or protostring.
         if isinstance(self._hyperparams['network_model'], basestring):

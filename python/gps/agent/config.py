@@ -65,7 +65,9 @@ except rospkg.common.ResourceNotFound as e:
 # AgentMuJoCo
 AGENT_MUJOCO = {
     'substeps': 1,
+    'camera_pos': np.array([2., 3., 2., 0., 0., 0.]),
 }
 
 AGENT_BOX2D = {
+    'render': True,
 }
