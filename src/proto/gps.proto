@@ -20,8 +20,8 @@ enum SampleType {
   POSITION = 13;
   LINEAR_VELOCITY = 14;
   RGB_IMAGE_SIZE = 15;
-  DOMAIN_IMAGE = 16; //initial image of the agent's environment.
-  DOMAIN_IMAGE_SIZE = 17;
+  CONTEXT_IMAGE = 16; //initial image of the agent's environment.
+  CONTEXT_IMAGE_SIZE = 17;
   TOTAL_DATA_TYPES = 18;
 }
 

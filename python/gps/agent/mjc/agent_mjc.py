@@ -11,7 +11,7 @@ from gps.agent.config import AGENT_MUJOCO
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
         END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
-        DOMAIN_IMAGE, DOMAIN_IMAGE_SIZE
+        CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE
 
 from gps.sample.sample import Sample
 
@@ -169,11 +169,11 @@ class AgentMuJoCo(Agent):
         # and flatten for storage
         img_data = np.transpose(img["img"], (2, 1, 0)).flatten()
         # if initial image is an observation, replicate it for each time step
-        if DOMAIN_IMAGE in self.obs_data_types:
-            sample.set(DOMAIN_IMAGE, np.tile(img_data, (self.T, 1)), t=None)
+        if CONTEXT_IMAGE in self.obs_data_types:
+            sample.set(CONTEXT_IMAGE, np.tile(img_data, (self.T, 1)), t=None)
         else:
-            sample.set(DOMAIN_IMAGE, img_data, t=None)
-        sample.set(DOMAIN_IMAGE_SIZE, np.array([self._hyperparams['image_channels'],
+            sample.set(CONTEXT_IMAGE, img_data, t=None)
+        sample.set(CONTEXT_IMAGE_SIZE, np.array([self._hyperparams['image_channels'],
                                                 self._hyperparams['image_width'],
                                                 self._hyperparams['image_height']]), t=None)
         # only save subsequent images if image is part of observation
@@ -217,8 +217,8 @@ class AgentMuJoCo(Agent):
         image_width = self._hyperparams['image_width']
         image_height = self._hyperparams['image_height']
         for sensor in self._hyperparams['obs_include']:
-            # Assumes only one of RGB_IMAGE or DOMAIN_IMAGE is present
-            if sensor == RGB_IMAGE or sensor == DOMAIN_IMAGE:
+            # Assumes only one of RGB_IMAGE or CONTEXT_IMAGE is present
+            if sensor == RGB_IMAGE or sensor == CONTEXT_IMAGE:
                 imend = imstart + self._hyperparams['sensor_dims'][sensor]
                 break
             else:
