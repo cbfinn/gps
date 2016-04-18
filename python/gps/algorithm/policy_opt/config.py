@@ -17,7 +17,7 @@ GENERIC_CONFIG = {
     'init_var': 0.1,  # Initial policy variance.
     'ent_reg': 0.0,  # Entropy regularizer.
     # Solver hyperparameters.
-    'iterations': 20000,  # Number of iterations per inner iteration.
+    'iterations': 5000,  # Number of iterations per inner iteration.
     'batch_size': 25,
     'lr': 0.001,  # Base learning rate (by default it's fixed).
     'lr_policy': 'fixed',  # Learning rate policy.
