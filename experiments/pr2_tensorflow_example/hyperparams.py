@@ -204,7 +204,6 @@ algorithm['policy_opt'] = {
     'network_params': {
         'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
         'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES],
-        'obs_image_data': [],
         'sensor_dims': SENSOR_DIMS,
     },
     'network_model': example_tf_network,
