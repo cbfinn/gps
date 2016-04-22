@@ -66,13 +66,13 @@ class TfPolicy(Policy):
         checkpoint_path += '/_pol'
         pickled_pol = {'deg_obs': deg_obs, 'deg_action': deg_action, 'chol_pol_covar': self.chol_pol_covar,
                        'checkpoint_path_tf': checkpoint_path + '_tf_data', 'scale': self.scale, 'bias': self.bias,
-                       'device_string': self.device_string, 'goal_state': goal_state}
+                       'device_string': self.device_string, 'goal_state': goal_state, 'x_idx': self.x_idx}
         pickle.dump(pickled_pol, open(checkpoint_path, "wb"))
         saver = tf.train.Saver()
         saver.save(self.sess, checkpoint_path + '_tf_data')
 
     @classmethod
-    def load_policy(cls, policy_dict_path, tf_generator):
+    def load_policy(cls, policy_dict_path, tf_generator, network_config=None):
         """
         For when we only need to load a policy for the forward pass. For instance, to run on the robot from
         a checkpointed policy.
@@ -80,7 +80,8 @@ class TfPolicy(Policy):
         from tensorflow.python.framework import ops
         ops.reset_default_graph()  # we need to destroy the default graph before re_init or checkpoint won't restore.
         pol_dict = pickle.load(open(policy_dict_path, "rb"))
-        tf_map = tf_generator(dim_input=pol_dict['deg_obs'], dim_output=pol_dict['deg_action'], batch_size=1)
+        tf_map = tf_generator(dim_input=pol_dict['deg_obs'], dim_output=pol_dict['deg_action'],
+                              batch_size=1, network_config=network_config)
 
         sess = tf.Session()
         init_op = tf.initialize_all_variables()
@@ -96,5 +97,6 @@ class TfPolicy(Policy):
         cls_init.chol_pol_covar = pol_dict['chol_pol_covar']
         cls_init.scale = pol_dict['scale']
         cls_init.bias = pol_dict['bias']
+        cls_init.x_idx = pol_dict['x_idx']
         return cls_init
 
