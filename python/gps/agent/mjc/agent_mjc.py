@@ -10,7 +10,9 @@ from gps.agent.agent_utils import generate_noise, setup
 from gps.agent.config import AGENT_MUJOCO
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
-        END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE
+        END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
+        CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE
+
 from gps.sample.sample import Sample
 
 
@@ -87,8 +89,10 @@ class AgentMuJoCo(Agent):
 
         cam_pos = self._hyperparams['camera_pos']
         for i in range(self._hyperparams['conditions']):
-            self._world[i].init_cam(cam_pos[0], cam_pos[1], cam_pos[2],
-                                    cam_pos[3], cam_pos[4], cam_pos[5])
+            self._world[i].init_viewer(AGENT_MUJOCO['image_width'],
+                                       AGENT_MUJOCO['image_height'],
+                                       cam_pos[0], cam_pos[1], cam_pos[2],
+                                       cam_pos[3], cam_pos[4], cam_pos[5])
 
     def sample(self, policy, condition, verbose=True, save=True):
         """
@@ -124,7 +128,6 @@ class AgentMuJoCo(Agent):
             U[t, :] = mj_U
             if verbose:
                 self._world[condition].plot(mj_X)
-                # obs = self._world[condition].get_image()
             if (t + 1) < self.T:
                 for _ in range(self._hyperparams['substeps']):
                     mj_X, _ = self._world[condition].step(mj_X, mj_U)
@@ -156,6 +159,29 @@ class AgentMuJoCo(Agent):
             idx = site * 3
             jac[idx:(idx+3), :] = self._world[condition].get_jac_site(site)
         sample.set(END_EFFECTOR_POINT_JACOBIANS, jac, t=0)
+
+        # save initial image to meta data
+        self._world[condition].plot(self._hyperparams['x0'][condition])
+        img = self._world[condition].get_image_scaled(self._hyperparams['image_width'],
+                                                      self._hyperparams['image_height'])
+        # mjcpy image shape is [height, width, channels],
+        # dim-shuffle it for later conv-net processing,
+        # and flatten for storage
+        img_data = np.transpose(img["img"], (2, 1, 0)).flatten()
+        # if initial image is an observation, replicate it for each time step
+        if CONTEXT_IMAGE in self.obs_data_types:
+            sample.set(CONTEXT_IMAGE, np.tile(img_data, (self.T, 1)), t=None)
+        else:
+            sample.set(CONTEXT_IMAGE, img_data, t=None)
+        sample.set(CONTEXT_IMAGE_SIZE, np.array([self._hyperparams['image_channels'],
+                                                self._hyperparams['image_width'],
+                                                self._hyperparams['image_height']]), t=None)
+        # only save subsequent images if image is part of observation
+        if RGB_IMAGE in self.obs_data_types:
+            sample.set(RGB_IMAGE, img_data, t=0)
+            sample.set(RGB_IMAGE_SIZE, [self._hyperparams['image_channels'],
+                                        self._hyperparams['image_width'],
+                                        self._hyperparams['image_height']], t=None)
         return sample
 
     def _set_sample(self, sample, mj_X, t, condition):
@@ -179,3 +205,25 @@ class AgentMuJoCo(Agent):
             idx = site * 3
             jac[idx:(idx+3), :] = self._world[condition].get_jac_site(site)
         sample.set(END_EFFECTOR_POINT_JACOBIANS, jac, t=t+1)
+        if RGB_IMAGE in self.obs_data_types:
+            img = self._world[condition].get_image_scaled(self._hyperparams['image_width'],
+                                                          self._hyperparams['image_height'])
+            sample.set(RGB_IMAGE, np.transpose(img["img"], (2, 1, 0)).flatten(), t=t+1)
+
+    def _get_image_from_obs(self, obs):
+        imstart = 0
+        imend = 0
+        image_channels = self._hyperparams['image_channels']
+        image_width = self._hyperparams['image_width']
+        image_height = self._hyperparams['image_height']
+        for sensor in self._hyperparams['obs_include']:
+            # Assumes only one of RGB_IMAGE or CONTEXT_IMAGE is present
+            if sensor == RGB_IMAGE or sensor == CONTEXT_IMAGE:
+                imend = imstart + self._hyperparams['sensor_dims'][sensor]
+                break
+            else:
+                imstart += self._hyperparams['sensor_dims'][sensor]
+        img = obs[imstart:imend]
+        img = img.reshape((image_channels, image_width, image_height))
+        img = np.transpose(img, [1, 2, 0])
+        return img

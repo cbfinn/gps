@@ -4,11 +4,6 @@ try:
 except ImportError:
     construct_fc_network = None
 
-try:
-    from gps.algorithm.policy_opt.tf_model_example import example_tf_network
-except ImportError:
-    example_tf_network = None
-
 import os
 
 # config options shared by both caffe and tf.
@@ -47,7 +42,6 @@ checkpoint_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                '..', 'policy_opt/tf_checkpoint/policy_checkpoint.ckpt'))
 POLICY_OPT_TF = {
     # Other hyperparameters.
-    'network_model': example_tf_network,  # should return TfMap object from tf_utils. See example.
     'checkpoint_prefix': checkpoint_path
 }
 

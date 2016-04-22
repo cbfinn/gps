@@ -20,7 +20,7 @@ Relevant papers which have used guided policy search include:
 * Sergey Levine, Pieter Abbeel. *Learning Neural Network Policies with Guided Policy Search under Unknown Dynamics*. NIPS 2014. [[pdf](http://www.eecs.berkeley.edu/~svlevine/papers/mfcgps.pdf)]
 
 If the codebase is helpful for your research, please cite any relevant paper(s) above and the following:
-* Chelsea Finn, Marvin Zhang, Justin Fu, Xin Yu Tan, Zoe McCarthy, Emily Scharff, Sergey Levine. Guided Policy Search Code Implementation. 2016. Software available from rll.berkeley.edu/gps.
+* Chelsea Finn, Marvin Zhang, Justin Fu, Xin Yu Tan, Zoe McCarthy, Emily Scharff, Bradly Stadie, Sergey Levine. Guided Policy Search Code Implementation. 2016. Software available from rll.berkeley.edu/gps.
 
 For bibtex, see [this page](bibtex.html).
 
@@ -42,7 +42,7 @@ One or more of the following agent interfaces is required. Set up instructions f
 
 One of the following neural network libraries is required for the full guided policy search algorithm
 * [Caffe](http://caffe.berkeleyvision.org/) (master branch as of 11/2015, with pycaffe compiled, python layer enabled, PYTHONPATH configured)
-* [TensorFlow](http://tensorflow.org)
+* [TensorFlow](http://tensorflow.org) (Tested on versions 0.5-0.8. Works with and without GPU support).
 
 #### Setup
 

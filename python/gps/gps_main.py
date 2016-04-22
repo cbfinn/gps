@@ -27,6 +27,15 @@ class GPSMain(object):
     def __init__(self, config):
         self._hyperparams = config
         self._conditions = config['common']['conditions']
+        if 'train_conditions' in config['common']:
+            self._train_idx = config['common']['train_conditions']
+            self._test_idx = config['common']['test_conditions']
+        else:
+            self._train_idx = range(self._conditions)
+            config['common']['train_conditions'] = config['common']['conditions']
+            self._hyperparams=config
+            self._test_idx = self._train_idx
+
         self._data_files_dir = config['common']['data_files_dir']
 
         self.agent = config['agent']['type'](config['agent'])
@@ -47,13 +56,13 @@ class GPSMain(object):
         itr_start = self._initialize(itr_load)
 
         for itr in range(itr_start, self._hyperparams['iterations']):
-            for cond in range(self._conditions):
+            for cond in self._train_idx:
                 for i in range(self._hyperparams['num_samples']):
                     self._take_sample(itr, cond, i)
 
             traj_sample_lists = [
                 self.agent.get_samples(cond, -self._hyperparams['num_samples'])
-                for cond in range(self._conditions)
+                for cond in self._train_idx
             ]
             self._take_iteration(itr, traj_sample_lists)
             pol_sample_lists = self._take_policy_samples()
@@ -78,7 +87,7 @@ class GPSMain(object):
             os._exit(1) # called instead of sys.exit(), since t
         traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
             ('traj_sample_itr_%02d.pkl' % itr))
-        
+
         pol_sample_lists = self._take_policy_samples(N)
         self.data_logger.pickle(
             self._data_files_dir + ('pol_sample_itr_%02d.pkl' % itr),
@@ -87,9 +96,9 @@ class GPSMain(object):
 
         if self.gui:
             self.gui.update(itr, self.algorithm, self.agent,
-                traj_sample_lists, pol_sample_lists)   
+                traj_sample_lists, pol_sample_lists)
             self.gui.set_status_text(('Took %d policy sample(s) from ' +
-                'algorithm state at iteration %d.\n' + 
+                'algorithm state at iteration %d.\n' +
                 'Saved to: data_files/pol_sample_itr_%02d.pkl.\n') % (N, itr, itr))
 
     def _initialize(self, itr_load):
@@ -106,12 +115,12 @@ class GPSMain(object):
                 self.gui.set_status_text('Press \'go\' to begin.')
             return 0
         else:
-            algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr_load
+            algorithm_file = self._data_files_dir + 'algorithm_i_%02d.pkl' % itr_load
             self.algorithm = self.data_logger.unpickle(algorithm_file)
             if self.algorithm is None:
                 print("Error: cannot find '%s.'" % algorithm_file)
                 os._exit(1) # called instead of sys.exit(), since this is in a thread
-
+                
             if self.gui:
                 traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
                     ('traj_sample_itr_%02d.pkl' % itr_load))
@@ -201,10 +210,10 @@ class GPSMain(object):
         if self.gui:
             self.gui.set_status_text('Taking policy samples.')
         pol_samples = [[None for _ in range(N)] for _ in range(self._conditions)]
-        for cond in range(self._conditions):
+        for cond in range(len(self._test_idx)):
             for i in range(N):
                 pol_samples[cond][i] = self.agent.sample(
-                    self.algorithm.policy_opt.policy, cond,
+                    self.algorithm.policy_opt.policy, self._test_idx[cond],
                     verbose=True, save=False)
         return [SampleList(samples) for samples in pol_samples]
 
@@ -224,6 +233,8 @@ class GPSMain(object):
             self.gui.save_figure(
                 self._data_files_dir + ('figure_itr_%02d.png' % itr)
             )
+        if 'no_sample_logging' in self._hyperparams['common']:
+            return
         self.data_logger.pickle(
             self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
             copy.copy(self.algorithm)
@@ -285,7 +296,7 @@ def main():
                 copy(prev_exp_dir + 'targets.npz', exp_dir)
         except IOError as e:
             with open(hyperparams_file, 'w') as f:
-                f.write('# To get started, copy over hyperparams from another experiment.\n' + 
+                f.write('# To get started, copy over hyperparams from another experiment.\n' +
                         '# Visit rll.berkeley.edu/gps/hyperparams.html for documentation.')
         with open(prev_exp_file, 'w') as f:
             f.write(exp_dir)

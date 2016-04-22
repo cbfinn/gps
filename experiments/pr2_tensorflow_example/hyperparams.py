@@ -25,6 +25,7 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         TRIAL_ARM, AUXILIARY_ARM, JOINT_SPACE
 from gps.utility.general_utils import get_ee_points
 from gps.gui.config import generate_experiment_info
+from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 
 
 EE_POINTS = np.array([[0.02, -0.025, 0.05], [0.02, -0.025, 0.05],
@@ -200,8 +201,14 @@ algorithm['traj_opt'] = {
 
 algorithm['policy_opt'] = {
     'type': PolicyOptTf,
+    'network_params': {
+        'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
+        'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES],
+        'sensor_dims': SENSOR_DIMS,
+    },
+    'network_model': example_tf_network,
+    'iterations': 1000,
     'weights_file_prefix': EXP_DIR + 'policy',
-    'iterations': 3000,
 }
 
 algorithm['policy_prior'] = {

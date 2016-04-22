@@ -40,13 +40,25 @@ class PolicyOptTf(PolicyOpt):
         self.var = self._hyperparams['init_var'] * np.ones(dU)
         self.sess = tf.Session()
         self.policy = TfPolicy(dU, self.obs_tensor, self.act_op, np.zeros(dU), self.sess, self.device_string)
+        # List of indices for state (vector) data and image (tensor) data in observation.
+        self.x_idx, self.img_idx, i = [], [], 0
+        if 'obs_image_data' not in self._hyperparams['network_params']:
+            self._hyperparams['network_params'].update({'obs_image_data': []})
+        for sensor in self._hyperparams['network_params']['obs_include']:
+            dim = self._hyperparams['network_params']['sensor_dims'][sensor]
+            if sensor in self._hyperparams['network_params']['obs_image_data']:
+                self.img_idx = self.img_idx + list(range(i, i+dim))
+            else:
+                self.x_idx = self.x_idx + list(range(i, i+dim))
+            i += dim
         init_op = tf.initialize_all_variables()
         self.sess.run(init_op)
 
     def init_network(self):
         """ Helper method to initialize the tf networks used """
         tf_map_generator = self._hyperparams['network_model']
-        tf_map = tf_map_generator(dim_input=self._dO, dim_output=self._dU, batch_size=self.batch_size)
+        tf_map = tf_map_generator(dim_input=self._dO, dim_output=self._dU, batch_size=self.batch_size,
+                                  network_config=self._hyperparams['network_params'])
         self.obs_tensor = tf_map.get_input_tensor()
         self.action_tensor = tf_map.get_target_output_tensor()
         self.precision_tensor = tf_map.get_precision_tensor()
@@ -62,9 +74,6 @@ class PolicyOptTf(PolicyOpt):
                                momentum=self._hyperparams['momentum'],
                                weight_decay=self._hyperparams['weight_decay'])
 
-    # TODO - This assumes that the obs is a vector being passed into the
-    #        network in the same place.
-    #        (won't work with images or multimodal networks)
     def update(self, obs, tgt_mu, tgt_prc, tgt_wt, itr, inner_itr):
         """
         Update policy.
@@ -107,9 +116,10 @@ class PolicyOptTf(PolicyOpt):
 
         # Normalize obs, but only compute normalzation at the beginning.
         if itr == 0 and inner_itr == 1:
-            self.policy.scale = np.diag(1.0 / np.std(obs, axis=0))
-            self.policy.bias = -np.mean(obs.dot(self.policy.scale), axis=0)
-        obs = obs.dot(self.policy.scale) + self.policy.bias
+            self.policy.x_idx = self.x_idx
+            self.policy.scale = np.diag(1.0 / np.std(obs[:, self.x_idx], axis=0))
+            self.policy.bias = -np.mean(obs[:, self.x_idx].dot(self.policy.scale), axis=0)
+        obs[:, self.x_idx] = obs[:, self.x_idx].dot(self.policy.scale) + self.policy.bias
 
         # Assuming that N*T >= self.batch_size.
         batches_per_epoch = np.floor(N*T / self.batch_size)
@@ -132,6 +142,7 @@ class PolicyOptTf(PolicyOpt):
             if i % 500 == 0 and i != 0:
                 LOGGER.debug('tensorflow iteration %d, average loss %f',
                              i, average_loss / 500)
+                print ('supervised tf loss is ' + str(average_loss))
                 average_loss = 0
 
         # Keep track of tensorflow iterations for loading solver states.
@@ -160,7 +171,8 @@ class PolicyOptTf(PolicyOpt):
         try:
             for n in range(N):
                 if self.policy.scale is not None and self.policy.bias is not None:
-                    obs[n, :, :] = obs[n, :, :].dot(self.policy.scale) + self.policy.bias
+                    obs[n, :, self.x_idx] = (obs[n, :, self.x_idx].T.dot(self.policy.scale)
+                                             + self.policy.bias).T
         except AttributeError:
             pass  # TODO: Should prob be called before update?
 
@@ -182,25 +194,6 @@ class PolicyOptTf(PolicyOpt):
     def set_ent_reg(self, ent_reg):
         """ Set the entropy regularization. """
         self._hyperparams['ent_reg'] = ent_reg
-
-    def auto_save_state(self, pickle_hyperparams_path=None):
-        """ auto-pickle including hyper params. Useful for debugging. """
-
-        saver = tf.train.Saver()
-        saver.save(self.sess, self.checkpoint_file)
-        return_dict = {
-            'hyperparams': self._hyperparams,
-            'dO': self._dO,
-            'dU': self._dU,
-            'scale': self.policy.scale,
-            'bias': self.policy.bias,
-            'tf_iter': self.tf_iter,
-        }
-
-        import pickle
-        if pickle_hyperparams_path is None:
-            pickle_hyperparams_path = self.checkpoint_file + '_hyperparams'
-        pickle.dump(return_dict, open(pickle_hyperparams_path, "wb"))
 
     # For pickling.
     def __getstate__(self):
