@@ -1,4 +1,5 @@
-""" Hyperparameters for MJC peg insertion policy optimization. """
+""" Hyperparameters for MJC peg insertion policy optimization with images as observations.
+    See https://youtu.be/Nk4NiO8Ofr0?t=11s for expected behavior after 5 iterations"""
 from __future__ import division
 
 from datetime import datetime
