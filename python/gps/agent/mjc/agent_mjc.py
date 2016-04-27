@@ -167,7 +167,7 @@ class AgentMuJoCo(Agent):
         # mjcpy image shape is [height, width, channels],
         # dim-shuffle it for later conv-net processing,
         # and flatten for storage
-        img_data = np.transpose(img["img"], (2, 1, 0)).flatten()
+        img_data = np.transpose(img["img"], (1, 0, 2)).flatten()
         # if initial image is an observation, replicate it for each time step
         if CONTEXT_IMAGE in self.obs_data_types:
             sample.set(CONTEXT_IMAGE, np.tile(img_data, (self.T, 1)), t=None)
@@ -224,6 +224,5 @@ class AgentMuJoCo(Agent):
             else:
                 imstart += self._hyperparams['sensor_dims'][sensor]
         img = obs[imstart:imend]
-        img = img.reshape((image_channels, image_width, image_height))
-        img = np.transpose(img, [1, 2, 0])
+        img = img.reshape((image_width, image_height, image_channels))
         return img

@@ -125,9 +125,8 @@ def multi_modal_network(dim_input=27, dim_output=7, batch_size=25, network_confi
     im_height = network_config['image_height']
     im_width = network_config['image_width']
     num_channels = network_config['image_channels']
-    
-    image_input = tf.reshape(image_input, [-1, num_channels, im_width, im_height])
-    image_input = tf.transpose(image_input, perm=[0,3,2,1])
+    image_input = tf.reshape(image_input, [-1, im_width, im_height, num_channels])
+
     # we pool twice, each time reducing the image size by a factor of 2.
     conv_out_size = int(im_width/(2.0*pool_size)*im_height/(2.0*pool_size)*num_filters[1])
     first_dense_size = conv_out_size + len(x_idx)
