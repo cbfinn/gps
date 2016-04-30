@@ -40,8 +40,8 @@ SENSOR_DIMS = {
 
 PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 
-BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-3]) + '/'
-EXP_DIR = BASE_DIR + 'experiments/pr2_badmm_example/'
+BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
+EXP_DIR = BASE_DIR + '/../experiments/pr2_badmm_example/'
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
