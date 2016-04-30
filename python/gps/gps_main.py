@@ -275,7 +275,9 @@ def main():
     resume_training_itr = args.resume
     test_policy_N = args.policy
 
-    exp_dir = 'experiments/' + exp_name + '/'
+    from gps import __file__ as gps_filepath
+    gps_dir = '/'.join(str.split(gps_filepath, '/')[:-3]) + '/'
+    exp_dir = gps_dir + 'experiments/' + exp_name + '/'
     hyperparams_file = exp_dir + 'hyperparams.py'
 
     if args.new:

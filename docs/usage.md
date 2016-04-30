@@ -54,8 +54,8 @@ For your reference, your experiments folder contains the following:
 
 To shorten gps commands, we suggest that you create an alias in your bashrc:
 ```sh
-echo "alias gps='python python/gps/gps_main.py'" >> ~/.bashrc
-cd /path/to/gps
+echo "alias gps='python /path/to/gps/python/gps/gps_main.py'" >> ~/.bashrc
+cd /path/to/gps             # (only required for MuJoCo experiments)
 gps -h                      # help
 gps <EXPERIMENT_NAME> -n    # new experiment
 gps <EXPERIMENT_NAME> -t    # target setup
