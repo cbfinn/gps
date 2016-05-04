@@ -37,6 +37,7 @@ endif()
 
 
 include_directories(SYSTEM ${OSG_INCLUDE_DIR})
+include_directories("../mjpro/include")
 message("osg includes: ${OSG_INCLUDE_DIR}")
 # add_definitions("-DOPENTHREADS_ATOMIC_USE_MUTEX")
 # add_executable(test_mujoco_osg test_mujoco_osg.cpp mujoco_osg_viewer.cpp)
