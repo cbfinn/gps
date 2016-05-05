@@ -33,7 +33,7 @@ For bibtex, see [this page](bibtex.html).
 The following are required
 * [python 2.7](https://www.python.org/download/releases/2.7/), [numpy](http://www.numpy.org) (v1.7.0+), [matplotlib](http://matplotlib.org) (v1.5.0+), [scipy](http://scipy.org) (v0.11.0+)
 * [boost](http://www.boost.org/), including boost-python
-* [protobuf](https://developers.google.com/protocol-buffers/) (apt-get packages libprotobuf-dev and protobuf-compiler)
+* [protobuf](https://developers.google.com/protocol-buffers/) (installed by running `sudo apt-get install libprotobuf-dev libprotobuf-compiler libboost-all-dev libopenscenegraph-dev`)
 
 One or more of the following agent interfaces is required. Set up instructions for each are below.
 * [Box2D](https://github.com/pybox2d/pybox2d)
