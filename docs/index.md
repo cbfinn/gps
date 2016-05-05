@@ -33,7 +33,7 @@ For bibtex, see [this page](bibtex.html).
 The following are required
 * [python 2.7](https://www.python.org/download/releases/2.7/), [numpy](http://www.numpy.org) (v1.7.0+), [matplotlib](http://matplotlib.org) (v1.5.0+), [scipy](http://scipy.org) (v0.11.0+)
 * [boost](http://www.boost.org/), including boost-python
-* [protobuf](https://developers.google.com/protocol-buffers/) (installed by running `sudo apt-get install libprotobuf-dev libprotobuf-compiler libboost-all-dev libopenscenegraph-dev`)
+* [protobuf](https://developers.google.com/protocol-buffers/) (apt-get packages libprotobuf-dev and protobuf-compiler)
 
 One or more of the following agent interfaces is required. Set up instructions for each are below.
 * [Box2D](https://github.com/pybox2d/pybox2d)
@@ -49,6 +49,13 @@ One of the following neural network libraries is required for the full guided po
 Follow the following steps to get set up:
 
 1. Install necessary dependencies above.
+
+    ```sh
+    sudo apt-get install libprotobuf-dev
+    sudo apt-get install libprotobuf-compiler
+    sudo apt-get install libboost-all-dev
+    sudo apt-get install libopenscenegraph-dev
+    ```
 
 2. Clone the repo:
 
