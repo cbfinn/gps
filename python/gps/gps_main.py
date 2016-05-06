@@ -276,6 +276,7 @@ def main():
     test_policy_N = args.policy
 
     from gps import __file__ as gps_filepath
+    gps_filepath = os.path.abspath(gps_filepath)
     gps_dir = '/'.join(str.split(gps_filepath, '/')[:-3]) + '/'
     exp_dir = gps_dir + 'experiments/' + exp_name + '/'
     hyperparams_file = exp_dir + 'hyperparams.py'
