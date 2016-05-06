@@ -96,17 +96,13 @@ class AlgorithmMD(Algorithm):
             )
 
         # kl step schedule
-        if t < 9:
-            self.base_kl_step = 2.0
+        if type(self._hyperparams['kl_step_schedule']) in (int, float):
+            self.base_kl_step = self._hyperparams['kl_step_schedule']
         else:
-            self.base_kl_step = 0.2
-#        if type(self._hyperparams['kl_step_schedule']) in (int, float):
-#            self.base_kl_step = self._hyperparams['kl_step_schedule']
-#        else:
-#            sch = self._hyperparams['kl_step_schedule']
-#            self.base_kl_step = np.exp(
-#                np.interp(t, np.linspace(0, 1, num=len(sch)), np.log(sch))
-#            )
+            sch = self._hyperparams['kl_step_schedule']
+            self.base_kl_step = np.exp(
+                np.interp(t, np.linspace(0, 1, num=len(sch)), np.log(sch))
+            )
 
     def _update_policy_samples(self):
         """ Update the list of samples to use with the policy. """
