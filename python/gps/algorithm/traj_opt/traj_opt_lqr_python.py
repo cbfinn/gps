@@ -32,6 +32,17 @@ class TrajOptLQRPython(TrajOpt):
         traj_info = algorithm.cur[m].traj_info
         prev_traj_distr = algorithm.cur[m].traj_distr
 
+        # if using mdpgs, use NN policy instead, kinda hacky but should work
+        # NOTE: we only copy K/k/chol_pol_covar, excluding (inv_)pol_covar
+        # (this is fine since the downstream functions only need these 3)
+        if hasattr(algorithm, "traj_opt_use_nn_policy"):
+            prev_traj_distr = prev_traj_distr.nans_like()
+            pol_info = algorithm.cur[m].pol_info
+
+            prev_traj_distr.K = pol_info.pol_K
+            prev_traj_distr.k = pol_info.pol_k
+            prev_traj_distr.chol_pol_covar = pol_info.chol_pol_S
+
         # Set KL-divergence step size (epsilon).
         kl_step = algorithm.base_kl_step * step_mult
 
