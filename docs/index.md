@@ -48,13 +48,10 @@ One of the following neural network libraries is required for the full guided po
 
 Follow the following steps to get set up:
 
-1. Install necessary dependencies above.
+1. Install necessary dependencies above. To install protobuf and boost:
 
     ```sh
-    sudo apt-get install libprotobuf-dev
-    sudo apt-get install libprotobuf-compiler
-    sudo apt-get install libboost-all-dev
-    sudo apt-get install libopenscenegraph-dev
+    sudo apt-get install libprotobuf-dev libprotobuf-compiler libboost-all-dev
     ```
 
 2. Clone the repo:
