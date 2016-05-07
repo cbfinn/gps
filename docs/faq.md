@@ -25,7 +25,7 @@ two extensions are in progress.
 
 Caffe provides a straight-forward interface in python that makes it easy to define, train, and deploy simple architectures.
 
-We plan to add support for TensorFlow to enable training more flexible network architectures.
+We recently added support for TensorFlow to enable training more flexible network architectures.
 
 **How can I find more details on the algorithms implemented in this codebase?**
 
