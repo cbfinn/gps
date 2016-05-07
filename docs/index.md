@@ -52,6 +52,7 @@ Follow the following steps to get set up:
 
     ```sh
     sudo apt-get install libprotobuf-dev libprotobuf-compiler libboost-all-dev
+    sudo pip install protobuf
     ```
 
 2. Clone the repo:
