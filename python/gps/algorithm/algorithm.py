@@ -166,11 +166,11 @@ class Algorithm(object):
         counter.
         """
         self.iteration_count += 1
-        self.prev = self.cur
+        self.prev = copy.deepcopy(self.cur)
         self.cur = [IterationData() for _ in range(self.M)]
         for m in range(self.M):
             self.cur[m].traj_info = TrajectoryInfo()
-            self.cur[m].traj_info.dynamics = self.prev[m].traj_info.dynamics
+            self.cur[m].traj_info.dynamics = copy.deepcopy(self.prev[m].traj_info.dynamics)
             self.cur[m].step_mult = self.prev[m].step_mult
             self.cur[m].eta = self.prev[m].eta
             self.cur[m].traj_distr = self.new_traj_distr[m]
