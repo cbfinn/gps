@@ -446,7 +446,7 @@ class AlgorithmBADMM(Algorithm):
         Args:
             traj_distr: A linear Gaussian policy object.
             traj_info: A TrajectoryInfo object.
-	    pol_info: Policy linearization info.
+            pol_info: Policy linearization info.
             m: Condition number.
         """
         # Constants.
