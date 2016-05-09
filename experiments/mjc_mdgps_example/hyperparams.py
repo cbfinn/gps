@@ -36,7 +36,7 @@ SENSOR_DIMS = {
 PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/mjc_md_example/'
+EXP_DIR = BASE_DIR + '/../experiments/mjc_mdgps_example/'
 
 
 common = {
@@ -61,8 +61,8 @@ agent = {
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
-    'pos_body_offset': [np.array([0.0, 0.12, 0]), np.array([0.0, -0.08, 0]),
-                        np.array([-0.2, -0.08, 0]), np.array([-0.2, 0.12, 0])],
+    'pos_body_offset': [np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0]),
+                        np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -80,7 +80,7 @@ algorithm = {
     'lg_step_schedule': 0.0,
     'policy_dual_rate': 0.0,
     'ent_reg_schedule': 0.0,
-    'kl_step_schedule': 2.0,
+    'kl_step_schedule': np.array([2.0, 2.0, 0.2]),
     'min_step_mult': 1.0,
     'max_step_mult': 1.0,
     'sample_decrease_var': 0.05,
@@ -102,13 +102,13 @@ algorithm['init_traj_distr'] = {
 
 torque_cost = {
     'type': CostAction,
-    'wu': 5e-5 / PR2_GAINS,
+    'wu': 1e-3 / PR2_GAINS,
 }
 
 fk_cost = {
     'type': CostFK,
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
-    'wp': np.array([1, 1, 1, 1, 1, 1]),
+    'wp': np.array([2, 2, 1, 2, 2, 1]),
     'l1': 0.1,
     'l2': 10.0,
     'alpha': 1e-5,
@@ -139,7 +139,7 @@ algorithm['dynamics'] = {
         'type': DynamicsPriorGMM,
         'max_clusters': 20,
         'min_samples_per_cluster': 40,
-        'max_samples': 20,
+        'max_samples': 40,
     },
 }
 
@@ -150,14 +150,14 @@ algorithm['traj_opt'] = {
 algorithm['policy_opt'] = {
     'type': PolicyOptCaffe,
     'weights_file_prefix': EXP_DIR + 'policy',
-    'iterations': 2000,
+    'iterations': 4000,
 }
 
 algorithm['policy_prior'] = {
     'type': PolicyPriorGMM,
     'max_clusters': 20,
     'min_samples_per_cluster': 40,
-    'max_samples': 20,
+    'max_samples': 40,
 }
 
 config = {

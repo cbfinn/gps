@@ -7,7 +7,6 @@ import scipy as sp
 
 from gps.algorithm.algorithm import Algorithm
 from gps.algorithm.algorithm_utils import PolicyInfo, gauss_fit_joint_prior
-#TODO: make new config for md
 from gps.algorithm.config import ALG_MD
 from gps.sample.sample_list import SampleList
 
@@ -300,7 +299,7 @@ class AlgorithmMD(Algorithm):
         for m in range(self.M):
             self.cur[m].traj_info.last_kl_step = \
                     self.prev[m].traj_info.last_kl_step
-            self.cur[m].pol_info = self.prev[m].pol_info
+            self.cur[m].pol_info = copy.deepcopy(self.prev[m].pol_info)
 
     def _stepadjust(self, m):
         """
@@ -312,19 +311,19 @@ class AlgorithmMD(Algorithm):
         # that the previous samples were actually drawn from under the
         # dynamics that were estimated from the previous samples.
         prev_laplace_obj, prev_laplace_kl = self._estimate_cost(
-            self.prev[m].traj_distr, self.prev[m].traj_info, m
+            self.prev[m].traj_distr, self.prev[m].traj_info, self.prev[m].pol_info, m
         )
         # This is the policy that we just used under the dynamics that
         # were estimated from the previous samples (so this is the cost
         # we thought we would have).
         new_pred_laplace_obj, new_pred_laplace_kl = self._estimate_cost(
-            self.cur[m].traj_distr, self.prev[m].traj_info, m
+            self.cur[m].traj_distr, self.prev[m].traj_info, self.prev[m].pol_info, m
         )
 
         # This is the actual cost we have under the current trajectory
         # based on the latest samples.
         new_actual_laplace_obj, new_actual_laplace_kl = self._estimate_cost(
-            self.cur[m].traj_distr, self.cur[m].traj_info, m
+            self.cur[m].traj_distr, self.cur[m].traj_info, self.cur[m].pol_info, m
         )
 
         # Measure the entropy of the current trajectory (for printout).
@@ -452,16 +451,15 @@ class AlgorithmMD(Algorithm):
                     0.5 * np.mean(d_pp_d_l)
         return kl_m, kl, kl_lm, kl_l
 
-    def _estimate_cost(self, traj_distr, traj_info, m):
+    def _estimate_cost(self, traj_distr, traj_info, pol_info, m):
         """
         Compute Laplace approximation to expected cost.
         Args:
             traj_distr: A linear Gaussian policy object.
             traj_info: A TrajectoryInfo object.
+            pol_info: Policy linearization info.
             m: Condition number.
         """
-        pol_info = self.cur[m].pol_info
-
         # Constants.
         T, dU, dX = self.T, self.dU, self.dX
 

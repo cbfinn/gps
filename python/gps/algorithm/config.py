@@ -45,8 +45,8 @@ ALG_BADMM = {
     'exp_step_lower': 1.0,
 }
 
+# AlgorithmMD
 ALG_MD = {
-    'kl_step_schedule': 1.0,
     'inner_iterations': 4,
     'policy_dual_rate': 1.0,
     'policy_dual_rate_covar': 0.0,
