@@ -59,11 +59,15 @@ class AlgorithmMD(Algorithm):
                 self._update_policy(self.iteration_count, inner_itr)
             for m in range(self.M):
                 self._update_policy_fit(m)  # Update policy priors.
+
+            # TODO: not sure about this, copied from previous
             if self.iteration_count > 0 or inner_itr > 0:
-                step = (inner_itr == self._hyperparams['inner_iterations'] - 1)
-                # Update dual variables.
-                for m in range(self.M):
-                    self._policy_dual_step(m, step=step)
+                # Compute KL divergence.
+                if (inner_itr == self._hyperparams['inner_iterations'] - 1):
+                    for m in range(self.M):
+                        kl_m = self._policy_kl(m)[0]
+                        self.cur[m].pol_info.prev_kl = kl_m
+
             self._update_trajectories()
 
         self._advance_iteration_variables()
@@ -76,25 +80,7 @@ class AlgorithmMD(Algorithm):
         # Compute temporal interpolation value.
         t = min((self.iteration_count + 1.0) /
                 (self._hyperparams['iterations'] - 1), 1)
-        # Perform iteration-based interpolation of entropy penalty.
-        if type(self._hyperparams['ent_reg_schedule']) in (int, float):
-            self.policy_opt.set_ent_reg(self._hyperparams['ent_reg_schedule'])
-        else:
-            sch = self._hyperparams['ent_reg_schedule']
-            self.policy_opt.set_ent_reg(
-                np.exp(np.interp(t, np.linspace(0, 1, num=len(sch)),
-                                 np.log(sch)))
-            )
-        # Perform iteration-based interpolation of Lagrange multiplier.
-        if type(self._hyperparams['lg_step_schedule']) in (int, float):
-            self._hyperparams['lg_step'] = self._hyperparams['lg_step_schedule']
-        else:
-            sch = self._hyperparams['lg_step_schedule']
-            self._hyperparams['lg_step'] = np.exp(
-                np.interp(t, np.linspace(0, 1, num=len(sch)), np.log(sch))
-            )
-
-        # kl step schedule
+        # Perform iteration-based interpolation of KL step size
         if type(self._hyperparams['kl_step_schedule']) in (int, float):
             self.base_kl_step = self._hyperparams['kl_step_schedule']
         else:
@@ -148,13 +134,7 @@ class AlgorithmMD(Algorithm):
                 prc[:, t, :, :] = np.tile(traj.inv_pol_covar[t, :, :],
                                           [N, 1, 1])
                 for i in range(N):
-                    mu[i, t, :] = \
-                            (traj.K[t, :, :].dot(X[i, t, :]) + traj.k[t, :]) - \
-                            np.linalg.solve(
-                                prc[i, t, :, :],  #TODO: Divide by pol_wt[t].
-                                pol_info.lambda_K[t, :, :].dot(X[i, t, :]) + \
-                                        pol_info.lambda_k[t, :]
-                            )
+                    mu[i, t, :] = (traj.K[t, :, :].dot(X[i, t, :]) + traj.k[t, :])
                 wt[:, t].fill(pol_info.pol_wt[t])
             tgt_mu = np.concatenate((tgt_mu, mu))
             tgt_prc = np.concatenate((tgt_prc, prc))
@@ -214,81 +194,6 @@ class AlgorithmMD(Algorithm):
             pol_info.pol_K[t, :, :], pol_info.pol_k[t, :] = pol_K, pol_k
             pol_info.pol_S[t, :, :], pol_info.chol_pol_S[t, :, :] = \
                     pol_S, sp.linalg.cholesky(pol_S)
-
-    def _policy_dual_step(self, m, step=False):
-        """
-        Update the dual variables for the specified condition.
-        Args:
-            m: Condition
-            step: Whether or not to update pol_wt.
-        """
-        dU, T = self.dU, self.T
-        samples = self.cur[m].sample_list
-        N = len(samples)
-        X = samples.get_X()
-        traj, pol_info = self.cur[m].traj_distr, self.cur[m].pol_info
-        # Compute trajectory action at each sampled state.
-        traj_mu = np.zeros((N, T, dU))
-        for i in range(N):
-            for t in range(T):
-                traj_mu[i, t, :] = traj.K[t, :, :].dot(X[i, t, :]) + \
-                        traj.k[t, :]
-        # Compute policy action at each sampled state.
-        pol_mu = pol_info.pol_mu
-        # Compute the difference and increment based on pol_wt.
-        for t in range(T):
-            tU, pU = traj_mu[:, t, :], pol_mu[:, t, :]
-            # Increment mean term.
-            pol_info.lambda_k[t, :] -= self._hyperparams['policy_dual_rate'] * \
-                    pol_info.pol_wt[t] * \
-                    traj.inv_pol_covar[t, :, :].dot(np.mean(tU - pU, axis=0))
-            # Increment covariance term.
-            t_covar, p_covar = traj.K[t, :, :], pol_info.pol_K[t, :, :]
-            pol_info.lambda_K[t, :, :] -= \
-                    self._hyperparams['policy_dual_rate_covar'] * \
-                    pol_info.pol_wt[t] * \
-                    traj.inv_pol_covar[t, :, :].dot(t_covar - p_covar)
-        # Compute KL divergence.
-        kl_m = self._policy_kl(m)[0]
-        if step:
-            lg_step = self._hyperparams['lg_step']
-            # Increment pol_wt based on change in KL divergence.
-            if self._hyperparams['fixed_lg_step'] == 1:
-                # Take fixed size step.
-                pol_info.pol_wt = np.array([
-                    max(wt + lg_step, 0) for wt in pol_info.pol_wt
-                ])
-            elif self._hyperparams['fixed_lg_step'] == 2:
-                # (In/De)crease based on change in constraint
-                # satisfaction.
-                if hasattr(pol_info, 'prev_kl'):
-                    kl_change = kl_m / pol_info.prev_kl
-                    for i in range(len(pol_info.pol_wt)):
-                        if kl_change[i] < 0.8:
-                            pol_info.pol_wt[i] *= 0.5
-                        elif kl_change[i] >= 0.95:
-                            pol_info.pol_wt[i] *= 2.0
-            elif self._hyperparams['fixed_lg_step'] == 3:
-                # (In/De)crease based on difference from average.
-                if hasattr(pol_info, 'prev_kl'):
-                    lower = np.mean(kl_m) - \
-                            self._hyperparams['exp_step_lower'] * np.std(kl_m)
-                    upper = np.mean(kl_m) + \
-                            self._hyperparams['exp_step_upper'] * np.std(kl_m)
-                    for i in range(len(pol_info.pol_wt)):
-                        if kl_m[i] < lower:
-                            pol_info.pol_wt[i] *= \
-                                    self._hyperparams['exp_step_decrease']
-                        elif kl_m[i] >= upper:
-                            pol_info.pol_wt[i] *= \
-                                    self._hyperparams['exp_step_increase']
-            else:
-                # Standard DGD step.
-                pol_info.pol_wt = np.array([
-                    max(pol_info.pol_wt[t] + lg_step * kl_m[t], 0)
-                    for t in range(T)
-                ])
-            pol_info.prev_kl = kl_m
 
     def _advance_iteration_variables(self):
         """
@@ -432,24 +337,7 @@ class AlgorithmMD(Algorithm):
             kl_m[t] = 0.5 * np.sum(np.sum(tr_pp_ct_m, axis=0), axis=0) - \
                     k_ln_det_ct + 0.5 * np.mean(ln_det_cp) + \
                     0.5 * np.mean(d_pp_d)
-            # Compute trajectory action at sample with Lagrange
-            # multiplier.
-            traj_mu = np.zeros((N, dU))
-            for i in range(N):
-                traj_mu[i, :] = \
-                        (traj.K[t, :, :] - pol_info.lambda_K[t, :, :]).dot(
-                            X[i, t, :]
-                        ) + (traj.k[t, :] - pol_info.lambda_k[t, :])
-            # Compute KL divergence with Lagrange multiplier.
-            diff_l = pol_mu[:, t, :] - traj_mu
-            d_pp_d_l = np.sum(diff_l * (diff_l.dot(pol_prec[1, t, :, :])),
-                              axis=1)
-            kl_l[:, t] = 0.5 * np.sum(np.sum(tr_pp_ct, axis=1), axis=1) - \
-                    k_ln_det_ct + 0.5 * ln_det_cp + 0.5 * d_pp_d_l
-            kl_lm[t] = 0.5 * np.sum(np.sum(tr_pp_ct_m, axis=0), axis=0) - \
-                    k_ln_det_ct + 0.5 * np.mean(ln_det_cp) + \
-                    0.5 * np.mean(d_pp_d_l)
-        return kl_m, kl, kl_lm, kl_l
+        return kl_m, kl
 
     def _estimate_cost(self, traj_distr, traj_info, pol_info, m):
         """
@@ -506,32 +394,10 @@ class AlgorithmMD(Algorithm):
         T, dU, dX = traj_distr.T, traj_distr.dU, traj_distr.dX
         Cm, cv = np.copy(traj_info.Cm), np.copy(traj_info.cv)
 
-#        # Modify policy action via Lagrange multiplier.
-#        cv[:, dX:] -= pol_info.lambda_k
-#        Cm[:, dX:, :dX] -= pol_info.lambda_K
-#        Cm[:, :dX, dX:] -= np.transpose(pol_info.lambda_K, [0, 2, 1])
-#
-        #Pre-process the costs with KL-divergence terms.
-#        TKLm = np.zeros((T, dX+dU, dX+dU))
-#        TKLv = np.zeros((T, dX+dU))
-
         PKLm = np.zeros((T, dX+dU, dX+dU))
         PKLv = np.zeros((T, dX+dU))
         fCm, fcv = np.zeros(Cm.shape), np.zeros(cv.shape)
         for t in range(T):
-#            K, k = traj_distr.K[t, :, :], traj_distr.k[t, :]
-#            inv_pol_covar = traj_distr.inv_pol_covar[t, :, :]
-#            # Trajectory KL-divergence terms.
-#            TKLm[t, :, :] = np.vstack([
-#                np.hstack([
-#                    K.T.dot(inv_pol_covar).dot(K),
-#                    -K.T.dot(inv_pol_covar)]),
-#                np.hstack([-inv_pol_covar.dot(K), inv_pol_covar])
-#            ])
-#            TKLv[t, :] = np.concatenate([
-#                K.T.dot(inv_pol_covar).dot(k), -inv_pol_covar.dot(k)
-#            ])
-
             # Policy KL-divergence terms.
             inv_pol_S = np.linalg.solve(
                 pol_info.chol_pol_S[t, :, :],
@@ -545,7 +411,6 @@ class AlgorithmMD(Algorithm):
             PKLv[t, :] = np.concatenate([
                 KB.T.dot(inv_pol_S).dot(kB), -inv_pol_S.dot(kB)
             ])
-            #wt = pol_info.pol_wt[t]
             fCm[t, :, :] = (Cm[t, :, :] + PKLm[t, :, :] * eta) / (eta)
             fcv[t, :] = (cv[t, :] + PKLv[t, :] * eta) / (eta)
 
