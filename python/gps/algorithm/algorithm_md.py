@@ -34,7 +34,11 @@ class AlgorithmMD(Algorithm):
             self._hyperparams['policy_opt'], self.dO, self.dU
         )
 
-        self.traj_opt_use_nn_policy = True;
+        # extra stuff to pass parameters to LQR/Sampling
+        # TODO: this is sloppy, handle better
+        self._hyperparams['traj_opt_use_nn_policy'] = True;
+        if not self._hyperparams['agent_use_nn_policy']:
+            del self._hyperparams['agent_use_nn_policy']
 
     def iteration(self, sample_lists):
         """
@@ -61,12 +65,11 @@ class AlgorithmMD(Algorithm):
                 self._update_policy_fit(m)  # Update policy priors.
 
             # TODO: not sure about this, copied from previous
-            if self.iteration_count > 0 or inner_itr > 0:
-                # Compute KL divergence.
-                if (inner_itr == self._hyperparams['inner_iterations'] - 1):
-                    for m in range(self.M):
-                        kl_m = self._policy_kl(m)[0]
-                        self.cur[m].pol_info.prev_kl = kl_m
+            if (self.iteration_count > 0 or inner_itr > 0) and \
+                    (inner_itr == self._hyperparams['inner_iterations'] - 1):
+                for m in range(self.M):
+                    kl_m = self._policy_kl(m)[0]
+                    self.cur[m].pol_info.prev_kl = kl_m
 
             self._update_trajectories()
 

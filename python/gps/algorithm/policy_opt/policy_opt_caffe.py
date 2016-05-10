@@ -39,7 +39,7 @@ class PolicyOptCaffe(PolicyOpt):
 
         self.policy = CaffePolicy(self.solver.test_nets[0],
                                   self.solver.test_nets[1],
-                                  np.zeros(dU))
+                                  self.var)
 
     def init_solver(self):
         """ Helper method to initialize the solver. """
@@ -184,6 +184,7 @@ class PolicyOptCaffe(PolicyOpt):
         self.var = 1 / np.diag(A)
 
         self.policy.net.share_with(self.solver.net)
+        self.policy.chol_pol_covar = np.diag(np.sqrt(self.var))
         return self.policy
 
     def prob(self, obs):

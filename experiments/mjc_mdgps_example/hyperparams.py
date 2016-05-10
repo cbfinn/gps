@@ -80,7 +80,7 @@ algorithm = {
     'lg_step_schedule': 0.0,
     'policy_dual_rate': 0.0,
     'ent_reg_schedule': 0.0,
-    'kl_step_schedule': np.array([2.0, 2.0, 0.2]),
+    'kl_step_schedule': 2.0,
     'min_step_mult': 1.0,
     'max_step_mult': 1.0,
     'sample_decrease_var': 0.05,

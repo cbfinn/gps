@@ -142,7 +142,10 @@ class GPSMain(object):
             i: Sample number.
         Returns: None
         """
-        pol = self.algorithm.cur[cond].traj_distr
+        if 'agent_use_nn_policy' in self.algorithm._hyperparams and self.algorithm.iteration_count > 0:
+            pol = self.algorithm.policy_opt.policy
+        else:
+            pol = self.algorithm.cur[cond].traj_distr
         if self.gui:
             self.gui.set_image_overlays(cond)   # Must call for each new cond.
             redo = True
@@ -214,7 +217,7 @@ class GPSMain(object):
             for i in range(N):
                 pol_samples[cond][i] = self.agent.sample(
                     self.algorithm.policy_opt.policy, self._test_idx[cond],
-                    verbose=True, save=False)
+                    verbose=True, save=False, noisy=False)
         return [SampleList(samples) for samples in pol_samples]
 
     def _log_data(self, itr, traj_sample_lists, pol_sample_lists=None):

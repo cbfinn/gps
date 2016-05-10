@@ -35,7 +35,7 @@ class TrajOptLQRPython(TrajOpt):
         # if using mdpgs, use NN policy instead, kinda hacky but should work
         # NOTE: we only copy K/k/chol_pol_covar, excluding (inv_)pol_covar
         # (this is fine since the downstream functions only need these 3)
-        if hasattr(algorithm, "traj_opt_use_nn_policy"):
+        if 'traj_opt_use_nn_policy' in algorithm._hyperparams:
             prev_traj_distr = prev_traj_distr.nans_like()
             pol_info = algorithm.cur[m].pol_info
 
