@@ -265,11 +265,12 @@ class GPSTrainingGUI(object):
         and the 3D trajectory visualizations (if end effector points exist).
         """
         if self._first_update:
-            self._output_column_titles(algorithm)
+            policy_titles = pol_sample_lists != None
+            self._output_column_titles(algorithm, policy_titles)
             self._first_update = False
 
         costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
-        self._update_iteration_data(itr, algorithm, costs)
+        self._update_iteration_data(itr, algorithm, costs, pol_sample_lists)
         self._cost_plotter.update(costs, t=itr)
         if END_EFFECTOR_POINTS in agent.x_data_types:
             self._update_trajectory_visualizations(algorithm, agent,
@@ -278,7 +279,7 @@ class GPSTrainingGUI(object):
         self._fig.canvas.draw()
         self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
 
-    def _output_column_titles(self, algorithm):
+    def _output_column_titles(self, algorithm, policy_titles=False):
         """
         Setup iteration data column titles: iteration, average cost, and for
         each condition the mean cost over samples, step size, linear Guassian
@@ -290,13 +291,13 @@ class GPSTrainingGUI(object):
         for m in range(algorithm.M):
             condition_titles += ' | %8s %9s %-7d' % ('', 'condition', m)
             itr_data_fields  += ' | %8s %8s %8s' % ('  cost  ', '  step  ', 'entropy ')
-            if algorithm.prev[0].pol_info is not None:
-                condition_titles += ' %8s %8s' % ('', '')
-                itr_data_fields  += ' %8s %8s' % ('kl_div_i', 'kl_div_f')
+            if policy_titles:
+                condition_titles += ' %8s %8s %8s' % ('', '', '')
+                itr_data_fields  += ' %8s %8s %8s' % ('pol_cost', 'kl_div_i', 'kl_div_f')
         self.append_output_text(condition_titles)
         self.append_output_text(itr_data_fields)
 
-    def _update_iteration_data(self, itr, algorithm, costs):
+    def _update_iteration_data(self, itr, algorithm, costs, pol_sample_lists):
         """
         Update iteration data information: iteration, average cost, and for
         each condition the mean cost over samples, step size, linear Guassian
@@ -310,10 +311,12 @@ class GPSTrainingGUI(object):
             entropy = 2*np.sum(np.log(np.diagonal(algorithm.prev[m].traj_distr.chol_pol_covar,
                     axis1=1, axis2=2)))
             itr_data += ' | %8.2f %8.2f %8.2f' % (cost, step, entropy)
-            if algorithm.prev[0].pol_info is not None:
+            if pol_sample_lists is not None:
+                pol_costs = [algorithm.cost[m].eval(s)[0] for s in pol_sample_lists[m]]
+                pol_cost = np.mean(np.sum(pol_costs, axis=1))
                 kl_div_i = algorithm.prev[m].pol_info.prev_kl[0]
                 kl_div_f = algorithm.prev[m].pol_info.prev_kl[-1]
-                itr_data += ' %8.2f %8.2f' % (kl_div_i, kl_div_f)
+                itr_data += ' %8.2f %8.2f %8.2f' % (pol_cost, kl_div_i, kl_div_f)
         self.append_output_text(itr_data)
 
     def _update_trajectory_visualizations(self, algorithm, agent,
