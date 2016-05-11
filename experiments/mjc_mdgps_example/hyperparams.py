@@ -8,14 +8,14 @@ import numpy as np
 
 from gps import __file__ as gps_filepath
 from gps.agent.mjc.agent_mjc import AgentMuJoCo
-from gps.algorithm.algorithm_md import AlgorithmMD
+from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.cost.cost_utils import RAMP_FINAL_ONLY
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
-from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
+from gps.algorithm.traj_opt.traj_opt_lqr_python_mdgps import TrajOptLQRPythonMDGPS
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
@@ -73,19 +73,14 @@ agent = {
 }
 
 algorithm = {
-    'type': AlgorithmMD,
+    'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
     'iterations': 12,
-    'fixed_lg_step': 1,
-    'lg_step_schedule': 0.0,
-    'policy_dual_rate': 0.0,
-    'ent_reg_schedule': 0.0,
-    'kl_step_schedule': 2.0,
-    'min_step_mult': 1.0,
+    'kl_step': 2.0,
+    'min_step_mult': 0.01,
     'max_step_mult': 1.0,
-    'sample_decrease_var': 0.05,
-    'sample_increase_var': 0.1,
-    'policy_sample_mode': 'replace'
+    'policy_sample_mode': 'replace',
+    'agent_use_nn_policy': True,
 }
 
 algorithm['init_traj_distr'] = {
@@ -144,7 +139,7 @@ algorithm['dynamics'] = {
 }
 
 algorithm['traj_opt'] = {
-    'type': TrajOptLQRPython,
+    'type': TrajOptLQRPythonMDGPS,
 }
 
 algorithm['policy_opt'] = {
