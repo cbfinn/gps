@@ -36,7 +36,7 @@ SENSOR_DIMS = {
 PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/badmm_2_cond/'
+EXP_DIR = BASE_DIR + '/../experiments/badmm_seed_1/'
 
 
 common = {
@@ -46,7 +46,7 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 2,
+    'conditions': 4,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -61,7 +61,8 @@ agent = {
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
-    'pos_body_offset': [np.array([0.1, -0.1, 0]), np.array([-0.1, 0.1, 0])],
+    'pos_body_offset': [np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0]),
+                        np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -169,6 +170,7 @@ config = {
     'agent': agent,
     'gui_on': True,
     'algorithm': algorithm,
+    'seed': 1,
 }
 
 common['info'] = generate_experiment_info(config)

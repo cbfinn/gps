@@ -8,14 +8,14 @@ import numpy as np
 
 from gps import __file__ as gps_filepath
 from gps.agent.mjc.agent_mjc import AgentMuJoCo
-from gps.algorithm.algorithm_badmm import AlgorithmBADMM
+from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.cost.cost_utils import RAMP_FINAL_ONLY
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
-from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
+from gps.algorithm.traj_opt.traj_opt_lqr_python_mdgps import TrajOptLQRPythonMDGPS
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
@@ -36,7 +36,7 @@ SENSOR_DIMS = {
 PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/badmm_2_cond/'
+EXP_DIR = BASE_DIR + '/../experiments/mdgps_seed_0/'
 
 
 common = {
@@ -46,7 +46,7 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 2,
+    'conditions': 4,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -61,7 +61,8 @@ agent = {
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
-    'pos_body_offset': [np.array([0.1, -0.1, 0]), np.array([-0.1, 0.1, 0])],
+    'pos_body_offset': [np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0]),
+                        np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -72,20 +73,14 @@ agent = {
 }
 
 algorithm = {
-    'type': AlgorithmBADMM,
+    'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
     'iterations': 12,
-    'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-2]),
-    'policy_dual_rate': 0.1,
-    'init_pol_wt': 0.01,
-    'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
-    'fixed_lg_step': 3,
     'kl_step': 2.0,
     'min_step_mult': 0.01,
     'max_step_mult': 1.0,
-    'sample_decrease_var': 0.05,
-    'sample_increase_var': 0.1,
-    'policy_sample_mode': 'replace'
+    'policy_sample_mode': 'replace',
+    'agent_use_nn_policy': False,
 }
 
 algorithm['init_traj_distr'] = {
@@ -144,7 +139,7 @@ algorithm['dynamics'] = {
 }
 
 algorithm['traj_opt'] = {
-    'type': TrajOptLQRPython,
+    'type': TrajOptLQRPythonMDGPS,
 }
 
 algorithm['policy_opt'] = {
@@ -169,6 +164,7 @@ config = {
     'agent': agent,
     'gui_on': True,
     'algorithm': algorithm,
+    'seed': 0,
 }
 
 common['info'] = generate_experiment_info(config)

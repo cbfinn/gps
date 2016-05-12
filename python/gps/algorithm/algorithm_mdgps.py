@@ -287,7 +287,6 @@ class AlgorithmMDGPS(Algorithm):
         N = len(samples)
         X, obs = samples.get_X(), samples.get_obs()
         kl, kl_m = np.zeros((N, T)), np.zeros(T)
-        kl_l, kl_lm = np.zeros((N, T)), np.zeros(T)
         # Compute policy mean and covariance at each sample.
         pol_mu, _, pol_prec, pol_det_sigma = self.policy_opt.prob(obs.copy())
         # Compute KL divergence.

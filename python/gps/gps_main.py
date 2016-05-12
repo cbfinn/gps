@@ -257,6 +257,7 @@ class GPSMain(object):
         if self.gui:
             self.gui.set_status_text('Training complete.')
             self.gui.end_mode()
+        os._exit(0)
 
 
 def main():
@@ -363,8 +364,9 @@ def main():
         import numpy as np
         import matplotlib.pyplot as plt
 
-        random.seed(0)
-        np.random.seed(0)
+        seed = hyperparams.config.get('seed', 0)
+        random.seed(seed)
+        np.random.seed(seed)
 
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:
