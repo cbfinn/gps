@@ -96,7 +96,6 @@ class AlgorithmMDGPS(Algorithm):
             self._eval_cost(m)
             # Adjust step size relative to the previous iteration.
             if self.iteration_count > 0:
-                assert self.prev[m].sample_list
                 self._stepadjust(m)
 
     def _update_policy(self, itr, inner_itr):
@@ -198,25 +197,33 @@ class AlgorithmMDGPS(Algorithm):
             m: Condition
         """
 
-        # TODO: add flags for options
-        if hasattr(self._hyperparams, 'agent_use_nn_policy'):
-            # Get the previous/current NN linearizations
-            # NOTE: we only pass in K/k/pol_covar, all that's needed
-            # TODO: make these functions work with pol_info instead
-            prev_pol_info = self.prev[m].pol_info
-            prev_traj_distr = self.prev[m].traj_distr.nans_like()
-            prev_traj_distr.K = prev_pol_info.pol_K
-            prev_traj_distr.k = prev_pol_info.pol_k
-            prev_traj_distr.pol_covar = prev_pol_info.pol_S
+#        # TODO: add flags for options
+#        if hasattr(self._hyperparams, 'agent_use_nn_policy'):
+#            # Get the previous/current NN linearizations
+#            # NOTE: we only pass in K/k/pol_covar, all that's needed
+#            # TODO: make these functions work with pol_info instead
+#            prev_pol_info = self.prev[m].pol_info
+#            prev_traj_distr = self.prev[m].traj_distr.nans_like()
+#            prev_traj_distr.K = prev_pol_info.pol_K
+#            prev_traj_distr.k = prev_pol_info.pol_k
+#            prev_traj_distr.pol_covar = prev_pol_info.pol_S
+#
+#            cur_pol_info = self.cur[m].pol_info
+#            cur_traj_distr = self.cur[m].traj_distr.nans_like()
+#            cur_traj_distr.K = cur_pol_info.pol_K
+#            cur_traj_distr.k = cur_pol_info.pol_k
+#            cur_traj_distr.pol_covar = cur_pol_info.pol_S
+#        else:
+#            prev_traj_distr = self.prev[m].traj_distr
+#            cur_traj_distr = self.cur[m].traj_distr
 
-            cur_pol_info = self.cur[m].pol_info
-            cur_traj_distr = self.cur[m].traj_distr.nans_like()
-            cur_traj_distr.K = cur_pol_info.pol_K
-            cur_traj_distr.k = cur_pol_info.pol_k
-            cur_traj_distr.pol_covar = cur_pol_info.pol_S
-        else:
-            prev_traj_distr = self.prev[m].traj_distr
-            cur_traj_distr = self.cur[m].traj_distr
+        # prev=NN, cur=LQR
+        prev_pol_info = self.prev[m].pol_info
+        prev_traj_distr = self.prev[m].traj_distr.nans_like()
+        prev_traj_distr.K = prev_pol_info.pol_K
+        prev_traj_distr.k = prev_pol_info.pol_k
+        prev_traj_distr.pol_covar = prev_pol_info.pol_S
+        cur_traj_distr = self.cur[m].traj_distr
 
         # Compute values under Laplace approximation. This is the policy
         # that the previous samples were actually drawn from under the
@@ -262,16 +269,6 @@ class AlgorithmMDGPS(Algorithm):
                      np.sum(new_actual_laplace_cost), new_mc_cost)
         LOGGER.debug('Predicted/actual improvement: %f / %f',
                      predicted_impr, actual_impr)
-
-        self._set_new_mult(predicted_impr, actual_impr, m)
-
-        # Compute actual KL step taken at last iteration.
-        # TODO: copied from badmm, not sure if necessary
-        actual_step = self.cur[m].traj_info.last_kl_step / \
-                (self._hyperparams['kl_step'] * self.T)
-        if actual_step < self.cur[m].step_mult:
-            self.cur[m].step_mult = max(actual_step,
-                                        self._hyperparams['min_step_mult'])
 
         self._set_new_mult(predicted_impr, actual_impr, m)
 
