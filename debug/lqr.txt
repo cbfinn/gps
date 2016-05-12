@@ -1,0 +1,1007 @@
+DEBUG:No ROS enabled: No module named rospkg
+DEBUG:Generating 12 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 12 clusters on 495 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 67229.709963
+DEBUG:GMM itr 1/100. Log likelihood: 76797.398469
+DEBUG:GMM itr 2/100. Log likelihood: 77757.736472
+DEBUG:GMM itr 3/100. Log likelihood: 78006.626947
+DEBUG:GMM itr 4/100. Log likelihood: 78097.490533
+DEBUG:GMM itr 5/100. Log likelihood: 78120.902997
+DEBUG:GMM itr 6/100. Log likelihood: 78120.903047
+DEBUG:GMM convergenced on itr=6/100
+DEBUG:Generating 12 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 12 clusters on 495 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 69224.594263
+DEBUG:GMM itr 1/100. Log likelihood: 78746.438394
+DEBUG:GMM itr 2/100. Log likelihood: 79536.910939
+DEBUG:GMM itr 3/100. Log likelihood: 79750.901400
+DEBUG:GMM itr 4/100. Log likelihood: 79828.908788
+DEBUG:GMM itr 5/100. Log likelihood: 79864.472360
+DEBUG:GMM itr 6/100. Log likelihood: 79871.514397
+DEBUG:GMM itr 7/100. Log likelihood: 79970.703548
+DEBUG:GMM itr 8/100. Log likelihood: 79970.908979
+DEBUG:GMM itr 9/100. Log likelihood: 79970.909000
+DEBUG:GMM convergenced on itr=9/100
+DEBUG:Iteration 0, KL: 74.363444 / 200.000000 eta: 1.000000 -> 0.367879
+DEBUG:Bracket points: 1.000000 0.367879 (-125.636556 -61.332310) a=-51.536830 b=-125.636556
+DEBUG:Iteration 1, KL: 138.667690 / 200.000000 eta: 0.367879 -> 0.295555
+DEBUG:Bracket points: 0.367879 0.295555 (-61.332310 -39.962216) a=-24.558779 b=-71.680453
+DEBUG:Iteration 2, KL: 160.037784 / 200.000000 eta: 0.295555 -> 0.232384
+DEBUG:Iteration 3, KL: 187.871248 / 200.000000 converged
+DEBUG:Iteration 0, KL: 75.127945 / 200.000000 eta: 1.000000 -> 0.367879
+DEBUG:Bracket points: 1.000000 0.367879 (-124.872055 -38.534559) a=-55.347991 b=-124.872055
+DEBUG:Iteration 1, KL: 161.465441 / 200.000000 eta: 0.367879 -> 0.323660
+DEBUG:Bracket points: 0.367879 0.323660 (-38.534559 -24.400466) a=-24.513805 b=-63.203682
+DEBUG:Iteration 2, KL: 175.599534 / 200.000000 eta: 0.323660 -> 0.275506
+DEBUG:Iteration 3, KL: 194.276658 / 200.000000 converged
+DEBUG:Generating 24 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 24 clusters on 990 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 131149.885891
+DEBUG:GMM itr 1/100. Log likelihood: 141951.259817
+DEBUG:GMM itr 2/100. Log likelihood: 142462.314304
+DEBUG:GMM itr 3/100. Log likelihood: 142657.147630
+DEBUG:GMM itr 4/100. Log likelihood: 142680.871982
+DEBUG:GMM itr 5/100. Log likelihood: 142741.005902
+DEBUG:GMM itr 6/100. Log likelihood: 142741.038132
+DEBUG:GMM itr 7/100. Log likelihood: 142741.045201
+DEBUG:GMM convergenced on itr=7/100
+DEBUG:Generating 24 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 24 clusters on 990 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 134407.060848
+DEBUG:GMM itr 1/100. Log likelihood: 144707.750645
+DEBUG:GMM itr 2/100. Log likelihood: 145077.450664
+DEBUG:GMM itr 3/100. Log likelihood: 145489.523410
+DEBUG:GMM itr 4/100. Log likelihood: 145542.568164
+DEBUG:GMM itr 5/100. Log likelihood: 145604.413947
+DEBUG:GMM itr 6/100. Log likelihood: 145659.038694
+DEBUG:GMM itr 7/100. Log likelihood: 145659.067591
+DEBUG:GMM itr 8/100. Log likelihood: 145659.629275
+DEBUG:GMM itr 9/100. Log likelihood: 145675.819153
+DEBUG:GMM itr 10/100. Log likelihood: 145761.588558
+DEBUG:GMM itr 11/100. Log likelihood: 145761.588540
+DEBUG:GMM convergenced on itr=11/100
+DEBUG:Trajectory step: ent: -117.366744 cost: 82.262834 -> -313.629494
+DEBUG:Previous cost: Laplace: 170.077739 MC: 82.262834
+DEBUG:Predicted new cost: Laplace: -434.901161 MC: -313.629494
+DEBUG:Actual new cost: Laplace: -317.854438 MC: -313.629494
+DEBUG:Predicted/actual improvement: 604.978900 / 487.932177
+DEBUG:Increasing step size multiplier to 1.000000
+DEBUG:Trajectory step: ent: -117.497608 cost: -104.187809 -> -476.002509
+DEBUG:Previous cost: Laplace: 401.309338 MC: -104.187809
+DEBUG:Predicted new cost: Laplace: -445.909777 MC: -476.002509
+DEBUG:Actual new cost: Laplace: -217.353355 MC: -476.002509
+DEBUG:Predicted/actual improvement: 847.219114 / 618.662693
+DEBUG:Increasing step size multiplier to 1.000000
+DEBUG:Iteration 0, KL: 182.122867 / 200.000000 converged
+DEBUG:Iteration 0, KL: 78.010493 / 200.000000 eta: 0.275506 -> 0.101353
+DEBUG:Iteration 1, KL: 214.005189 / 200.000000 converged
+DEBUG:Generating 37 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 37 clusters on 1485 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 202429.066724
+DEBUG:GMM itr 1/100. Log likelihood: 213665.677532
+DEBUG:GMM itr 2/100. Log likelihood: 214064.683777
+DEBUG:GMM itr 3/100. Log likelihood: 214203.990383
+DEBUG:GMM itr 4/100. Log likelihood: 214205.127684
+DEBUG:GMM itr 5/100. Log likelihood: 214205.127697
+DEBUG:GMM convergenced on itr=5/100
+DEBUG:Generating 37 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 37 clusters on 1485 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 205942.809957
+DEBUG:GMM itr 1/100. Log likelihood: 217321.986921
+DEBUG:GMM itr 2/100. Log likelihood: 217660.941389
+DEBUG:GMM itr 3/100. Log likelihood: 217842.664097
+DEBUG:GMM itr 4/100. Log likelihood: 217846.687534
+DEBUG:GMM itr 5/100. Log likelihood: 217882.011317
+DEBUG:GMM itr 6/100. Log likelihood: 217949.677107
+DEBUG:GMM itr 7/100. Log likelihood: 217949.673927
+DEBUG:GMM convergenced on itr=7/100
+DEBUG:Trajectory step: ent: -132.425117 cost: -313.629494 -> -417.808876
+DEBUG:Previous cost: Laplace: -317.854438 MC: -313.629494
+DEBUG:Predicted new cost: Laplace: -444.429098 MC: -417.808876
+DEBUG:Actual new cost: Laplace: -407.096406 MC: -417.808876
+DEBUG:Predicted/actual improvement: 126.574660 / 89.241968
+DEBUG:Increasing step size multiplier to 1.000000
+DEBUG:Trajectory step: ent: -151.569343 cost: -476.002509 -> -526.718670
+DEBUG:Previous cost: Laplace: -217.353355 MC: -476.002509
+DEBUG:Predicted new cost: Laplace: -539.980316 MC: -526.718670
+DEBUG:Actual new cost: Laplace: -518.504545 MC: -526.718670
+DEBUG:Predicted/actual improvement: 322.626961 / 301.151190
+DEBUG:Increasing step size multiplier to 1.000000
+DEBUG:Iteration 0, KL: 104.426956 / 200.000000 eta: 0.232384 -> 0.085489
+DEBUG:Bracket points: 0.232384 0.085489 (-95.573044 150.814823) a=-17.551331 b=-73.437224
+DEBUG:Iteration 1, KL: 350.814823 / 200.000000 eta: 0.085489 -> 0.123431
+DEBUG:Bracket points: 0.232384 0.123431 (-95.573044 33.440597) a=-20.813214 b=-82.957782
+DEBUG:Iteration 2, KL: 233.440597 / 200.000000 eta: 0.123431 -> 0.136298
+DEBUG:Iteration 3, KL: 207.541089 / 200.000000 converged
+DEBUG:Iteration 0, KL: 101.536226 / 200.000000 eta: 0.101353 -> 0.037286
+DEBUG:Bracket points: 0.101353 0.037286 (-98.463774 118.801336) a=-7.204602 b=-42.964364
+DEBUG:Iteration 1, KL: 318.801336 / 200.000000 eta: 0.037286 -> 0.050705
+DEBUG:Bracket points: 0.101353 0.050705 (-98.463774 31.410315) a=-8.354395 b=-48.228449
+DEBUG:Iteration 2, KL: 231.410315 / 200.000000 eta: 0.050705 -> 0.055776
+DEBUG:Iteration 3, KL: 208.361890 / 200.000000 converged
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 235496.154910
+DEBUG:GMM itr 1/100. Log likelihood: 248829.789978
+DEBUG:GMM itr 2/100. Log likelihood: 250250.510910
+DEBUG:GMM itr 3/100. Log likelihood: 250775.379422
+DEBUG:GMM itr 4/100. Log likelihood: 250931.776698
+DEBUG:GMM itr 5/100. Log likelihood: 251041.232089
+DEBUG:GMM itr 6/100. Log likelihood: 251136.376154
+DEBUG:GMM itr 7/100. Log likelihood: 251195.964673
+DEBUG:GMM itr 8/100. Log likelihood: 251372.289745
+DEBUG:GMM itr 9/100. Log likelihood: 251461.312206
+DEBUG:GMM itr 10/100. Log likelihood: 251508.551304
+DEBUG:GMM itr 11/100. Log likelihood: 251621.920002
+DEBUG:GMM itr 12/100. Log likelihood: 251725.154171
+DEBUG:GMM itr 13/100. Log likelihood: 251727.375477
+DEBUG:GMM itr 14/100. Log likelihood: 251727.375412
+DEBUG:GMM convergenced on itr=14/100
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 237621.697799
+DEBUG:GMM itr 1/100. Log likelihood: 250502.289679
+DEBUG:GMM itr 2/100. Log likelihood: 252095.157598
+DEBUG:GMM itr 3/100. Log likelihood: 252874.885729
+DEBUG:GMM itr 4/100. Log likelihood: 253220.939629
+DEBUG:GMM itr 5/100. Log likelihood: 253379.136860
+DEBUG:GMM itr 6/100. Log likelihood: 253563.887308
+DEBUG:GMM itr 7/100. Log likelihood: 253767.003530
+DEBUG:GMM itr 8/100. Log likelihood: 253796.241748
+DEBUG:GMM itr 9/100. Log likelihood: 253921.800075
+DEBUG:GMM itr 10/100. Log likelihood: 253944.981372
+DEBUG:GMM itr 11/100. Log likelihood: 253983.706032
+DEBUG:GMM itr 12/100. Log likelihood: 253990.018746
+DEBUG:GMM itr 13/100. Log likelihood: 253998.927907
+DEBUG:GMM itr 14/100. Log likelihood: 253999.030671
+DEBUG:GMM itr 15/100. Log likelihood: 254001.720310
+DEBUG:GMM itr 16/100. Log likelihood: 254046.075553
+DEBUG:GMM itr 17/100. Log likelihood: 254051.078987
+DEBUG:GMM itr 18/100. Log likelihood: 254088.069018
+DEBUG:GMM itr 19/100. Log likelihood: 254141.873506
+DEBUG:GMM itr 20/100. Log likelihood: 254141.980010
+DEBUG:GMM itr 21/100. Log likelihood: 254145.325032
+DEBUG:GMM itr 22/100. Log likelihood: 254174.405371
+DEBUG:GMM itr 23/100. Log likelihood: 254174.750091
+DEBUG:GMM itr 24/100. Log likelihood: 254174.770625
+DEBUG:GMM itr 25/100. Log likelihood: 254174.897109
+DEBUG:GMM itr 26/100. Log likelihood: 254177.781693
+DEBUG:GMM itr 27/100. Log likelihood: 254194.779725
+DEBUG:GMM itr 28/100. Log likelihood: 254194.936024
+DEBUG:GMM itr 29/100. Log likelihood: 254194.936198
+DEBUG:GMM convergenced on itr=29/100
+DEBUG:Trajectory step: ent: -152.327501 cost: -417.808876 -> -480.220777
+DEBUG:Previous cost: Laplace: -407.096406 MC: -417.808876
+DEBUG:Predicted new cost: Laplace: -487.538769 MC: -480.220777
+DEBUG:Actual new cost: Laplace: -481.204390 MC: -480.220777
+DEBUG:Predicted/actual improvement: 80.442363 / 74.107985
+DEBUG:Increasing step size multiplier to 1.000000
+DEBUG:Trajectory step: ent: -191.804434 cost: -526.718670 -> -550.037008
+DEBUG:Previous cost: Laplace: -518.504545 MC: -526.718670
+DEBUG:Predicted new cost: Laplace: -554.085251 MC: -550.037008
+DEBUG:Actual new cost: Laplace: -535.275147 MC: -550.037008
+DEBUG:Predicted/actual improvement: 35.580707 / 16.770603
+DEBUG:Decreasing step size multiplier to 0.945787
+DEBUG:Iteration 0, KL: 86.704495 / 200.000000 eta: 0.136298 -> 0.050141
+DEBUG:Solving non-log problem due to ratio choice: 0.853927 0.146073
+DEBUG:Bracket points: 0.136298 0.050141 (-113.295505 131.114733) a=-1418.403835 b=273.355799
+DEBUG:Iteration 1, KL: 331.114733 / 200.000000 eta: 0.050141 -> 0.096360
+DEBUG:Bracket points: 0.096360 0.050141 (-56.685330 131.114733) a=-9.212749 b=-48.571626
+DEBUG:Iteration 2, KL: 143.314670 / 200.000000 eta: 0.096360 -> 0.071639
+DEBUG:Iteration 3, KL: 213.366105 / 200.000000 converged
+DEBUG:Iteration 0, KL: 165.713562 / 189.157415 eta: 0.055776 -> 0.020519
+DEBUG:Bracket points: 0.055776 0.020519 (-23.443852 255.501798) a=-3.275102 b=-20.214192
+DEBUG:Iteration 1, KL: 444.659212 / 189.157415 eta: 0.020519 -> 0.045683
+DEBUG:Iteration 2, KL: 205.876314 / 189.157415 converged
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: -32958.464636
+DEBUG:GMM itr 1/100. Log likelihood: 282928.240221
+DEBUG:GMM itr 2/100. Log likelihood: 284542.571904
+DEBUG:GMM itr 3/100. Log likelihood: 285312.505855
+DEBUG:GMM itr 4/100. Log likelihood: 285677.823462
+DEBUG:GMM itr 5/100. Log likelihood: 286230.137267
+DEBUG:GMM itr 6/100. Log likelihood: 286504.170498
+DEBUG:GMM itr 7/100. Log likelihood: 286700.362239
+DEBUG:GMM itr 8/100. Log likelihood: 286743.763255
+DEBUG:GMM itr 9/100. Log likelihood: 286775.217134
+DEBUG:GMM itr 10/100. Log likelihood: 286811.874364
+DEBUG:GMM itr 11/100. Log likelihood: 286824.681350
+DEBUG:GMM itr 12/100. Log likelihood: 286871.870547
+DEBUG:GMM itr 13/100. Log likelihood: 286905.070618
+DEBUG:GMM itr 14/100. Log likelihood: 286916.679537
+DEBUG:GMM itr 15/100. Log likelihood: 286975.862894
+DEBUG:GMM itr 16/100. Log likelihood: 286984.387527
+DEBUG:GMM itr 17/100. Log likelihood: 287001.524253
+DEBUG:GMM itr 18/100. Log likelihood: 287006.026470
+DEBUG:GMM itr 19/100. Log likelihood: 287010.356065
+DEBUG:GMM itr 20/100. Log likelihood: 287017.058829
+DEBUG:GMM itr 21/100. Log likelihood: 287032.780991
+DEBUG:GMM itr 22/100. Log likelihood: 287044.796926
+DEBUG:GMM itr 23/100. Log likelihood: 287055.216329
+DEBUG:GMM itr 24/100. Log likelihood: 287081.564599
+DEBUG:GMM itr 25/100. Log likelihood: 287087.418405
+DEBUG:GMM itr 26/100. Log likelihood: 287092.140273
+DEBUG:GMM itr 27/100. Log likelihood: 287098.568097
+DEBUG:GMM itr 28/100. Log likelihood: 287126.044486
+DEBUG:GMM itr 29/100. Log likelihood: 287126.220670
+DEBUG:GMM itr 30/100. Log likelihood: 287126.983391
+DEBUG:GMM itr 31/100. Log likelihood: 287133.166848
+DEBUG:GMM itr 32/100. Log likelihood: 287134.945206
+DEBUG:GMM itr 33/100. Log likelihood: 287135.031033
+DEBUG:GMM itr 34/100. Log likelihood: 287135.741870
+DEBUG:GMM itr 35/100. Log likelihood: 287146.019137
+DEBUG:GMM itr 36/100. Log likelihood: 287154.275260
+DEBUG:GMM itr 37/100. Log likelihood: 287154.276550
+DEBUG:GMM convergenced on itr=37/100
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: 49856.089931
+DEBUG:GMM itr 1/100. Log likelihood: 289923.599662
+DEBUG:GMM itr 2/100. Log likelihood: 290758.892205
+DEBUG:GMM itr 3/100. Log likelihood: 291362.522715
+DEBUG:GMM itr 4/100. Log likelihood: 291900.426867
+DEBUG:GMM itr 5/100. Log likelihood: 292209.060251
+DEBUG:GMM itr 6/100. Log likelihood: 292553.897212
+DEBUG:GMM itr 7/100. Log likelihood: 292961.209734
+DEBUG:GMM itr 8/100. Log likelihood: 293568.099969
+DEBUG:GMM itr 9/100. Log likelihood: 294132.153968
+DEBUG:GMM itr 10/100. Log likelihood: 294454.400786
+DEBUG:GMM itr 11/100. Log likelihood: 294559.376234
+DEBUG:GMM itr 12/100. Log likelihood: 294680.067073
+DEBUG:GMM itr 13/100. Log likelihood: 294738.640224
+DEBUG:GMM itr 14/100. Log likelihood: 294780.568887
+DEBUG:GMM itr 15/100. Log likelihood: 294797.795417
+DEBUG:GMM itr 16/100. Log likelihood: 294825.651543
+DEBUG:GMM itr 17/100. Log likelihood: 294852.655215
+DEBUG:GMM itr 18/100. Log likelihood: 294861.064158
+DEBUG:GMM itr 19/100. Log likelihood: 294861.771419
+DEBUG:GMM itr 20/100. Log likelihood: 294877.412983
+DEBUG:GMM itr 21/100. Log likelihood: 294911.630269
+DEBUG:GMM itr 22/100. Log likelihood: 294913.159843
+DEBUG:GMM itr 23/100. Log likelihood: 294913.642443
+DEBUG:GMM itr 24/100. Log likelihood: 294914.032489
+DEBUG:GMM itr 25/100. Log likelihood: 294914.118343
+DEBUG:GMM itr 26/100. Log likelihood: 294914.132521
+DEBUG:GMM itr 27/100. Log likelihood: 294914.143045
+DEBUG:GMM itr 28/100. Log likelihood: 294914.156495
+DEBUG:GMM itr 29/100. Log likelihood: 294914.179178
+DEBUG:GMM itr 30/100. Log likelihood: 294914.230504
+DEBUG:GMM itr 31/100. Log likelihood: 294914.383556
+DEBUG:GMM itr 32/100. Log likelihood: 294914.823818
+DEBUG:GMM itr 33/100. Log likelihood: 294915.370420
+DEBUG:GMM itr 34/100. Log likelihood: 294915.910532
+DEBUG:GMM itr 35/100. Log likelihood: 294918.394277
+DEBUG:GMM itr 36/100. Log likelihood: 294920.879622
+DEBUG:GMM itr 37/100. Log likelihood: 294921.613663
+DEBUG:GMM itr 38/100. Log likelihood: 294924.477883
+DEBUG:GMM itr 39/100. Log likelihood: 294929.782742
+DEBUG:GMM itr 40/100. Log likelihood: 294929.851235
+DEBUG:GMM itr 41/100. Log likelihood: 294929.844689
+DEBUG:GMM convergenced on itr=41/100
+DEBUG:Trajectory step: ent: -181.943411 cost: -480.220777 -> -511.540337
+DEBUG:Previous cost: Laplace: -481.204390 MC: -480.220777
+DEBUG:Predicted new cost: Laplace: -521.255818 MC: -511.540337
+DEBUG:Actual new cost: Laplace: -508.104610 MC: -511.540337
+DEBUG:Predicted/actual improvement: 40.051427 / 26.900219
+DEBUG:Increasing step size multiplier to 1.000000
+DEBUG:Trajectory step: ent: -231.117794 cost: -550.037008 -> -563.446021
+DEBUG:Previous cost: Laplace: -535.275147 MC: -550.037008
+DEBUG:Predicted new cost: Laplace: -565.370793 MC: -563.446021
+DEBUG:Actual new cost: Laplace: -563.408332 MC: -563.446021
+DEBUG:Predicted/actual improvement: 30.095646 / 28.133185
+DEBUG:Increasing step size multiplier to 1.000000
+DEBUG:Iteration 0, KL: 139.259166 / 200.000000 eta: 0.071639 -> 0.026355
+DEBUG:Bracket points: 0.071639 0.026355 (-60.740834 275.678943) a=-5.808436 b=-34.974783
+DEBUG:Iteration 1, KL: 475.678943 / 200.000000 eta: 0.026355 -> 0.049258
+DEBUG:Bracket points: 0.071639 0.049258 (-60.740834 28.520615) a=-7.683687 b=-44.861520
+DEBUG:Iteration 2, KL: 228.520615 / 200.000000 eta: 0.049258 -> 0.053973
+DEBUG:Iteration 3, KL: 203.309228 / 200.000000 converged
+DEBUG:Iteration 0, KL: 104.741313 / 200.000000 eta: 0.045683 -> 0.016806
+DEBUG:Solving non-log problem due to ratio choice: 0.768024 0.231976
+DEBUG:Bracket points: 0.045683 0.016806 (-95.258687 120.129768) a=-3729.430579 b=245.480831
+DEBUG:Iteration 1, KL: 320.129768 / 200.000000 eta: 0.016806 -> 0.032911
+DEBUG:Bracket points: 0.032911 0.016806 (-43.995356 120.129768) a=-2.579081 b=-19.057599
+DEBUG:Iteration 2, KL: 156.004644 / 200.000000 eta: 0.032911 -> 0.024856
+DEBUG:Iteration 3, KL: 213.908690 / 200.000000 converged
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: 90544.331915
+DEBUG:GMM itr 1/100. Log likelihood: 309335.226492
+DEBUG:GMM itr 2/100. Log likelihood: 309912.850935
+DEBUG:GMM itr 3/100. Log likelihood: 310218.846429
+DEBUG:GMM itr 4/100. Log likelihood: 310369.900073
+DEBUG:GMM itr 5/100. Log likelihood: 310404.864853
+DEBUG:GMM itr 6/100. Log likelihood: 310421.894952
+DEBUG:GMM itr 7/100. Log likelihood: 310445.377113
+DEBUG:GMM itr 8/100. Log likelihood: 310466.335122
+DEBUG:GMM itr 9/100. Log likelihood: 310485.234835
+DEBUG:GMM itr 10/100. Log likelihood: 310485.924416
+DEBUG:GMM itr 11/100. Log likelihood: 310485.971364
+DEBUG:GMM itr 12/100. Log likelihood: 310485.985643
+DEBUG:GMM itr 13/100. Log likelihood: 310485.989496
+DEBUG:GMM convergenced on itr=13/100
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: 6107.525306
+DEBUG:GMM itr 1/100. Log likelihood: 316540.384010
+DEBUG:GMM itr 2/100. Log likelihood: 317286.317061
+DEBUG:GMM itr 3/100. Log likelihood: 318117.928974
+DEBUG:GMM itr 4/100. Log likelihood: 318563.206650
+DEBUG:GMM itr 5/100. Log likelihood: 319056.765589
+DEBUG:GMM itr 6/100. Log likelihood: 319558.673746
+DEBUG:GMM itr 7/100. Log likelihood: 319692.123844
+DEBUG:GMM itr 8/100. Log likelihood: 319802.389599
+DEBUG:GMM itr 9/100. Log likelihood: 320110.555640
+DEBUG:GMM itr 10/100. Log likelihood: 320258.327603
+DEBUG:GMM itr 11/100. Log likelihood: 320428.742110
+DEBUG:GMM itr 12/100. Log likelihood: 320593.184160
+DEBUG:GMM itr 13/100. Log likelihood: 320833.694446
+DEBUG:GMM itr 14/100. Log likelihood: 321142.351397
+DEBUG:GMM itr 15/100. Log likelihood: 321443.814745
+DEBUG:GMM itr 16/100. Log likelihood: 321706.509222
+DEBUG:GMM itr 17/100. Log likelihood: 321824.863775
+DEBUG:GMM itr 18/100. Log likelihood: 321901.857446
+DEBUG:GMM itr 19/100. Log likelihood: 321963.308967
+DEBUG:GMM itr 20/100. Log likelihood: 322008.307646
+DEBUG:GMM itr 21/100. Log likelihood: 322029.851834
+DEBUG:GMM itr 22/100. Log likelihood: 322075.128370
+DEBUG:GMM itr 23/100. Log likelihood: 322139.812855
+DEBUG:GMM itr 24/100. Log likelihood: 322174.818454
+DEBUG:GMM itr 25/100. Log likelihood: 322221.202651
+DEBUG:GMM itr 26/100. Log likelihood: 322222.677246
+DEBUG:GMM itr 27/100. Log likelihood: 322223.692102
+DEBUG:GMM itr 28/100. Log likelihood: 322223.858447
+DEBUG:GMM itr 29/100. Log likelihood: 322223.885706
+DEBUG:GMM itr 30/100. Log likelihood: 322223.895473
+DEBUG:GMM convergenced on itr=30/100
+DEBUG:Trajectory step: ent: -215.477204 cost: -511.540337 -> -529.555835
+DEBUG:Previous cost: Laplace: -508.104610 MC: -511.540337
+DEBUG:Predicted new cost: Laplace: -537.149633 MC: -529.555835
+DEBUG:Actual new cost: Laplace: -525.747294 MC: -529.555835
+DEBUG:Predicted/actual improvement: 29.045023 / 17.642684
+DEBUG:Increasing step size multiplier to 1.000000
+DEBUG:Trajectory step: ent: -285.880607 cost: -563.446021 -> -576.170244
+DEBUG:Previous cost: Laplace: -563.408332 MC: -563.446021
+DEBUG:Predicted new cost: Laplace: -580.049509 MC: -576.170244
+DEBUG:Actual new cost: Laplace: -571.212559 MC: -576.170244
+DEBUG:Predicted/actual improvement: 16.641176 / 7.804227
+DEBUG:Decreasing step size multiplier to 0.941568
+DEBUG:Iteration 0, KL: 131.101963 / 200.000000 eta: 0.053973 -> 0.019856
+DEBUG:Bracket points: 0.053973 0.019856 (-68.898037 213.343329) a=-3.977347 b=-26.940537
+DEBUG:Iteration 1, KL: 413.343329 / 200.000000 eta: 0.019856 -> 0.033818
+DEBUG:Bracket points: 0.053973 0.033818 (-68.898037 27.542639) a=-4.973599 b=-32.757197
+DEBUG:Iteration 2, KL: 227.542639 / 200.000000 eta: 0.033818 -> 0.037138
+DEBUG:Iteration 3, KL: 204.048124 / 200.000000 converged
+DEBUG:Iteration 0, KL: 130.792446 / 188.313582 eta: 0.024856 -> 0.009144
+DEBUG:Bracket points: 0.024856 0.009144 (-57.521136 172.447589) a=-1.503315 b=-12.538201
+DEBUG:Iteration 1, KL: 360.761171 / 188.313582 eta: 0.009144 -> 0.015449
+DEBUG:Bracket points: 0.024856 0.015449 (-57.521136 25.361893) a=-1.915301 b=-15.582487
+DEBUG:Iteration 2, KL: 213.675475 / 188.313582 eta: 0.015449 -> 0.017113
+DEBUG:Iteration 3, KL: 192.426967 / 188.313582 converged
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: -609722.089887
+DEBUG:GMM itr 1/100. Log likelihood: 300870.892758
+DEBUG:GMM itr 2/100. Log likelihood: 301196.223660
+DEBUG:GMM itr 3/100. Log likelihood: 301329.339506
+DEBUG:GMM itr 4/100. Log likelihood: 301390.717222
+DEBUG:GMM itr 5/100. Log likelihood: 301450.868581
+DEBUG:GMM itr 6/100. Log likelihood: 301508.401326
+DEBUG:GMM itr 7/100. Log likelihood: 301561.459854
+DEBUG:GMM itr 8/100. Log likelihood: 301623.132027
+DEBUG:GMM itr 9/100. Log likelihood: 301665.190704
+DEBUG:GMM itr 10/100. Log likelihood: 301694.482449
+DEBUG:GMM itr 11/100. Log likelihood: 301735.825090
+DEBUG:GMM itr 12/100. Log likelihood: 301788.050751
+DEBUG:GMM itr 13/100. Log likelihood: 301846.601653
+DEBUG:GMM itr 14/100. Log likelihood: 301898.974241
+DEBUG:GMM itr 15/100. Log likelihood: 301962.545466
+DEBUG:GMM itr 16/100. Log likelihood: 302136.113006
+DEBUG:GMM itr 17/100. Log likelihood: 302421.150842
+DEBUG:GMM itr 18/100. Log likelihood: 302790.955157
+DEBUG:GMM itr 19/100. Log likelihood: 303190.090703
+DEBUG:GMM itr 20/100. Log likelihood: 303437.204059
+DEBUG:GMM itr 21/100. Log likelihood: 303687.460119
+DEBUG:GMM itr 22/100. Log likelihood: 303808.902821
+DEBUG:GMM itr 23/100. Log likelihood: 303838.960297
+DEBUG:GMM itr 24/100. Log likelihood: 303860.805070
+DEBUG:GMM itr 25/100. Log likelihood: 303886.701336
+DEBUG:GMM itr 26/100. Log likelihood: 303905.290631
+DEBUG:GMM itr 27/100. Log likelihood: 303926.794224
+DEBUG:GMM itr 28/100. Log likelihood: 303937.249460
+DEBUG:GMM itr 29/100. Log likelihood: 303942.335563
+DEBUG:GMM itr 30/100. Log likelihood: 303964.201136
+DEBUG:GMM itr 31/100. Log likelihood: 303991.040431
+DEBUG:GMM itr 32/100. Log likelihood: 304024.193363
+DEBUG:GMM itr 33/100. Log likelihood: 304078.153453
+DEBUG:GMM itr 34/100. Log likelihood: 304103.632588
+DEBUG:GMM itr 35/100. Log likelihood: 304141.540277
+DEBUG:GMM itr 36/100. Log likelihood: 304181.691632
+DEBUG:GMM itr 37/100. Log likelihood: 304244.905131
+DEBUG:GMM itr 38/100. Log likelihood: 304308.056528
+DEBUG:GMM itr 39/100. Log likelihood: 304383.652308
+DEBUG:GMM itr 40/100. Log likelihood: 304446.298043
+DEBUG:GMM itr 41/100. Log likelihood: 304535.344865
+DEBUG:GMM itr 42/100. Log likelihood: 304652.307786
+DEBUG:GMM itr 43/100. Log likelihood: 304751.899563
+DEBUG:GMM itr 44/100. Log likelihood: 304911.591305
+DEBUG:GMM itr 45/100. Log likelihood: 305228.947734
+DEBUG:GMM itr 46/100. Log likelihood: 305411.538786
+DEBUG:GMM itr 47/100. Log likelihood: 305535.475858
+DEBUG:GMM itr 48/100. Log likelihood: 305704.652723
+DEBUG:GMM itr 49/100. Log likelihood: 305895.967684
+DEBUG:GMM itr 50/100. Log likelihood: 306031.911341
+DEBUG:GMM itr 51/100. Log likelihood: 306084.204703
+DEBUG:GMM itr 52/100. Log likelihood: 306159.732878
+DEBUG:GMM itr 53/100. Log likelihood: 306219.488085
+DEBUG:GMM itr 54/100. Log likelihood: 306297.753327
+DEBUG:GMM itr 55/100. Log likelihood: 306345.098210
+DEBUG:GMM itr 56/100. Log likelihood: 306376.050699
+DEBUG:GMM itr 57/100. Log likelihood: 306417.957970
+DEBUG:GMM itr 58/100. Log likelihood: 306516.698094
+DEBUG:GMM itr 59/100. Log likelihood: 306603.134387
+DEBUG:GMM itr 60/100. Log likelihood: 306717.383483
+DEBUG:GMM itr 61/100. Log likelihood: 306869.772540
+DEBUG:GMM itr 62/100. Log likelihood: 306932.655037
+DEBUG:GMM itr 63/100. Log likelihood: 306940.417341
+DEBUG:GMM itr 64/100. Log likelihood: 306957.671600
+DEBUG:GMM itr 65/100. Log likelihood: 306962.665091
+DEBUG:GMM itr 66/100. Log likelihood: 306985.338328
+DEBUG:GMM itr 67/100. Log likelihood: 307008.785133
+DEBUG:GMM itr 68/100. Log likelihood: 307031.979233
+DEBUG:GMM itr 69/100. Log likelihood: 307033.585489
+DEBUG:GMM itr 70/100. Log likelihood: 307033.874356
+DEBUG:GMM itr 71/100. Log likelihood: 307034.685535
+DEBUG:GMM itr 72/100. Log likelihood: 307036.467248
+DEBUG:GMM itr 73/100. Log likelihood: 307044.281849
+DEBUG:GMM itr 74/100. Log likelihood: 307054.746576
+DEBUG:GMM itr 75/100. Log likelihood: 307055.670036
+DEBUG:GMM itr 76/100. Log likelihood: 307055.718637
+DEBUG:GMM itr 77/100. Log likelihood: 307056.280613
+DEBUG:GMM itr 78/100. Log likelihood: 307058.528710
+DEBUG:GMM itr 79/100. Log likelihood: 307066.167656
+DEBUG:GMM itr 80/100. Log likelihood: 307074.484975
+DEBUG:GMM itr 81/100. Log likelihood: 307075.051223
+DEBUG:GMM itr 82/100. Log likelihood: 307076.556972
+DEBUG:GMM itr 83/100. Log likelihood: 307079.967119
+DEBUG:GMM itr 84/100. Log likelihood: 307081.358381
+DEBUG:GMM itr 85/100. Log likelihood: 307081.679594
+DEBUG:GMM itr 86/100. Log likelihood: 307081.812571
+DEBUG:GMM itr 87/100. Log likelihood: 307081.883885
+DEBUG:GMM itr 88/100. Log likelihood: 307081.881007
+DEBUG:GMM convergenced on itr=88/100
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: 223046.281087
+DEBUG:GMM itr 1/100. Log likelihood: 319846.652837
+DEBUG:GMM itr 2/100. Log likelihood: 320288.262276
+DEBUG:GMM itr 3/100. Log likelihood: 320908.546117
+DEBUG:GMM itr 4/100. Log likelihood: 321579.640354
+DEBUG:GMM itr 5/100. Log likelihood: 322051.512304
+DEBUG:GMM itr 6/100. Log likelihood: 322111.359911
+DEBUG:GMM itr 7/100. Log likelihood: 322212.090553
+DEBUG:GMM itr 8/100. Log likelihood: 322431.875927
+DEBUG:GMM itr 9/100. Log likelihood: 322757.357933
+DEBUG:GMM itr 10/100. Log likelihood: 322799.022662
+DEBUG:GMM itr 11/100. Log likelihood: 322802.528378
+DEBUG:GMM itr 12/100. Log likelihood: 322847.866987
+DEBUG:GMM itr 13/100. Log likelihood: 322922.057831
+DEBUG:GMM itr 14/100. Log likelihood: 322985.635589
+DEBUG:GMM itr 15/100. Log likelihood: 322999.299267
+DEBUG:GMM itr 16/100. Log likelihood: 323013.705624
+DEBUG:GMM itr 17/100. Log likelihood: 323013.960716
+DEBUG:GMM itr 18/100. Log likelihood: 323014.100099
+DEBUG:GMM itr 19/100. Log likelihood: 323014.222790
+DEBUG:GMM itr 20/100. Log likelihood: 323014.365545
+DEBUG:GMM itr 21/100. Log likelihood: 323014.585818
+DEBUG:GMM itr 22/100. Log likelihood: 323015.100187
+DEBUG:GMM itr 23/100. Log likelihood: 323018.021059
+DEBUG:GMM itr 24/100. Log likelihood: 323031.381754
+DEBUG:GMM itr 25/100. Log likelihood: 323032.856555
+DEBUG:GMM itr 26/100. Log likelihood: 323032.863517
+DEBUG:GMM convergenced on itr=26/100
+DEBUG:Trajectory step: ent: -254.260442 cost: -529.555835 -> -538.419746
+DEBUG:Previous cost: Laplace: -525.747294 MC: -529.555835
+DEBUG:Predicted new cost: Laplace: -553.041192 MC: -538.419746
+DEBUG:Actual new cost: Laplace: -537.834930 MC: -538.419746
+DEBUG:Predicted/actual improvement: 27.293898 / 12.087635
+DEBUG:Decreasing step size multiplier to 0.897456
+DEBUG:Trajectory step: ent: -351.779403 cost: -576.170244 -> -586.900889
+DEBUG:Previous cost: Laplace: -571.212559 MC: -576.170244
+DEBUG:Predicted new cost: Laplace: -588.907889 MC: -586.900889
+DEBUG:Actual new cost: Laplace: -587.510238 MC: -586.900889
+DEBUG:Predicted/actual improvement: 17.695330 / 16.297679
+DEBUG:Increasing step size multiplier to 1.000000
+DEBUG:Iteration 0, KL: 133.053809 / 179.491164 eta: 0.037138 -> 0.013662
+DEBUG:Bracket points: 0.037138 0.013662 (-46.437354 317.211956) a=-3.029239 b=-21.675822
+DEBUG:Iteration 1, KL: 496.703120 / 179.491164 eta: 0.013662 -> 0.027938
+DEBUG:Iteration 2, KL: 196.540951 / 179.491164 converged
+DEBUG:Iteration 0, KL: 194.621964 / 200.000000 converged
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: 248066.204851
+DEBUG:GMM itr 1/100. Log likelihood: 267693.709390
+DEBUG:GMM itr 2/100. Log likelihood: 268361.995785
+DEBUG:GMM itr 3/100. Log likelihood: 268788.131159
+DEBUG:GMM itr 4/100. Log likelihood: 268879.944265
+DEBUG:GMM itr 5/100. Log likelihood: 268941.815139
+DEBUG:GMM itr 6/100. Log likelihood: 269007.187951
+DEBUG:GMM itr 7/100. Log likelihood: 269045.905293
+DEBUG:GMM itr 8/100. Log likelihood: 269089.200340
+DEBUG:GMM itr 9/100. Log likelihood: 269135.148894
+DEBUG:GMM itr 10/100. Log likelihood: 269183.183492
+DEBUG:GMM itr 11/100. Log likelihood: 269308.352810
+DEBUG:GMM itr 12/100. Log likelihood: 269370.131130
+DEBUG:GMM itr 13/100. Log likelihood: 269371.215317
+DEBUG:GMM itr 14/100. Log likelihood: 269372.774927
+DEBUG:GMM itr 15/100. Log likelihood: 269374.615955
+DEBUG:GMM itr 16/100. Log likelihood: 269376.021963
+DEBUG:GMM itr 17/100. Log likelihood: 269379.502113
+DEBUG:GMM itr 18/100. Log likelihood: 269381.562223
+DEBUG:GMM itr 19/100. Log likelihood: 269381.780428
+DEBUG:GMM itr 20/100. Log likelihood: 269381.733317
+DEBUG:GMM itr 21/100. Log likelihood: 269381.598236
+DEBUG:GMM itr 22/100. Log likelihood: 269381.461377
+DEBUG:GMM itr 23/100. Log likelihood: 269381.420662
+DEBUG:GMM itr 24/100. Log likelihood: 269381.774063
+DEBUG:GMM itr 25/100. Log likelihood: 269383.304167
+DEBUG:GMM itr 26/100. Log likelihood: 269383.854265
+DEBUG:GMM itr 27/100. Log likelihood: 269383.932857
+DEBUG:GMM itr 28/100. Log likelihood: 269384.515658
+DEBUG:GMM itr 29/100. Log likelihood: 269384.625567
+DEBUG:GMM itr 30/100. Log likelihood: 269384.546420
+DEBUG:GMM itr 31/100. Log likelihood: 269384.461631
+DEBUG:GMM itr 32/100. Log likelihood: 269384.368329
+DEBUG:GMM itr 33/100. Log likelihood: 269384.268116
+DEBUG:GMM itr 34/100. Log likelihood: 269384.162527
+DEBUG:GMM itr 35/100. Log likelihood: 269384.052112
+DEBUG:GMM itr 36/100. Log likelihood: 269383.936673
+DEBUG:GMM itr 37/100. Log likelihood: 269383.815774
+DEBUG:GMM itr 38/100. Log likelihood: 269383.689859
+DEBUG:GMM itr 39/100. Log likelihood: 269383.562861
+DEBUG:GMM itr 40/100. Log likelihood: 269383.445017
+DEBUG:GMM itr 41/100. Log likelihood: 269383.340058
+DEBUG:GMM itr 42/100. Log likelihood: 269383.210664
+DEBUG:GMM itr 43/100. Log likelihood: 269383.037118
+DEBUG:GMM itr 44/100. Log likelihood: 269382.869252
+DEBUG:GMM itr 45/100. Log likelihood: 269382.736579
+DEBUG:GMM itr 46/100. Log likelihood: 269382.638304
+DEBUG:GMM itr 47/100. Log likelihood: 269382.566479
+DEBUG:GMM itr 48/100. Log likelihood: 269382.513852
+DEBUG:GMM itr 49/100. Log likelihood: 269382.475054
+DEBUG:GMM itr 50/100. Log likelihood: 269382.446290
+DEBUG:GMM itr 51/100. Log likelihood: 269382.424875
+DEBUG:GMM itr 52/100. Log likelihood: 269382.408884
+DEBUG:GMM itr 53/100. Log likelihood: 269382.396924
+DEBUG:GMM itr 54/100. Log likelihood: 269382.387964
+DEBUG:GMM convergenced on itr=54/100
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: -1230096.326905
+DEBUG:GMM itr 1/100. Log likelihood: 259471.681342
+DEBUG:GMM itr 2/100. Log likelihood: 259607.379200
+DEBUG:GMM itr 3/100. Log likelihood: 259634.512752
+DEBUG:GMM itr 4/100. Log likelihood: 259636.535573
+DEBUG:GMM itr 5/100. Log likelihood: 259641.421852
+DEBUG:GMM itr 6/100. Log likelihood: 259709.238068
+DEBUG:GMM itr 7/100. Log likelihood: 259709.229101
+DEBUG:GMM convergenced on itr=7/100
+DEBUG:Trajectory step: ent: -295.719755 cost: -538.419746 -> -553.451936
+DEBUG:Previous cost: Laplace: -537.834930 MC: -538.419746
+DEBUG:Predicted new cost: Laplace: -552.935255 MC: -553.451936
+DEBUG:Actual new cost: Laplace: -549.574289 MC: -553.451936
+DEBUG:Predicted/actual improvement: 15.100325 / 11.739359
+DEBUG:Increasing step size multiplier to 1.000000
+DEBUG:Trajectory step: ent: -416.346494 cost: -586.900889 -> -544.108603
+DEBUG:Previous cost: Laplace: -587.510238 MC: -586.900889
+DEBUG:Predicted new cost: Laplace: -597.890883 MC: -544.108603
+DEBUG:Actual new cost: Laplace: -107.207080 MC: -544.108603
+DEBUG:Predicted/actual improvement: 10.380645 / -480.303158
+DEBUG:Decreasing step size multiplier to 0.100000
+DEBUG:Iteration 0, KL: 182.942514 / 200.000000 converged
+DEBUG:Iteration 0, KL: 504.999529 / 20.000000 eta: 0.017113 -> 4.867109
+DEBUG:Bracket points: 4.867109 0.017113 (-10.484308 484.999529) a=-5.249921 b=-34.412265
+DEBUG:Iteration 1, KL: 9.515692 / 20.000000 eta: 4.867109 -> 0.089144
+DEBUG:Bracket points: 4.867109 0.089144 (-10.484308 78.963333) a=-7.258424 b=-28.055354
+DEBUG:Iteration 2, KL: 98.963333 / 20.000000 eta: 0.089144 -> 0.144770
+DEBUG:Bracket points: 4.867109 0.144770 (-10.484308 45.927388) a=-8.204188 b=-25.062010
+DEBUG:Iteration 3, KL: 65.927388 / 20.000000 eta: 0.144770 -> 0.217101
+DEBUG:Bracket points: 4.867109 0.217101 (-10.484308 28.855361) a=-9.211383 b=-21.874237
+DEBUG:Iteration 4, KL: 48.855361 / 20.000000 eta: 0.217101 -> 0.305029
+DEBUG:Solving non-log problem due to ratio choice: 2.174781 0.595067
+DEBUG:Bracket points: 4.867109 0.305029 (-10.484308 19.009657) a=-3.232513 b=20.981678
+DEBUG:Iteration 5, KL: 39.009657 / 20.000000 eta: 0.305029 -> 3.245413
+DEBUG:Bracket points: 3.245413 0.305029 (-8.379581 19.009657) a=-6.976619 b=-10.768852
+DEBUG:Iteration 6, KL: 11.620419 / 20.000000 eta: 3.245413 -> 0.462189
+DEBUG:Solving non-log problem due to ratio choice: 1.726063 0.222961
+DEBUG:Bracket points: 3.245413 0.462189 (-8.379581 10.472563) a=-3.386746 b=13.603195
+DEBUG:Iteration 7, KL: 30.472563 / 20.000000 eta: 0.462189 -> 2.008299
+DEBUG:Bracket points: 2.008299 0.462189 (-5.384068 10.472563) a=-5.327562 b=-3.383127
+DEBUG:Iteration 8, KL: 14.615932 / 20.000000 eta: 2.008299 -> 0.727958
+DEBUG:Bracket points: 2.008299 0.727958 (-5.384068 3.900231) a=-6.726462 b=-1.432256
+DEBUG:Iteration 9, KL: 23.900231 / 20.000000 eta: 0.727958 -> 0.899007
+DEBUG:Iteration 10, KL: 21.494427 / 20.000000 converged
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: 250535.346847
+DEBUG:GMM itr 1/100. Log likelihood: 260282.522657
+DEBUG:GMM itr 2/100. Log likelihood: 260576.525199
+DEBUG:GMM itr 3/100. Log likelihood: 260804.905519
+DEBUG:GMM itr 4/100. Log likelihood: 260865.779883
+DEBUG:GMM itr 5/100. Log likelihood: 260895.816124
+DEBUG:GMM itr 6/100. Log likelihood: 260918.634994
+DEBUG:GMM itr 7/100. Log likelihood: 260948.982652
+DEBUG:GMM itr 8/100. Log likelihood: 260971.922084
+DEBUG:GMM itr 9/100. Log likelihood: 261001.270867
+DEBUG:GMM itr 10/100. Log likelihood: 261026.048646
+DEBUG:GMM itr 11/100. Log likelihood: 261059.822219
+DEBUG:GMM itr 12/100. Log likelihood: 261087.175272
+DEBUG:GMM itr 13/100. Log likelihood: 261127.772907
+DEBUG:GMM itr 14/100. Log likelihood: 261181.825551
+DEBUG:GMM itr 15/100. Log likelihood: 261254.561706
+DEBUG:GMM itr 16/100. Log likelihood: 261304.972002
+DEBUG:GMM itr 17/100. Log likelihood: 261387.284983
+DEBUG:GMM itr 18/100. Log likelihood: 261444.810534
+DEBUG:GMM itr 19/100. Log likelihood: 261468.822224
+DEBUG:GMM itr 20/100. Log likelihood: 261526.322865
+DEBUG:GMM itr 21/100. Log likelihood: 261614.721730
+DEBUG:GMM itr 22/100. Log likelihood: 261690.103838
+DEBUG:GMM itr 23/100. Log likelihood: 261730.873836
+DEBUG:GMM itr 24/100. Log likelihood: 261808.790920
+DEBUG:GMM itr 25/100. Log likelihood: 261891.676567
+DEBUG:GMM itr 26/100. Log likelihood: 261959.719545
+DEBUG:GMM itr 27/100. Log likelihood: 262002.818962
+DEBUG:GMM itr 28/100. Log likelihood: 262024.258451
+DEBUG:GMM itr 29/100. Log likelihood: 262047.020304
+DEBUG:GMM itr 30/100. Log likelihood: 262063.013154
+DEBUG:GMM itr 31/100. Log likelihood: 262071.736583
+DEBUG:GMM itr 32/100. Log likelihood: 262086.906914
+DEBUG:GMM itr 33/100. Log likelihood: 262093.684594
+DEBUG:GMM itr 34/100. Log likelihood: 262102.621004
+DEBUG:GMM itr 35/100. Log likelihood: 262114.025610
+DEBUG:GMM itr 36/100. Log likelihood: 262142.191673
+DEBUG:GMM itr 37/100. Log likelihood: 262151.468915
+DEBUG:GMM itr 38/100. Log likelihood: 262155.630533
+DEBUG:GMM itr 39/100. Log likelihood: 262157.146395
+DEBUG:GMM itr 40/100. Log likelihood: 262158.066766
+DEBUG:GMM itr 41/100. Log likelihood: 262161.037283
+DEBUG:GMM itr 42/100. Log likelihood: 262174.488326
+DEBUG:GMM itr 43/100. Log likelihood: 262183.506931
+DEBUG:GMM itr 44/100. Log likelihood: 262191.350912
+DEBUG:GMM itr 45/100. Log likelihood: 262201.538661
+DEBUG:GMM itr 46/100. Log likelihood: 262208.643388
+DEBUG:GMM itr 47/100. Log likelihood: 262216.030470
+DEBUG:GMM itr 48/100. Log likelihood: 262223.641085
+DEBUG:GMM itr 49/100. Log likelihood: 262228.861420
+DEBUG:GMM itr 50/100. Log likelihood: 262234.408902
+DEBUG:GMM itr 51/100. Log likelihood: 262238.839766
+DEBUG:GMM itr 52/100. Log likelihood: 262254.689599
+DEBUG:GMM itr 53/100. Log likelihood: 262282.819508
+DEBUG:GMM itr 54/100. Log likelihood: 262337.328876
+DEBUG:GMM itr 55/100. Log likelihood: 262387.269912
+DEBUG:GMM itr 56/100. Log likelihood: 262414.939126
+DEBUG:GMM itr 57/100. Log likelihood: 262445.611560
+DEBUG:GMM itr 58/100. Log likelihood: 262464.952875
+DEBUG:GMM itr 59/100. Log likelihood: 262479.606162
+DEBUG:GMM itr 60/100. Log likelihood: 262512.773776
+DEBUG:GMM itr 61/100. Log likelihood: 262556.579301
+DEBUG:GMM itr 62/100. Log likelihood: 262579.029733
+DEBUG:GMM itr 63/100. Log likelihood: 262623.910874
+DEBUG:GMM itr 64/100. Log likelihood: 262642.926938
+DEBUG:GMM itr 65/100. Log likelihood: 262662.878613
+DEBUG:GMM itr 66/100. Log likelihood: 262694.503520
+DEBUG:GMM itr 67/100. Log likelihood: 262726.516832
+DEBUG:GMM itr 68/100. Log likelihood: 262751.490794
+DEBUG:GMM itr 69/100. Log likelihood: 262767.722001
+DEBUG:GMM itr 70/100. Log likelihood: 262777.233538
+DEBUG:GMM itr 71/100. Log likelihood: 262794.285410
+DEBUG:GMM itr 72/100. Log likelihood: 262816.969916
+DEBUG:GMM itr 73/100. Log likelihood: 262898.811425
+DEBUG:GMM itr 74/100. Log likelihood: 263049.258270
+DEBUG:GMM itr 75/100. Log likelihood: 263267.310522
+DEBUG:GMM itr 76/100. Log likelihood: 263532.143693
+DEBUG:GMM itr 77/100. Log likelihood: 263907.139713
+DEBUG:GMM itr 78/100. Log likelihood: 264316.917450
+DEBUG:GMM itr 79/100. Log likelihood: 264616.063053
+DEBUG:GMM itr 80/100. Log likelihood: 264936.719774
+DEBUG:GMM itr 81/100. Log likelihood: 265178.740156
+DEBUG:GMM itr 82/100. Log likelihood: 265198.623209
+DEBUG:GMM itr 83/100. Log likelihood: 265208.656332
+DEBUG:GMM itr 84/100. Log likelihood: 265298.374492
+DEBUG:GMM itr 85/100. Log likelihood: 265326.698014
+DEBUG:GMM itr 86/100. Log likelihood: 265328.038782
+DEBUG:GMM itr 87/100. Log likelihood: 265329.611253
+DEBUG:GMM itr 88/100. Log likelihood: 265329.951612
+DEBUG:GMM itr 89/100. Log likelihood: 265329.967090
+DEBUG:GMM itr 90/100. Log likelihood: 265329.967556
+DEBUG:GMM convergenced on itr=90/100
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: 226761.745065
+DEBUG:GMM itr 1/100. Log likelihood: 248153.690638
+DEBUG:GMM itr 2/100. Log likelihood: 248275.197137
+DEBUG:GMM itr 3/100. Log likelihood: 248326.749092
+DEBUG:GMM itr 4/100. Log likelihood: 248351.912575
+DEBUG:GMM itr 5/100. Log likelihood: 248354.691466
+DEBUG:GMM itr 6/100. Log likelihood: 248354.739921
+DEBUG:GMM itr 7/100. Log likelihood: 248354.756328
+DEBUG:GMM itr 8/100. Log likelihood: 248354.762363
+DEBUG:GMM convergenced on itr=8/100
+DEBUG:Trajectory step: ent: -337.888323 cost: -553.451936 -> -562.956055
+DEBUG:Previous cost: Laplace: -549.574289 MC: -553.451936
+DEBUG:Predicted new cost: Laplace: -566.141934 MC: -562.956055
+DEBUG:Actual new cost: Laplace: -560.745405 MC: -562.956055
+DEBUG:Predicted/actual improvement: 16.567646 / 11.171117
+DEBUG:Increasing step size multiplier to 1.000000
+DEBUG:Trajectory step: ent: -423.173902 cost: -544.108603 -> -554.932005
+DEBUG:Previous cost: Laplace: -107.207080 MC: -544.108603
+DEBUG:Predicted new cost: Laplace: -533.655493 MC: -554.932005
+DEBUG:Actual new cost: Laplace: -225.996256 MC: -554.932005
+DEBUG:Predicted/actual improvement: 426.448413 / 118.789176
+DEBUG:Decreasing step size multiplier to 0.069305
+DEBUG:Iteration 0, KL: 136.931366 / 200.000000 eta: 0.027938 -> 0.010278
+DEBUG:Bracket points: 0.027938 0.010278 (-63.068634 291.843133) a=-2.380761 b=-18.797632
+DEBUG:Iteration 1, KL: 491.843133 / 200.000000 eta: 0.010278 -> 0.019297
+DEBUG:Bracket points: 0.027938 0.019297 (-63.068634 23.522118) a=-2.994053 b=-23.186063
+DEBUG:Iteration 2, KL: 223.522118 / 200.000000 eta: 0.019297 -> 0.020816
+DEBUG:Iteration 3, KL: 202.474078 / 200.000000 converged
+DEBUG:Iteration 0, KL: 24.645438 / 13.861063 eta: 0.899007 -> 1.006851
+DEBUG:Bracket points: 1.006851 0.899007 (9.553891 10.784375) a=-0.334919 b=9.623917
+DEBUG:Iteration 1, KL: 23.414954 / 13.861063 eta: 1.006851 -> 54.972197
+DEBUG:Bracket points: 54.972197 1.006851 (-12.823597 9.553891) a=-89.320082 b=10.839018
+DEBUG:Iteration 2, KL: 1.037466 / 13.861063 eta: 54.972197 -> 1.062554
+DEBUG:Bracket points: 54.972197 1.062554 (-12.823597 8.996964) a=-90.531357 b=20.545763
+DEBUG:Iteration 3, KL: 22.858027 / 13.861063 eta: 1.062554 -> 1.120162
+DEBUG:Solving non-log problem due to ratio choice: 4.308468 0.415114
+DEBUG:Bracket points: 54.972197 1.120162 (-12.823597 8.466971) a=-0.197677 b=8.909831
+DEBUG:Iteration 4, KL: 22.328034 / 13.861063 eta: 1.120162 -> 22.536388
+DEBUG:Solving non-log problem due to ratio choice: 3.222119 0.220461
+DEBUG:Bracket points: 22.536388 1.120162 (-10.555356 8.466971) a=-0.444110 b=9.461922
+DEBUG:Iteration 5, KL: 3.305707 / 13.861063 eta: 22.536388 -> 10.652674
+DEBUG:Bracket points: 10.652674 1.120162 (-7.163898 8.466971) a=-19.046667 b=13.806950
+DEBUG:Iteration 6, KL: 6.697165 / 13.861063 eta: 10.652674 -> 1.436846
+DEBUG:Bracket points: 10.652674 1.436846 (-7.163898 6.155193) a=-21.253975 b=24.251096
+DEBUG:Iteration 7, KL: 20.016257 / 13.861063 eta: 1.436846 -> 1.769164
+DEBUG:Bracket points: 10.652674 1.769164 (-7.163898 4.417412) a=-23.430522 b=34.549698
+DEBUG:Iteration 8, KL: 18.278475 / 13.861063 eta: 1.769164 -> 2.090242
+DEBUG:Solving non-log problem due to ratio choice: 2.458939 0.830408
+DEBUG:Bracket points: 10.652674 2.090242 (-7.163898 3.122539) a=-0.600673 b=5.633640
+DEBUG:Iteration 9, KL: 16.983602 / 13.861063 eta: 2.090242 -> 4.689444
+DEBUG:Bracket points: 4.689444 2.090242 (-2.385051 3.122539) a=-10.959574 b=22.687403
+DEBUG:Iteration 10, KL: 11.476012 / 13.861063 eta: 4.689444 -> 2.815246
+DEBUG:Iteration 11, KL: 14.834019 / 13.861063 converged
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: 232662.521814
+DEBUG:GMM itr 1/100. Log likelihood: 263739.567491
+DEBUG:GMM itr 2/100. Log likelihood: 264382.564133
+DEBUG:GMM itr 3/100. Log likelihood: 264451.959917
+DEBUG:GMM itr 4/100. Log likelihood: 264473.307267
+DEBUG:GMM itr 5/100. Log likelihood: 264480.595706
+DEBUG:GMM itr 6/100. Log likelihood: 264485.935886
+DEBUG:GMM itr 7/100. Log likelihood: 264489.846607
+DEBUG:GMM itr 8/100. Log likelihood: 264494.338166
+DEBUG:GMM itr 9/100. Log likelihood: 264495.110760
+DEBUG:GMM itr 10/100. Log likelihood: 264495.115392
+DEBUG:GMM convergenced on itr=10/100
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: 229845.119525
+DEBUG:GMM itr 1/100. Log likelihood: 241532.952647
+DEBUG:GMM itr 2/100. Log likelihood: 241710.469907
+DEBUG:GMM itr 3/100. Log likelihood: 241862.299954
+DEBUG:GMM itr 4/100. Log likelihood: 241912.960220
+DEBUG:GMM itr 5/100. Log likelihood: 241932.127910
+DEBUG:GMM itr 6/100. Log likelihood: 241932.141734
+DEBUG:GMM itr 7/100. Log likelihood: 241932.142615
+DEBUG:GMM convergenced on itr=7/100
+DEBUG:Trajectory step: ent: -387.920808 cost: -562.956055 -> -556.909765
+DEBUG:Previous cost: Laplace: -560.745405 MC: -562.956055
+DEBUG:Predicted new cost: Laplace: -573.116893 MC: -556.909765
+DEBUG:Actual new cost: Laplace: -528.624613 MC: -556.909765
+DEBUG:Predicted/actual improvement: 12.371487 / -32.120792
+DEBUG:Decreasing step size multiplier to 0.139030
+DEBUG:Trajectory step: ent: -425.719406 cost: -554.932005 -> -557.315463
+DEBUG:Previous cost: Laplace: -225.996256 MC: -554.932005
+DEBUG:Predicted new cost: Laplace: -536.856141 MC: -557.315463
+DEBUG:Actual new cost: Laplace: -3.330648 MC: -557.315463
+DEBUG:Predicted/actual improvement: 310.859885 / -222.665608
+DEBUG:Decreasing step size multiplier to 0.020190
+DEBUG:Iteration 0, KL: 160.606280 / 27.805919 eta: 0.020816 -> 1.348820
+DEBUG:Bracket points: 1.348820 0.020816 (-23.000564 132.800361) a=-4.050109 b=-28.599790
+DEBUG:Iteration 1, KL: 4.805355 / 27.805919 eta: 1.348820 -> 0.029283
+DEBUG:Solving non-log problem due to ratio choice: 2.597340 1.232633
+DEBUG:Bracket points: 1.348820 0.029283 (-23.000564 78.897672) a=-38.611367 b=81.158997
+DEBUG:Iteration 2, KL: 106.703591 / 27.805919 eta: 0.029283 -> 1.050973
+DEBUG:Bracket points: 1.050973 0.029283 (-22.164412 78.897672) a=-3.575598 b=-22.938664
+DEBUG:Iteration 3, KL: 5.641508 / 27.805919 eta: 1.050973 -> 0.040451
+DEBUG:Bracket points: 1.050973 0.040451 (-22.164412 45.272921) a=-3.856702 b=-22.910713
+DEBUG:Iteration 4, KL: 73.078840 / 27.805919 eta: 0.040451 -> 0.051291
+DEBUG:Bracket points: 1.050973 0.051291 (-22.164412 28.026850) a=-4.094704 b=-22.887048
+DEBUG:Iteration 5, KL: 55.832770 / 27.805919 eta: 0.051291 -> 0.061132
+DEBUG:Solving non-log problem due to ratio choice: 3.038429 0.194000
+DEBUG:Bracket points: 1.050973 0.061132 (-22.164412 18.255894) a=-20.417587 b=20.752247
+DEBUG:Iteration 6, KL: 46.061814 / 27.805919 eta: 0.061132 -> 0.508195
+DEBUG:Solving non-log problem due to ratio choice: 2.167575 0.049751
+DEBUG:Bracket points: 0.508195 0.061132 (-19.187110 18.255894) a=-41.876656 b=23.375936
+DEBUG:Iteration 7, KL: 8.618809 / 27.805919 eta: 0.508195 -> 0.279105
+DEBUG:Solving non-log problem due to ratio choice: 1.350010 0.168535
+DEBUG:Bracket points: 0.279105 0.061132 (-15.424444 18.255894) a=-77.258330 b=27.701870
+DEBUG:Iteration 8, KL: 12.381476 / 27.805919 eta: 0.279105 -> 0.179281
+DEBUG:Bracket points: 0.179281 0.061132 (-10.872582 18.255894) a=-1.424500 b=-6.846114
+DEBUG:Iteration 9, KL: 16.933337 / 27.805919 eta: 0.179281 -> 0.090447
+DEBUG:Bracket points: 0.179281 0.090447 (-10.872582 2.969604) a=-1.620787 b=-7.520869
+DEBUG:Iteration 10, KL: 30.775523 / 27.805919 eta: 0.090447 -> 0.098261
+DEBUG:Iteration 11, KL: 28.410258 / 27.805919 converged
+DEBUG:Iteration 0, KL: 19.756441 / 4.038091 eta: 2.815246 -> 2.972429
+DEBUG:Solving non-log problem due to a > 0: 0.022466 0.031864
+DEBUG:Bracket points: 2.972429 2.815246 (15.225402 15.718350) a=-1.568068 b=24.547344
+DEBUG:Iteration 1, KL: 19.263492 / 4.038091 eta: 2.972429 -> 7.827257
+DEBUG:Solving non-log problem due to a > 0: 0.273158 0.695075
+DEBUG:Bracket points: 7.827257 2.972429 (7.598042 15.225402) a=-0.785544 b=19.895348
+DEBUG:Iteration 2, KL: 11.636132 / 4.038091 eta: 7.827257 -> 12.663424
+DEBUG:Bracket points: 12.663424 7.827257 (4.468739 7.598042) a=-2.995481 b=71.798902
+DEBUG:Iteration 3, KL: 8.506830 / 4.038091 eta: 12.663424 -> 691.399533
+DEBUG:Bracket points: 691.399533 12.663424 (-4.008835 4.468739) a=-353.537018 b=1851.651019
+DEBUG:Iteration 4, KL: 0.029256 / 4.038091 eta: 691.399533 -> 13.718582
+DEBUG:Bracket points: 691.399533 13.718582 (-4.008835 3.988890) a=-360.516913 b=1942.930145
+DEBUG:Iteration 5, KL: 8.026980 / 4.038091 eta: 13.718582 -> 14.800263
+DEBUG:Bracket points: 691.399533 14.800263 (-4.008835 3.545237) a=-367.341762 b=2032.181664
+DEBUG:Iteration 6, KL: 7.583327 / 4.038091 eta: 14.800263 -> 15.895945
+DEBUG:Solving non-log problem due to ratio choice: 4.017519 0.244865
+DEBUG:Bracket points: 691.399533 15.895945 (-4.008835 3.138156) a=-0.005290 b=3.306339
+DEBUG:Iteration 7, KL: 7.176247 / 4.038091 eta: 15.895945 -> 312.501296
+DEBUG:Bracket points: 312.501296 15.895945 (-3.909540 3.138156) a=-213.463376 b=1230.790691
+DEBUG:Iteration 8, KL: 0.128550 / 4.038091 eta: 312.501296 -> 17.866158
+DEBUG:Bracket points: 312.501296 17.866158 (-3.909540 2.494750) a=-221.250984 b=1320.264205
+DEBUG:Iteration 9, KL: 6.532840 / 4.038091 eta: 17.866158 -> 19.759505
+DEBUG:Bracket points: 312.501296 19.759505 (-3.909540 1.963558) a=-228.277296 b=1400.991032
+DEBUG:Iteration 10, KL: 6.001648 / 4.038091 eta: 19.759505 -> 21.512124
+DEBUG:Bracket points: 312.501296 21.512124 (-3.909540 1.533033) a=-234.439270 b=1471.787294
+DEBUG:Iteration 11, KL: 5.571123 / 4.038091 eta: 21.512124 -> 23.079670
+DEBUG:Bracket points: 312.501296 23.079670 (-3.909540 1.189350) a=-239.706621 b=1532.305029
+DEBUG:Iteration 12, KL: 5.227441 / 4.038091 eta: 23.079670 -> 24.439709
+DEBUG:Solving non-log problem due to ratio choice: 3.997094 1.448695
+DEBUG:Bracket points: 312.501296 24.439709 (-3.909540 0.918260) a=-0.008380 b=1.327860
+DEBUG:Iteration 13, KL: 4.956350 / 4.038091 eta: 24.439709 -> 79.229744
+DEBUG:Bracket points: 79.229744 24.439709 (-2.810661 0.918260) a=-104.209273 b=688.591278
+DEBUG:Iteration 14, KL: 1.227430 / 4.038091 eta: 79.229744 -> 27.218225
+DEBUG:Bracket points: 79.229744 27.218225 (-2.810661 0.430143) a=-109.688034 b=736.501419
+DEBUG:Iteration 15, KL: 4.468234 / 4.038091 eta: 27.218225 -> 28.710275
+DEBUG:Iteration 16, KL: 4.237042 / 4.038091 converged
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: 268207.285410
+DEBUG:GMM itr 1/100. Log likelihood: 274826.916744
+DEBUG:GMM itr 2/100. Log likelihood: 274849.744229
+DEBUG:GMM itr 3/100. Log likelihood: 274867.516971
+DEBUG:GMM itr 4/100. Log likelihood: 274895.870083
+DEBUG:GMM itr 5/100. Log likelihood: 274908.915615
+DEBUG:GMM itr 6/100. Log likelihood: 274910.216504
+DEBUG:GMM itr 7/100. Log likelihood: 274910.232353
+DEBUG:GMM itr 8/100. Log likelihood: 274910.235547
+DEBUG:GMM convergenced on itr=8/100
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: 221548.790098
+DEBUG:GMM itr 1/100. Log likelihood: 227465.150557
+DEBUG:GMM itr 2/100. Log likelihood: 227658.173013
+DEBUG:GMM itr 3/100. Log likelihood: 227658.176617
+DEBUG:GMM convergenced on itr=3/100
+DEBUG:Trajectory step: ent: -402.465609 cost: -556.909765 -> -569.887717
+DEBUG:Previous cost: Laplace: -528.624613 MC: -556.909765
+DEBUG:Predicted new cost: Laplace: -565.150996 MC: -569.887717
+DEBUG:Actual new cost: Laplace: -566.804818 MC: -569.887717
+DEBUG:Predicted/actual improvement: 36.526383 / 38.180205
+DEBUG:Increasing step size multiplier to 0.695148
+DEBUG:Trajectory step: ent: -426.486024 cost: -557.315463 -> -553.756537
+DEBUG:Previous cost: Laplace: -3.330648 MC: -557.315463
+DEBUG:Predicted new cost: Laplace: -376.664987 MC: -553.756537
+DEBUG:Actual new cost: Laplace: 2198.838442 MC: -553.756537
+DEBUG:Predicted/actual improvement: 373.334339 / -2202.169090
+DEBUG:Decreasing step size multiplier to 0.010000
+DEBUG:Iteration 0, KL: 23.656706 / 139.029597 eta: 0.098261 -> 0.036148
+DEBUG:Bracket points: 0.098261 0.036148 (-115.372891 -45.939923) a=-4.838002 b=-33.786221
+DEBUG:Iteration 1, KL: 93.089674 / 139.029597 eta: 0.036148 -> 0.030447
+DEBUG:Bracket points: 0.036148 0.030447 (-45.939923 -21.621892) a=-2.920068 b=-21.050646
+DEBUG:Iteration 2, KL: 117.407705 / 139.029597 eta: 0.030447 -> 0.027202
+DEBUG:Iteration 3, KL: 136.567237 / 139.029597 converged
+DEBUG:Iteration 0, KL: 21.727499 / 2.000000 eta: 28.710275 -> 28.907550
+DEBUG:Solving non-log problem due to a > 0: 0.000599 0.006249
+DEBUG:Bracket points: 28.907550 28.710275 (19.604609 19.727499) a=-0.311468 b=37.612143
+DEBUG:Iteration 1, KL: 21.604609 / 2.000000 eta: 28.907550 -> 60.378891
+DEBUG:Bracket points: 60.378891 28.907550 (8.384153 19.604609) a=-41.067446 b=843.031452
+DEBUG:Iteration 2, KL: 10.384153 / 2.000000 eta: 60.378891 -> 3296.575726
+DEBUG:Bracket points: 3296.575726 60.378891 (-1.989732 8.384153) a=-883.190963 b=7749.521450
+DEBUG:Iteration 3, KL: 0.010268 / 2.000000 eta: 3296.575726 -> 80.417248
+DEBUG:Bracket points: 3296.575726 80.417248 (-1.989732 5.301557) a=-940.595958 b=8679.555794
+DEBUG:Iteration 4, KL: 7.301557 / 2.000000 eta: 80.417248 -> 100.872750
+DEBUG:Solving non-log problem due to ratio choice: 2.954827 0.531952
+DEBUG:Bracket points: 3296.575726 100.872750 (-1.989732 3.387026) a=-0.000841 b=3.556744
+DEBUG:Iteration 5, KL: 5.387026 / 2.000000 eta: 100.872750 -> 2113.968707
+DEBUG:Bracket points: 2113.968707 100.872750 (-1.975406 3.387026) a=-742.425834 b=7192.556123
+DEBUG:Iteration 6, KL: 0.024594 / 2.000000 eta: 2113.968707 -> 126.970653
+DEBUG:Solving non-log problem due to ratio choice: 2.866311 0.053945
+DEBUG:Bracket points: 2113.968707 126.970653 (-1.975406 1.871667) a=-0.000968 b=2.117497
+DEBUG:Iteration 7, KL: 3.871667 / 2.000000 eta: 126.970653 -> 1093.679105
+DEBUG:Bracket points: 1093.679105 126.970653 (-1.911623 1.871667) a=-540.635014 b=5475.271137
+DEBUG:Iteration 8, KL: 0.088377 / 2.000000 eta: 1093.679105 -> 158.181133
+DEBUG:Bracket points: 1093.679105 158.181133 (-1.911623 0.772073) a=-572.215964 b=5917.234063
+DEBUG:Iteration 9, KL: 2.772073 / 2.000000 eta: 158.181133 -> 175.994941
+DEBUG:Bracket points: 1093.679105 175.994941 (-1.911623 0.342888) a=-588.732534 b=6148.376944
+DEBUG:Iteration 10, KL: 2.342888 / 2.000000 eta: 175.994941 -> 185.250035
+DEBUG:Iteration 11, KL: 2.158245 / 2.000000 converged
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: 276323.278557
+DEBUG:GMM itr 1/100. Log likelihood: 281944.023822
+DEBUG:GMM itr 2/100. Log likelihood: 282241.217646
+DEBUG:GMM itr 3/100. Log likelihood: 282464.087629
+DEBUG:GMM itr 4/100. Log likelihood: 282566.999360
+DEBUG:GMM itr 5/100. Log likelihood: 282620.841419
+DEBUG:GMM itr 6/100. Log likelihood: 282671.688867
+DEBUG:GMM itr 7/100. Log likelihood: 282726.867729
+DEBUG:GMM itr 8/100. Log likelihood: 282748.903762
+DEBUG:GMM itr 9/100. Log likelihood: 282765.230951
+DEBUG:GMM itr 10/100. Log likelihood: 282797.579937
+DEBUG:GMM itr 11/100. Log likelihood: 282816.311719
+DEBUG:GMM itr 12/100. Log likelihood: 282827.248584
+DEBUG:GMM itr 13/100. Log likelihood: 282859.531782
+DEBUG:GMM itr 14/100. Log likelihood: 282895.790919
+DEBUG:GMM itr 15/100. Log likelihood: 282948.080954
+DEBUG:GMM itr 16/100. Log likelihood: 282976.181941
+DEBUG:GMM itr 17/100. Log likelihood: 283008.123235
+DEBUG:GMM itr 18/100. Log likelihood: 283018.648977
+DEBUG:GMM itr 19/100. Log likelihood: 283033.387105
+DEBUG:GMM itr 20/100. Log likelihood: 283043.009856
+DEBUG:GMM itr 21/100. Log likelihood: 283050.779020
+DEBUG:GMM itr 22/100. Log likelihood: 283054.248649
+DEBUG:GMM itr 23/100. Log likelihood: 283055.501196
+DEBUG:GMM itr 24/100. Log likelihood: 283055.536648
+DEBUG:GMM itr 25/100. Log likelihood: 283055.536909
+DEBUG:GMM convergenced on itr=25/100
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:GMM itr 0/100. Log likelihood: 231993.018544
+DEBUG:GMM itr 1/100. Log likelihood: 238462.339254
+DEBUG:GMM itr 2/100. Log likelihood: 238572.450956
+DEBUG:GMM itr 3/100. Log likelihood: 238652.523662
+DEBUG:GMM itr 4/100. Log likelihood: 238670.085747
+DEBUG:GMM itr 5/100. Log likelihood: 238713.214156
+DEBUG:GMM itr 6/100. Log likelihood: 238714.783890
+DEBUG:GMM itr 7/100. Log likelihood: 238714.784008
+DEBUG:GMM convergenced on itr=7/100
+DEBUG:Trajectory step: ent: -443.167685 cost: -569.887717 -> -573.160599
+DEBUG:Previous cost: Laplace: -566.804818 MC: -569.887717
+DEBUG:Predicted new cost: Laplace: -580.672972 MC: -573.160599
+DEBUG:Actual new cost: Laplace: -571.751868 MC: -573.160599
+DEBUG:Predicted/actual improvement: 13.868154 / 4.947050
+DEBUG:Decreasing step size multiplier to 0.540315
+DEBUG:Trajectory step: ent: -426.654676 cost: -553.756537 -> -578.991732
+DEBUG:Previous cost: Laplace: 2198.838442 MC: -553.756537
+DEBUG:Predicted new cost: Laplace: 1301.727696 MC: -578.991732
+DEBUG:Actual new cost: Laplace: -24.185954 MC: -578.991732
+DEBUG:Predicted/actual improvement: 897.110746 / 2223.024396
+DEBUG:Increasing step size multiplier to 0.050000
+DEBUG:Iteration 0, KL: 111.682315 / 108.063077 converged
+DEBUG:Iteration 0, KL: 0.238266 / 10.000000 eta: 185.250035 -> 68.149679
+DEBUG:Bracket points: 185.250035 68.149679 (-9.761734 -8.833421) a=-603.183400 b=4490.931719
+DEBUG:Iteration 1, KL: 1.166579 / 10.000000 eta: 68.149679 -> 41.375617
+DEBUG:Bracket points: 68.149679 41.375617 (-8.833421 -7.737844) a=-282.393187 b=1782.367495
+DEBUG:Iteration 2, KL: 2.262156 / 10.000000 eta: 41.375617 -> 23.472416
+DEBUG:Bracket points: 41.375617 23.472416 (-7.737844 -5.727654) a=-163.809666 b=899.467704
+DEBUG:Iteration 3, KL: 4.272346 / 10.000000 eta: 23.472416 -> 15.571867
+DEBUG:Bracket points: 23.472416 15.571867 (-5.727654 -3.666100) a=-94.251207 b=460.438926
+DEBUG:Iteration 4, KL: 6.333900 / 10.000000 eta: 15.571867 -> 11.503088
+DEBUG:Bracket points: 15.571867 11.503088 (-3.666100 -1.744914) a=-61.112889 b=278.478684
+DEBUG:Iteration 5, KL: 8.255086 / 10.000000 eta: 11.503088 -> 9.761008
+DEBUG:Iteration 6, KL: 9.470891 / 10.000000 converged

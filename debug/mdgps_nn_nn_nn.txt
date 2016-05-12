@@ -1,0 +1,2158 @@
+DEBUG:No ROS enabled: No module named rospkg
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I0511 15:38:50.109834  1057 solver.cpp:48] Initializing solver from parameters: 
+test_iter: 1
+test_iter: 1
+test_interval: 1000000
+base_lr: 0.001
+display: 0
+lr_policy: "fixed"
+momentum: 0.9
+weight_decay: 0.005
+snapshot_prefix: "python/../experiments/mjc_mdgps_example/policy"
+random_seed: 1
+train_net_param {
+  layer {
+    name: "Python1"
+    type: "Python"
+    top: "Python1"
+    top: "Python2"
+    top: "Python3"
+    python_param {
+      module: "policy_layers"
+      layer: "PolicyDataLayer"
+      param_str: "{\"shape\": [{\"dim\": [25, 26]}, {\"dim\": [25, 7]}, {\"dim\": [25, 7, 7]}]}"
+    }
+  }
+  layer {
+    name: "InnerProduct1"
+    type: "InnerProduct"
+    bottom: "Python1"
+    top: "InnerProduct1"
+    inner_product_param {
+      num_output: 42
+      weight_filler {
+        type: "gaussian"
+        std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+  }
+  layer {
+    name: "ReLU1"
+    type: "ReLU"
+    bottom: "InnerProduct1"
+    top: "InnerProduct1"
+  }
+  layer {
+    name: "InnerProduct2"
+    type: "InnerProduct"
+    bottom: "InnerProduct1"
+    top: "InnerProduct2"
+    inner_product_param {
+      num_output: 42
+      weight_filler {
+        type: "gaussian"
+        std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+  }
+  layer {
+    name: "ReLU2"
+    type: "ReLU"
+    bottom: "InnerProduct2"
+    top: "InnerProduct2"
+  }
+  layer {
+    name: "InnerProduct3"
+    type: "InnerProduct"
+    bottom: "InnerProduct2"
+    top: "InnerProduct3"
+    inner_product_param {
+      num_output: 7
+      weight_filler {
+        type: "gaussian"
+        std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+  }
+  layer {
+    name: "Python4"
+    type: "Python"
+    bottom: "InnerProduct3"
+    bottom: "Python2"
+    bottom: "Python3"
+    top: "Python4"
+    loss_weight: 1
+    python_param {
+      module: "policy_layers"
+      layer: "WeightedEuclideanLoss"
+    }
+  }
+}
+test_net_param {
+  layer {
+    name: "Python1"
+    type: "Python"
+    top: "Python1"
+    python_param {
+      module: "policy_layers"
+      layer: "PolicyDataLayer"
+      param_str: "{\"shape\": [{\"dim\": [1, 26]}]}"
+    }
+  }
+  layer {
+    name: "InnerProduct1"
+    type: "InnerProduct"
+    bottom: "Python1"
+    top: "InnerProduct1"
+    inner_product_param {
+      num_output: 42
+      weight_filler {
+        type: "gaussian"
+        std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+  }
+  layer {
+    name: "ReLU1"
+    type: "ReLU"
+    bottom: "InnerProduct1"
+    top: "InnerProduct1"
+  }
+  layer {
+    name: "InnerProduct2"
+    type: "InnerProduct"
+    bottom: "InnerProduct1"
+    top: "InnerProduct2"
+    inner_product_param {
+      num_output: 42
+      weight_filler {
+        type: "gaussian"
+        std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+  }
+  layer {
+    name: "ReLU2"
+    type: "ReLU"
+    bottom: "InnerProduct2"
+    top: "InnerProduct2"
+  }
+  layer {
+    name: "InnerProduct3"
+    type: "InnerProduct"
+    bottom: "InnerProduct2"
+    top: "InnerProduct3"
+    inner_product_param {
+      num_output: 7
+      weight_filler {
+        type: "gaussian"
+        std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+  }
+}
+test_net_param {
+  layer {
+    name: "DummyData1"
+    type: "DummyData"
+    top: "DummyData1"
+    dummy_data_param {
+      shape {
+        dim: 1
+        dim: 26
+      }
+    }
+  }
+  layer {
+    name: "InnerProduct1"
+    type: "InnerProduct"
+    bottom: "DummyData1"
+    top: "InnerProduct1"
+    inner_product_param {
+      num_output: 42
+      weight_filler {
+        type: "gaussian"
+        std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+  }
+  layer {
+    name: "ReLU1"
+    type: "ReLU"
+    bottom: "InnerProduct1"
+    top: "InnerProduct1"
+  }
+  layer {
+    name: "InnerProduct2"
+    type: "InnerProduct"
+    bottom: "InnerProduct1"
+    top: "InnerProduct2"
+    inner_product_param {
+      num_output: 42
+      weight_filler {
+        type: "gaussian"
+        std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+  }
+  layer {
+    name: "ReLU2"
+    type: "ReLU"
+    bottom: "InnerProduct2"
+    top: "InnerProduct2"
+  }
+  layer {
+    name: "InnerProduct3"
+    type: "InnerProduct"
+    bottom: "InnerProduct2"
+    top: "InnerProduct3"
+    inner_product_param {
+      num_output: 7
+      weight_filler {
+        type: "gaussian"
+        std: 0.01
+      }
+      bias_filler {
+        type: "constant"
+        value: 0
+      }
+    }
+  }
+}
+type: "Adam"
+I0511 15:38:50.109884  1057 solver.cpp:77] Creating training net specified in train_net_param.
+I0511 15:38:50.109940  1057 net.cpp:49] Initializing net from parameters: 
+state {
+  phase: TRAIN
+}
+layer {
+  name: "Python1"
+  type: "Python"
+  top: "Python1"
+  top: "Python2"
+  top: "Python3"
+  python_param {
+    module: "policy_layers"
+    layer: "PolicyDataLayer"
+    param_str: "{\"shape\": [{\"dim\": [25, 26]}, {\"dim\": [25, 7]}, {\"dim\": [25, 7, 7]}]}"
+  }
+}
+layer {
+  name: "InnerProduct1"
+  type: "InnerProduct"
+  bottom: "Python1"
+  top: "InnerProduct1"
+  inner_product_param {
+    num_output: 42
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "ReLU1"
+  type: "ReLU"
+  bottom: "InnerProduct1"
+  top: "InnerProduct1"
+}
+layer {
+  name: "InnerProduct2"
+  type: "InnerProduct"
+  bottom: "InnerProduct1"
+  top: "InnerProduct2"
+  inner_product_param {
+    num_output: 42
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "ReLU2"
+  type: "ReLU"
+  bottom: "InnerProduct2"
+  top: "InnerProduct2"
+}
+layer {
+  name: "InnerProduct3"
+  type: "InnerProduct"
+  bottom: "InnerProduct2"
+  top: "InnerProduct3"
+  inner_product_param {
+    num_output: 7
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "Python4"
+  type: "Python"
+  bottom: "InnerProduct3"
+  bottom: "Python2"
+  bottom: "Python3"
+  top: "Python4"
+  loss_weight: 1
+  python_param {
+    module: "policy_layers"
+    layer: "WeightedEuclideanLoss"
+  }
+}
+I0511 15:38:50.109968  1057 layer_factory.hpp:77] Creating layer Python1
+I0511 15:38:50.110165  1057 net.cpp:91] Creating Layer Python1
+I0511 15:38:50.110175  1057 net.cpp:399] Python1 -> Python1
+I0511 15:38:50.110183  1057 net.cpp:399] Python1 -> Python2
+I0511 15:38:50.110188  1057 net.cpp:399] Python1 -> Python3
+I0511 15:38:50.116658  1057 net.cpp:141] Setting up Python1
+I0511 15:38:50.116685  1057 net.cpp:148] Top shape: 25 26 (650)
+I0511 15:38:50.116689  1057 net.cpp:148] Top shape: 25 7 (175)
+I0511 15:38:50.116693  1057 net.cpp:148] Top shape: 25 7 7 (1225)
+I0511 15:38:50.116695  1057 net.cpp:156] Memory required for data: 8200
+I0511 15:38:50.116700  1057 layer_factory.hpp:77] Creating layer InnerProduct1
+I0511 15:38:50.116714  1057 net.cpp:91] Creating Layer InnerProduct1
+I0511 15:38:50.116717  1057 net.cpp:425] InnerProduct1 <- Python1
+I0511 15:38:50.116722  1057 net.cpp:399] InnerProduct1 -> InnerProduct1
+I0511 15:38:50.117177  1057 net.cpp:141] Setting up InnerProduct1
+I0511 15:38:50.117199  1057 net.cpp:148] Top shape: 25 42 (1050)
+I0511 15:38:50.117202  1057 net.cpp:156] Memory required for data: 12400
+I0511 15:38:50.117210  1057 layer_factory.hpp:77] Creating layer ReLU1
+I0511 15:38:50.117216  1057 net.cpp:91] Creating Layer ReLU1
+I0511 15:38:50.117219  1057 net.cpp:425] ReLU1 <- InnerProduct1
+I0511 15:38:50.117224  1057 net.cpp:386] ReLU1 -> InnerProduct1 (in-place)
+I0511 15:38:50.236691  1057 net.cpp:141] Setting up ReLU1
+I0511 15:38:50.236717  1057 net.cpp:148] Top shape: 25 42 (1050)
+I0511 15:38:50.236721  1057 net.cpp:156] Memory required for data: 16600
+I0511 15:38:50.236726  1057 layer_factory.hpp:77] Creating layer InnerProduct2
+I0511 15:38:50.236737  1057 net.cpp:91] Creating Layer InnerProduct2
+I0511 15:38:50.236740  1057 net.cpp:425] InnerProduct2 <- InnerProduct1
+I0511 15:38:50.236747  1057 net.cpp:399] InnerProduct2 -> InnerProduct2
+I0511 15:38:50.236912  1057 net.cpp:141] Setting up InnerProduct2
+I0511 15:38:50.236919  1057 net.cpp:148] Top shape: 25 42 (1050)
+I0511 15:38:50.236922  1057 net.cpp:156] Memory required for data: 20800
+I0511 15:38:50.236932  1057 layer_factory.hpp:77] Creating layer ReLU2
+I0511 15:38:50.236937  1057 net.cpp:91] Creating Layer ReLU2
+I0511 15:38:50.236940  1057 net.cpp:425] ReLU2 <- InnerProduct2
+I0511 15:38:50.236944  1057 net.cpp:386] ReLU2 -> InnerProduct2 (in-place)
+I0511 15:38:50.237063  1057 net.cpp:141] Setting up ReLU2
+I0511 15:38:50.237071  1057 net.cpp:148] Top shape: 25 42 (1050)
+I0511 15:38:50.237073  1057 net.cpp:156] Memory required for data: 25000
+I0511 15:38:50.237076  1057 layer_factory.hpp:77] Creating layer InnerProduct3
+I0511 15:38:50.237082  1057 net.cpp:91] Creating Layer InnerProduct3
+I0511 15:38:50.237084  1057 net.cpp:425] InnerProduct3 <- InnerProduct2
+I0511 15:38:50.237089  1057 net.cpp:399] InnerProduct3 -> InnerProduct3
+I0511 15:38:50.237519  1057 net.cpp:141] Setting up InnerProduct3
+I0511 15:38:50.237540  1057 net.cpp:148] Top shape: 25 7 (175)
+I0511 15:38:50.237541  1057 net.cpp:156] Memory required for data: 25700
+I0511 15:38:50.237550  1057 layer_factory.hpp:77] Creating layer Python4
+I0511 15:38:50.237596  1057 net.cpp:91] Creating Layer Python4
+I0511 15:38:50.237601  1057 net.cpp:425] Python4 <- InnerProduct3
+I0511 15:38:50.237606  1057 net.cpp:425] Python4 <- Python2
+I0511 15:38:50.237608  1057 net.cpp:425] Python4 <- Python3
+I0511 15:38:50.237612  1057 net.cpp:399] Python4 -> Python4
+I0511 15:38:50.237663  1057 net.cpp:141] Setting up Python4
+I0511 15:38:50.237671  1057 net.cpp:148] Top shape: 1 (1)
+I0511 15:38:50.237674  1057 net.cpp:151]     with loss weight 1
+I0511 15:38:50.237681  1057 net.cpp:156] Memory required for data: 25704
+I0511 15:38:50.237684  1057 net.cpp:217] Python4 needs backward computation.
+I0511 15:38:50.237689  1057 net.cpp:217] InnerProduct3 needs backward computation.
+I0511 15:38:50.237691  1057 net.cpp:217] ReLU2 needs backward computation.
+I0511 15:38:50.237694  1057 net.cpp:217] InnerProduct2 needs backward computation.
+I0511 15:38:50.237697  1057 net.cpp:217] ReLU1 needs backward computation.
+I0511 15:38:50.237699  1057 net.cpp:217] InnerProduct1 needs backward computation.
+I0511 15:38:50.237702  1057 net.cpp:219] Python1 does not need backward computation.
+I0511 15:38:50.237705  1057 net.cpp:261] This network produces output Python4
+I0511 15:38:50.237711  1057 net.cpp:274] Network initialization done.
+I0511 15:38:50.237747  1057 solver.cpp:181] Creating test net (#0) specified by test_net_param
+I0511 15:38:50.237805  1057 net.cpp:49] Initializing net from parameters: 
+state {
+  phase: TEST
+}
+layer {
+  name: "Python1"
+  type: "Python"
+  top: "Python1"
+  python_param {
+    module: "policy_layers"
+    layer: "PolicyDataLayer"
+    param_str: "{\"shape\": [{\"dim\": [1, 26]}]}"
+  }
+}
+layer {
+  name: "InnerProduct1"
+  type: "InnerProduct"
+  bottom: "Python1"
+  top: "InnerProduct1"
+  inner_product_param {
+    num_output: 42
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "ReLU1"
+  type: "ReLU"
+  bottom: "InnerProduct1"
+  top: "InnerProduct1"
+}
+layer {
+  name: "InnerProduct2"
+  type: "InnerProduct"
+  bottom: "InnerProduct1"
+  top: "InnerProduct2"
+  inner_product_param {
+    num_output: 42
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "ReLU2"
+  type: "ReLU"
+  bottom: "InnerProduct2"
+  top: "InnerProduct2"
+}
+layer {
+  name: "InnerProduct3"
+  type: "InnerProduct"
+  bottom: "InnerProduct2"
+  top: "InnerProduct3"
+  inner_product_param {
+    num_output: 7
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+I0511 15:38:50.237829  1057 layer_factory.hpp:77] Creating layer Python1
+I0511 15:38:50.237848  1057 net.cpp:91] Creating Layer Python1
+I0511 15:38:50.237854  1057 net.cpp:399] Python1 -> Python1
+I0511 15:38:50.237920  1057 net.cpp:141] Setting up Python1
+I0511 15:38:50.237929  1057 net.cpp:148] Top shape: 1 26 (26)
+I0511 15:38:50.237932  1057 net.cpp:156] Memory required for data: 104
+I0511 15:38:50.237936  1057 layer_factory.hpp:77] Creating layer InnerProduct1
+I0511 15:38:50.237941  1057 net.cpp:91] Creating Layer InnerProduct1
+I0511 15:38:50.237944  1057 net.cpp:425] InnerProduct1 <- Python1
+I0511 15:38:50.237949  1057 net.cpp:399] InnerProduct1 -> InnerProduct1
+I0511 15:38:50.238049  1057 net.cpp:141] Setting up InnerProduct1
+I0511 15:38:50.238057  1057 net.cpp:148] Top shape: 1 42 (42)
+I0511 15:38:50.238060  1057 net.cpp:156] Memory required for data: 272
+I0511 15:38:50.238067  1057 layer_factory.hpp:77] Creating layer ReLU1
+I0511 15:38:50.238072  1057 net.cpp:91] Creating Layer ReLU1
+I0511 15:38:50.238075  1057 net.cpp:425] ReLU1 <- InnerProduct1
+I0511 15:38:50.238078  1057 net.cpp:386] ReLU1 -> InnerProduct1 (in-place)
+I0511 15:38:50.238309  1057 net.cpp:141] Setting up ReLU1
+I0511 15:38:50.238319  1057 net.cpp:148] Top shape: 1 42 (42)
+I0511 15:38:50.238322  1057 net.cpp:156] Memory required for data: 440
+I0511 15:38:50.238325  1057 layer_factory.hpp:77] Creating layer InnerProduct2
+I0511 15:38:50.238332  1057 net.cpp:91] Creating Layer InnerProduct2
+I0511 15:38:50.238335  1057 net.cpp:425] InnerProduct2 <- InnerProduct1
+I0511 15:38:50.238339  1057 net.cpp:399] InnerProduct2 -> InnerProduct2
+I0511 15:38:50.238462  1057 net.cpp:141] Setting up InnerProduct2
+I0511 15:38:50.238469  1057 net.cpp:148] Top shape: 1 42 (42)
+I0511 15:38:50.238472  1057 net.cpp:156] Memory required for data: 608
+I0511 15:38:50.238478  1057 layer_factory.hpp:77] Creating layer ReLU2
+I0511 15:38:50.238483  1057 net.cpp:91] Creating Layer ReLU2
+I0511 15:38:50.238487  1057 net.cpp:425] ReLU2 <- InnerProduct2
+I0511 15:38:50.238489  1057 net.cpp:386] ReLU2 -> InnerProduct2 (in-place)
+I0511 15:38:50.238607  1057 net.cpp:141] Setting up ReLU2
+I0511 15:38:50.238615  1057 net.cpp:148] Top shape: 1 42 (42)
+I0511 15:38:50.238620  1057 net.cpp:156] Memory required for data: 776
+I0511 15:38:50.238621  1057 layer_factory.hpp:77] Creating layer InnerProduct3
+I0511 15:38:50.238626  1057 net.cpp:91] Creating Layer InnerProduct3
+I0511 15:38:50.238629  1057 net.cpp:425] InnerProduct3 <- InnerProduct2
+I0511 15:38:50.238633  1057 net.cpp:399] InnerProduct3 -> InnerProduct3
+I0511 15:38:50.238713  1057 net.cpp:141] Setting up InnerProduct3
+I0511 15:38:50.238719  1057 net.cpp:148] Top shape: 1 7 (7)
+I0511 15:38:50.238723  1057 net.cpp:156] Memory required for data: 804
+I0511 15:38:50.238729  1057 net.cpp:219] InnerProduct3 does not need backward computation.
+I0511 15:38:50.238732  1057 net.cpp:219] ReLU2 does not need backward computation.
+I0511 15:38:50.238734  1057 net.cpp:219] InnerProduct2 does not need backward computation.
+I0511 15:38:50.238737  1057 net.cpp:219] ReLU1 does not need backward computation.
+I0511 15:38:50.238740  1057 net.cpp:219] InnerProduct1 does not need backward computation.
+I0511 15:38:50.238744  1057 net.cpp:219] Python1 does not need backward computation.
+I0511 15:38:50.238745  1057 net.cpp:261] This network produces output InnerProduct3
+I0511 15:38:50.238750  1057 net.cpp:274] Network initialization done.
+I0511 15:38:50.238760  1057 solver.cpp:181] Creating test net (#1) specified by test_net_param
+I0511 15:38:50.238808  1057 net.cpp:49] Initializing net from parameters: 
+state {
+  phase: TEST
+}
+layer {
+  name: "DummyData1"
+  type: "DummyData"
+  top: "DummyData1"
+  dummy_data_param {
+    shape {
+      dim: 1
+      dim: 26
+    }
+  }
+}
+layer {
+  name: "InnerProduct1"
+  type: "InnerProduct"
+  bottom: "DummyData1"
+  top: "InnerProduct1"
+  inner_product_param {
+    num_output: 42
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "ReLU1"
+  type: "ReLU"
+  bottom: "InnerProduct1"
+  top: "InnerProduct1"
+}
+layer {
+  name: "InnerProduct2"
+  type: "InnerProduct"
+  bottom: "InnerProduct1"
+  top: "InnerProduct2"
+  inner_product_param {
+    num_output: 42
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "ReLU2"
+  type: "ReLU"
+  bottom: "InnerProduct2"
+  top: "InnerProduct2"
+}
+layer {
+  name: "InnerProduct3"
+  type: "InnerProduct"
+  bottom: "InnerProduct2"
+  top: "InnerProduct3"
+  inner_product_param {
+    num_output: 7
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+I0511 15:38:50.238828  1057 layer_factory.hpp:77] Creating layer DummyData1
+I0511 15:38:50.238839  1057 net.cpp:91] Creating Layer DummyData1
+I0511 15:38:50.238842  1057 net.cpp:399] DummyData1 -> DummyData1
+I0511 15:38:50.238875  1057 net.cpp:141] Setting up DummyData1
+I0511 15:38:50.238883  1057 net.cpp:148] Top shape: 1 26 (26)
+I0511 15:38:50.238885  1057 net.cpp:156] Memory required for data: 104
+I0511 15:38:50.238888  1057 layer_factory.hpp:77] Creating layer InnerProduct1
+I0511 15:38:50.238893  1057 net.cpp:91] Creating Layer InnerProduct1
+I0511 15:38:50.238896  1057 net.cpp:425] InnerProduct1 <- DummyData1
+I0511 15:38:50.238900  1057 net.cpp:399] InnerProduct1 -> InnerProduct1
+I0511 15:38:50.238997  1057 net.cpp:141] Setting up InnerProduct1
+I0511 15:38:50.239003  1057 net.cpp:148] Top shape: 1 42 (42)
+I0511 15:38:50.239006  1057 net.cpp:156] Memory required for data: 272
+I0511 15:38:50.239013  1057 layer_factory.hpp:77] Creating layer ReLU1
+I0511 15:38:50.239017  1057 net.cpp:91] Creating Layer ReLU1
+I0511 15:38:50.239020  1057 net.cpp:425] ReLU1 <- InnerProduct1
+I0511 15:38:50.239024  1057 net.cpp:386] ReLU1 -> InnerProduct1 (in-place)
+I0511 15:38:50.239248  1057 net.cpp:141] Setting up ReLU1
+I0511 15:38:50.239259  1057 net.cpp:148] Top shape: 1 42 (42)
+I0511 15:38:50.239261  1057 net.cpp:156] Memory required for data: 440
+I0511 15:38:50.239264  1057 layer_factory.hpp:77] Creating layer InnerProduct2
+I0511 15:38:50.239269  1057 net.cpp:91] Creating Layer InnerProduct2
+I0511 15:38:50.239272  1057 net.cpp:425] InnerProduct2 <- InnerProduct1
+I0511 15:38:50.239276  1057 net.cpp:399] InnerProduct2 -> InnerProduct2
+I0511 15:38:50.239399  1057 net.cpp:141] Setting up InnerProduct2
+I0511 15:38:50.239408  1057 net.cpp:148] Top shape: 1 42 (42)
+I0511 15:38:50.239410  1057 net.cpp:156] Memory required for data: 608
+I0511 15:38:50.239416  1057 layer_factory.hpp:77] Creating layer ReLU2
+I0511 15:38:50.239421  1057 net.cpp:91] Creating Layer ReLU2
+I0511 15:38:50.239424  1057 net.cpp:425] ReLU2 <- InnerProduct2
+I0511 15:38:50.239428  1057 net.cpp:386] ReLU2 -> InnerProduct2 (in-place)
+I0511 15:38:50.239542  1057 net.cpp:141] Setting up ReLU2
+I0511 15:38:50.239548  1057 net.cpp:148] Top shape: 1 42 (42)
+I0511 15:38:50.239552  1057 net.cpp:156] Memory required for data: 776
+I0511 15:38:50.239554  1057 layer_factory.hpp:77] Creating layer InnerProduct3
+I0511 15:38:50.239558  1057 net.cpp:91] Creating Layer InnerProduct3
+I0511 15:38:50.239562  1057 net.cpp:425] InnerProduct3 <- InnerProduct2
+I0511 15:38:50.239565  1057 net.cpp:399] InnerProduct3 -> InnerProduct3
+I0511 15:38:50.239644  1057 net.cpp:141] Setting up InnerProduct3
+I0511 15:38:50.239650  1057 net.cpp:148] Top shape: 1 7 (7)
+I0511 15:38:50.239652  1057 net.cpp:156] Memory required for data: 804
+I0511 15:38:50.239660  1057 net.cpp:219] InnerProduct3 does not need backward computation.
+I0511 15:38:50.239662  1057 net.cpp:219] ReLU2 does not need backward computation.
+I0511 15:38:50.239665  1057 net.cpp:219] InnerProduct2 does not need backward computation.
+I0511 15:38:50.239667  1057 net.cpp:219] ReLU1 does not need backward computation.
+I0511 15:38:50.239670  1057 net.cpp:219] InnerProduct1 does not need backward computation.
+I0511 15:38:50.239672  1057 net.cpp:219] DummyData1 does not need backward computation.
+I0511 15:38:50.239675  1057 net.cpp:261] This network produces output InnerProduct3
+I0511 15:38:50.239681  1057 net.cpp:274] Network initialization done.
+I0511 15:38:50.239697  1057 solver.cpp:60] Solver scaffolding done.
+DEBUG:Generating 12 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 12 clusters on 495 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 67229.709963
+DEBUG:GMM itr 1/100. Log likelihood: 76797.398469
+DEBUG:GMM itr 2/100. Log likelihood: 77757.736472
+DEBUG:GMM itr 3/100. Log likelihood: 78006.626947
+DEBUG:GMM itr 4/100. Log likelihood: 78097.490533
+DEBUG:GMM itr 5/100. Log likelihood: 78120.902997
+DEBUG:GMM itr 6/100. Log likelihood: 78120.903047
+DEBUG:GMM convergenced on itr=6/100
+DEBUG:Generating 12 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 12 clusters on 495 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 69224.594263
+DEBUG:GMM itr 1/100. Log likelihood: 78746.438394
+DEBUG:GMM itr 2/100. Log likelihood: 79536.910939
+DEBUG:GMM itr 3/100. Log likelihood: 79750.901400
+DEBUG:GMM itr 4/100. Log likelihood: 79828.908788
+DEBUG:GMM itr 5/100. Log likelihood: 79864.472360
+DEBUG:GMM itr 6/100. Log likelihood: 79871.514397
+DEBUG:GMM itr 7/100. Log likelihood: 79970.703548
+DEBUG:GMM itr 8/100. Log likelihood: 79970.908979
+DEBUG:GMM itr 9/100. Log likelihood: 79970.909000
+DEBUG:GMM convergenced on itr=9/100
+I0511 15:38:55.625656  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:38:55.695263  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 12 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 12 clusters on 500 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 30943.930388
+DEBUG:GMM itr 1/100. Log likelihood: 37874.536133
+DEBUG:GMM itr 2/100. Log likelihood: 42522.608746
+DEBUG:GMM itr 3/100. Log likelihood: 43925.227629
+DEBUG:GMM itr 4/100. Log likelihood: 44290.353200
+DEBUG:GMM itr 5/100. Log likelihood: 44345.414531
+DEBUG:GMM itr 6/100. Log likelihood: 44387.822234
+DEBUG:GMM itr 7/100. Log likelihood: 44388.249181
+DEBUG:GMM itr 8/100. Log likelihood: 44388.253614
+DEBUG:GMM convergenced on itr=8/100
+I0511 15:38:56.103118  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:38:56.149636  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 12 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 12 clusters on 500 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 32359.390817
+DEBUG:GMM itr 1/100. Log likelihood: 39622.334802
+DEBUG:GMM itr 2/100. Log likelihood: 43976.100148
+DEBUG:GMM itr 3/100. Log likelihood: 45067.114020
+DEBUG:GMM itr 4/100. Log likelihood: 45553.732980
+DEBUG:GMM itr 5/100. Log likelihood: 45688.526684
+DEBUG:GMM itr 6/100. Log likelihood: 45868.338760
+DEBUG:GMM itr 7/100. Log likelihood: 46055.614791
+DEBUG:GMM itr 8/100. Log likelihood: 46063.241746
+DEBUG:GMM itr 9/100. Log likelihood: 46084.911380
+DEBUG:GMM itr 10/100. Log likelihood: 46154.681463
+DEBUG:GMM itr 11/100. Log likelihood: 46155.402145
+DEBUG:GMM itr 12/100. Log likelihood: 46171.667240
+DEBUG:GMM itr 13/100. Log likelihood: 46178.395364
+DEBUG:GMM itr 14/100. Log likelihood: 46178.395696
+DEBUG:GMM convergenced on itr=14/100
+I0511 15:38:56.514955  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:38:56.561393  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 12 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 12 clusters on 500 points
+DEBUG:GMM itr 0/100. Log likelihood: 44388.253614
+DEBUG:GMM itr 1/100. Log likelihood: 44388.251739
+DEBUG:GMM convergenced on itr=1/100
+I0511 15:38:56.777961  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:38:56.824277  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 12 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 12 clusters on 500 points
+DEBUG:GMM itr 0/100. Log likelihood: 46178.395696
+DEBUG:GMM itr 1/100. Log likelihood: 46178.395696
+DEBUG:GMM convergenced on itr=1/100
+DEBUG:Iteration 0, KL: 67.482088 / 200.000000 eta: 1.000000 -> 0.367879
+DEBUG:Bracket points: 1.000000 0.367879 (-132.517912 -60.396497) a=-55.149641 b=-132.517912
+DEBUG:Iteration 1, KL: 139.603503 / 200.000000 eta: 0.367879 -> 0.300761
+DEBUG:Bracket points: 0.367879 0.300761 (-60.396497 -36.560349) a=-27.856267 b=-77.931165
+DEBUG:Iteration 2, KL: 163.439651 / 200.000000 eta: 0.300761 -> 0.246891
+DEBUG:Iteration 3, KL: 191.513634 / 200.000000 converged
+DEBUG:Iteration 0, KL: 157.109434 / 200.000000 eta: 1.000000 -> 0.367879
+DEBUG:Bracket points: 1.000000 0.367879 (-42.890566 100.957600) a=-40.015396 b=-42.890566
+DEBUG:Iteration 1, KL: 300.957600 / 200.000000 eta: 0.367879 -> 0.585127
+DEBUG:Bracket points: 1.000000 0.585127 (-42.890566 22.000168) a=-52.025360 b=-42.890566
+DEBUG:Iteration 2, KL: 222.000168 / 200.000000 eta: 0.585127 -> 0.662186
+DEBUG:Iteration 3, KL: 204.828791 / 200.000000 converged
+I0511 15:38:57.865456  1075 solver.cpp:337] Iteration 0, Testing net (#0)
+I0511 15:38:57.865478  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:38:57.865509  1075 solver.cpp:404]     Test net output #0: InnerProduct3 = 3.34397e-05
+I0511 15:38:57.865520  1075 solver.cpp:404]     Test net output #1: InnerProduct3 = 2.08554e-05
+I0511 15:38:57.865525  1075 solver.cpp:404]     Test net output #2: InnerProduct3 = 5.30183e-05
+I0511 15:38:57.865527  1075 solver.cpp:404]     Test net output #3: InnerProduct3 = 9.8775e-06
+I0511 15:38:57.865530  1075 solver.cpp:404]     Test net output #4: InnerProduct3 = -9.18224e-07
+I0511 15:38:57.865533  1075 solver.cpp:404]     Test net output #5: InnerProduct3 = 3.36048e-05
+I0511 15:38:57.865536  1075 solver.cpp:404]     Test net output #6: InnerProduct3 = -1.72629e-05
+I0511 15:38:57.865540  1075 solver.cpp:337] Iteration 0, Testing net (#1)
+I0511 15:38:57.865542  1075 net.cpp:684] Ignoring source layer Python1
+I0511 15:38:57.865664  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:38:57.865681  1075 solver.cpp:404]     Test net output #0: InnerProduct3 = 0
+I0511 15:38:57.865689  1075 solver.cpp:404]     Test net output #1: InnerProduct3 = 0
+I0511 15:38:57.865692  1075 solver.cpp:404]     Test net output #2: InnerProduct3 = 0
+I0511 15:38:57.865695  1075 solver.cpp:404]     Test net output #3: InnerProduct3 = 0
+I0511 15:38:57.865697  1075 solver.cpp:404]     Test net output #4: InnerProduct3 = 0
+I0511 15:38:57.865700  1075 solver.cpp:404]     Test net output #5: InnerProduct3 = 0
+I0511 15:38:57.865703  1075 solver.cpp:404]     Test net output #6: InnerProduct3 = 0
+DEBUG:Caffe iteration 500, average loss 0.604585
+DEBUG:Caffe iteration 1000, average loss 0.159249
+DEBUG:Caffe iteration 1500, average loss 0.112509
+DEBUG:Caffe iteration 2000, average loss 0.090832
+DEBUG:Caffe iteration 2500, average loss 0.077551
+DEBUG:Caffe iteration 3000, average loss 0.069713
+DEBUG:Caffe iteration 3500, average loss 0.062542
+I0511 15:39:00.668213  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:00.668651  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:00.719194  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 12 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 12 clusters on 500 points
+DEBUG:GMM itr 0/100. Log likelihood: -576472782.999432
+DEBUG:GMM itr 1/100. Log likelihood: 34115.956077
+DEBUG:GMM itr 2/100. Log likelihood: 34420.915018
+DEBUG:GMM itr 3/100. Log likelihood: 34491.828953
+DEBUG:GMM itr 4/100. Log likelihood: 34495.687001
+DEBUG:GMM itr 5/100. Log likelihood: 34519.711933
+DEBUG:GMM itr 6/100. Log likelihood: 34519.781396
+DEBUG:GMM itr 7/100. Log likelihood: 34519.781162
+DEBUG:GMM convergenced on itr=7/100
+I0511 15:39:00.998260  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:01.047140  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 12 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 12 clusters on 500 points
+DEBUG:GMM itr 0/100. Log likelihood: -547684955.301520
+DEBUG:GMM itr 1/100. Log likelihood: 35200.113210
+DEBUG:GMM itr 2/100. Log likelihood: 35229.383756
+DEBUG:GMM itr 3/100. Log likelihood: 35229.530136
+DEBUG:GMM itr 4/100. Log likelihood: 35229.530136
+DEBUG:GMM convergenced on itr=4/100
+DEBUG:Iteration 0, KL: 192.284755 / 200.000000 converged
+DEBUG:Iteration 0, KL: 104.689113 / 200.000000 eta: 0.662186 -> 0.243605
+DEBUG:Iteration 1, KL: 216.215134 / 200.000000 converged
+DEBUG:Caffe iteration 500, average loss 0.057758
+DEBUG:Caffe iteration 1000, average loss 0.052783
+DEBUG:Caffe iteration 1500, average loss 0.051448
+DEBUG:Caffe iteration 2000, average loss 0.049405
+DEBUG:Caffe iteration 2500, average loss 0.048077
+DEBUG:Caffe iteration 3000, average loss 0.046578
+DEBUG:Caffe iteration 3500, average loss 0.046227
+I0511 15:39:04.353606  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:04.354084  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:04.423751  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 12 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 12 clusters on 500 points
+DEBUG:GMM itr 0/100. Log likelihood: -103966.094077
+DEBUG:GMM itr 1/100. Log likelihood: 30957.529984
+DEBUG:GMM itr 2/100. Log likelihood: 31028.868457
+DEBUG:GMM itr 3/100. Log likelihood: 31069.234443
+DEBUG:GMM itr 4/100. Log likelihood: 31132.202436
+DEBUG:GMM itr 5/100. Log likelihood: 31132.206789
+DEBUG:GMM convergenced on itr=5/100
+I0511 15:39:04.770783  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:04.840101  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 12 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 12 clusters on 500 points
+DEBUG:GMM itr 0/100. Log likelihood: -10285.920771
+DEBUG:GMM itr 1/100. Log likelihood: 30382.059905
+DEBUG:GMM itr 2/100. Log likelihood: 30467.962744
+DEBUG:GMM itr 3/100. Log likelihood: 30505.685441
+DEBUG:GMM itr 4/100. Log likelihood: 30611.666126
+DEBUG:GMM itr 5/100. Log likelihood: 30614.253578
+DEBUG:GMM itr 6/100. Log likelihood: 30680.921242
+DEBUG:GMM itr 7/100. Log likelihood: 30685.013940
+DEBUG:GMM itr 8/100. Log likelihood: 30684.996194
+DEBUG:GMM itr 9/100. Log likelihood: 30685.144782
+DEBUG:GMM itr 10/100. Log likelihood: 30694.922510
+DEBUG:GMM itr 11/100. Log likelihood: 30705.617167
+DEBUG:GMM itr 12/100. Log likelihood: 30705.596003
+DEBUG:GMM itr 13/100. Log likelihood: 30706.000107
+DEBUG:GMM itr 14/100. Log likelihood: 30730.841441
+DEBUG:GMM itr 15/100. Log likelihood: 30746.570586
+DEBUG:GMM itr 16/100. Log likelihood: 30746.571496
+DEBUG:GMM convergenced on itr=16/100
+DEBUG:Iteration 0, KL: 188.439292 / 200.000000 converged
+DEBUG:Iteration 0, KL: 246.487370 / 200.000000 eta: 0.243605 -> 0.708478
+DEBUG:Solving non-log problem due to ratio choice: 1.708536 0.640963
+DEBUG:Bracket points: 0.708478 0.243605 (-88.247385 46.487370) a=-144.915441 b=117.091549
+DEBUG:Iteration 1, KL: 111.752615 / 200.000000 eta: 0.708478 -> 0.404000
+DEBUG:Bracket points: 0.404000 0.243605 (-24.869022 46.487370) a=-21.123762 b=-48.337757
+DEBUG:Iteration 2, KL: 175.130978 / 200.000000 eta: 0.404000 -> 0.318493
+DEBUG:Iteration 3, KL: 207.152945 / 200.000000 converged
+DEBUG:Caffe iteration 500, average loss 0.045770
+DEBUG:Caffe iteration 1000, average loss 0.042176
+DEBUG:Caffe iteration 1500, average loss 0.041581
+DEBUG:Caffe iteration 2000, average loss 0.041701
+DEBUG:Caffe iteration 2500, average loss 0.040984
+DEBUG:Caffe iteration 3000, average loss 0.040664
+DEBUG:Caffe iteration 3500, average loss 0.039903
+I0511 15:39:08.600908  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:08.601382  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:08.670994  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 12 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 12 clusters on 500 points
+DEBUG:GMM itr 0/100. Log likelihood: -95291.970891
+DEBUG:GMM itr 1/100. Log likelihood: 27672.434468
+DEBUG:GMM itr 2/100. Log likelihood: 27694.788925
+DEBUG:GMM itr 3/100. Log likelihood: 27712.226121
+DEBUG:GMM itr 4/100. Log likelihood: 27723.670593
+DEBUG:GMM itr 5/100. Log likelihood: 27723.686863
+DEBUG:GMM itr 6/100. Log likelihood: 27723.883218
+DEBUG:GMM itr 7/100. Log likelihood: 27728.027856
+DEBUG:GMM itr 8/100. Log likelihood: 27733.727840
+DEBUG:GMM itr 9/100. Log likelihood: 27743.260039
+DEBUG:GMM itr 10/100. Log likelihood: 27746.012340
+DEBUG:GMM itr 11/100. Log likelihood: 27746.012368
+DEBUG:GMM convergenced on itr=11/100
+I0511 15:39:09.083431  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:09.152850  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 12 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 12 clusters on 500 points
+DEBUG:GMM itr 0/100. Log likelihood: -135117.616086
+DEBUG:GMM itr 1/100. Log likelihood: 30287.112288
+DEBUG:GMM itr 2/100. Log likelihood: 30380.967738
+DEBUG:GMM itr 3/100. Log likelihood: 30381.648018
+DEBUG:GMM itr 4/100. Log likelihood: 30381.648808
+DEBUG:GMM convergenced on itr=4/100
+I0511 15:39:09.482560  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:09.564399  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Iteration 0, KL: 191.390452 / 200.000000 converged
+DEBUG:Iteration 0, KL: 200.004075 / 200.000000 converged
+I0511 15:39:15.387459  1075 solver.cpp:454] Snapshotting to binary proto file python/../experiments/mjc_mdgps_example/policy_iter_12000.caffemodel
+I0511 15:39:15.387668  1075 sgd_solver.cpp:273] Snapshotting solver state to binary proto file python/../experiments/mjc_mdgps_example/policy_iter_12000.solverstate
+DEBUG:Generating 24 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 24 clusters on 990 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 144802.801037
+DEBUG:GMM itr 1/100. Log likelihood: 156028.495346
+DEBUG:GMM itr 2/100. Log likelihood: 156984.984182
+DEBUG:GMM itr 3/100. Log likelihood: 156991.159074
+DEBUG:GMM itr 4/100. Log likelihood: 157068.893728
+DEBUG:GMM itr 5/100. Log likelihood: 157081.624274
+DEBUG:GMM itr 6/100. Log likelihood: 157172.297221
+DEBUG:GMM itr 7/100. Log likelihood: 157172.449611
+DEBUG:GMM itr 8/100. Log likelihood: 157172.449611
+DEBUG:GMM convergenced on itr=8/100
+DEBUG:Generating 24 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 24 clusters on 990 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 142316.735154
+DEBUG:GMM itr 1/100. Log likelihood: 152623.486564
+DEBUG:GMM itr 2/100. Log likelihood: 153359.179646
+DEBUG:GMM itr 3/100. Log likelihood: 153442.949822
+DEBUG:GMM itr 4/100. Log likelihood: 153500.596716
+DEBUG:GMM itr 5/100. Log likelihood: 153500.728511
+DEBUG:GMM itr 6/100. Log likelihood: 153500.728461
+DEBUG:GMM convergenced on itr=6/100
+I0511 15:39:21.944036  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:21.991693  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1000 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 34638.518038
+DEBUG:GMM itr 1/100. Log likelihood: 46141.467272
+DEBUG:GMM itr 2/100. Log likelihood: 55938.933426
+DEBUG:GMM itr 3/100. Log likelihood: 58789.895950
+DEBUG:GMM itr 4/100. Log likelihood: 59435.130140
+DEBUG:GMM itr 5/100. Log likelihood: 59595.478625
+DEBUG:GMM itr 6/100. Log likelihood: 59769.273582
+DEBUG:GMM itr 7/100. Log likelihood: 59818.274650
+DEBUG:GMM itr 8/100. Log likelihood: 59874.985985
+DEBUG:GMM itr 9/100. Log likelihood: 59903.372276
+DEBUG:GMM itr 10/100. Log likelihood: 59960.572150
+DEBUG:GMM itr 11/100. Log likelihood: 60038.795938
+DEBUG:GMM itr 12/100. Log likelihood: 60061.350753
+DEBUG:GMM itr 13/100. Log likelihood: 60088.972730
+DEBUG:GMM itr 14/100. Log likelihood: 60175.235858
+DEBUG:GMM itr 15/100. Log likelihood: 60191.907699
+DEBUG:GMM itr 16/100. Log likelihood: 60206.876946
+DEBUG:GMM itr 17/100. Log likelihood: 60206.887841
+DEBUG:GMM itr 18/100. Log likelihood: 60206.955331
+DEBUG:GMM itr 19/100. Log likelihood: 60207.405569
+DEBUG:GMM itr 20/100. Log likelihood: 60210.194288
+DEBUG:GMM itr 21/100. Log likelihood: 60214.666109
+DEBUG:GMM itr 22/100. Log likelihood: 60218.129083
+DEBUG:GMM itr 23/100. Log likelihood: 60219.525289
+DEBUG:GMM itr 24/100. Log likelihood: 60224.939419
+DEBUG:GMM itr 25/100. Log likelihood: 60225.967584
+DEBUG:GMM itr 26/100. Log likelihood: 60231.378540
+DEBUG:GMM itr 27/100. Log likelihood: 60232.411534
+DEBUG:GMM itr 28/100. Log likelihood: 60236.547119
+DEBUG:GMM itr 29/100. Log likelihood: 60242.208357
+DEBUG:GMM itr 30/100. Log likelihood: 60242.280772
+DEBUG:GMM itr 31/100. Log likelihood: 60246.634154
+DEBUG:GMM itr 32/100. Log likelihood: 60301.643883
+DEBUG:GMM itr 33/100. Log likelihood: 60304.387931
+DEBUG:GMM itr 34/100. Log likelihood: 60304.404538
+DEBUG:GMM itr 35/100. Log likelihood: 60304.412333
+DEBUG:GMM convergenced on itr=35/100
+DEBUG:Trajectory step: ent: -217.000241 cost: 82.262834 -> 78.383837
+DEBUG:Previous cost: Laplace: 170.077739 MC: 82.262834
+DEBUG:Predicted new cost: Laplace: -426.176706 MC: 78.383837
+DEBUG:Actual new cost: Laplace: -303.111623 MC: 78.383837
+DEBUG:Predicted/actual improvement: 596.254446 / 473.189362
+DEBUG:Increasing step size multiplier to 1.000000
+I0511 15:39:23.192000  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:23.239239  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1000 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 34088.007280
+DEBUG:GMM itr 1/100. Log likelihood: 46253.059530
+DEBUG:GMM itr 2/100. Log likelihood: 55763.154706
+DEBUG:GMM itr 3/100. Log likelihood: 58247.563043
+DEBUG:GMM itr 4/100. Log likelihood: 58498.740326
+DEBUG:GMM itr 5/100. Log likelihood: 58573.331468
+DEBUG:GMM itr 6/100. Log likelihood: 58653.626947
+DEBUG:GMM itr 7/100. Log likelihood: 58688.885111
+DEBUG:GMM itr 8/100. Log likelihood: 58741.432128
+DEBUG:GMM itr 9/100. Log likelihood: 58822.056254
+DEBUG:GMM itr 10/100. Log likelihood: 58866.294404
+DEBUG:GMM itr 11/100. Log likelihood: 58968.883323
+DEBUG:GMM itr 12/100. Log likelihood: 59015.448104
+DEBUG:GMM itr 13/100. Log likelihood: 59016.038187
+DEBUG:GMM itr 14/100. Log likelihood: 59016.083532
+DEBUG:GMM itr 15/100. Log likelihood: 59016.124191
+DEBUG:GMM itr 16/100. Log likelihood: 59016.199286
+DEBUG:GMM itr 17/100. Log likelihood: 59016.478605
+DEBUG:GMM itr 18/100. Log likelihood: 59017.890648
+DEBUG:GMM itr 19/100. Log likelihood: 59019.320156
+DEBUG:GMM itr 20/100. Log likelihood: 59019.372997
+DEBUG:GMM itr 21/100. Log likelihood: 59019.417786
+DEBUG:GMM itr 22/100. Log likelihood: 59019.900355
+DEBUG:GMM itr 23/100. Log likelihood: 59023.472620
+DEBUG:GMM itr 24/100. Log likelihood: 59027.288971
+DEBUG:GMM itr 25/100. Log likelihood: 59039.423190
+DEBUG:GMM itr 26/100. Log likelihood: 59039.451830
+DEBUG:GMM itr 27/100. Log likelihood: 59039.453809
+DEBUG:GMM convergenced on itr=27/100
+DEBUG:Trajectory step: ent: -216.905805 cost: -104.187809 -> -158.881018
+DEBUG:Previous cost: Laplace: 401.309338 MC: -104.187809
+DEBUG:Predicted new cost: Laplace: -431.002469 MC: -158.881018
+DEBUG:Actual new cost: Laplace: 572.194847 MC: -158.881018
+DEBUG:Predicted/actual improvement: 832.311807 / -170.885509
+DEBUG:Decreasing step size multiplier to 0.414830
+DEBUG:Caffe iteration 500, average loss 4.742724
+DEBUG:Caffe iteration 1000, average loss 4.004338
+DEBUG:Caffe iteration 1500, average loss 3.802969
+DEBUG:Caffe iteration 2000, average loss 3.703151
+DEBUG:Caffe iteration 2500, average loss 3.624916
+DEBUG:Caffe iteration 3000, average loss 3.569562
+DEBUG:Caffe iteration 3500, average loss 3.513252
+I0511 15:39:27.039746  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:27.040259  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:27.087885  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1000 points
+DEBUG:GMM itr 0/100. Log likelihood: -6682767.495450
+DEBUG:GMM itr 1/100. Log likelihood: 22225.885432
+DEBUG:GMM itr 2/100. Log likelihood: 24974.294052
+DEBUG:GMM itr 3/100. Log likelihood: 25783.917519
+DEBUG:GMM itr 4/100. Log likelihood: 25979.551274
+DEBUG:GMM itr 5/100. Log likelihood: 26911.309639
+DEBUG:GMM itr 6/100. Log likelihood: 26911.309639
+DEBUG:GMM convergenced on itr=6/100
+I0511 15:39:27.576231  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:27.623571  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1000 points
+DEBUG:GMM itr 0/100. Log likelihood: -4941123.893792
+DEBUG:GMM itr 1/100. Log likelihood: 28917.698441
+DEBUG:GMM itr 2/100. Log likelihood: 29310.754593
+DEBUG:GMM itr 3/100. Log likelihood: 29574.013901
+DEBUG:GMM itr 4/100. Log likelihood: 29699.779257
+DEBUG:GMM itr 5/100. Log likelihood: 30897.066371
+DEBUG:GMM itr 6/100. Log likelihood: 31481.580764
+DEBUG:GMM itr 7/100. Log likelihood: 31630.671251
+DEBUG:GMM itr 8/100. Log likelihood: 31738.384543
+DEBUG:GMM itr 9/100. Log likelihood: 31820.826619
+DEBUG:GMM itr 10/100. Log likelihood: 31855.214244
+DEBUG:GMM itr 11/100. Log likelihood: 31870.659759
+DEBUG:GMM itr 12/100. Log likelihood: 31894.735584
+DEBUG:GMM itr 13/100. Log likelihood: 31931.337419
+DEBUG:GMM itr 14/100. Log likelihood: 32046.716562
+DEBUG:GMM itr 15/100. Log likelihood: 32119.696979
+DEBUG:GMM itr 16/100. Log likelihood: 32131.839527
+DEBUG:GMM itr 17/100. Log likelihood: 32136.820448
+DEBUG:GMM itr 18/100. Log likelihood: 32141.250775
+DEBUG:GMM itr 19/100. Log likelihood: 32151.034672
+DEBUG:GMM itr 20/100. Log likelihood: 32175.087673
+DEBUG:GMM itr 21/100. Log likelihood: 32198.223853
+DEBUG:GMM itr 22/100. Log likelihood: 32210.541308
+DEBUG:GMM itr 23/100. Log likelihood: 32226.215903
+DEBUG:GMM itr 24/100. Log likelihood: 32250.584793
+DEBUG:GMM itr 25/100. Log likelihood: 32256.605680
+DEBUG:GMM itr 26/100. Log likelihood: 32264.383518
+DEBUG:GMM itr 27/100. Log likelihood: 32272.063593
+DEBUG:GMM itr 28/100. Log likelihood: 32275.420906
+DEBUG:GMM itr 29/100. Log likelihood: 32276.101554
+DEBUG:GMM itr 30/100. Log likelihood: 32277.200820
+DEBUG:GMM itr 31/100. Log likelihood: 32278.945770
+DEBUG:GMM itr 32/100. Log likelihood: 32280.144283
+DEBUG:GMM itr 33/100. Log likelihood: 32284.666846
+DEBUG:GMM itr 34/100. Log likelihood: 32308.272716
+DEBUG:GMM itr 35/100. Log likelihood: 33257.994453
+DEBUG:GMM itr 36/100. Log likelihood: 33842.565994
+DEBUG:GMM itr 37/100. Log likelihood: 33862.906202
+DEBUG:GMM itr 38/100. Log likelihood: 33885.732326
+DEBUG:GMM itr 39/100. Log likelihood: 33915.538295
+DEBUG:GMM itr 40/100. Log likelihood: 33940.651156
+DEBUG:GMM itr 41/100. Log likelihood: 33959.392028
+DEBUG:GMM itr 42/100. Log likelihood: 33964.961043
+DEBUG:GMM itr 43/100. Log likelihood: 33965.753172
+DEBUG:GMM itr 44/100. Log likelihood: 33967.558067
+DEBUG:GMM itr 45/100. Log likelihood: 33973.276396
+DEBUG:GMM itr 46/100. Log likelihood: 33986.688045
+DEBUG:GMM itr 47/100. Log likelihood: 33998.211035
+DEBUG:GMM itr 48/100. Log likelihood: 34003.081599
+DEBUG:GMM itr 49/100. Log likelihood: 34008.291137
+DEBUG:GMM itr 50/100. Log likelihood: 34015.853914
+DEBUG:GMM itr 51/100. Log likelihood: 34025.860935
+DEBUG:GMM itr 52/100. Log likelihood: 34035.096017
+DEBUG:GMM itr 53/100. Log likelihood: 34038.136040
+DEBUG:GMM itr 54/100. Log likelihood: 34038.954214
+DEBUG:GMM itr 55/100. Log likelihood: 34039.225102
+DEBUG:GMM itr 56/100. Log likelihood: 34039.412982
+DEBUG:GMM itr 57/100. Log likelihood: 34039.971609
+DEBUG:GMM itr 58/100. Log likelihood: 34041.348873
+DEBUG:GMM itr 59/100. Log likelihood: 34043.912946
+DEBUG:GMM itr 60/100. Log likelihood: 34047.176023
+DEBUG:GMM itr 61/100. Log likelihood: 34050.744523
+DEBUG:GMM itr 62/100. Log likelihood: 34056.150016
+DEBUG:GMM itr 63/100. Log likelihood: 34062.210978
+DEBUG:GMM itr 64/100. Log likelihood: 34062.684997
+DEBUG:GMM itr 65/100. Log likelihood: 34062.726655
+DEBUG:GMM itr 66/100. Log likelihood: 34062.752114
+DEBUG:GMM itr 67/100. Log likelihood: 34062.766881
+DEBUG:GMM itr 68/100. Log likelihood: 34062.772181
+DEBUG:GMM convergenced on itr=68/100
+DEBUG:Iteration 0, KL: 161.019696 / 200.000000 eta: 0.246891 -> 0.090826
+DEBUG:Bracket points: 0.246891 0.090826 (-38.980304 163.312777) a=-12.228475 b=-43.834473
+DEBUG:Iteration 1, KL: 363.312777 / 200.000000 eta: 0.090826 -> 0.166575
+DEBUG:Bracket points: 0.246891 0.166575 (-38.980304 23.412810) a=-17.183940 b=-57.697965
+DEBUG:Iteration 2, KL: 223.412810 / 200.000000 eta: 0.166575 -> 0.186591
+DEBUG:Iteration 3, KL: 203.433342 / 200.000000 converged
+DEBUG:Iteration 0, KL: 293.330527 / 82.965912 eta: 0.318493 -> 2.422139
+DEBUG:Bracket points: 2.422139 0.318493 (9.697303 210.364614) a=-10.723387 b=42.461122
+DEBUG:Iteration 1, KL: 92.663215 / 82.965912 eta: 2.422139 -> 7.241565
+DEBUG:Bracket points: 7.241565 2.422139 (-43.607042 9.697303) a=-154.892098 b=297.539093
+DEBUG:Iteration 2, KL: 39.358870 / 82.965912 eta: 7.241565 -> 2.612930
+DEBUG:Iteration 3, KL: 87.765654 / 82.965912 converged
+DEBUG:Caffe iteration 500, average loss 3.439174
+DEBUG:Caffe iteration 1000, average loss 3.389530
+DEBUG:Caffe iteration 1500, average loss 3.348631
+DEBUG:Caffe iteration 2000, average loss 3.311810
+DEBUG:Caffe iteration 2500, average loss 3.278316
+DEBUG:Caffe iteration 3000, average loss 3.245898
+DEBUG:Caffe iteration 3500, average loss 3.213073
+I0511 15:39:33.064617  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:33.065093  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:33.112692  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1000 points
+DEBUG:GMM itr 0/100. Log likelihood: 11638.590088
+DEBUG:GMM itr 1/100. Log likelihood: 22246.165634
+DEBUG:GMM itr 2/100. Log likelihood: 22246.165634
+DEBUG:GMM convergenced on itr=2/100
+I0511 15:39:33.501091  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:33.548734  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1000 points
+DEBUG:GMM itr 0/100. Log likelihood: 11321.643071
+DEBUG:GMM itr 1/100. Log likelihood: 27279.343653
+DEBUG:GMM itr 2/100. Log likelihood: 27474.740493
+DEBUG:GMM itr 3/100. Log likelihood: 27519.373466
+DEBUG:GMM itr 4/100. Log likelihood: 27586.719584
+DEBUG:GMM itr 5/100. Log likelihood: 27793.083171
+DEBUG:GMM itr 6/100. Log likelihood: 27887.133398
+DEBUG:GMM itr 7/100. Log likelihood: 27935.057106
+DEBUG:GMM itr 8/100. Log likelihood: 27964.289200
+DEBUG:GMM itr 9/100. Log likelihood: 27989.977076
+DEBUG:GMM itr 10/100. Log likelihood: 28028.992900
+DEBUG:GMM itr 11/100. Log likelihood: 28046.299286
+DEBUG:GMM itr 12/100. Log likelihood: 28060.710563
+DEBUG:GMM itr 13/100. Log likelihood: 28096.705682
+DEBUG:GMM itr 14/100. Log likelihood: 28112.941014
+DEBUG:GMM itr 15/100. Log likelihood: 28131.650723
+DEBUG:GMM itr 16/100. Log likelihood: 28151.929098
+DEBUG:GMM itr 17/100. Log likelihood: 28161.986547
+DEBUG:GMM itr 18/100. Log likelihood: 28171.433442
+DEBUG:GMM itr 19/100. Log likelihood: 28188.212422
+DEBUG:GMM itr 20/100. Log likelihood: 28212.201146
+DEBUG:GMM itr 21/100. Log likelihood: 28234.233955
+DEBUG:GMM itr 22/100. Log likelihood: 28248.086516
+DEBUG:GMM itr 23/100. Log likelihood: 28256.442688
+DEBUG:GMM itr 24/100. Log likelihood: 28267.410620
+DEBUG:GMM itr 25/100. Log likelihood: 28282.086803
+DEBUG:GMM itr 26/100. Log likelihood: 28291.852714
+DEBUG:GMM itr 27/100. Log likelihood: 28302.611881
+DEBUG:GMM itr 28/100. Log likelihood: 28326.712393
+DEBUG:GMM itr 29/100. Log likelihood: 28374.540211
+DEBUG:GMM itr 30/100. Log likelihood: 28405.968608
+DEBUG:GMM itr 31/100. Log likelihood: 28407.677099
+DEBUG:GMM itr 32/100. Log likelihood: 28409.863860
+DEBUG:GMM itr 33/100. Log likelihood: 28410.626244
+DEBUG:GMM itr 34/100. Log likelihood: 28410.662056
+DEBUG:GMM itr 35/100. Log likelihood: 28410.630864
+DEBUG:GMM itr 36/100. Log likelihood: 28410.614236
+DEBUG:GMM itr 37/100. Log likelihood: 28410.605491
+DEBUG:GMM convergenced on itr=37/100
+DEBUG:Iteration 0, KL: 315.416855 / 200.000000 eta: 0.186591 -> 1.340760
+DEBUG:Solving non-log problem due to ratio choice: 1.950076 0.021994
+DEBUG:Bracket points: 1.340760 0.186591 (-112.906053 115.416855) a=-98.912290 b=152.329223
+DEBUG:Iteration 1, KL: 87.093947 / 200.000000 eta: 1.340760 -> 0.770022
+DEBUG:Solving non-log problem due to ratio choice: 0.981713 0.435784
+DEBUG:Bracket points: 0.770022 0.186591 (-74.646692 115.416855) a=-162.884534 b=176.202565
+DEBUG:Iteration 2, KL: 125.353308 / 200.000000 eta: 0.770022 -> 0.540882
+DEBUG:Bracket points: 0.540882 0.186591 (-41.791239 115.416855) a=-20.736993 b=-48.092145
+DEBUG:Iteration 3, KL: 158.208761 / 200.000000 eta: 0.540882 -> 0.313620
+DEBUG:Bracket points: 0.540882 0.313620 (-41.791239 25.878519) a=-28.182617 b=-57.243628
+DEBUG:Iteration 4, KL: 225.878519 / 200.000000 eta: 0.313620 -> 0.362191
+DEBUG:Iteration 5, KL: 205.698988 / 200.000000 converged
+DEBUG:Iteration 0, KL: 166.074187 / 82.965912 eta: 2.612930 -> 3.444013
+DEBUG:Solving non-log problem due to a > 0: 0.108368 0.167797
+DEBUG:Bracket points: 3.444013 2.612930 (70.270173 83.108275) a=-7.723721 b=123.471355
+DEBUG:Iteration 1, KL: 153.236086 / 82.965912 eta: 3.444013 -> 7.992997
+DEBUG:Solving non-log problem due to a > 0: 0.231871 0.610058
+DEBUG:Bracket points: 7.992997 3.444013 (38.179154 70.270173) a=-3.527273 b=94.566116
+DEBUG:Iteration 2, KL: 121.145067 / 82.965912 eta: 7.992997 -> 13.404991
+DEBUG:Bracket points: 13.404991 7.992997 (21.256268 38.179154) a=-19.558409 b=386.472755
+DEBUG:Iteration 3, KL: 104.222181 / 82.965912 eta: 13.404991 -> 731.887701
+DEBUG:Bracket points: 731.887701 13.404991 (-79.630286 21.256268) a=-7320.670909 b=38288.403513
+DEBUG:Iteration 4, KL: 3.335626 / 82.965912 eta: 731.887701 -> 13.668425
+DEBUG:Bracket points: 731.887701 13.668425 (-79.630286 20.634808) a=-7356.098945 b=38755.743733
+DEBUG:Iteration 5, KL: 103.600721 / 82.965912 eta: 13.668425 -> 13.932988
+DEBUG:Bracket points: 731.887701 13.932988 (-79.630286 20.023112) a=-7391.311754 b=39220.244847
+DEBUG:Iteration 6, KL: 102.989024 / 82.965912 eta: 13.932988 -> 14.198432
+DEBUG:Bracket points: 731.887701 14.198432 (-79.630286 19.421359) a=-7426.283620 b=39681.567625
+DEBUG:Iteration 7, KL: 102.387272 / 82.965912 eta: 14.198432 -> 14.464503
+DEBUG:Solving non-log problem due to ratio choice: 5.365887 1.441958
+DEBUG:Bracket points: 731.887701 14.464503 (-79.630286 18.829726) a=-0.068621 b=20.814851
+DEBUG:Iteration 8, KL: 101.795638 / 82.965912 eta: 14.464503 -> 151.666213
+DEBUG:Solving non-log problem due to ratio choice: 3.440274 1.090289
+DEBUG:Bracket points: 151.666213 14.464503 (-56.020967 18.829726) a=-0.272776 b=26.720867
+DEBUG:Iteration 9, KL: 26.944946 / 82.965912 eta: 151.666213 -> 48.979488
+DEBUG:Solving non-log problem due to ratio choice: 1.317744 0.098040
+DEBUG:Bracket points: 48.979488 14.464503 (-20.769309 18.829726) a=-0.573650 b=35.424846
+DEBUG:Iteration 10, KL: 62.196603 / 82.965912 eta: 48.979488 -> 30.876714
+DEBUG:Iteration 11, KL: 77.462385 / 82.965912 converged
+DEBUG:Caffe iteration 500, average loss 3.179527
+DEBUG:Caffe iteration 1000, average loss 3.126458
+DEBUG:Caffe iteration 1500, average loss 3.093936
+DEBUG:Caffe iteration 2000, average loss 3.066280
+DEBUG:Caffe iteration 2500, average loss 3.034428
+DEBUG:Caffe iteration 3000, average loss 3.007903
+DEBUG:Caffe iteration 3500, average loss 2.980125
+I0511 15:39:39.196466  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:39.196959  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:39.244410  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1000 points
+DEBUG:GMM itr 0/100. Log likelihood: -726.685765
+DEBUG:GMM itr 1/100. Log likelihood: 21069.161639
+DEBUG:GMM itr 2/100. Log likelihood: 21069.161639
+DEBUG:GMM convergenced on itr=2/100
+I0511 15:39:39.631150  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:39.678369  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1000 points
+DEBUG:GMM itr 0/100. Log likelihood: 12440.374839
+DEBUG:GMM itr 1/100. Log likelihood: 22883.736180
+DEBUG:GMM itr 2/100. Log likelihood: 22907.116365
+DEBUG:GMM itr 3/100. Log likelihood: 22926.156084
+DEBUG:GMM itr 4/100. Log likelihood: 22947.229752
+DEBUG:GMM itr 5/100. Log likelihood: 22975.970649
+DEBUG:GMM itr 6/100. Log likelihood: 22999.889801
+DEBUG:GMM itr 7/100. Log likelihood: 23026.020307
+DEBUG:GMM itr 8/100. Log likelihood: 23040.508318
+DEBUG:GMM itr 9/100. Log likelihood: 23048.835990
+DEBUG:GMM itr 10/100. Log likelihood: 23557.762809
+DEBUG:GMM itr 11/100. Log likelihood: 24055.572463
+DEBUG:GMM itr 12/100. Log likelihood: 24062.739502
+DEBUG:GMM itr 13/100. Log likelihood: 24071.297516
+DEBUG:GMM itr 14/100. Log likelihood: 24074.862839
+DEBUG:GMM itr 15/100. Log likelihood: 24075.395108
+DEBUG:GMM itr 16/100. Log likelihood: 24075.790332
+DEBUG:GMM itr 17/100. Log likelihood: 24076.382380
+DEBUG:GMM itr 18/100. Log likelihood: 24077.123406
+DEBUG:GMM itr 19/100. Log likelihood: 24077.682613
+DEBUG:GMM itr 20/100. Log likelihood: 24078.083923
+DEBUG:GMM itr 21/100. Log likelihood: 24078.431979
+DEBUG:GMM itr 22/100. Log likelihood: 24078.798017
+DEBUG:GMM itr 23/100. Log likelihood: 24079.283713
+DEBUG:GMM itr 24/100. Log likelihood: 24079.663876
+DEBUG:GMM itr 25/100. Log likelihood: 24079.733423
+DEBUG:GMM itr 26/100. Log likelihood: 24079.739557
+DEBUG:GMM convergenced on itr=26/100
+DEBUG:Iteration 0, KL: 276.975388 / 200.000000 eta: 0.362191 -> 1.131945
+DEBUG:Bracket points: 1.131945 0.362191 (-36.018231 76.975388) a=-30.122491 b=-33.304055
+DEBUG:Iteration 1, KL: 163.981769 / 200.000000 eta: 1.131945 -> 0.575331
+DEBUG:Bracket points: 1.131945 0.575331 (-36.018231 23.168788) a=-39.970854 b=-30.862899
+DEBUG:Iteration 2, KL: 223.168788 / 200.000000 eta: 0.575331 -> 0.679725
+DEBUG:Iteration 3, KL: 206.804365 / 200.000000 converged
+DEBUG:Iteration 0, KL: 42.664476 / 82.965912 eta: 30.876714 -> 11.358908
+DEBUG:Bracket points: 30.876714 11.358908 (-40.301436 -26.732837) a=-470.360036 b=1982.296098
+DEBUG:Iteration 1, KL: 56.233076 / 82.965912 eta: 11.358908 -> 8.225273
+DEBUG:Bracket points: 11.358908 8.225273 (-26.732837 -21.907001) a=-191.245791 b=625.799584
+DEBUG:Iteration 2, KL: 61.058912 / 82.965912 eta: 8.225273 -> 5.135172
+DEBUG:Bracket points: 8.225273 5.135172 (-21.907001 -13.708772) a=-116.530030 b=310.915774
+DEBUG:Iteration 3, KL: 69.257141 / 82.965912 eta: 5.135172 -> 3.796420
+DEBUG:Iteration 4, KL: 75.706695 / 82.965912 converged
+DEBUG:Caffe iteration 500, average loss 2.964783
+DEBUG:Caffe iteration 1000, average loss 2.935300
+DEBUG:Caffe iteration 1500, average loss 2.898675
+DEBUG:Caffe iteration 2000, average loss 2.891445
+DEBUG:Caffe iteration 2500, average loss 2.855006
+DEBUG:Caffe iteration 3000, average loss 2.846164
+DEBUG:Caffe iteration 3500, average loss 2.813025
+I0511 15:39:44.181788  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:44.182240  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:44.229584  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1000 points
+DEBUG:GMM itr 0/100. Log likelihood: 14742.866849
+DEBUG:GMM itr 1/100. Log likelihood: 20375.888637
+DEBUG:GMM itr 2/100. Log likelihood: 20375.888637
+DEBUG:GMM convergenced on itr=2/100
+I0511 15:39:44.624272  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:44.671634  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1000 points
+DEBUG:GMM itr 0/100. Log likelihood: 18653.240425
+DEBUG:GMM itr 1/100. Log likelihood: 23017.819651
+DEBUG:GMM itr 2/100. Log likelihood: 23019.945284
+DEBUG:GMM itr 3/100. Log likelihood: 23021.146824
+DEBUG:GMM itr 4/100. Log likelihood: 23021.951140
+DEBUG:GMM itr 5/100. Log likelihood: 23022.288326
+DEBUG:GMM itr 6/100. Log likelihood: 23022.436663
+DEBUG:GMM itr 7/100. Log likelihood: 23022.522909
+DEBUG:GMM itr 8/100. Log likelihood: 23022.562711
+DEBUG:GMM itr 9/100. Log likelihood: 23022.583617
+DEBUG:GMM itr 10/100. Log likelihood: 23022.598282
+DEBUG:GMM itr 11/100. Log likelihood: 23022.610276
+DEBUG:GMM itr 12/100. Log likelihood: 23022.620793
+DEBUG:GMM itr 13/100. Log likelihood: 23022.630391
+DEBUG:GMM convergenced on itr=13/100
+I0511 15:39:45.320900  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:39:45.376569  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Iteration 0, KL: 232.557278 / 200.000000 eta: 0.679725 -> 1.005297
+DEBUG:Iteration 1, KL: 195.226319 / 200.000000 converged
+DEBUG:Iteration 0, KL: 206.498707 / 82.965912 eta: 3.796420 -> 5.031748
+DEBUG:Solving non-log problem due to a > 0: 0.211442 0.070267
+DEBUG:Bracket points: 5.031748 3.796420 (115.150445 123.532795) a=-3.392763 b=149.293502
+DEBUG:Iteration 1, KL: 198.116358 / 82.965912 eta: 5.031748 -> 22.001759
+DEBUG:Solving non-log problem due to a > 0: 1.200539 0.274816
+DEBUG:Bracket points: 22.001759 5.031748 (87.481143 115.150445) a=-0.815241 b=123.354622
+DEBUG:Iteration 2, KL: 170.447056 / 82.965912 eta: 22.001759 -> 75.655299
+DEBUG:Solving non-log problem due to a > 0: 0.957110 0.277955
+DEBUG:Bracket points: 75.655299 22.001759 (66.252141 87.481143) a=-0.197834 b=96.186541
+DEBUG:Iteration 3, KL: 149.218054 / 82.965912 eta: 75.655299 -> 243.098959
+DEBUG:Solving non-log problem due to a > 0: 0.456601 0.710680
+DEBUG:Bracket points: 243.098959 75.655299 (32.550339 66.252141) a=-0.100636 b=81.479471
+DEBUG:Iteration 4, KL: 115.516251 / 82.965912 eta: 243.098959 -> 404.821698
+DEBUG:Bracket points: 404.821698 243.098959 (10.980546 32.550339) a=-3399.940068 b=45267.881401
+DEBUG:Iteration 5, KL: 93.946459 / 82.965912 eta: 404.821698 -> 778.336328
+DEBUG:Solving non-log problem due to ratio choice: 1.267507 0.613795
+DEBUG:Bracket points: 778.336328 404.821698 (-20.285774 10.980546) a=-0.041854 b=44.867532
+DEBUG:Iteration 6, KL: 62.680138 / 82.965912 eta: 778.336328 -> 535.997819
+DEBUG:Iteration 7, KL: 80.702932 / 82.965912 converged
+I0511 15:39:51.868552  1075 solver.cpp:454] Snapshotting to binary proto file python/../experiments/mjc_mdgps_example/policy_iter_28000.caffemodel
+I0511 15:39:51.868757  1075 sgd_solver.cpp:273] Snapshotting solver state to binary proto file python/../experiments/mjc_mdgps_example/policy_iter_28000.solverstate
+DEBUG:Generating 37 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 37 clusters on 1485 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 209870.842678
+DEBUG:GMM itr 1/100. Log likelihood: 222214.095635
+DEBUG:GMM itr 2/100. Log likelihood: 223325.713677
+DEBUG:GMM itr 3/100. Log likelihood: 223520.936789
+DEBUG:GMM itr 4/100. Log likelihood: 223562.936874
+DEBUG:GMM itr 5/100. Log likelihood: 223596.255052
+DEBUG:GMM itr 6/100. Log likelihood: 223652.655864
+DEBUG:GMM itr 7/100. Log likelihood: 223717.823268
+DEBUG:GMM itr 8/100. Log likelihood: 223722.238478
+DEBUG:GMM itr 9/100. Log likelihood: 223722.238478
+DEBUG:GMM convergenced on itr=9/100
+DEBUG:Generating 37 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 37 clusters on 1485 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 208355.312706
+DEBUG:GMM itr 1/100. Log likelihood: 220102.777009
+DEBUG:GMM itr 2/100. Log likelihood: 220772.531330
+DEBUG:GMM itr 3/100. Log likelihood: 220845.285694
+DEBUG:GMM itr 4/100. Log likelihood: 220845.259241
+DEBUG:GMM itr 5/100. Log likelihood: 220847.914384
+DEBUG:GMM itr 6/100. Log likelihood: 220919.572335
+DEBUG:GMM itr 7/100. Log likelihood: 220945.595545
+DEBUG:GMM itr 8/100. Log likelihood: 220945.595713
+DEBUG:GMM convergenced on itr=8/100
+I0511 15:40:23.349079  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:23.400974  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1500 points
+DEBUG:GMM itr 0/100. Log likelihood: -70635.197133
+DEBUG:GMM itr 1/100. Log likelihood: 19571.863869
+DEBUG:GMM itr 2/100. Log likelihood: 19571.863869
+DEBUG:GMM convergenced on itr=2/100
+DEBUG:Trajectory step: ent: -200.291822 cost: 78.383837 -> -200.779950
+DEBUG:Previous cost: Laplace: -303.111623 MC: 78.383837
+DEBUG:Predicted new cost: Laplace: -343.902641 MC: -200.779950
+DEBUG:Actual new cost: Laplace: 4194.592690 MC: -200.779950
+DEBUG:Predicted/actual improvement: 40.791019 / -4497.704313
+DEBUG:Decreasing step size multiplier to 0.100000
+I0511 15:40:23.922138  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:23.972285  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1500 points
+DEBUG:GMM itr 0/100. Log likelihood: -25962.257599
+DEBUG:GMM itr 1/100. Log likelihood: 23275.313043
+DEBUG:GMM itr 2/100. Log likelihood: 23397.529289
+DEBUG:GMM itr 3/100. Log likelihood: 23578.493763
+DEBUG:GMM itr 4/100. Log likelihood: 23907.240749
+DEBUG:GMM itr 5/100. Log likelihood: 23965.785833
+DEBUG:GMM itr 6/100. Log likelihood: 24016.630496
+DEBUG:GMM itr 7/100. Log likelihood: 24037.483569
+DEBUG:GMM itr 8/100. Log likelihood: 24048.684920
+DEBUG:GMM itr 9/100. Log likelihood: 24058.414009
+DEBUG:GMM itr 10/100. Log likelihood: 24081.089912
+DEBUG:GMM itr 11/100. Log likelihood: 24164.990554
+DEBUG:GMM itr 12/100. Log likelihood: 25479.695714
+DEBUG:GMM itr 13/100. Log likelihood: 25480.632179
+DEBUG:GMM itr 14/100. Log likelihood: 25481.020334
+DEBUG:GMM itr 15/100. Log likelihood: 25481.190033
+DEBUG:GMM itr 16/100. Log likelihood: 25481.280978
+DEBUG:GMM itr 17/100. Log likelihood: 25481.341799
+DEBUG:GMM itr 18/100. Log likelihood: 25481.408603
+DEBUG:GMM itr 19/100. Log likelihood: 25481.543235
+DEBUG:GMM itr 20/100. Log likelihood: 25482.202412
+DEBUG:GMM itr 21/100. Log likelihood: 25489.579931
+DEBUG:GMM itr 22/100. Log likelihood: 25517.567189
+DEBUG:GMM itr 23/100. Log likelihood: 25537.527199
+DEBUG:GMM itr 24/100. Log likelihood: 25545.314663
+DEBUG:GMM itr 25/100. Log likelihood: 25549.398211
+DEBUG:GMM itr 26/100. Log likelihood: 25550.504076
+DEBUG:GMM itr 27/100. Log likelihood: 25550.843885
+DEBUG:GMM itr 28/100. Log likelihood: 25551.038764
+DEBUG:GMM itr 29/100. Log likelihood: 25551.239451
+DEBUG:GMM itr 30/100. Log likelihood: 25551.387148
+DEBUG:GMM itr 31/100. Log likelihood: 25551.438353
+DEBUG:GMM itr 32/100. Log likelihood: 25551.453504
+DEBUG:GMM itr 33/100. Log likelihood: 25551.462809
+DEBUG:GMM convergenced on itr=33/100
+DEBUG:Trajectory step: ent: -195.247337 cost: -158.881018 -> -396.359559
+DEBUG:Previous cost: Laplace: 572.194847 MC: -158.881018
+DEBUG:Predicted new cost: Laplace: 19324.692973 MC: -396.359559
+DEBUG:Actual new cost: Laplace: 125362.974377 MC: -396.359559
+DEBUG:Predicted/actual improvement: -18752.498126 / -124790.779530
+DEBUG:Decreasing step size multiplier to 0.041483
+DEBUG:Caffe iteration 500, average loss 5.049698
+DEBUG:Caffe iteration 1000, average loss 3.110076
+DEBUG:Caffe iteration 1500, average loss 2.659063
+DEBUG:Caffe iteration 2000, average loss 2.416427
+DEBUG:Caffe iteration 2500, average loss 2.204146
+DEBUG:Caffe iteration 3000, average loss 2.122802
+DEBUG:Caffe iteration 3500, average loss 1.951540
+I0511 15:40:28.881319  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:28.881796  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:28.929216  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1500 points
+DEBUG:GMM itr 0/100. Log likelihood: -34601.249276
+DEBUG:GMM itr 1/100. Log likelihood: 15930.288135
+DEBUG:GMM itr 2/100. Log likelihood: 15930.288135
+DEBUG:GMM convergenced on itr=2/100
+I0511 15:40:29.435657  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:29.505537  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1500 points
+DEBUG:GMM itr 0/100. Log likelihood: 5356.610796
+DEBUG:GMM itr 1/100. Log likelihood: 25031.955075
+DEBUG:GMM itr 2/100. Log likelihood: 25109.949675
+DEBUG:GMM itr 3/100. Log likelihood: 25142.220734
+DEBUG:GMM itr 4/100. Log likelihood: 25193.751958
+DEBUG:GMM itr 5/100. Log likelihood: 25219.769149
+DEBUG:GMM itr 6/100. Log likelihood: 25219.821609
+DEBUG:GMM itr 7/100. Log likelihood: 25219.817497
+DEBUG:GMM convergenced on itr=7/100
+DEBUG:Iteration 0, KL: 198.198175 / 20.000000 eta: 1.005297 -> 2.787279
+DEBUG:Solving non-log problem due to a > 0: 0.626976 0.392807
+DEBUG:Bracket points: 2.787279 1.005297 (120.312119 178.198175) a=-16.242045 b=210.854347
+DEBUG:Iteration 1, KL: 140.312119 / 20.000000 eta: 2.787279 -> 6.491004
+DEBUG:Solving non-log problem due to a > 0: 0.625372 0.219980
+DEBUG:Bracket points: 6.491004 2.787279 (96.554713 120.312119) a=-3.207232 b=138.191020
+DEBUG:Iteration 2, KL: 116.554713 / 20.000000 eta: 6.491004 -> 21.543659
+DEBUG:Solving non-log problem due to a > 0: 0.824999 0.374665
+DEBUG:Bracket points: 21.543659 6.491004 (66.383232 96.554713) a=-1.002198 b=109.565254
+DEBUG:Iteration 3, KL: 86.383232 / 20.000000 eta: 21.543659 -> 54.662482
+DEBUG:Solving non-log problem due to a > 0: 0.341505 0.589591
+DEBUG:Bracket points: 54.662482 21.543659 (36.813080 66.383232) a=-0.446425 b=85.618496
+DEBUG:Iteration 4, KL: 56.813080 / 20.000000 eta: 54.662482 -> 95.893444
+DEBUG:Bracket points: 95.893444 54.662482 (18.313080 36.813080) a=-227.902639 b=3836.052150
+DEBUG:Iteration 5, KL: 38.313080 / 20.000000 eta: 95.893444 -> 4518.741803
+DEBUG:Solving non-log problem due to ratio choice: 3.935641 0.082890
+DEBUG:Bracket points: 4518.741803 95.893444 (-19.895739 18.313080) a=-0.004319 b=19.141500
+DEBUG:Iteration 6, KL: 0.104261 / 20.000000 eta: 4518.741803 -> 2215.717602
+DEBUG:Solving non-log problem due to ratio choice: 3.207717 0.067623
+DEBUG:Bracket points: 2215.717602 95.893444 (-19.594305 18.313080) a=-0.008941 b=20.027878
+DEBUG:Iteration 7, KL: 0.405695 / 20.000000 eta: 2215.717602 -> 1119.981750
+DEBUG:Solving non-log problem due to ratio choice: 2.473057 0.015227
+DEBUG:Bracket points: 1119.981750 95.893444 (-18.594070 18.313080) a=-0.018020 b=21.768987
+DEBUG:Iteration 8, KL: 1.405930 / 20.000000 eta: 1119.981750 -> 604.039185
+DEBUG:Solving non-log problem due to ratio choice: 1.706394 0.134007
+DEBUG:Bracket points: 604.039185 95.893444 (-16.016320 18.313080) a=-0.033779 b=24.791467
+DEBUG:Iteration 9, KL: 3.983680 / 20.000000 eta: 604.039185 -> 366.964706
+DEBUG:Bracket points: 366.964706 95.893444 (-11.523257 18.313080) a=-2229.734701 b=22105.722905
+DEBUG:Iteration 10, KL: 8.476743 / 20.000000 eta: 366.964706 -> 142.170898
+DEBUG:Bracket points: 366.964706 142.170898 (-11.523257 6.818200) a=-2740.867881 b=28142.477351
+DEBUG:Iteration 11, KL: 26.818200 / 20.000000 eta: 142.170898 -> 169.671199
+DEBUG:Bracket points: 366.964706 169.671199 (-11.523257 2.321936) a=-2996.224345 b=31158.372867
+DEBUG:Iteration 12, KL: 22.321936 / 20.000000 eta: 169.671199 -> 181.200856
+DEBUG:Iteration 13, KL: 20.771951 / 20.000000 converged
+DEBUG:Iteration 0, KL: 0.194085 / 8.296591 eta: 535.997819 -> 197.182578
+DEBUG:Bracket points: 535.997819 197.182578 (-8.102506 -7.591693) a=-1422.988039 b=13541.558303
+DEBUG:Iteration 1, KL: 0.704899 / 8.296591 eta: 197.182578 -> 116.529213
+DEBUG:Bracket points: 197.182578 116.529213 (-7.591693 -7.081779) a=-638.527161 b=5251.171632
+DEBUG:Iteration 2, KL: 1.214812 / 8.296591 eta: 116.529213 -> 61.065111
+DEBUG:Bracket points: 116.529213 61.065111 (-7.081779 -6.051693) a=-352.588928 b=2530.102206
+DEBUG:Iteration 3, KL: 2.244898 / 8.296591 eta: 61.065111 -> 36.157786
+DEBUG:Bracket points: 61.065111 36.157786 (-6.051693 -4.513394) a=-196.883515 b=1249.599359
+DEBUG:Iteration 4, KL: 3.783197 / 8.296591 eta: 36.157786 -> 23.889724
+DEBUG:Bracket points: 36.157786 23.889724 (-4.513394 -2.354783) a=-129.015310 b=762.591736
+DEBUG:Iteration 5, KL: 5.941808 / 8.296591 eta: 23.889724 -> 19.210004
+DEBUG:Iteration 6, KL: 7.622807 / 8.296591 converged
+DEBUG:Caffe iteration 500, average loss 1.788693
+DEBUG:Caffe iteration 1000, average loss 1.728680
+DEBUG:Caffe iteration 1500, average loss 1.748473
+DEBUG:Caffe iteration 2000, average loss 1.667024
+DEBUG:Caffe iteration 2500, average loss 1.573229
+DEBUG:Caffe iteration 3000, average loss 1.546974
+DEBUG:Caffe iteration 3500, average loss 1.498555
+I0511 15:40:34.922189  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:34.922652  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:34.970269  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1500 points
+DEBUG:GMM itr 0/100. Log likelihood: 1311.170604
+DEBUG:GMM itr 1/100. Log likelihood: 12245.310137
+DEBUG:GMM itr 2/100. Log likelihood: 12245.310137
+DEBUG:GMM convergenced on itr=2/100
+I0511 15:40:35.443775  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:35.503500  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1500 points
+DEBUG:GMM itr 0/100. Log likelihood: 9555.365555
+DEBUG:GMM itr 1/100. Log likelihood: 21944.098982
+DEBUG:GMM itr 2/100. Log likelihood: 21949.655192
+DEBUG:GMM itr 3/100. Log likelihood: 21953.274278
+DEBUG:GMM itr 4/100. Log likelihood: 21956.702873
+DEBUG:GMM itr 5/100. Log likelihood: 21958.035714
+DEBUG:GMM itr 6/100. Log likelihood: 21958.936070
+DEBUG:GMM itr 7/100. Log likelihood: 21959.906569
+DEBUG:GMM itr 8/100. Log likelihood: 21960.978851
+DEBUG:GMM itr 9/100. Log likelihood: 21961.974004
+DEBUG:GMM itr 10/100. Log likelihood: 21962.642849
+DEBUG:GMM itr 11/100. Log likelihood: 21963.844933
+DEBUG:GMM itr 12/100. Log likelihood: 21966.891085
+DEBUG:GMM itr 13/100. Log likelihood: 21972.614193
+DEBUG:GMM itr 14/100. Log likelihood: 21978.761171
+DEBUG:GMM itr 15/100. Log likelihood: 21982.702769
+DEBUG:GMM itr 16/100. Log likelihood: 21984.897744
+DEBUG:GMM itr 17/100. Log likelihood: 21987.398113
+DEBUG:GMM itr 18/100. Log likelihood: 21991.217653
+DEBUG:GMM itr 19/100. Log likelihood: 21992.119791
+DEBUG:GMM itr 20/100. Log likelihood: 21992.219693
+DEBUG:GMM itr 21/100. Log likelihood: 21992.330080
+DEBUG:GMM itr 22/100. Log likelihood: 21992.427273
+DEBUG:GMM itr 23/100. Log likelihood: 21992.514619
+DEBUG:GMM itr 24/100. Log likelihood: 21992.619707
+DEBUG:GMM itr 25/100. Log likelihood: 21992.791419
+DEBUG:GMM itr 26/100. Log likelihood: 21993.072305
+DEBUG:GMM itr 27/100. Log likelihood: 21993.365922
+DEBUG:GMM itr 28/100. Log likelihood: 21993.636589
+DEBUG:GMM itr 29/100. Log likelihood: 21993.994262
+DEBUG:GMM itr 30/100. Log likelihood: 21994.468337
+DEBUG:GMM itr 31/100. Log likelihood: 21994.927429
+DEBUG:GMM itr 32/100. Log likelihood: 21995.180394
+DEBUG:GMM itr 33/100. Log likelihood: 21995.366523
+DEBUG:GMM itr 34/100. Log likelihood: 21995.599996
+DEBUG:GMM itr 35/100. Log likelihood: 21995.883764
+DEBUG:GMM itr 36/100. Log likelihood: 21996.118273
+DEBUG:GMM itr 37/100. Log likelihood: 21996.213431
+DEBUG:GMM itr 38/100. Log likelihood: 21996.257396
+DEBUG:GMM itr 39/100. Log likelihood: 21996.358880
+DEBUG:GMM itr 40/100. Log likelihood: 21996.655156
+DEBUG:GMM itr 41/100. Log likelihood: 21997.367814
+DEBUG:GMM itr 42/100. Log likelihood: 21998.951480
+DEBUG:GMM itr 43/100. Log likelihood: 22000.410466
+DEBUG:GMM itr 44/100. Log likelihood: 22000.563169
+DEBUG:GMM itr 45/100. Log likelihood: 22000.567499
+DEBUG:GMM convergenced on itr=45/100
+DEBUG:Iteration 0, KL: 25.047811 / 20.000000 eta: 181.200856 -> 181.251334
+DEBUG:Bracket points: 181.251334 181.200856 (5.039077 5.047811) a=-2384.082960 b=25707.252272
+DEBUG:Iteration 1, KL: 25.039077 / 20.000000 eta: 181.251334 -> 219.517968
+DEBUG:Iteration 2, KL: 19.535982 / 20.000000 converged
+DEBUG:Iteration 0, KL: 9.477635 / 8.296591 eta: 19.210004 -> 19.221814
+DEBUG:Bracket points: 19.221814 19.210004 (1.174673 1.181044) a=-88.275007 b=544.469271
+DEBUG:Iteration 1, KL: 9.471264 / 8.296591 eta: 19.221814 -> 21.844253
+DEBUG:Iteration 2, KL: 8.231102 / 8.296591 converged
+DEBUG:Caffe iteration 500, average loss 1.585643
+DEBUG:Caffe iteration 1000, average loss 1.413626
+DEBUG:Caffe iteration 1500, average loss 1.466918
+DEBUG:Caffe iteration 2000, average loss 1.368147
+DEBUG:Caffe iteration 2500, average loss 1.338350
+DEBUG:Caffe iteration 3000, average loss 1.329412
+DEBUG:Caffe iteration 3500, average loss 1.286126
+I0511 15:40:41.122149  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:41.122571  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:41.170044  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1500 points
+DEBUG:GMM itr 0/100. Log likelihood: 7097.091897
+DEBUG:GMM itr 1/100. Log likelihood: 10103.288001
+DEBUG:GMM itr 2/100. Log likelihood: 10103.288001
+DEBUG:GMM convergenced on itr=2/100
+I0511 15:40:41.655189  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:41.703275  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1500 points
+DEBUG:GMM itr 0/100. Log likelihood: 18538.575047
+DEBUG:GMM itr 1/100. Log likelihood: 20610.067105
+DEBUG:GMM itr 2/100. Log likelihood: 20613.956718
+DEBUG:GMM itr 3/100. Log likelihood: 20614.195098
+DEBUG:GMM itr 4/100. Log likelihood: 20614.265709
+DEBUG:GMM itr 5/100. Log likelihood: 20614.291739
+DEBUG:GMM itr 6/100. Log likelihood: 20614.290007
+DEBUG:GMM convergenced on itr=6/100
+DEBUG:Iteration 0, KL: 23.011543 / 20.000000 eta: 219.517968 -> 219.548083
+DEBUG:Bracket points: 219.548083 219.517968 (3.008300 3.011543) a=-2265.166219 b=25086.076625
+DEBUG:Iteration 1, KL: 23.008300 / 20.000000 eta: 219.548083 -> 254.006256
+DEBUG:Iteration 2, KL: 19.738382 / 20.000000 converged
+DEBUG:Iteration 0, KL: 8.662033 / 8.296591 converged
+DEBUG:Caffe iteration 500, average loss 1.194737
+DEBUG:Caffe iteration 1000, average loss 1.153190
+DEBUG:Caffe iteration 1500, average loss 1.152097
+DEBUG:Caffe iteration 2000, average loss 1.125294
+DEBUG:Caffe iteration 2500, average loss 1.112429
+DEBUG:Caffe iteration 3000, average loss 1.075457
+DEBUG:Caffe iteration 3500, average loss 1.069780
+I0511 15:40:45.719857  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:45.720357  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:45.790180  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1500 points
+DEBUG:GMM itr 0/100. Log likelihood: 6102.128324
+DEBUG:GMM itr 1/100. Log likelihood: 9780.047480
+DEBUG:GMM itr 2/100. Log likelihood: 9780.047480
+DEBUG:GMM convergenced on itr=2/100
+I0511 15:40:46.317039  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:46.390069  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 1500 points
+DEBUG:GMM itr 0/100. Log likelihood: 19629.167290
+DEBUG:GMM itr 1/100. Log likelihood: 20511.054295
+DEBUG:GMM itr 2/100. Log likelihood: 20511.360060
+DEBUG:GMM itr 3/100. Log likelihood: 20511.629668
+DEBUG:GMM itr 4/100. Log likelihood: 20512.055588
+DEBUG:GMM itr 5/100. Log likelihood: 20512.280128
+DEBUG:GMM itr 6/100. Log likelihood: 20512.423388
+DEBUG:GMM itr 7/100. Log likelihood: 20512.555524
+DEBUG:GMM itr 8/100. Log likelihood: 20512.636091
+DEBUG:GMM itr 9/100. Log likelihood: 20512.690714
+DEBUG:GMM itr 10/100. Log likelihood: 20512.751679
+DEBUG:GMM itr 11/100. Log likelihood: 20512.830479
+DEBUG:GMM itr 12/100. Log likelihood: 20512.930798
+DEBUG:GMM itr 13/100. Log likelihood: 20513.053105
+DEBUG:GMM itr 14/100. Log likelihood: 20513.190456
+DEBUG:GMM itr 15/100. Log likelihood: 20513.319069
+DEBUG:GMM itr 16/100. Log likelihood: 20513.409279
+DEBUG:GMM itr 17/100. Log likelihood: 20513.457127
+DEBUG:GMM itr 18/100. Log likelihood: 20513.479049
+DEBUG:GMM itr 19/100. Log likelihood: 20513.488879
+DEBUG:GMM convergenced on itr=19/100
+I0511 15:40:47.538157  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:40:47.594326  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Iteration 0, KL: 22.252519 / 20.000000 eta: 254.006256 -> 254.028781
+DEBUG:Bracket points: 254.028781 254.006256 (2.250560 2.252519) a=-2520.529590 b=28486.307934
+DEBUG:Iteration 1, KL: 22.250560 / 20.000000 eta: 254.028781 -> 284.535399
+DEBUG:Iteration 2, KL: 19.846515 / 20.000000 converged
+DEBUG:Iteration 0, KL: 12.303516 / 8.296591 eta: 21.844253 -> 21.884322
+DEBUG:Bracket points: 21.884322 21.844253 (3.985274 4.006925) a=-85.467607 b=614.681858
+DEBUG:Iteration 1, KL: 12.281865 / 8.296591 eta: 21.884322 -> 36.451883
+DEBUG:Iteration 2, KL: 7.629134 / 8.296591 converged
+I0511 15:40:53.818603  1075 solver.cpp:454] Snapshotting to binary proto file python/../experiments/mjc_mdgps_example/policy_iter_44000.caffemodel
+I0511 15:40:53.818817  1075 sgd_solver.cpp:273] Snapshotting solver state to binary proto file python/../experiments/mjc_mdgps_example/policy_iter_44000.solverstate
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 214656.893253
+DEBUG:GMM itr 1/100. Log likelihood: 235213.674402
+DEBUG:GMM itr 2/100. Log likelihood: 241604.161262
+DEBUG:GMM itr 3/100. Log likelihood: 244382.971171
+DEBUG:GMM itr 4/100. Log likelihood: 244915.522141
+DEBUG:GMM itr 5/100. Log likelihood: 245511.091549
+DEBUG:GMM itr 6/100. Log likelihood: 245895.530192
+DEBUG:GMM itr 7/100. Log likelihood: 246140.746262
+DEBUG:GMM itr 8/100. Log likelihood: 246175.372733
+DEBUG:GMM itr 9/100. Log likelihood: 246303.930352
+DEBUG:GMM itr 10/100. Log likelihood: 246404.204976
+DEBUG:GMM itr 11/100. Log likelihood: 246711.325306
+DEBUG:GMM itr 12/100. Log likelihood: 246881.738815
+DEBUG:GMM itr 13/100. Log likelihood: 246987.677859
+DEBUG:GMM itr 14/100. Log likelihood: 247258.802388
+DEBUG:GMM itr 15/100. Log likelihood: 247418.525138
+DEBUG:GMM itr 16/100. Log likelihood: 247544.717962
+DEBUG:GMM itr 17/100. Log likelihood: 247675.458072
+DEBUG:GMM itr 18/100. Log likelihood: 247678.284249
+DEBUG:GMM itr 19/100. Log likelihood: 247690.553855
+DEBUG:GMM itr 20/100. Log likelihood: 247768.503721
+DEBUG:GMM itr 21/100. Log likelihood: 247902.792505
+DEBUG:GMM itr 22/100. Log likelihood: 247984.874993
+DEBUG:GMM itr 23/100. Log likelihood: 248026.101384
+DEBUG:GMM itr 24/100. Log likelihood: 248053.625435
+DEBUG:GMM itr 25/100. Log likelihood: 248152.013559
+DEBUG:GMM itr 26/100. Log likelihood: 248218.147868
+DEBUG:GMM itr 27/100. Log likelihood: 248319.025283
+DEBUG:GMM itr 28/100. Log likelihood: 248413.345430
+DEBUG:GMM itr 29/100. Log likelihood: 248507.567311
+DEBUG:GMM itr 30/100. Log likelihood: 248592.654978
+DEBUG:GMM itr 31/100. Log likelihood: 248656.948781
+DEBUG:GMM itr 32/100. Log likelihood: 248841.312972
+DEBUG:GMM itr 33/100. Log likelihood: 249170.569912
+DEBUG:GMM itr 34/100. Log likelihood: 249329.798547
+DEBUG:GMM itr 35/100. Log likelihood: 249552.575088
+DEBUG:GMM itr 36/100. Log likelihood: 249701.292714
+DEBUG:GMM itr 37/100. Log likelihood: 249819.803945
+DEBUG:GMM itr 38/100. Log likelihood: 249875.557795
+DEBUG:GMM itr 39/100. Log likelihood: 249936.153519
+DEBUG:GMM itr 40/100. Log likelihood: 249980.328428
+DEBUG:GMM itr 41/100. Log likelihood: 250069.708890
+DEBUG:GMM itr 42/100. Log likelihood: 250127.523839
+DEBUG:GMM itr 43/100. Log likelihood: 250190.354967
+DEBUG:GMM itr 44/100. Log likelihood: 250205.756295
+DEBUG:GMM itr 45/100. Log likelihood: 250314.001097
+DEBUG:GMM itr 46/100. Log likelihood: 250515.369970
+DEBUG:GMM itr 47/100. Log likelihood: 250563.696309
+DEBUG:GMM itr 48/100. Log likelihood: 250791.341033
+DEBUG:GMM itr 49/100. Log likelihood: 250827.541298
+DEBUG:GMM itr 50/100. Log likelihood: 250909.442592
+DEBUG:GMM itr 51/100. Log likelihood: 250929.883688
+DEBUG:GMM itr 52/100. Log likelihood: 250929.898779
+DEBUG:GMM itr 53/100. Log likelihood: 250929.921236
+DEBUG:GMM itr 54/100. Log likelihood: 250929.981537
+DEBUG:GMM itr 55/100. Log likelihood: 250930.405247
+DEBUG:GMM itr 56/100. Log likelihood: 250939.107129
+DEBUG:GMM itr 57/100. Log likelihood: 250986.477322
+DEBUG:GMM itr 58/100. Log likelihood: 251104.173072
+DEBUG:GMM itr 59/100. Log likelihood: 251115.260113
+DEBUG:GMM itr 60/100. Log likelihood: 251118.511507
+DEBUG:GMM itr 61/100. Log likelihood: 251139.121892
+DEBUG:GMM itr 62/100. Log likelihood: 251178.287211
+DEBUG:GMM itr 63/100. Log likelihood: 251202.913285
+DEBUG:GMM itr 64/100. Log likelihood: 251222.349979
+DEBUG:GMM itr 65/100. Log likelihood: 251300.608226
+DEBUG:GMM itr 66/100. Log likelihood: 251304.459660
+DEBUG:GMM itr 67/100. Log likelihood: 251307.732746
+DEBUG:GMM itr 68/100. Log likelihood: 251328.415062
+DEBUG:GMM itr 69/100. Log likelihood: 251328.932607
+DEBUG:GMM itr 70/100. Log likelihood: 251328.932723
+DEBUG:GMM convergenced on itr=70/100
+DEBUG:Generating 40 clusters for dynamics GMM.
+DEBUG:Fitting GMM with 40 clusters on 1881 points
+DEBUG:Initializing GMM.
+DEBUG:GMM itr 0/100. Log likelihood: 236295.823621
+DEBUG:GMM itr 1/100. Log likelihood: 253512.057962
+DEBUG:GMM itr 2/100. Log likelihood: 259001.097496
+DEBUG:GMM itr 3/100. Log likelihood: 260527.892782
+DEBUG:GMM itr 4/100. Log likelihood: 260972.134061
+DEBUG:GMM itr 5/100. Log likelihood: 261383.942263
+DEBUG:GMM itr 6/100. Log likelihood: 261679.104278
+DEBUG:GMM itr 7/100. Log likelihood: 261896.775942
+DEBUG:GMM itr 8/100. Log likelihood: 262019.559899
+DEBUG:GMM itr 9/100. Log likelihood: 262127.003440
+DEBUG:GMM itr 10/100. Log likelihood: 262223.423102
+DEBUG:GMM itr 11/100. Log likelihood: 262234.837578
+DEBUG:GMM itr 12/100. Log likelihood: 262259.809430
+DEBUG:GMM itr 13/100. Log likelihood: 262331.070500
+DEBUG:GMM itr 14/100. Log likelihood: 262356.235095
+DEBUG:GMM itr 15/100. Log likelihood: 262368.152604
+DEBUG:GMM itr 16/100. Log likelihood: 262397.823473
+DEBUG:GMM itr 17/100. Log likelihood: 262405.364783
+DEBUG:GMM itr 18/100. Log likelihood: 262454.977282
+DEBUG:GMM itr 19/100. Log likelihood: 262456.156422
+DEBUG:GMM itr 20/100. Log likelihood: 262494.504403
+DEBUG:GMM itr 21/100. Log likelihood: 262713.282171
+DEBUG:GMM itr 22/100. Log likelihood: 262796.138051
+DEBUG:GMM itr 23/100. Log likelihood: 262859.169478
+DEBUG:GMM itr 24/100. Log likelihood: 262874.908169
+DEBUG:GMM itr 25/100. Log likelihood: 262910.395735
+DEBUG:GMM itr 26/100. Log likelihood: 262941.749978
+DEBUG:GMM itr 27/100. Log likelihood: 262988.823332
+DEBUG:GMM itr 28/100. Log likelihood: 263073.800649
+DEBUG:GMM itr 29/100. Log likelihood: 263208.950273
+DEBUG:GMM itr 30/100. Log likelihood: 263415.283424
+DEBUG:GMM itr 31/100. Log likelihood: 263627.795133
+DEBUG:GMM itr 32/100. Log likelihood: 263781.533715
+DEBUG:GMM itr 33/100. Log likelihood: 263781.633620
+DEBUG:GMM itr 34/100. Log likelihood: 263781.855550
+DEBUG:GMM itr 35/100. Log likelihood: 263782.837060
+DEBUG:GMM itr 36/100. Log likelihood: 263785.499625
+DEBUG:GMM itr 37/100. Log likelihood: 263789.946562
+DEBUG:GMM itr 38/100. Log likelihood: 263809.904333
+DEBUG:GMM itr 39/100. Log likelihood: 263829.325302
+DEBUG:GMM itr 40/100. Log likelihood: 263929.282680
+DEBUG:GMM itr 41/100. Log likelihood: 263933.389012
+DEBUG:GMM itr 42/100. Log likelihood: 263946.015919
+DEBUG:GMM itr 43/100. Log likelihood: 264101.660357
+DEBUG:GMM itr 44/100. Log likelihood: 264205.745021
+DEBUG:GMM itr 45/100. Log likelihood: 264284.363464
+DEBUG:GMM itr 46/100. Log likelihood: 264353.576548
+DEBUG:GMM itr 47/100. Log likelihood: 264415.390302
+DEBUG:GMM itr 48/100. Log likelihood: 264430.929359
+DEBUG:GMM itr 49/100. Log likelihood: 264472.006187
+DEBUG:GMM itr 50/100. Log likelihood: 264646.464696
+DEBUG:GMM itr 51/100. Log likelihood: 264724.651044
+DEBUG:GMM itr 52/100. Log likelihood: 264724.648452
+DEBUG:GMM convergenced on itr=52/100
+I0511 15:41:20.917824  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:41:20.967839  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 2000 points
+DEBUG:GMM itr 0/100. Log likelihood: -19318616.687882
+DEBUG:GMM itr 1/100. Log likelihood: -21590.113634
+DEBUG:GMM itr 2/100. Log likelihood: -19949.474161
+DEBUG:GMM itr 3/100. Log likelihood: -19208.555782
+DEBUG:GMM itr 4/100. Log likelihood: -17477.788501
+DEBUG:GMM itr 5/100. Log likelihood: -14282.352912
+DEBUG:GMM itr 6/100. Log likelihood: -11179.191959
+DEBUG:GMM itr 7/100. Log likelihood: -6416.536067
+DEBUG:GMM itr 8/100. Log likelihood: -1623.088220
+DEBUG:GMM itr 9/100. Log likelihood: 3811.866675
+DEBUG:GMM itr 10/100. Log likelihood: 9384.639361
+DEBUG:GMM itr 11/100. Log likelihood: 10557.995372
+DEBUG:GMM itr 12/100. Log likelihood: 11926.023053
+DEBUG:GMM itr 13/100. Log likelihood: 12160.153630
+DEBUG:GMM itr 14/100. Log likelihood: 12204.343277
+DEBUG:GMM itr 15/100. Log likelihood: 12228.334846
+DEBUG:GMM itr 16/100. Log likelihood: 12242.184235
+DEBUG:GMM itr 17/100. Log likelihood: 12245.453783
+DEBUG:GMM itr 18/100. Log likelihood: 12246.390661
+DEBUG:GMM itr 19/100. Log likelihood: 12246.557868
+DEBUG:GMM itr 20/100. Log likelihood: 12246.793925
+DEBUG:GMM itr 21/100. Log likelihood: 12247.221608
+DEBUG:GMM itr 22/100. Log likelihood: 12247.628623
+DEBUG:GMM itr 23/100. Log likelihood: 12247.715365
+DEBUG:GMM itr 24/100. Log likelihood: 12247.719917
+DEBUG:GMM convergenced on itr=24/100
+DEBUG:Trajectory step: ent: -150.935751 cost: -200.779950 -> -142.438680
+DEBUG:Previous cost: Laplace: 4194.592690 MC: -200.779950
+DEBUG:Predicted new cost: Laplace: 8783.782743 MC: -142.438680
+DEBUG:Actual new cost: Laplace: 16610183.973523 MC: -142.438680
+DEBUG:Predicted/actual improvement: -4589.190053 / -16605989.380833
+DEBUG:Decreasing step size multiplier to 0.010000
+I0511 15:41:22.580868  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:41:22.629776  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 2000 points
+DEBUG:GMM itr 0/100. Log likelihood: 6710.423924
+DEBUG:GMM itr 1/100. Log likelihood: 20011.659798
+DEBUG:GMM itr 2/100. Log likelihood: 20114.723937
+DEBUG:GMM itr 3/100. Log likelihood: 20191.453999
+DEBUG:GMM itr 4/100. Log likelihood: 20311.802371
+DEBUG:GMM itr 5/100. Log likelihood: 20584.054017
+DEBUG:GMM itr 6/100. Log likelihood: 21142.517014
+DEBUG:GMM itr 7/100. Log likelihood: 23737.639793
+DEBUG:GMM itr 8/100. Log likelihood: 24761.421963
+DEBUG:GMM itr 9/100. Log likelihood: 25867.236716
+DEBUG:GMM itr 10/100. Log likelihood: 26375.442171
+DEBUG:GMM itr 11/100. Log likelihood: 26793.935512
+DEBUG:GMM itr 12/100. Log likelihood: 27166.762871
+DEBUG:GMM itr 13/100. Log likelihood: 27529.635821
+DEBUG:GMM itr 14/100. Log likelihood: 27832.513064
+DEBUG:GMM itr 15/100. Log likelihood: 28108.221998
+DEBUG:GMM itr 16/100. Log likelihood: 28251.244733
+DEBUG:GMM itr 17/100. Log likelihood: 28301.798179
+DEBUG:GMM itr 18/100. Log likelihood: 28364.032337
+DEBUG:GMM itr 19/100. Log likelihood: 28450.879458
+DEBUG:GMM itr 20/100. Log likelihood: 28457.971962
+DEBUG:GMM itr 21/100. Log likelihood: 28459.227189
+DEBUG:GMM itr 22/100. Log likelihood: 28459.665376
+DEBUG:GMM itr 23/100. Log likelihood: 28459.779835
+DEBUG:GMM itr 24/100. Log likelihood: 28459.823366
+DEBUG:GMM itr 25/100. Log likelihood: 28459.845100
+DEBUG:GMM itr 26/100. Log likelihood: 28459.857936
+DEBUG:GMM itr 27/100. Log likelihood: 28459.866937
+DEBUG:GMM convergenced on itr=27/100
+DEBUG:Trajectory step: ent: -165.244509 cost: -396.359559 -> -434.047498
+DEBUG:Previous cost: Laplace: 125362.974377 MC: -396.359559
+DEBUG:Predicted new cost: Laplace: 191.589310 MC: -434.047498
+DEBUG:Actual new cost: Laplace: 6408.077952 MC: -434.047498
+DEBUG:Predicted/actual improvement: 125171.385067 / 118954.896425
+DEBUG:Increasing step size multiplier to 0.207415
+DEBUG:Caffe iteration 500, average loss 331.417572
+DEBUG:Caffe iteration 1000, average loss 193.969284
+DEBUG:Caffe iteration 1500, average loss 163.825287
+DEBUG:Caffe iteration 2000, average loss 134.563934
+DEBUG:Caffe iteration 2500, average loss 118.776512
+DEBUG:Caffe iteration 3000, average loss 99.643723
+DEBUG:Caffe iteration 3500, average loss 89.579010
+I0511 15:41:27.413985  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:41:27.414463  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:41:27.462721  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 2000 points
+DEBUG:GMM itr 0/100. Log likelihood: -431963.198513
+DEBUG:GMM itr 1/100. Log likelihood: 3868.169372
+DEBUG:GMM itr 2/100. Log likelihood: 5223.405801
+DEBUG:GMM itr 3/100. Log likelihood: 5327.555674
+DEBUG:GMM itr 4/100. Log likelihood: 5348.643994
+DEBUG:GMM itr 5/100. Log likelihood: 5350.232871
+DEBUG:GMM itr 6/100. Log likelihood: 5352.307765
+DEBUG:GMM itr 7/100. Log likelihood: 5352.923618
+DEBUG:GMM itr 8/100. Log likelihood: 5353.128497
+DEBUG:GMM itr 9/100. Log likelihood: 5353.211051
+DEBUG:GMM itr 10/100. Log likelihood: 5353.226195
+DEBUG:GMM itr 11/100. Log likelihood: 5353.239983
+DEBUG:GMM itr 12/100. Log likelihood: 5353.275179
+DEBUG:GMM itr 13/100. Log likelihood: 5353.387929
+DEBUG:GMM itr 14/100. Log likelihood: 5353.734939
+DEBUG:GMM itr 15/100. Log likelihood: 5354.155424
+DEBUG:GMM itr 16/100. Log likelihood: 5354.222801
+DEBUG:GMM itr 17/100. Log likelihood: 5354.223859
+DEBUG:GMM convergenced on itr=17/100
+I0511 15:41:28.693073  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:41:28.741344  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 2000 points
+DEBUG:GMM itr 0/100. Log likelihood: -11811.165262
+DEBUG:GMM itr 1/100. Log likelihood: 19959.275568
+DEBUG:GMM itr 2/100. Log likelihood: 21188.799040
+DEBUG:GMM itr 3/100. Log likelihood: 21444.303882
+DEBUG:GMM itr 4/100. Log likelihood: 21636.337711
+DEBUG:GMM itr 5/100. Log likelihood: 21713.932271
+DEBUG:GMM itr 6/100. Log likelihood: 21716.204029
+DEBUG:GMM itr 7/100. Log likelihood: 21717.088360
+DEBUG:GMM itr 8/100. Log likelihood: 21717.755734
+DEBUG:GMM itr 9/100. Log likelihood: 21718.007954
+DEBUG:GMM itr 10/100. Log likelihood: 21718.064770
+DEBUG:GMM itr 11/100. Log likelihood: 21718.093461
+DEBUG:GMM itr 12/100. Log likelihood: 21718.111702
+DEBUG:GMM itr 13/100. Log likelihood: 21718.125165
+DEBUG:GMM itr 14/100. Log likelihood: 21718.136799
+DEBUG:GMM itr 15/100. Log likelihood: 21718.148586
+DEBUG:GMM itr 16/100. Log likelihood: 21718.162528
+DEBUG:GMM itr 17/100. Log likelihood: 21718.181669
+DEBUG:GMM itr 18/100. Log likelihood: 21718.212057
+DEBUG:GMM itr 19/100. Log likelihood: 21718.267802
+DEBUG:GMM itr 20/100. Log likelihood: 21718.385253
+DEBUG:GMM itr 21/100. Log likelihood: 21718.658256
+DEBUG:GMM itr 22/100. Log likelihood: 21719.261560
+DEBUG:GMM itr 23/100. Log likelihood: 21720.180922
+DEBUG:GMM itr 24/100. Log likelihood: 21720.858613
+DEBUG:GMM itr 25/100. Log likelihood: 21721.082369
+DEBUG:GMM itr 26/100. Log likelihood: 21721.203402
+DEBUG:GMM itr 27/100. Log likelihood: 21721.474462
+DEBUG:GMM itr 28/100. Log likelihood: 21722.595698
+DEBUG:GMM itr 29/100. Log likelihood: 21726.937759
+DEBUG:GMM itr 30/100. Log likelihood: 21731.918016
+DEBUG:GMM itr 31/100. Log likelihood: 21734.777447
+DEBUG:GMM itr 32/100. Log likelihood: 21736.203685
+DEBUG:GMM itr 33/100. Log likelihood: 21736.484263
+DEBUG:GMM itr 34/100. Log likelihood: 21736.654526
+DEBUG:GMM itr 35/100. Log likelihood: 21736.865686
+DEBUG:GMM itr 36/100. Log likelihood: 21737.226561
+DEBUG:GMM itr 37/100. Log likelihood: 21737.858119
+DEBUG:GMM itr 38/100. Log likelihood: 21738.774977
+DEBUG:GMM itr 39/100. Log likelihood: 21739.929202
+DEBUG:GMM itr 40/100. Log likelihood: 21741.376396
+DEBUG:GMM itr 41/100. Log likelihood: 21743.147378
+DEBUG:GMM itr 42/100. Log likelihood: 21745.206076
+DEBUG:GMM itr 43/100. Log likelihood: 21747.118261
+DEBUG:GMM itr 44/100. Log likelihood: 21749.171823
+DEBUG:GMM itr 45/100. Log likelihood: 21753.252896
+DEBUG:GMM itr 46/100. Log likelihood: 21760.839915
+DEBUG:GMM itr 47/100. Log likelihood: 21766.829676
+DEBUG:GMM itr 48/100. Log likelihood: 21769.863796
+DEBUG:GMM itr 49/100. Log likelihood: 21771.037813
+DEBUG:GMM itr 50/100. Log likelihood: 21771.306975
+DEBUG:GMM itr 51/100. Log likelihood: 21771.320747
+DEBUG:GMM itr 52/100. Log likelihood: 21771.316200
+DEBUG:GMM convergenced on itr=52/100
+DEBUG:Iteration 0, KL: 132.681537 / 2.000000 eta: 284.535399 -> 285.842214
+DEBUG:Solving non-log problem due to a > 0: 0.003918 0.000664
+DEBUG:Bracket points: 285.842214 284.535399 (130.594788 130.681537) a=-0.033191 b=149.569614
+DEBUG:Iteration 1, KL: 132.594788 / 2.000000 eta: 285.842214 -> 2253.159495
+DEBUG:Solving non-log problem due to a > 0: 1.770844 0.293805
+DEBUG:Bracket points: 2253.159495 285.842214 (97.348232 130.594788) a=-0.008450 b=135.425361
+DEBUG:Iteration 2, KL: 99.348232 / 2.000000 eta: 2253.159495 -> 8013.601628
+DEBUG:Solving non-log problem due to a > 0: 1.135207 0.133600
+DEBUG:Bracket points: 8013.601628 2253.159495 (85.173850 97.348232) a=-0.001057 b=102.110163
+DEBUG:Iteration 3, KL: 87.173850 / 2.000000 eta: 8013.601628 -> 48314.538887
+DEBUG:Solving non-log problem due to a > 0: 1.635412 0.161180
+DEBUG:Bracket points: 48314.538887 8013.601628 (72.494763 85.173850) a=-0.000157 b=87.695011
+DEBUG:Iteration 4, KL: 74.494763 / 2.000000 eta: 48314.538887 -> 278741.769173
+DEBUG:Solving non-log problem due to a > 0: 1.487512 0.265042
+DEBUG:Bracket points: 278741.769173 48314.538887 (55.616096 72.494763) a=-0.000037 b=76.033776
+DEBUG:Iteration 5, KL: 57.616096 / 2.000000 eta: 278741.769173 -> 1038011.604404
+DEBUG:Solving non-log problem due to a > 0: 1.101808 0.212968
+DEBUG:Bracket points: 1038011.604404 278741.769173 (44.947916 55.616096) a=-0.000007 b=59.532578
+DEBUG:Iteration 6, KL: 46.947916 / 2.000000 eta: 1038011.604404 -> 4237020.109547
+DEBUG:Solving non-log problem due to a > 0: 1.278298 0.128255
+DEBUG:Bracket points: 4237020.109547 1038011.604404 (39.537489 44.947916) a=-0.000001 b=46.703487
+DEBUG:Iteration 7, KL: 41.537489 / 2.000000 eta: 4237020.109547 -> 27614245.141187
+DEBUG:Solving non-log problem due to a > 0: 1.772483 0.101989
+DEBUG:Bracket points: 27614245.141187 4237020.109547 (35.703925 39.537489) a=-0.000000 b=40.232306
+DEBUG:Iteration 8, KL: 37.703925 / 2.000000 eta: 27614245.141187 -> 245338168.339840
+DEBUG:Solving non-log problem due to a > 0: 1.988778 0.195528
+DEBUG:Bracket points: 245338168.339840 27614245.141187 (29.362918 35.703925) a=-0.000000 b=36.508164
+DEBUG:Iteration 9, KL: 31.362918 / 2.000000 eta: 245338168.339840 -> 1253539151.775857
+DEBUG:Solving non-log problem due to a > 0: 1.486855 0.144234
+DEBUG:Bracket points: 1253539151.775857 245338168.339840 (25.419047 29.362918) a=-0.000000 b=30.322629
+DEBUG:Iteration 10, KL: 27.419047 / 2.000000 eta: 1253539151.775857 -> 7751599387.294871
+DEBUG:Solving non-log problem due to a > 0: 1.757982 0.063947
+DEBUG:Bracket points: 7751599387.294871 1253539151.775857 (23.844462 25.419047) a=-0.000000 b=25.722800
+DEBUG:Iteration 11, KL: 25.844462 / 2.000000 eta: 7751599387.294871 -> 106153860254.406509
+DEBUG:Solving non-log problem due to a > 0: 2.549315 0.067676
+DEBUG:Bracket points: 106153860254.406509 7751599387.294871 (22.284165 23.844462) a=-0.000000 b=23.967374
+DEBUG:Iteration 12, KL: 24.284165 / 2.000000 eta: 106153860254.406509 -> 1511535200158.980225
+DEBUG:Solving non-log problem due to a > 0: 2.537988 0.118003
+DEBUG:Bracket points: 1511535200158.980225 106153860254.406509 (19.803781 22.284165) a=-0.000000 b=22.471518
+DEBUG:Iteration 13, KL: 21.803781 / 2.000000 eta: 1511535200158.980225 -> 12732324801307.587891
+DEBUG:Solving non-log problem due to a > 0: 1.719528 0.411490
+DEBUG:Bracket points: 12732324801307.587891 1511535200158.980225 (13.123210 19.803781) a=-0.000000 b=20.703711
+DEBUG:Iteration 14, KL: 15.123210 / 2.000000 eta: 12732324801307.587891 -> 34774270979638.285156
+DEBUG:Solving non-log problem due to a > 0: 0.353271 0.651463
+DEBUG:Bracket points: 34774270979638.285156 12732324801307.587891 (6.840902 13.123210) a=-0.000000 b=16.752127
+DEBUG:Iteration 15, KL: 8.840902 / 2.000000 eta: 34774270979638.285156 -> 58776083233010.460938
+DEBUG:Bracket points: 58776083233010.460938 34774270979638.285156 (3.829962 6.840902) a=-12172091806587.283203 b=996936557919374.875000
+DEBUG:Iteration 16, KL: 5.829962 / 2.000000 eta: 58776083233010.460938 -> 3209065410716467.000000
+DEBUG:Solving non-log problem due to ratio choice: 3.166920 0.833080
+DEBUG:Bracket points: 3209065410716467.000000 58776083233010.460938 (-1.664916 3.829962) a=-0.000000 b=3.932482
+DEBUG:Iteration 17, KL: 0.335084 / 2.000000 eta: 3209065410716467.000000 -> 2254545953716021.000000
+DEBUG:Bracket points: 2254545953716021.000000 3209065410716467.000000 (-1.724645 -1.664916) a=-2060064156112524.000000 b=141765351343424880.000000
+DEBUG:Iteration 18, KL: 0.275355 / 2.000000 eta: 2254545953716021.000000 -> 877408915860231.000000
+DEBUG:Bracket points: 3209065410716467.000000 877408915860231.000000 (-1.664916 -1.631366) a=-1508160587287619.500000 b=102354186667659696.000000
+DEBUG:Iteration 19, KL: 0.368634 / 2.000000 eta: 877408915860231.000000 -> 545896745789726.000000
+DEBUG:Iteration 20, KL: 0.722931 / 2.000000 converged
+DEBUG:Iteration 0, KL: 80.768394 / 41.482956 eta: 36.451883 -> 36.844738
+DEBUG:Solving non-log problem due to a > 0: 0.004229 0.006491
+DEBUG:Bracket points: 36.844738 36.451883 (39.031257 39.285438) a=-0.323505 b=62.870183
+DEBUG:Iteration 1, KL: 80.514214 / 41.482956 eta: 36.844738 -> 97.170295
+DEBUG:Solving non-log problem due to a > 0: 0.367236 0.602516
+DEBUG:Bracket points: 97.170295 36.844738 (21.366982 39.031257) a=-0.146408 b=49.819978
+DEBUG:Iteration 2, KL: 62.849938 / 41.482956 eta: 97.170295 -> 170.141026
+DEBUG:Solving non-log problem due to a > 0: 0.149719 0.410444
+DEBUG:Bracket points: 170.141026 97.170295 (14.173912 21.366982) a=-0.049287 b=30.945518
+DEBUG:Iteration 3, KL: 55.656868 / 41.482956 eta: 170.141026 -> 313.929514
+DEBUG:Bracket points: 313.929514 170.141026 (7.551059 14.173912) a=-33.519166 b=2755.914840
+DEBUG:Iteration 4, KL: 49.034015 / 41.482956 eta: 313.929514 -> 17139.970728
+DEBUG:Solving non-log problem due to ratio choice: 4.795407 0.795407
+DEBUG:Bracket points: 17139.970728 313.929514 (-16.728176 7.551059) a=-0.000721 b=8.004045
+DEBUG:Iteration 5, KL: 24.754780 / 41.482956 eta: 17139.970728 -> 5546.978433
+DEBUG:Solving non-log problem due to ratio choice: 3.156544 0.284704
+DEBUG:Bracket points: 5546.978433 313.929514 (-10.038143 7.551059) a=-0.001681 b=8.606231
+DEBUG:Iteration 6, KL: 31.444813 / 41.482956 eta: 5546.978433 -> 2560.481721
+DEBUG:Bracket points: 2560.481721 313.929514 (-6.726827 7.551059) a=-4668.044395 b=56045.247605
+DEBUG:Iteration 7, KL: 34.756130 / 41.482956 eta: 2560.481721 -> 404.671524
+DEBUG:Solving non-log problem due to ratio choice: 2.116885 0.272010
+DEBUG:Bracket points: 2560.481721 404.671524 (-6.726827 5.124809) a=-0.002749 b=7.349504
+DEBUG:Iteration 8, KL: 46.607765 / 41.482956 eta: 404.671524 -> 1336.873255
+DEBUG:Iteration 9, KL: 37.884620 / 41.482956 converged
+DEBUG:Caffe iteration 500, average loss 71.164917
+DEBUG:Caffe iteration 1000, average loss 64.624504
+DEBUG:Caffe iteration 1500, average loss 55.835838
+DEBUG:Caffe iteration 2000, average loss 47.842789
+DEBUG:Caffe iteration 2500, average loss 41.386112
+DEBUG:Caffe iteration 3000, average loss 36.030781
+DEBUG:Caffe iteration 3500, average loss 32.476284
+I0511 15:41:37.642832  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:41:37.643329  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:41:37.713362  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 2000 points
+DEBUG:GMM itr 0/100. Log likelihood: -3956.975267
+DEBUG:GMM itr 1/100. Log likelihood: 2528.257519
+DEBUG:GMM itr 2/100. Log likelihood: 4119.643941
+DEBUG:GMM itr 3/100. Log likelihood: 4825.381989
+DEBUG:GMM itr 4/100. Log likelihood: 4871.710348
+DEBUG:GMM itr 5/100. Log likelihood: 4874.888462
+DEBUG:GMM itr 6/100. Log likelihood: 4876.742397
+DEBUG:GMM itr 7/100. Log likelihood: 4879.241672
+DEBUG:GMM itr 8/100. Log likelihood: 4883.146545
+DEBUG:GMM itr 9/100. Log likelihood: 4902.368765
+DEBUG:GMM itr 10/100. Log likelihood: 4920.753437
+DEBUG:GMM itr 11/100. Log likelihood: 4923.889529
+DEBUG:GMM itr 12/100. Log likelihood: 4923.891152
+DEBUG:GMM convergenced on itr=12/100
+I0511 15:41:38.908059  1075 net.cpp:684] Ignoring source layer Python4
+I0511 15:41:38.955809  1075 net.cpp:684] Ignoring source layer Python4
+DEBUG:Generating 20 clusters for policy prior GMM.
+DEBUG:Fitting GMM with 20 clusters on 2000 points
+DEBUG:GMM itr 0/100. Log likelihood: 12761.310341
+DEBUG:GMM itr 1/100. Log likelihood: 19235.539488
+DEBUG:GMM itr 2/100. Log likelihood: 19343.497246
+DEBUG:GMM itr 3/100. Log likelihood: 19361.295130
+DEBUG:GMM itr 4/100. Log likelihood: 19397.681549
+DEBUG:GMM itr 5/100. Log likelihood: 19422.244093
+DEBUG:GMM itr 6/100. Log likelihood: 19431.104473
+DEBUG:GMM itr 7/100. Log likelihood: 19435.564524
+DEBUG:GMM itr 8/100. Log likelihood: 19439.726544
+DEBUG:GMM itr 9/100. Log likelihood: 19441.405803
+DEBUG:GMM itr 10/100. Log likelihood: 19441.576285
+DEBUG:GMM itr 11/100. Log likelihood: 19441.591805
+DEBUG:GMM itr 12/100. Log likelihood: 19441.597192
+DEBUG:GMM convergenced on itr=12/100
+DEBUG:Iteration 0, KL: 15.374490 / 2.000000 eta: 545896745789726.000000 -> 545896745789726.125000
+python/gps/algorithm/traj_opt/traj_opt_utils.py:204: RuntimeWarning: divide by zero encountered in double_scalars
+  a = (lc2 - lc1) / (2 * (le2 - le1))
+DEBUG:Solving non-log problem due to a > 0: 0.013669 0.013669
+DEBUG:Bracket points: 545896745789726.125000 545896745789726.000000 (13.192912 13.374490) a=-0.726312 b=792983180539949.875000
+DEBUG:Iteration 1, KL: 15.192912 / 2.000000 eta: 545896745789726.125000 -> 545896745789733.750000
+DEBUG:Bracket points: 545896745789733.750000 545896745789726.125000 (11.433463 13.192912) a=-33793783171615798914566848512.000000 b=2293479368251347902249062891520.000000
+DEBUG:Iteration 2, KL: 13.433463 / 2.000000 eta: 545896745789733.750000 -> 545896745789784.125000
+DEBUG:Bracket points: 545896745789784.125000 545896745789733.750000 (11.409656 11.433463) a=-70349588938637103652143104.000000 b=4774408653111549830419709952.000000
+DEBUG:Iteration 3, KL: 13.409656 / 2.000000 eta: 545896745789784.125000 -> 545896745813953.125000
+DEBUG:Bracket points: 545896745813953.125000 545896745789784.125000 (5.578704 11.409656) a=-35947772927743149580746752.000000 b=2439663979788497766076907520.000000
+DEBUG:Iteration 4, KL: 7.578704 / 2.000000 eta: 545896745813953.125000 -> 545896745837078.750000
+DEBUG:Solving non-log problem due to a > 0: 0.727368 0.727368
+WARNING:Dual is not concave!
+DEBUG:Bracket points: 545896745813953.125000 545896745837078.750000 (5.578704 11.545831) a=0.000129 b=-140858241105.394653
+DEBUG:Iteration 5, KL: 13.545831 / 2.000000 eta: 545896745837078.750000 -> 1483901204423857.000000
+DEBUG:Solving non-log problem due to a > 0: 1.664585 0.664585
+WARNING:Dual is not concave!
+DEBUG:Bracket points: 545896745813953.125000 1483901204423857.000000 (5.578704 10.843235) a=0.000000 b=2.514870
+DEBUG:Iteration 6, KL: 12.843235 / 2.000000 eta: 1483901204423857.000000 -> 4033661679213861.500000
+DEBUG:LinAlgError: 1-th leading minor not positive definite
+DEBUG:Increasing eta: 4033661679213861.500000 -> 4033661679213861.500000
+DEBUG:LinAlgError: 1-th leading minor not positive definite
+DEBUG:Increasing eta: 4033661679213861.500000 -> 4033661679213861.500000
+DEBUG:LinAlgError: 1-th leading minor not positive definite
+DEBUG:Increasing eta: 4033661679213861.500000 -> 4033661679213861.500000
+DEBUG:LinAlgError: 1-th leading minor not positive definite
+DEBUG:Increasing eta: 4033661679213861.500000 -> 4033661679213861.500000
+DEBUG:LinAlgError: 1-th leading minor not positive definite
+DEBUG:Increasing eta: 4033661679213861.500000 -> 4033661679213861.500000
+DEBUG:LinAlgError: 1-th leading minor not positive definite
+DEBUG:Increasing eta: 4033661679213861.500000 -> 4033661679213861.500000
+DEBUG:LinAlgError: 1-th leading minor not positive definite
+DEBUG:Increasing eta: 4033661679213861.500000 -> 4033661679213861.500000
+DEBUG:LinAlgError: 1-th leading minor not positive definite
+DEBUG:Increasing eta: 4033661679213861.500000 -> 4033661679213861.500000
+DEBUG:LinAlgError: 1-th leading minor not positive definite
+DEBUG:Increasing eta: 4033661679213861.500000 -> 4033661679213861.500000
+DEBUG:LinAlgError: 1-th leading minor not positive definite
+DEBUG:Increasing eta: 4033661679213861.500000 -> 4033661679213861.500000
+DEBUG:LinAlgError: 1-th leading minor not positive definite
+DEBUG:Increasing eta: 4033661679213861.500000 -> 4033661679213861.500000
+DEBUG:LinAlgError: 1-th leading minor not positive definite
+DEBUG:Increasing eta: 4033661679213861.500000 -> 4033661679213861.500000
+DEBUG:LinAlgError: 1-th leading minor not positive definite
+DEBUG:Increasing eta: 4033661679213861.500000 -> 4033661679213862.000000
+DEBUG:Solving non-log problem due to a > 0: 3.942187 1.942187
+WARNING:Dual is not concave!
+DEBUG:Bracket points: 545896745813953.125000 4033661679213862.000000 (5.578704 38.905803) a=0.000000 b=0.362425
+DEBUG:Iteration 7, KL: 40.905803 / 2.000000 eta: 4033661679213861.500000 -> 10964629244758638.000000
+DEBUG:Solving non-log problem due to a > 0: 3.401658 0.401658
+WARNING:Dual is not concave!
+DEBUG:Bracket points: 545896745813953.125000 10964629244758638.000000 (5.578704 8.336255) a=0.000000 b=5.434220
+DEBUG:Iteration 8, KL: 10.336255 / 2.000000 eta: 10964629244758638.000000 -> 29804952431818032.000000
+DEBUG:LinAlgError: 6-th leading minor not positive definite
+DEBUG:Increasing eta: 29804952431818032.000000 -> 29804952431818032.000000
+Exception in thread Thread-2:
+Traceback (most recent call last):
+  File "/home/harley/anaconda2/lib/python2.7/threading.py", line 801, in __bootstrap_inner
+    self.run()
+  File "/home/harley/anaconda2/lib/python2.7/threading.py", line 754, in run
+    self.__target(*self.__args, **self.__kwargs)
+  File "python/gps/gps_main.py", line 372, in <lambda>
+    target=lambda: gps.run(itr_load=resume_training_itr)
+  File "python/gps/gps_main.py", line 67, in run
+    self._take_iteration(itr, traj_sample_lists)
+  File "python/gps/gps_main.py", line 198, in _take_iteration
+    self.algorithm.iteration(sample_lists)
+  File "python/gps/algorithm/algorithm_mdgps.py", line 72, in iteration
+    self._update_trajectories()
+  File "python/gps/algorithm/algorithm.py", line 114, in _update_trajectories
+    self.traj_opt.update(cond, self)
+  File "python/gps/algorithm/traj_opt/traj_opt_lqr_python_mdgps.py", line 50, in update
+    prev_eta, algorithm, m)
+  File "python/gps/algorithm/traj_opt/traj_opt_lqr_python_mdgps.py", line 287, in backward
+    reasonably well conditioned)!')
+ValueError: Failed to find PD solution even for very                             large eta (check that dynamics and cost are                             reasonably well conditioned)!
+
+DEBUG:Unrecognized keyboard input: shift
+DEBUG:Unrecognized keyboard input: shift
