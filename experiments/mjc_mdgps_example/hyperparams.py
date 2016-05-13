@@ -80,7 +80,7 @@ algorithm = {
     'min_step_mult': 0.01,
     'max_step_mult': 1.0,
     'policy_sample_mode': 'replace',
-    'agent_use_nn_policy': True,
+    'agent_use_nn_policy': False,
 }
 
 algorithm['init_traj_distr'] = {
