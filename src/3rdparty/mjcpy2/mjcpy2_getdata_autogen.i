@@ -58,7 +58,6 @@
     out["qLDiagSqrtInv"] = toNdarray2<mjtNum>(m_data->qLDiagSqrtInv, m_model->nv, 1);
     out["efc_type"] = toNdarray2<int>(m_data->efc_type, m_model->njmax, 1);
     out["efc_id"] = toNdarray2<int>(m_data->efc_id, m_model->njmax, 1);
-    out["efc_signature"] = toNdarray2<int>(m_data->efc_signature, m_model->njmax, 1);
     out["efc_rownnz"] = toNdarray2<int>(m_data->efc_rownnz, m_model->njmax, 1);
     out["efc_rowadr"] = toNdarray2<int>(m_data->efc_rowadr, m_model->njmax, 1);
     out["efc_colind"] = toNdarray2<int>(m_data->efc_colind, m_model->njmax, m_model->nv);

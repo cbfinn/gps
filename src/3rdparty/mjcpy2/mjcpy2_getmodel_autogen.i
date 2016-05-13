@@ -156,7 +156,7 @@
     out["tex_rgb"] = toNdarray2<mjtByte>(m_model->tex_rgb, m_model->ntexdata, 1);
     out["mat_texid"] = toNdarray2<int>(m_model->mat_texid, m_model->nmat, 1);
     out["mat_texuniform"] = toNdarray2<mjtByte>(m_model->mat_texuniform, m_model->nmat, 1);
-    out["mat_texscale"] = toNdarray2<float>(m_model->mat_texscale, m_model->nmat, 2);
+    out["mat_texrepeat"] = toNdarray2<float>(m_model->mat_texrepeat, m_model->nmat, 2);
     out["mat_emission"] = toNdarray2<float>(m_model->mat_emission, m_model->nmat, 1);
     out["mat_specular"] = toNdarray2<float>(m_model->mat_specular, m_model->nmat, 1);
     out["mat_shininess"] = toNdarray2<float>(m_model->mat_shininess, m_model->nmat, 1);

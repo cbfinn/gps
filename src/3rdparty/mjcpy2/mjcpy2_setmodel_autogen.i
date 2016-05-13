@@ -156,7 +156,7 @@
     _cadihk(d, "tex_rgb", m_model->tex_rgb);
     _cadihk(d, "mat_texid", m_model->mat_texid);
     _cadihk(d, "mat_texuniform", m_model->mat_texuniform);
-    _cadihk(d, "mat_texscale", m_model->mat_texscale);
+    _cadihk(d, "mat_texrepeat", m_model->mat_texrepeat);
     _cadihk(d, "mat_emission", m_model->mat_emission);
     _cadihk(d, "mat_specular", m_model->mat_specular);
     _cadihk(d, "mat_shininess", m_model->mat_shininess);
