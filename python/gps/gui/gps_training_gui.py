@@ -16,6 +16,7 @@ For more detailed documentation, visit: rll.berkeley.edu/gps/gui
 """
 import time
 import threading
+from IPython.core.debugger import Tracer; debug_here = Tracer()
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -286,8 +287,12 @@ class GPSTrainingGUI(object):
         controller entropies, and initial/final KL divergences for BADMM.
         """
         self.set_output_text(self._hyperparams['experiment_name'])
-        condition_titles = '%3s | %8s' % ('', '')
-        itr_data_fields  = '%3s | %8s' % ('itr', 'avg_cost')
+        if policy_titles:
+            condition_titles = '%3s | %8s %12s' % ('', '', '')
+            itr_data_fields  = '%3s | %8s %12s' % ('itr', 'avg_cost', 'avg_pol_cost')
+        else:
+            condition_titles = '%3s | %8s' % ('', '')
+            itr_data_fields  = '%3s | %8s' % ('itr', 'avg_cost')
         for m in range(algorithm.M):
             condition_titles += ' | %8s %9s %-7d' % ('', 'condition', m)
             itr_data_fields  += ' | %8s %8s %8s' % ('  cost  ', '  step  ', 'entropy ')
@@ -304,7 +309,13 @@ class GPSTrainingGUI(object):
         controller entropies, and initial/final KL divergences for BADMM.
         """
         avg_cost = np.mean(costs)
-        itr_data = '%3d | %8.2f' % (itr, avg_cost)
+        if pol_sample_lists is not None:
+            pol_costs = [np.mean([np.sum(algorithm.cost[m].eval(s)[0]) \
+                    for s in pol_sample_lists[m]]) \
+                    for m in range(algorithm.M)]
+            itr_data = '%3d | %8.2f %12.2f' % (itr, avg_cost, np.mean(pol_costs))
+        else:
+            itr_data = '%3d | %8.2f' % (itr, avg_cost)
         for m in range(algorithm.M):
             cost = costs[m]
             step = algorithm.prev[m].step_mult * algorithm.base_kl_step
@@ -312,11 +323,9 @@ class GPSTrainingGUI(object):
                     axis1=1, axis2=2)))
             itr_data += ' | %8.2f %8.2f %8.2f' % (cost, step, entropy)
             if pol_sample_lists is not None:
-                pol_costs = [algorithm.cost[m].eval(s)[0] for s in pol_sample_lists[m]]
-                pol_cost = np.mean(np.sum(pol_costs, axis=1))
                 kl_div_i = algorithm.prev[m].pol_info.prev_kl[0]
                 kl_div_f = algorithm.prev[m].pol_info.prev_kl[-1]
-                itr_data += ' %8.2f %8.2f %8.2f' % (pol_cost, kl_div_i, kl_div_f)
+                itr_data += ' %8.2f %8.2f %8.2f' % (pol_costs[m], kl_div_i, kl_div_f)
         self.append_output_text(itr_data)
 
     def _update_trajectory_visualizations(self, algorithm, agent,
