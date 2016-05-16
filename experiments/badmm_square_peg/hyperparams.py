@@ -36,7 +36,7 @@ SENSOR_DIMS = {
 PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/badmm_peg_big/'
+EXP_DIR = BASE_DIR + '/../experiments/badmm_square_peg/'
 
 
 common = {
@@ -46,27 +46,23 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 9,
+    'conditions': 4,
 }
 
 if not os.path.exists(common['data_files_dir']):
     os.makedirs(common['data_files_dir'])
 
-# set up grid of positions
-xs = np.linspace(-0.1, 0.1, 3)
-ys = np.linspace(-0.1, 0.1, 3)
-pos_body_offset = [np.array([x,y,0]) for x in xs for y in ys]
-
 agent = {
     'type': AgentMuJoCo,
-    'filename': './mjc_models/pr2_arm3d.xml',
+    'filename': './mjc_models/pr2_arm3d_square_peg.xml',
     'x0': np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
                           np.zeros(7)]),
     'dt': 0.05,
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
-    'pos_body_offset': pos_body_offset,
+    'pos_body_offset': [np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0]),
+                        np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
