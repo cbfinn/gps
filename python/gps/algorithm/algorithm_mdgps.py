@@ -1,6 +1,7 @@
 """ This file defines the MD-based GPS algorithm. """
 import copy
 import logging
+from IPython.core.debugger import Tracer; debug_here = Tracer()
 
 import numpy as np
 import scipy as sp
@@ -94,6 +95,10 @@ class AlgorithmMDGPS(Algorithm):
         for m in range(self.M):
             self._update_policy_fit(m, init=True)
             self._eval_cost(m)
+            lmax = self.cur[m].cs.max(axis=0)
+            lmin = self.cur[m].cs.min(axis=0)
+            self.cur[m].qmax = np.cumsum( (lmax - lmin)[::-1] )[::-1]
+            #debug_here()
             # Adjust step size relative to the previous iteration.
             if self.iteration_count > 0:
                 self._stepadjust(m)
@@ -326,7 +331,7 @@ class AlgorithmMDGPS(Algorithm):
                     0.5 * np.mean(d_pp_d)
         return kl_m, kl
 
-    def compute_costs(self, m, eta):
+    def compute_costs(self, m, eta, weights):
         """ Compute cost estimates used in the LQR backward pass. """
         traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
         pol_info = self.cur[m].pol_info
@@ -350,7 +355,7 @@ class AlgorithmMDGPS(Algorithm):
             PKLv[t, :] = np.concatenate([
                 KB.T.dot(inv_pol_S).dot(kB), -inv_pol_S.dot(kB)
             ])
-            fCm[t, :, :] = (Cm[t, :, :] + PKLm[t, :, :] * eta) / (eta)
-            fcv[t, :] = (cv[t, :] + PKLv[t, :] * eta) / (eta)
+            fCm[t, :, :] = (Cm[t, :, :] + PKLm[t, :, :] * eta * weights[t]) / (eta * weights[t])
+            fcv[t, :] = (cv[t, :] + PKLv[t, :] * eta * weights[t]) / (eta * weights[t])
 
         return fCm, fcv

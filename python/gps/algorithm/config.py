@@ -53,4 +53,5 @@ ALG_MDGPS = {
     'max_policy_samples': 20,
     'agent_use_nn_policy': False,
     'step_rule': 'old',
+    'weighted_kl': False,
 }
