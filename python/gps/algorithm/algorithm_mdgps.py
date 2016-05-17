@@ -218,18 +218,26 @@ class AlgorithmMDGPS(Algorithm):
 #            cur_traj_distr = self.cur[m].traj_distr
 
         # prev=NN, cur=LQR
+        # NOTE: we only copy in K/k/pol_covar, only things needed for cost
         prev_pol_info = self.prev[m].pol_info
-        prev_traj_distr = self.prev[m].traj_distr.nans_like()
-        prev_traj_distr.K = prev_pol_info.pol_K
-        prev_traj_distr.k = prev_pol_info.pol_k
-        prev_traj_distr.pol_covar = prev_pol_info.pol_S
+        prev_nn = self.prev[m].traj_distr.nans_like()
+        prev_nn.K = prev_pol_info.pol_K
+        prev_nn.k = prev_pol_info.pol_k
+        prev_nn.pol_covar = prev_pol_info.pol_S
+
+        cur_pol_info = self.cur[m].pol_info
+        cur_nn = self.cur[m].traj_distr.nans_like()
+        cur_nn.K = cur_pol_info.pol_K
+        cur_nn.k = cur_pol_info.pol_k
+        cur_nn.pol_covar = cur_pol_info.pol_S
+
         cur_traj_distr = self.cur[m].traj_distr
 
         # Compute values under Laplace approximation. This is the policy
         # that the previous samples were actually drawn from under the
         # dynamics that were estimated from the previous samples.
         prev_laplace_cost = self.traj_opt.estimate_cost(
-            prev_traj_distr, self.prev[m].traj_info
+            prev_nn, self.prev[m].traj_info
         )
         # This is the policy that we just used under the dynamics that
         # were estimated from the prev samples (so this is the cost
@@ -240,9 +248,14 @@ class AlgorithmMDGPS(Algorithm):
 
         # This is the actual cost we have under the current trajectory
         # based on the latest samples.
-        new_actual_laplace_cost = self.traj_opt.estimate_cost(
-            cur_traj_distr, self.cur[m].traj_info
-        )
+        if (self._hyperparams['step_rule'] == 'old'):
+            new_actual_laplace_cost = self.traj_opt.estimate_cost(
+                cur_traj_distr, self.cur[m].traj_info
+            )
+        else:
+            new_actual_laplace_cost = self.traj_opt.estimate_cost(
+                cur_nn, self.cur[m].traj_info
+            )
 
         # Measure the entropy of the current trajectory (for printout).
         ent = self._measure_ent(m)

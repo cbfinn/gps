@@ -5,7 +5,6 @@ from gps.gui.config import generate_experiment_info
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.traj_opt.traj_opt_lqr_python_mdgps import TrajOptLQRPythonMDGPS
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
-from IPython.core.debugger import Tracer; debug_here = Tracer()
 
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 default = imp.load_source('default_hyperparams', BASE_DIR+'/hyperparams.py')
@@ -28,7 +27,8 @@ if not os.path.exists(common['data_files_dir']):
 algorithm = default.algorithm.copy()
 algorithm.update({
     'type': AlgorithmMDGPS,
-    'agent_use_nn_policy': True,
+    'agent_use_nn_policy': False,
+    'step_rule': 'new',
 })
 
 algorithm['traj_opt'] = {

@@ -13,10 +13,11 @@ from gps.sample.sample_list import SampleList
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
+debug_here()
 
 os.chdir('experiments/peg3D')
-expts = ['lqr', 'badmm', 'mdgps_lqr', 'mdgps_nn']
-colors = ['k-', 'r-', 'b-', 'g-']
+expts = ['lqr', 'badmm', 'mdgps_lqr_old', 'mdgps_lqr_new', 'mdgps_nn_old', 'mdgps_nn_new']
+colors = ['k-', 'r-', 'b-', 'b--', 'g-', 'g--']
 iters = 12
 
 for i, expt in enumerate(expts):
