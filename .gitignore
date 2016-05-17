@@ -91,6 +91,6 @@ MUJOCO_LOG.TXT
 *.pkl
 
 # Experiment files
-experiments/*/data_files/
-experiments/*/log.txt
+experiments/**/data_files/
+experiments/**/log.txt
 .previous_experiment
