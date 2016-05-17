@@ -137,7 +137,7 @@ algorithm['policy_prior'] = {
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': 5,
-    'verbose_trials': 1,
+    'verbose_trials': 0,
     'agent': agent,
     'gui_on': True,
 }
