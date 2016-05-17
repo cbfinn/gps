@@ -28,7 +28,7 @@ if not os.path.exists(common['data_files_dir']):
 algorithm = default.algorithm.copy()
 algorithm.update({
     'type': AlgorithmMDGPS,
-    'agent_use_nn_policy': False,
+    'agent_use_nn_policy': True,
 })
 
 algorithm['traj_opt'] = {
