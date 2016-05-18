@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath('python'))
 from gps.sample.sample_list import SampleList
 from gps.algorithm.cost.cost_sum import CostSum
 
-os.chdir('experiments/peg3D')
+os.chdir('experiments/peg3D_hard')
 iters = 12
 seeds = [0, 1, 2]
 
@@ -89,6 +89,6 @@ expts = ['lqr', 'badmm', 'mdgps_lqr', 'mdgps_nn']
 colors = ['k', 'r', 'b', 'g']
 
 plot_expts(expts, colors)
-plt.title("Peg Insertion (easy)")
-plt.savefig("easy_peg.png")
+plt.title("Peg Insertion (hard)")
+plt.savefig("hard_peg.png")
 plt.clf()
