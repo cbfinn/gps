@@ -80,8 +80,8 @@ def plot_expts(expts, colors):
     plt.ylim((0, 0.5))
 
 
-expts = ['linear', 'qmax', 'qmax1', 'lg_covar']
-colors = ['k', 'r', 'b', 'g']
+expts = ['lqr', 'badmm', 'mdgps_lqr', 'avg_qmax', 'lg_covar']
+colors = ['k', 'r', 'b', 'g', 'm']
 
 plot_expts(expts, colors)
 plt.title("Peg Insertion (hard)")
