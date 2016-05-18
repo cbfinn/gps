@@ -93,4 +93,5 @@ MUJOCO_LOG.TXT
 # Experiment files
 experiments/**/data_files/
 experiments/**/log.txt
+experiments/**/*.png
 .previous_experiment

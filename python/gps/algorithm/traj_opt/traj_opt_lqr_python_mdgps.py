@@ -38,7 +38,14 @@ class TrajOptLQRPythonMDGPS(TrajOpt):
         prev_nn_traj_distr = algorithm.cur[m].traj_distr.nans_like()
         prev_nn_traj_distr.K = pol_info.pol_K
         prev_nn_traj_distr.k = pol_info.pol_k
-        prev_nn_traj_distr.chol_pol_covar = pol_info.chol_pol_S
+
+        # Maybe use other covar?
+        if algorithm._hyperparams['use_lg_covar']:
+            prev_nn_traj_distr.chol_pol_covar = algorithm.cur[m].traj_distr.chol_pol_covar
+            prev_nn_traj_distr.pol_covar = algorithm.cur[m].traj_distr.pol_covar
+        else:
+            prev_nn_traj_distr.chol_pol_covar = pol_info.chol_pol_S
+            prev_nn_traj_distr.pol_covar = pol_info.pol_S
 
         # Set KL-divergence step size (epsilon).
         kl_step = algorithm.base_kl_step * step_mult
@@ -47,12 +54,23 @@ class TrajOptLQRPythonMDGPS(TrajOpt):
         min_eta = -np.Inf
 
         # Set weights for kl divergence
-        if algorithm._hyperparams['weighted_kl']:
-            weights = algorithm.cur[m].qmax
-            weights /= weights.sum()
-            weights *= T
-        else:
+        if not algorithm._hyperparams['weighted_kl']:
             weights = np.ones(T)
+        elif algorithm._hyperparams['weighted_kl'] == 'linear':
+            weights = np.linspace(T, 1, T)
+        elif algorithm._hyperparams['weighted_kl'] == 'qmax':
+            weights = algorithm.cur[m].qmax
+        elif algorithm._hyperparams['weighted_kl'] == 'qmax1':
+            weights = algorithm.cur[m].qmax + 1
+        elif algorithm._hyperparams['weighted_kl'] == 'avg_qmax':
+            weights = self.estimate_cost(prev_nn_traj_distr, traj_info)
+            weights = np.cumsum( weights[::-1] )[::-1]
+        elif algorithm._hyperparams['weighted_kl'] == 'avg_qmax1':
+            weights = self.estimate_cost(prev_nn_traj_distr, traj_info) + 1
+            weights = np.cumsum( weights[::-1] )[::-1]
+
+        # Normalize to sum to T
+        weights *= T/weights.sum()
 
         # Run DGD
         for itr in range(DGD_MAX_ITER):

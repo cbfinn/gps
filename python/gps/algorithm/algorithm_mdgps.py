@@ -343,10 +343,13 @@ class AlgorithmMDGPS(Algorithm):
         fCm, fcv = np.zeros(Cm.shape), np.zeros(cv.shape)
         for t in range(T):
             # Policy KL-divergence terms.
-            inv_pol_S = np.linalg.solve(
-                pol_info.chol_pol_S[t, :, :],
-                np.linalg.solve(pol_info.chol_pol_S[t, :, :].T, np.eye(dU))
-            )
+            if self._hyperparams['use_lg_covar']:
+                inv_pol_S = traj_distr.inv_pol_covar[t, :, :]
+            else:
+                inv_pol_S = np.linalg.solve(
+                    pol_info.chol_pol_S[t, :, :],
+                    np.linalg.solve(pol_info.chol_pol_S[t, :, :].T, np.eye(dU))
+                )
             KB, kB = pol_info.pol_K[t, :, :], pol_info.pol_k[t, :]
             PKLm[t, :, :] = np.vstack([
                 np.hstack([KB.T.dot(inv_pol_S).dot(KB), -KB.T.dot(inv_pol_S)]),
