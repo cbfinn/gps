@@ -80,10 +80,16 @@ def plot_expts(expts, colors):
     plt.ylim((0, 0.5))
 
 
-expts = ['lqr', 'badmm', 'mdgps_lqr', 'avg_qmax', 'lg_covar']
-colors = ['k', 'r', 'b', 'g', 'm']
+old_expts = ['lqr', 'badmm', 'mdgps_lqr', 'mdgps_nn']
+new_expts = ['lqr', 'badmm', 'mdgps_lqr_new', 'mdgps_nn_new']
+colors = ['k', 'r', 'b', 'g']
 
-plot_expts(expts, colors)
-plt.title("Peg Insertion (hard)")
-plt.savefig("hard_peg_debug.png")
+plot_expts(old_expts, colors)
+plt.title("Peg Insertion (hard, old step size)")
+plt.savefig("hard_peg_debug_old.png")
+plt.clf()
+
+plot_expts(new_expts, colors)
+plt.title("Peg Insertion (hard, new step size)")
+plt.savefig("hard_peg_debug_new.png")
 plt.clf()
