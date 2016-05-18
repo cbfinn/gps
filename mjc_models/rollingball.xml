@@ -21,8 +21,8 @@
   </worldbody>
 
   <actuator>
-    <motor joint="ball_rx" ctrllimited="true" ctrlrange="-500 500"/>
-    <motor joint="ball_ry" ctrllimited="true" ctrlrange="-500 500"/>
+    <motor joint="ball_rx" ctrllimited="true" ctrlrange="-100 100"/>
+    <motor joint="ball_ry" ctrllimited="true" ctrlrange="-100 100"/>
   </actuator>
 
 </mujoco>

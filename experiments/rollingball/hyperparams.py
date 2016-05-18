@@ -85,7 +85,7 @@ algorithm['init_traj_distr'] = {
 
 torque_cost = {
     'type': CostAction,
-    'wu': 1e-4*np.ones(SENSOR_DIMS[ACTION]),
+    'wu': 1e-2*np.ones(SENSOR_DIMS[ACTION]),
 }
 
 fk_cost = {
