@@ -98,7 +98,7 @@ class AlgorithmMDGPS(Algorithm):
             lmax = self.cur[m].cs.max(axis=0)
             lmin = self.cur[m].cs.min(axis=0)
             self.cur[m].qmax = np.cumsum( (lmax - lmin)[::-1] )[::-1]
-            #debug_here()
+
             # Adjust step size relative to the previous iteration.
             if self.iteration_count > 0:
                 self._stepadjust(m)

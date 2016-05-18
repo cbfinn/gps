@@ -24,10 +24,8 @@ from gps.gui.config import generate_experiment_info
 
 
 SENSOR_DIMS = {
-    JOINT_ANGLES: 6,
-    JOINT_VELOCITIES: 6,
-    END_EFFECTOR_POINTS: 3,
-    END_EFFECTOR_POINT_VELOCITIES: 3,
+    JOINT_ANGLES: 5,
+    JOINT_VELOCITIES: 5,
     ACTION: 2,
 }
 
@@ -48,7 +46,7 @@ pos_body_offset.pop(4) # get rid of (0,0,0) point
 agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/rollingball.xml',
-    'x0': np.zeros(12),
+    'x0': np.zeros(SENSOR_DIMS[JOINT_ANGLES] + SENSOR_DIMS[JOINT_VELOCITIES]),
     'dt': 0.05,
     'substeps': 5,
     'conditions': common['conditions'],
@@ -56,10 +54,8 @@ agent = {
     'pos_body_offset': pos_body_offset,
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
-    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-                      END_EFFECTOR_POINT_VELOCITIES],
-    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-                    END_EFFECTOR_POINT_VELOCITIES],
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
 }
 
 algorithm = {
@@ -85,7 +81,7 @@ algorithm['init_traj_distr'] = {
 
 torque_cost = {
     'type': CostAction,
-    'wu': 1e-2*np.ones(SENSOR_DIMS[ACTION]),
+    'wu': 1e-3*np.ones(SENSOR_DIMS[ACTION]),
 }
 
 fk_cost = {
@@ -136,7 +132,7 @@ algorithm['policy_prior'] = {
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': 5,
-    'verbose_trials': 0,
+    'verbose_trials': 1,
     'agent': agent,
     'gui_on': True,
 }
