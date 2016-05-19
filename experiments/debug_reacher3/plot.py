@@ -7,13 +7,13 @@ from IPython.core.debugger import Tracer; debug_here = Tracer()
 
 # Add gps/python to path so that imports work.
 # (should be run from ~/gps)
+dirname = '/'.join(str.split(os.path.abspath(str(__file__)), '/')[:-1])
 os.chdir(os.path.expanduser('~/gps'))
 sys.path.append(os.path.abspath('python'))
 from gps.sample.sample_list import SampleList
 from gps.algorithm.cost.cost_sum import CostSum
-
-dirname = '/'.join(str.split(os.path.abspath(__file__), '/')[:-1])
 os.chdir(dirname)
+
 iters = 12
 
 def pickle_dist(expt, itr):
@@ -83,10 +83,10 @@ colors = ['k', 'r', 'b', 'g']
 
 plot_expts(old_expts, colors)
 plt.title("Reacher3 (old step size)")
-plt.savefig("reacher3_old.png")
+plt.savefig("debug_reacher3_old.png")
 plt.clf()
 
 plot_expts(new_expts, colors)
 plt.title("Reacher3 (new step size)")
-plt.savefig("reacher3_new.png")
+plt.savefig("debug_reacher3_new.png")
 plt.clf()
