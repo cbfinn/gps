@@ -7,12 +7,13 @@ from IPython.core.debugger import Tracer; debug_here = Tracer()
 
 # Add gps/python to path so that imports work.
 # (should be run from ~/gps)
+dirname = '/'.join(str.split(os.path.abspath(str(__file__)), '/')[:-1])
 os.chdir(os.path.expanduser('~/gps'))
 sys.path.append(os.path.abspath('python'))
 from gps.sample.sample_list import SampleList
 from gps.algorithm.cost.cost_sum import CostSum
+os.chdir(dirname)
 
-os.chdir('experiments/peg3D_hard')
 iters = 12
 seeds = [0, 1, 2]
 

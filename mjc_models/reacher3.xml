@@ -1,0 +1,38 @@
+<mujoco model="reacher2">
+    <compiler inertiafromgeom="true" angle="radian" coordinate="local" />
+    <option timestep="0.01" gravity="0 0 0" iterations="20" integrator="Euler" />
+
+    <default>
+        <joint armature='0.04' damping="0.1" limited="false"/>
+        <geom contype="2" conaffinity="1" condim="1" friction=".5 .1 .1" density="1000" margin="0.002" />
+    </default>
+
+    <worldbody>
+        <body name="link1" pos="0 0 0">
+            <geom name="link1" type="capsule" fromto="0 0 0 0 0 0.1" size="0.01" />
+            <joint name="joint1" type="hinge" pos="0 0 0" axis="0 0 1" />
+
+            <body name="link2" pos="0 0 0.1">
+                <geom name="link2" type="capsule" fromto="0 0 0 0 0 0.1" size="0.01" />
+                <joint name="joint2" type="hinge" pos="0 0 0" axis="0 1 0" limited="true" range="-3 3"/>
+
+                <body name="link3" pos="0 0 0.1">
+                    <site name="end_effector" pos="0 0 0.1" size="0.01" />
+
+                    <geom name="link3" type="capsule" fromto="0 0 0 0 0 0.1" size="0.01" />
+                    <joint name="joint3" type="hinge" pos="0 0 0" axis="0 1 0" limited="true" range="-3 3"/>
+                </body>
+            </body>
+        </body>
+
+        <body name="target" pos="0 0 0">
+            <geom name="target" type="box" size="0.01 0.01 0.01" />
+        </body>
+    </worldbody>
+
+    <actuator>
+        <motor joint="joint1" ctrllimited="true" ctrlrange="-1 1"/>
+        <motor joint="joint2" ctrllimited="true" ctrlrange="-1 1"/>
+        <motor joint="joint3" ctrllimited="true" ctrlrange="-1 1"/>
+    </actuator>
+</mujoco>

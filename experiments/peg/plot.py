@@ -7,12 +7,13 @@ from IPython.core.debugger import Tracer; debug_here = Tracer()
 
 # Add gps/python to path so that imports work.
 # (should be run from ~/gps)
+dirname = '/'.join(str.split(os.path.abspath(str(__file__)), '/')[:-1])
 os.chdir(os.path.expanduser('~/gps'))
 sys.path.append(os.path.abspath('python'))
 from gps.sample.sample_list import SampleList
 from gps.algorithm.cost.cost_sum import CostSum
+os.chdir(dirname)
 
-os.chdir('experiments/peg3D')
 iters = 12
 seeds = [0, 1, 2]
 
@@ -38,6 +39,8 @@ def pickle_z(expt, seed, itr):
         cPickle.dump(z, f, -1)
 
 def unpickle_z(expt, seed, itr):
+    print "Unpickling %s, seed %s, itr %s" % (expt, seed, itr)
+
     dirname = "%s/%s/data_files" % (expt, seed)
     fname = "%s/z_itr_%02d.pkl" % (dirname, itr)
     with open(fname, 'rb') as f:
