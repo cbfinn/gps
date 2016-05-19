@@ -27,7 +27,8 @@ if not os.path.exists(common['data_files_dir']):
 algorithm = default.algorithm.copy()
 algorithm.update({
     'type': AlgorithmMDGPS,
-    'agent_use_nn_policy': True,
+    'agent_use_nn_policy': False,
+    'step_rule': 'new',
 })
 
 algorithm['traj_opt'] = {
@@ -45,7 +46,7 @@ config.update({
     'common': common,
     'algorithm': algorithm,
     'verbose_policy_trials': 1,
-    'step_rule': 'old',
+    'seed': 1,
 })
 
 common['info'] = generate_experiment_info(config)

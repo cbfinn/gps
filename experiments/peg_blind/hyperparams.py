@@ -34,15 +34,10 @@ SENSOR_DIMS = {
 PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 
 common = {
-    'conditions': 9,
+    'conditions': 4,
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
 }
-
-# set up grid of positions
-xs = np.linspace(-0.1, 0.1, 3)
-ys = np.linspace(-0.1, 0.1, 3)
-pos_body_offset = [np.array([x,y,0]) for x in xs for y in ys]
 
 agent = {
     'type': AgentMuJoCo,
@@ -53,7 +48,8 @@ agent = {
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
-    'pos_body_offset': pos_body_offset,
+    'pos_body_offset': [np.array([0.01, 0.01, 0]), np.array([0.01, -0.01, 0]),
+                        np.array([-0.01, -0.01, 0]), np.array([-0.01, 0.01, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -64,7 +60,7 @@ agent = {
 
 algorithm = {
     'conditions': common['conditions'],
-    'iterations': 12,
+    'iterations': 20,
     'kl_step': 2.0,
     'min_step_mult': 0.01,
     'max_step_mult': 1.0,

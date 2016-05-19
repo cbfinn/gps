@@ -190,6 +190,8 @@ class TrajOptLQRPython(TrajOpt):
         dX = prev_traj_distr.dX
 
         traj_distr = prev_traj_distr.nans_like()
+        if algorithm.cur[m].pol_info:
+            pol_wt = algorithm.cur[m].pol_info.pol_wt
 
         idx_x = slice(dX)
         idx_u = slice(dX, dX+dU)
@@ -221,13 +223,20 @@ class TrajOptLQRPython(TrajOpt):
 
                 # Add in the value function from the next time step.
                 if t < T - 1:
-                    #TODO: Should multiply by
-                    #      (pol_wt[t+1] + eta)/(pol_wt[t] + eta) here.
-                    Qtt = Qtt + \
-                            Fm[t, :, :].T.dot(Vxx[t+1, :, :]).dot(Fm[t, :, :])
-                    Qt = Qt + \
-                            Fm[t, :, :].T.dot(Vx[t+1, :] +
-                                              Vxx[t+1, :, :].dot(fv[t, :]))
+                    if algorithm.cur[m].pol_info:
+                        Qtt = Qtt + \
+                                (pol_wt[t+1] + eta)/(pol_wt[t] + eta) * \
+                                Fm[t, :, :].T.dot(Vxx[t+1, :, :]).dot(Fm[t, :, :])
+                        Qt = Qt + \
+                                (pol_wt[t+1] + eta)/(pol_wt[t] + eta) * \
+                                Fm[t, :, :].T.dot(Vx[t+1, :] +
+                                                Vxx[t+1, :, :].dot(fv[t, :]))
+                    else:
+                        Qtt = Qtt + \
+                                Fm[t, :, :].T.dot(Vxx[t+1, :, :]).dot(Fm[t, :, :])
+                        Qt = Qt + \
+                                Fm[t, :, :].T.dot(Vx[t+1, :] +
+                                                Vxx[t+1, :, :].dot(fv[t, :]))
 
                 # Symmetrize quadratic component.
                 Qtt = 0.5 * (Qtt + Qtt.T)
@@ -244,14 +253,28 @@ class TrajOptLQRPython(TrajOpt):
                     fail = True
                     break
 
-                # Store conditional covariance, inverse, and Cholesky.
-                traj_distr.inv_pol_covar[t, :, :] = Qtt[idx_u, idx_u]
-                traj_distr.pol_covar[t, :, :] = sp.linalg.solve_triangular(
-                    U, sp.linalg.solve_triangular(L, np.eye(dU), lower=True)
-                )
-                traj_distr.chol_pol_covar[t, :, :] = sp.linalg.cholesky(
-                    traj_distr.pol_covar[t, :, :]
-                )
+                if not algorithm.cur[m].pol_info:
+                    traj_distr.pol_covar[t, :, :] = sp.linalg.solve_triangular(
+                        U, sp.linalg.solve_triangular(L, np.eye(dU), lower=True)
+                    )
+                    traj_distr.pol_covar[t, :, :] += 1e-6*np.eye(dU)
+
+                    traj_distr.chol_pol_covar[t, :, :] = sp.linalg.cholesky(
+                        traj_distr.pol_covar[t, :, :]
+                    )
+
+                    traj_distr.inv_pol_covar[t, :, :] = np.linalg.solve(
+                        traj_distr.chol_pol_covar[t, :, :],
+                        np.linalg.solve(traj_distr.chol_pol_covar[t, :, :].T, np.eye(dU))
+                    )
+                else:
+                    traj_distr.inv_pol_covar[t, :, :] = Qtt[idx_u, idx_u]
+                    traj_distr.pol_covar[t, :, :] = sp.linalg.solve_triangular(
+                        U, sp.linalg.solve_triangular(L, np.eye(dU), lower=True)
+                    )
+                    traj_distr.chol_pol_covar[t, :, :] = sp.linalg.cholesky(
+                        traj_distr.pol_covar[t, :, :]
+                    )
 
                 # Compute mean terms.
                 traj_distr.k[t, :] = -sp.linalg.solve_triangular(

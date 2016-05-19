@@ -14,7 +14,7 @@ from gps.sample.sample_list import SampleList
 from gps.algorithm.cost.cost_sum import CostSum
 os.chdir(dirname)
 
-iters = 20
+iters = 30
 seeds = [0, 1, 2]
 
 def pickle_z(expt, seed, itr):
@@ -91,5 +91,5 @@ colors = ['k', 'r', 'b', 'c', 'm', 'g']
 
 plot_expts(expts, colors)
 plt.title("Blind Peg Insertion")
-plt.savefig("peg_blind.png")
+plt.savefig("peg_blind_big.png")
 plt.clf()

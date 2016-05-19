@@ -228,13 +228,20 @@ class AlgorithmMDGPS(Algorithm):
         prev_nn = self.prev[m].traj_distr.nans_like()
         prev_nn.K = prev_pol_info.pol_K
         prev_nn.k = prev_pol_info.pol_k
-        prev_nn.pol_covar = prev_pol_info.pol_S
+
+        if self._hyperparams['use_lg_covar']:
+            prev_nn.pol_covar = prev_pol_info.pol_S
+        else:
+            prev_nn.pol_covar = self.prev[m].traj_distr.pol_covar
 
         cur_pol_info = self.cur[m].pol_info
         cur_nn = self.cur[m].traj_distr.nans_like()
         cur_nn.K = cur_pol_info.pol_K
         cur_nn.k = cur_pol_info.pol_k
-        cur_nn.pol_covar = cur_pol_info.pol_S
+        if self._hyperparams['use_lg_covar']:
+            cur_nn.pol_covar = cur_pol_info.pol_S
+        else:
+            cur_nn.pol_covar = self.cur[m].traj_distr.pol_covar
 
         cur_traj_distr = self.cur[m].traj_distr
 

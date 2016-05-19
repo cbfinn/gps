@@ -31,8 +31,8 @@
     </worldbody>
 
     <actuator>
-        <motor joint="joint1" ctrllimited="true" ctrlrange="-0.05 0.05"/>
-        <motor joint="joint2" ctrllimited="true" ctrlrange="-0.05 0.05"/>
-        <motor joint="joint3" ctrllimited="true" ctrlrange="-0.05 0.05"/>
+        <motor joint="joint1" ctrllimited="true" ctrlrange="-100 100"/>
+        <motor joint="joint2" ctrllimited="true" ctrlrange="-100 100"/>
+        <motor joint="joint3" ctrllimited="true" ctrlrange="-100 100"/>
     </actuator>
 </mujoco>

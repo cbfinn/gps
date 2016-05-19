@@ -88,8 +88,8 @@ def plot_expts(expts, colors):
     plt.ylim((0, 0.5))
 
 
-expts = ['lqr', 'badmm', 'mdgps_lqr', 'mdgps_nn']
-colors = ['k', 'r', 'b', 'g']
+expts = ['lqr', 'badmm', 'mdgps_lqr', 'mdgps_nn', 'mdgps_lqr_new', 'mdgps_nn_new']
+colors = ['k', 'r', 'b', 'c', 'm', 'g']
 
 plot_expts(expts, colors)
 plt.title("Peg Insertion (easy)")

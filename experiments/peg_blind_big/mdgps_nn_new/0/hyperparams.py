@@ -28,6 +28,7 @@ algorithm = default.algorithm.copy()
 algorithm.update({
     'type': AlgorithmMDGPS,
     'agent_use_nn_policy': True,
+    'step_rule': 'new',
 })
 
 algorithm['traj_opt'] = {
@@ -45,7 +46,6 @@ config.update({
     'common': common,
     'algorithm': algorithm,
     'verbose_policy_trials': 1,
-    'step_rule': 'old',
 })
 
 common['info'] = generate_experiment_info(config)
