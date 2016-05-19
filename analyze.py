@@ -10,7 +10,7 @@ from IPython.core.debugger import Tracer; debug_here = Tracer()
 sys.path.append(os.path.abspath('python'))
 from gps.sample.sample_list import SampleList
 
-tasks = ['peg_blind_big']
+tasks = ['peg', 'peg_blind', 'peg_blind_big']
 expts = ['lqr', 'badmm', 'mdgps_lqr', 'mdgps_nn', 'mdgps_lqr_new', 'mdgps_nn_new']
 seeds = [0, 1, 2]
 iters = range(30)
@@ -68,6 +68,42 @@ def get_final_eepts(task, expt, itr):
     return np.array(eepts) # (num_seeds, M, N, num_eepts)
 
 task = tasks[0]
+csv = open('peg.csv', 'w')
+csv.write("iteration\t")
+[csv.write("%12s\t" % expt) for expt in expts]
+csv.write("\n")
+for i in [10]:
+    csv.write("%8s\t" % i)
+    for expt in expts:
+        eepts = get_final_eepts(task, expt, i-1)
+        if eepts.shape[0] == 0:
+            csv.write("%12s\t" % "N/A")
+            continue
+        zpos = eepts[:, :, :, 2].flatten()
+        pct = np.mean(zpos < SUCCESS_THRESHOLD)
+        csv.write("%12f\t" % pct)
+    csv.write('\n')
+
+'''
+task = tasks[1]
+csv = open('peg_blind.csv', 'w')
+csv.write("iteration\t")
+[csv.write("%12s\t" % expt) for expt in expts]
+csv.write("\n")
+for i in [10, 20]:
+    csv.write("%8s\t" % i)
+    for expt in expts:
+        eepts = get_final_eepts(task, expt, i-1)
+        if eepts.shape[0] == 0:
+            csv.write("%12s\t" % "N/A")
+            continue
+        zpos = eepts[:, :, :, 2].flatten()
+        pct = np.mean(zpos < SUCCESS_THRESHOLD)
+        csv.write("%12f\t" % pct)
+    csv.write('\n')
+'''
+
+task = tasks[2]
 csv = open('peg_blind_big.csv', 'w')
 csv.write("iteration\t")
 [csv.write("%12s\t" % expt) for expt in expts]
@@ -83,6 +119,7 @@ for i in [10, 20, 30]:
         pct = np.mean(zpos < SUCCESS_THRESHOLD)
         csv.write("%12f\t" % pct)
     csv.write('\n')
+
 
 #def plot_expts(expts, colors):
 #    for expt, color in zip(expts, colors):

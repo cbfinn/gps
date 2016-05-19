@@ -40,8 +40,9 @@ common = {
 # set up grid of positions
 xs = np.linspace(-1.5, 1.5, 3)
 ys = np.linspace(-1.5, 1.5, 3)
-pos_body_offset = [np.array([x,y,0]) for x in xs for y in ys]
-pos_body_offset.pop(4) # get rid of (0,0,0) point
+x0 = [np.array([x,y,0,0,0,0,0,0,0,0]) for x in xs for y in ys]
+#pos_body_offset = [np.array([x,y,0]) for x in xs for y in ys]
+#pos_body_offset.pop(4) # get rid of (0,0,0) point
 
 agent = {
     'type': AgentMuJoCo,
@@ -50,8 +51,8 @@ agent = {
     'dt': 0.05,
     'substeps': 5,
     'conditions': common['conditions'],
-    'pos_body_idx': np.array([1]),
-    'pos_body_offset': pos_body_offset,
+#    'pos_body_idx': np.array([1]),
+#    'pos_body_offset': pos_body_offset,
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],

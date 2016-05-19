@@ -65,7 +65,7 @@ agent = {
 
 algorithm = {
     'conditions': common['conditions'],
-    'iterations': 12,
+    'iterations': 20,
     'kl_step': 2.0,
     'min_step_mult': 0.01,
     'max_step_mult': 1.0,

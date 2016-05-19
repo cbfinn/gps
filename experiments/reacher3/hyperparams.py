@@ -34,21 +34,25 @@ SENSOR_DIMS = {
 PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 
 common = {
-    'conditions': 8,
+    'conditions': 4,
+#    'conditions': 8,
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
 }
 
 # set up grid of positions
-xs = np.linspace(-0.1, 0.1, 3)
-ys = np.linspace(-0.1, 0.1, 3)
+xs = np.linspace(-0.1, 0.1, 2)
+ys = np.linspace(-0.1, 0.1, 2)
 pos_body_offset = [np.array([x,y,0]) for x in xs for y in ys]
-pos_body_offset.pop(4) # get rid of (0,0,0) point
+#xs = np.linspace(-0.1, 0.1, 3)
+#ys = np.linspace(-0.1, 0.1, 3)
+#pos_body_offset = [np.array([x,y,0]) for x in xs for y in ys]
+#pos_body_offset.pop(4) # get rid of (0,0,0) point
 
 agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/reacher3.xml',
-    'x0': np.zeros(6),
+    'x0': np.zeros(SENSOR_DIMS[JOINT_VELOCITIES] + SENSOR_DIMS[JOINT_ANGLES]),
     'dt': 0.05,
     'substeps': 5,
     'conditions': common['conditions'],
@@ -86,13 +90,13 @@ algorithm['init_traj_distr'] = {
 
 torque_cost = {
     'type': CostAction,
-    'wu': 1e-1*np.ones(SENSOR_DIMS[ACTION]),
+    'wu': 1e0*np.ones(SENSOR_DIMS[ACTION]),
 }
 
 fk_cost = {
     'type': CostFK,
     'target_end_effector': np.array([0.0, 0.0, 0.0]),
-    'wp': np.array([2, 2, 1]),
+    'wp': np.array([1, 1, 1]),
     'l1': 0.1,
     'l2': 10.0,
     'alpha': 1e-5,
