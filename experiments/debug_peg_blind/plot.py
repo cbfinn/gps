@@ -14,7 +14,7 @@ from gps.sample.sample_list import SampleList
 from gps.algorithm.cost.cost_sum import CostSum
 os.chdir(dirname)
 
-iters = 12
+iters = 20
 
 def pickle_z(expt, itr):
     print "Pickling %s, itr %s" % (expt, itr)
@@ -52,6 +52,7 @@ def process_z(expt, itr):
     # skip if not done
     fname = "%s/algorithm_itr_%02d.pkl" % (dirname, itr)
     if not os.path.exists(fname):
+        print "Skipping, not done, %s, itr %s" % (expt, itr)
         return
 
     # pickle if hasn't been pickled
@@ -81,16 +82,11 @@ def plot_expts(expts, colors):
     plt.ylim((0, 0.5))
 
 
-old_expts = ['lqr', 'badmm', 'mdgps_lqr', 'mdgps_nn']
-new_expts = ['lqr', 'badmm', 'mdgps_lqr_new', 'mdgps_nn_new']
-colors = ['k', 'r', 'b', 'g']
+expts = ['lqr', 'badmm', 'mdgps_lqr', 'mdgps_nn', 'mdgps_lqr_new', 'mdgps_nn_new']
+colors = ['k', 'r', 'b', 'g', 'm', 'darkgreen']
 
-plot_expts(old_expts, colors)
-plt.title("Peg Insertion (hard, old step size)")
-plt.savefig("hard_peg_debug_old.png")
-plt.clf()
-
-plot_expts(new_expts, colors)
-plt.title("Peg Insertion (hard, new step size)")
-plt.savefig("hard_peg_debug_new.png")
+plt.figure(figsize=(12,6))
+plot_expts(expts, colors)
+plt.title("Peg Insertion (Blind)")
+plt.savefig("debug_peg_blind.png")
 plt.clf()

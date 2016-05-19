@@ -1,9 +1,9 @@
 <mujoco model="reacher2">
     <compiler inertiafromgeom="true" angle="radian" coordinate="local" />
-    <option timestep="0.01" gravity="0 0 0" iterations="20" integrator="Euler" />
+    <option timestep="0.01" gravity="0 0 0" iterations="20" integrator="RK4" />
 
     <default>
-        <joint armature='0.04' damping="0.1" limited="false"/>
+        <joint armature='0.04' damping="1.0" limited="false"/>
         <geom contype="2" conaffinity="1" condim="1" friction=".5 .1 .1" density="1000" margin="0.002" />
     </default>
 
@@ -31,8 +31,8 @@
     </worldbody>
 
     <actuator>
-        <motor joint="joint1" ctrllimited="true" ctrlrange="-1 1"/>
-        <motor joint="joint2" ctrllimited="true" ctrlrange="-1 1"/>
-        <motor joint="joint3" ctrllimited="true" ctrlrange="-1 1"/>
+        <motor joint="joint1" ctrllimited="true" ctrlrange="-0.05 0.05"/>
+        <motor joint="joint2" ctrllimited="true" ctrlrange="-0.05 0.05"/>
+        <motor joint="joint3" ctrllimited="true" ctrlrange="-0.05 0.05"/>
     </actuator>
 </mujoco>
