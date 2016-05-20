@@ -1,9 +1,10 @@
 """ Hyperparameters for MJC peg insertion policy optimization. """
 import imp
 import os.path
+import numpy as np
 from gps.gui.config import generate_experiment_info
-from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
-from gps.algorithm.traj_opt.traj_opt_lqr_python_mdgps import TrajOptLQRPythonMDGPS
+from gps.algorithm.algorithm_badmm import AlgorithmBADMM
+from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-3])
@@ -26,12 +27,16 @@ if not os.path.exists(common['data_files_dir']):
 # Algorithm
 algorithm = default.algorithm.copy()
 algorithm.update({
-    'type': AlgorithmMDGPS,
-    'agent_use_nn_policy': False,
+    'type': AlgorithmBADMM,
+    'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-2]),
+    'policy_dual_rate': 0.1,
+    'init_pol_wt': 0.01,
+    'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
+    'fixed_lg_step': 3,
 })
 
 algorithm['traj_opt'] = {
-    'type': TrajOptLQRPythonMDGPS,
+    'type': TrajOptLQRPython,
 }
 
 algorithm['policy_opt'] = {
@@ -45,7 +50,6 @@ config.update({
     'common': common,
     'algorithm': algorithm,
     'verbose_policy_trials': 1,
-    'seed': 41,
 })
 
 common['info'] = generate_experiment_info(config)

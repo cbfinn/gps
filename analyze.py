@@ -10,11 +10,12 @@ from IPython.core.debugger import Tracer; debug_here = Tracer()
 sys.path.append(os.path.abspath('python'))
 from gps.sample.sample_list import SampleList
 
-tasks = ['peg', 'peg_blind', 'peg_blind_big']
-expts = ['lqr', 'badmm', 'mdgps_lqr', 'mdgps_nn', 'mdgps_lqr_new', 'mdgps_nn_new']
+tasks = ['reacher3', 'peg', 'peg_blind_big']
+expts = ['badmm', 'mdgps_lqr', 'mdgps_nn', 'mdgps_lqr_new', 'mdgps_nn_new']
+labels = ['BADMM', 'classic, off policy', 'classic, on policy', 'global, off policy', 'global, on policy']
 seeds = [0, 1, 2]
 iters = range(30)
-colors = ['k', 'r', 'b', 'c', 'm', 'g']
+colors = ['k', 'r', 'b', 'm', 'g']
 
 SUCCESS_THRESHOLD = -0.5 + 0.06
 
@@ -40,6 +41,7 @@ def pickle_final_eepts(task, expt, seed, itr):
         cPickle.dump(final_eepts, f, -1)
 
 def unpickle_final_eepts(task, expt, seed, itr):
+    print "Unpickling task %s, expt %s, seed %s, itr %s" % (task, expt, seed, itr)
     dirname = "experiments/%s/%s/%s/data_files" % (task, expt, seed)
     fname = "%s/final_eepts_itr_%02d.pkl" % (dirname, itr)
     with open(fname, 'rb') as f:
@@ -56,6 +58,7 @@ def get_final_eepts(task, expt, itr):
         # skip if the seed hasn't been run
         fname = "%s/algorithm_itr_%02d.pkl" % (dirname, itr)
         if not os.path.exists(fname):
+            print "Skipping, not done, task %s, expt %s, seed %s, itr %s" % (task, expt, seed, itr)
             continue
 
         # pickle if the seed hasn't been pickled
@@ -63,85 +66,143 @@ def get_final_eepts(task, expt, itr):
         if not os.path.exists(fname):
             pickle_final_eepts(task, expt, seed, itr)
 
-        eepts.append(unpickle_final_eepts(task, expt, seed, itr))
+        pts = unpickle_final_eepts(task, expt, seed, itr)
+        if np.isnan(pts).any() or np.isinf(pts).any():
+            #debug_here()
+            print "Skipping, NaN/Inf, task %s, expt %s, seed %s, itr %s" % (task, expt, seed, itr)
+            continue
+        eepts.append(pts)
 
     return np.array(eepts) # (num_seeds, M, N, num_eepts)
 
-task = tasks[0]
-csv = open('peg.csv', 'w')
-csv.write("iteration\t")
-[csv.write("%12s\t" % expt) for expt in expts]
-csv.write("\n")
-for i in [10]:
-    csv.write("%8s\t" % i)
-    for expt in expts:
-        eepts = get_final_eepts(task, expt, i-1)
-        if eepts.shape[0] == 0:
-            csv.write("%12s\t" % "N/A")
-            continue
-        zpos = eepts[:, :, :, 2].flatten()
-        pct = np.mean(zpos < SUCCESS_THRESHOLD)
-        csv.write("%12f\t" % pct)
-    csv.write('\n')
-
-'''
-task = tasks[1]
-csv = open('peg_blind.csv', 'w')
-csv.write("iteration\t")
-[csv.write("%12s\t" % expt) for expt in expts]
-csv.write("\n")
-for i in [10, 20]:
-    csv.write("%8s\t" % i)
-    for expt in expts:
-        eepts = get_final_eepts(task, expt, i-1)
-        if eepts.shape[0] == 0:
-            csv.write("%12s\t" % "N/A")
-            continue
-        zpos = eepts[:, :, :, 2].flatten()
-        pct = np.mean(zpos < SUCCESS_THRESHOLD)
-        csv.write("%12f\t" % pct)
-    csv.write('\n')
-'''
-
-task = tasks[2]
-csv = open('peg_blind_big.csv', 'w')
-csv.write("iteration\t")
-[csv.write("%12s\t" % expt) for expt in expts]
-csv.write("\n")
-for i in [10, 20, 30]:
-    csv.write("%8s\t" % i)
-    for expt in expts:
-        eepts = get_final_eepts(task, expt, i-1)
-        if eepts.shape[0] == 0:
-            csv.write("%12s\t" % "N/A")
-            continue
-        zpos = eepts[:, :, :, 2].flatten()
-        pct = np.mean(zpos < SUCCESS_THRESHOLD)
-        csv.write("%12f\t" % pct)
-    csv.write('\n')
+def write_success_pcts(task, fname):
+    with open(fname, 'w') as f:
+        f.write('\hline\n')
+        f.write('Iteration & ' + ' & '.join(labels) + '\\\\\n')
+        f.write('\hline\n')
+        for i in [5, 10, 15]:
+            line = "%d" % i
+            for expt in expts:
+                eepts = get_final_eepts(task, expt, i-1)
+                zpos = eepts[:, :, :, 2].flatten()
+                pct = 100*np.mean(zpos < SUCCESS_THRESHOLD)
+                line += ("& %.2f" % pct) #+ "~\% "
+            line += "\\\\ \n"
+            f.write(line)
+        f.write('\hline\n')
+#write_success_pcts('peg', 'peg_success.txt')
+#write_success_pcts('peg_blind_big', 'peg_blind_big_success.txt')
 
 
-#def plot_expts(expts, colors):
-#    for expt, color in zip(expts, colors):
-#        print "Plotting %s" % expt
+plt.figure(figsize=(16,5))
+
+plt.subplot(131)
+plt.title("Obstacle")
+task = 'obstacle'
+iters = 12
+for expt, color, label in zip(expts, colors, labels):
+    means = []
+    stdevs = []
+    for itr in range(iters):
+        eepts = get_final_eepts(task, expt, itr)
+        if eepts.shape[0] == 0: # no more afterwards
+            break
+        diffs = eepts - np.array([2.5, 0, 0])
+        dists = np.sqrt(np.sum(diffs**2, axis=3))
+
+        # average over seeds first
+        dists = dists.mean(axis=1)
+        means.append(dists.mean())
+        stdevs.append(dists.std())
+    itrs = range(len(means))
+    plt.errorbar(itrs, means, stdevs, c=color, label=label)
+plt.legend()
+plt.xlabel('Iterations')
+plt.xlim((0, iters-1))
+plt.ylabel('Distance to target')
+plt.ylim((0, 3.0))
+
+## Peg plot
+plt.subplot(132)
+plt.title("Peg Insertion")
+task = 'peg'
+iters = 15
+for expt, color, label in zip(expts, colors, labels):
+    means = []
+    stdevs = []
+    for itr in range(iters):
+        eepts = get_final_eepts(task, expt, itr)
+#        if eepts.shape[0] == 0: # no more afterwards
+#            break
+
+        # average over seeds first
+        zs = eepts[:, :, :, 2].mean(axis=1)
+        means.append(zs.mean() + 0.5)
+        stdevs.append(zs.std())
+    itrs = range(len(means))
+    plt.errorbar(itrs, means, stdevs, c=color, label=label)
+
+height = 0.1*np.ones(iters)
+plt.plot(range(iters), height, 'k--')
+plt.legend()
+plt.xlabel('Iterations')
+plt.xlim((0, iters-1))
+plt.ylabel('Distance to target')
+plt.ylim((0, 0.5))
+
+## Blind peg plot
+plt.subplot(133)
+plt.title("Blind Peg Insertion")
+task = 'peg_blind_big'
+iters = 15
+for expt, color, label in zip(expts, colors, labels):
+    means = []
+    stdevs = []
+    for itr in range(iters):
+        eepts = get_final_eepts(task, expt, itr)
+#        if eepts.shape[0] == 0: # no more afterwards
+#            break
+
+        # average over seeds first
+        zs = eepts[:, :, :, 2].mean(axis=1)
+        means.append(zs.mean() + 0.5)
+        stdevs.append(zs.std())
+    itrs = range(len(means))
+    plt.errorbar(itrs, means, stdevs, c=color, label=label)
+
+height = 0.1*np.ones(iters)
+plt.plot(range(iters), height, 'k--')
+plt.legend()
+plt.xlabel('Iterations')
+plt.xlim((0, iters-1))
+plt.ylabel('Distance to target')
+plt.ylim((0, 0.5))
+
+plt.tight_layout()
+plt.show()
+plt.savefig('results.png')
+
+### Reacher plot
+#plt.subplot(131)
+#plt.title("Reaching")
+#task = 'reacher3'
+#iters = 15
+#for expt, color, label in zip(expts, colors, labels):
+#    means = []
+#    stdevs = []
+#    for itr in range(iters):
+#        eepts = get_final_eepts(task, expt, itr)
+#        if eepts.shape[0] == 0: # no more afterwards
+#            break
+#        dists = np.sqrt( np.sum(eepts[:, :, :, :3]**2, axis=3) ).flatten()
+#        means.append(dists.mean())
+#        stdevs.append(dists.std())
+#    itrs = range(len(means))
+#    plt.errorbar(itrs, means, stdevs, c=color, label=label)
 #
-#        Z = np.zeros((iters, 2))
-#        for itr in range(iters):
-#            Z[itr] = process_z(expt, itr)
-#
-#        plt.errorbar(range(iters), Z[:,0] + 0.5, Z[:,1], c=color, label=expt)
-#
-#    height = 0.1*np.ones(iters)
-#    plt.plot(range(iters), height, 'k--')
-#    plt.legend()
-#    plt.xlabel('Iterations')
-#    plt.xlim((0, iters-1))
-#    plt.ylabel('Distance to target')
-#    plt.ylim((0, 0.5))
-#
-#
-#
-#plot_expts(expts, colors)
-#plt.title("Blind Peg Insertion")
-#plt.savefig("peg_blind_big.png")
-#plt.clf()
+#plt.legend()
+#plt.xlabel('Iterations')
+#plt.xlim((0, iters-1))
+#plt.ylabel('Distance to target')
+#plt.ylim((0, 0.4))
+

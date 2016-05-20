@@ -8,10 +8,7 @@ import numpy as np
 
 from gps import __file__ as gps_filepath
 from gps.agent.mjc.agent_mjc import AgentMuJoCo
-from gps.algorithm.cost.cost_fk import CostFK
-from gps.algorithm.cost.cost_action import CostAction
-from gps.algorithm.cost.cost_sum import CostSum
-from gps.algorithm.cost.cost_utils import RAMP_FINAL_ONLY
+from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
@@ -24,44 +21,34 @@ from gps.gui.config import generate_experiment_info
 
 
 SENSOR_DIMS = {
-    JOINT_ANGLES: 7,
-    JOINT_VELOCITIES: 7,
-    END_EFFECTOR_POINTS: 6,
-    END_EFFECTOR_POINT_VELOCITIES: 6,
-    ACTION: 7,
+    JOINT_ANGLES: 2,
+    JOINT_VELOCITIES: 2,
+    ACTION: 2,
 }
 
-PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
-
 common = {
-    'conditions': 5,
+    'conditions': 4,
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
 }
 
 agent = {
     'type': AgentMuJoCo,
-    'filename': './mjc_models/pr2_arm3d.xml',
-    'x0': np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
-                          np.zeros(7)]),
+    'filename': './mjc_models/particle2d.xml',
+    'x0': [np.array([0., 0., 0., 0.]), np.array([0., 1., 0., 0.]),
+           np.array([1., 0., 0., 0.]), np.array([1., 1., 0., 0.])],
     'dt': 0.05,
     'substeps': 5,
     'conditions': common['conditions'],
-    'pos_body_idx': np.array([1]),
-    'pos_body_offset': [np.array([0.01, 0.01, 0]), np.array([0.01, -0.01, 0]),
-                        np.array([-0.01, -0.01, 0]), np.array([-0.01, 0.01, 0]),
-                        np.array([0, 0, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
-    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-                      END_EFFECTOR_POINT_VELOCITIES],
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
-    'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
 }
 
 algorithm = {
     'conditions': common['conditions'],
-    'iterations': 30,
+    'iterations': 12,
     'kl_step': 2.0,
     'min_step_mult': 0.01,
     'max_step_mult': 1.0,
@@ -70,46 +57,25 @@ algorithm = {
 
 algorithm['init_traj_distr'] = {
     'type': init_lqr,
-    'init_gains':  1.0 / PR2_GAINS,
-    'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
     'init_var': 1.0,
-    'stiffness': 1.0,
-    'stiffness_vel': 0.5,
-    'final_weight': 50.0,
+    'stiffness': 10.0,
+    'stiffness_vel': 10.0,
     'dt': agent['dt'],
     'T': agent['T'],
 }
 
-torque_cost = {
-    'type': CostAction,
-    'wu': 1e-3 / PR2_GAINS,
-}
-
-fk_cost = {
-    'type': CostFK,
-    'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
-    'wp': np.array([2, 2, 1, 2, 2, 1]),
-    'l1': 0.1,
-    'l2': 10.0,
-    'alpha': 1e-5,
-}
-
-# Create second cost function for last step only.
-final_cost = {
-    'type': CostFK,
-    'ramp_option': RAMP_FINAL_ONLY,
-    'target_end_effector': fk_cost['target_end_effector'],
-    'wp': fk_cost['wp'],
-    'l1': 1.0,
-    'l2': 0.0,
-    'alpha': 1e-5,
-    'wp_final_multiplier': 10.0,
-}
-
 algorithm['cost'] = {
-    'type': CostSum,
-    'costs': [torque_cost, fk_cost, final_cost],
-    'weights': [1.0, 1.0, 1.0],
+    'type': CostState,
+    'data_types' : {
+        JOINT_ANGLES: {
+            'wp': np.ones(SENSOR_DIMS[ACTION]),
+            'target_state': np.array([2.5, 0.0]),
+            'wp_final_multiplier': 10,
+            'l1' : 0.1,
+            'l2' : 10,
+            'alpha' : 1e-5,
+        },
+    },
 }
 
 algorithm['dynamics'] = {
@@ -117,7 +83,7 @@ algorithm['dynamics'] = {
     'regularization': 1e-6,
     'prior': {
         'type': DynamicsPriorGMM,
-        'max_clusters': 20,
+        'max_clusters': 10,
         'min_samples_per_cluster': 40,
         'max_samples': 40,
     },
@@ -125,7 +91,7 @@ algorithm['dynamics'] = {
 
 algorithm['policy_prior'] = {
     'type': PolicyPriorGMM,
-    'max_clusters': 20,
+    'max_clusters': 100,
     'min_samples_per_cluster': 40,
     'max_samples': 40,
 }

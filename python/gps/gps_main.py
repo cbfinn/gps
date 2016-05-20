@@ -117,6 +117,10 @@ class GPSMain(object):
         else:
             algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr_load
             self.algorithm = self.data_logger.unpickle(algorithm_file)
+            if "step_rule" not in self.algorithm._hyperparams:
+                self.algorithm._hyperparams["step_rule"] = "old"
+            if "use_lg_covar" not in self.algorithm._hyperparams:
+                self.algorithm._hyperparams["use_lg_covar"] = False
             if self.algorithm is None:
                 print("Error: cannot find '%s.'" % algorithm_file)
                 os._exit(1) # called instead of sys.exit(), since this is in a thread
@@ -124,10 +128,13 @@ class GPSMain(object):
             if self.gui:
                 traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
                     ('traj_sample_itr_%02d.pkl' % itr_load))
-                pol_sample_lists = self.data_logger.unpickle(self._data_files_dir +
-                    ('pol_sample_itr_%02d.pkl' % itr_load))
-                self.gui.update(itr_load, self.algorithm, self.agent,
-                    traj_sample_lists, pol_sample_lists)
+                if self.algorithm.cur[0].pol_info:
+                    pol_sample_lists = self.data_logger.unpickle(self._data_files_dir +
+                        ('pol_sample_itr_%02d.pkl' % itr_load))
+                else:
+                    pol_sample_lists = None
+                #self.gui.update(itr_load, self.algorithm, self.agent,
+                #    traj_sample_lists, pol_sample_lists)
                 self.gui.set_status_text(
                     ('Resuming training from algorithm state at iteration %d.\n' +
                     'Press \'go\' to begin.') % itr_load)

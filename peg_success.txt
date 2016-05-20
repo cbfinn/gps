@@ -1,0 +1,7 @@
+\hline
+Iteration & BADMM & classic, off policy & classic, on policy & global, off policy & global, on policy\\
+\hline
+5& 0.00& 33.33& 0.00& 0.00& 0.00\\ 
+10& 59.26& 66.67& 37.04& 48.15& 18.52\\ 
+15& 66.67& 100.00& 70.37& 66.67& 37.04\\ 
+\hline

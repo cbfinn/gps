@@ -70,7 +70,7 @@ agent = {
 algorithm = {
     'conditions': common['conditions'],
     'iterations': 15,
-    'kl_step': 2.0,
+    'kl_step': 3.0,
     'min_step_mult': 0.01,
     'max_step_mult': 1.0,
     'policy_sample_mode': 'replace',
@@ -96,7 +96,7 @@ torque_cost = {
 fk_cost = {
     'type': CostFK,
     'target_end_effector': np.array([0.0, 0.0, 0.0]),
-    'wp': np.array([1, 1, 1]),
+    'wp': np.array([1, 1, 2]),
     'l1': 0.1,
     'l2': 10.0,
     'alpha': 1e-5,
