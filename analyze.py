@@ -11,11 +11,11 @@ sys.path.append(os.path.abspath('python'))
 from gps.sample.sample_list import SampleList
 
 tasks = ['reacher3', 'peg', 'peg_blind_big']
-expts = ['badmm', 'mdgps_lqr', 'mdgps_nn', 'mdgps_lqr_new', 'mdgps_nn_new']
-labels = ['BADMM', 'classic, off policy', 'classic, on policy', 'global, off policy', 'global, on policy']
+expts = ['badmm', 'mdgps_lqr', 'mdgps_lqr_new', 'mdgps_nn', 'mdgps_nn_new']
+labels = ['BADMM', 'Off Policy, Classic Step', 'Off Policy, Global Step', 'On Policy, Classic Step', 'On Policy, Global Step']
 seeds = [0, 1, 2]
 iters = range(30)
-colors = ['k', 'r', 'b', 'm', 'g']
+colors = ['k', 'r', 'm', 'b', 'g']
 
 SUCCESS_THRESHOLD = -0.5 + 0.06
 
@@ -84,20 +84,20 @@ def write_success_pcts(task, fname):
             line = "%d" % i
             for expt in expts:
                 eepts = get_final_eepts(task, expt, i-1)
-                zpos = eepts[:, :, :, 2].flatten()
-                pct = 100*np.mean(zpos < SUCCESS_THRESHOLD)
+                zs = eepts[:, :, :, 2]
+                pct = 100*np.mean(zs < SUCCESS_THRESHOLD)
                 line += ("& %.2f" % pct) #+ "~\% "
             line += "\\\\ \n"
             f.write(line)
         f.write('\hline\n')
-#write_success_pcts('peg', 'peg_success.txt')
-#write_success_pcts('peg_blind_big', 'peg_blind_big_success.txt')
+write_success_pcts('peg', 'peg_success.txt')
+write_success_pcts('peg_blind_big', 'peg_blind_big_success.txt')
 
 
 plt.figure(figsize=(16,5))
 
 plt.subplot(131)
-plt.title("Obstacle")
+plt.title("Obstacle Navigation")
 task = 'obstacle'
 iters = 12
 for expt, color, label in zip(expts, colors, labels):
@@ -110,7 +110,7 @@ for expt, color, label in zip(expts, colors, labels):
         diffs = eepts - np.array([2.5, 0, 0])
         dists = np.sqrt(np.sum(diffs**2, axis=3))
 
-        # average over seeds first
+        # average over conditions first
         dists = dists.mean(axis=1)
         means.append(dists.mean())
         stdevs.append(dists.std())
@@ -135,7 +135,7 @@ for expt, color, label in zip(expts, colors, labels):
 #        if eepts.shape[0] == 0: # no more afterwards
 #            break
 
-        # average over seeds first
+        # average over conditions first
         zs = eepts[:, :, :, 2].mean(axis=1)
         means.append(zs.mean() + 0.5)
         stdevs.append(zs.std())
@@ -163,7 +163,7 @@ for expt, color, label in zip(expts, colors, labels):
 #        if eepts.shape[0] == 0: # no more afterwards
 #            break
 
-        # average over seeds first
+        # average over conditions first
         zs = eepts[:, :, :, 2].mean(axis=1)
         means.append(zs.mean() + 0.5)
         stdevs.append(zs.std())
@@ -179,7 +179,6 @@ plt.ylabel('Distance to target')
 plt.ylim((0, 0.5))
 
 plt.tight_layout()
-plt.show()
 plt.savefig('results.png')
 
 ### Reacher plot

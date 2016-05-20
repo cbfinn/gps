@@ -91,7 +91,7 @@ algorithm['dynamics'] = {
 
 algorithm['policy_prior'] = {
     'type': PolicyPriorGMM,
-    'max_clusters': 100,
+    'max_clusters': 10,
     'min_samples_per_cluster': 40,
     'max_samples': 40,
 }
