@@ -10,7 +10,7 @@ from IPython.core.debugger import Tracer; debug_here = Tracer()
 sys.path.append(os.path.abspath('python'))
 from gps.sample.sample_list import SampleList
 
-tasks = ['reacher3', 'peg', 'peg_blind_big']
+tasks = ['obstacle_course', 'peg', 'peg_blind_big']
 expts = ['badmm', 'mdgps_lqr', 'mdgps_lqr_new', 'mdgps_nn', 'mdgps_nn_new']
 labels = ['BADMM', 'Off Policy, Classic Step', 'Off Policy, Global Step', 'On Policy, Classic Step', 'On Policy, Global Step']
 seeds = [0, 1, 2]
@@ -94,12 +94,12 @@ write_success_pcts('peg', 'peg_success.txt')
 write_success_pcts('peg_blind_big', 'peg_blind_big_success.txt')
 
 
-plt.figure(figsize=(16,5))
+plt.figure(figsize=(16,4))
 
 plt.subplot(131)
 plt.title("Obstacle Navigation")
-task = 'obstacle'
-iters = 12
+task = 'obstacle_course'
+iters = 15
 for expt, color, label in zip(expts, colors, labels):
     means = []
     stdevs = []
@@ -107,7 +107,7 @@ for expt, color, label in zip(expts, colors, labels):
         eepts = get_final_eepts(task, expt, itr)
         if eepts.shape[0] == 0: # no more afterwards
             break
-        diffs = eepts - np.array([2.5, 0, 0])
+        diffs = eepts - np.array([3.0, 0, 0])
         dists = np.sqrt(np.sum(diffs**2, axis=3))
 
         # average over conditions first
@@ -116,7 +116,7 @@ for expt, color, label in zip(expts, colors, labels):
         stdevs.append(dists.std())
     itrs = range(len(means))
     plt.errorbar(itrs, means, stdevs, c=color, label=label)
-plt.legend()
+#plt.legend()
 plt.xlabel('Iterations')
 plt.xlim((0, iters-1))
 plt.ylabel('Distance to target')
@@ -172,7 +172,7 @@ for expt, color, label in zip(expts, colors, labels):
 
 height = 0.1*np.ones(iters)
 plt.plot(range(iters), height, 'k--')
-plt.legend()
+#plt.legend()
 plt.xlabel('Iterations')
 plt.xlim((0, iters-1))
 plt.ylabel('Distance to target')
@@ -180,28 +180,3 @@ plt.ylim((0, 0.5))
 
 plt.tight_layout()
 plt.savefig('results.png')
-
-### Reacher plot
-#plt.subplot(131)
-#plt.title("Reaching")
-#task = 'reacher3'
-#iters = 15
-#for expt, color, label in zip(expts, colors, labels):
-#    means = []
-#    stdevs = []
-#    for itr in range(iters):
-#        eepts = get_final_eepts(task, expt, itr)
-#        if eepts.shape[0] == 0: # no more afterwards
-#            break
-#        dists = np.sqrt( np.sum(eepts[:, :, :, :3]**2, axis=3) ).flatten()
-#        means.append(dists.mean())
-#        stdevs.append(dists.std())
-#    itrs = range(len(means))
-#    plt.errorbar(itrs, means, stdevs, c=color, label=label)
-#
-#plt.legend()
-#plt.xlabel('Iterations')
-#plt.xlim((0, iters-1))
-#plt.ylabel('Distance to target')
-#plt.ylim((0, 0.4))
-
