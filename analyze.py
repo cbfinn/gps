@@ -12,7 +12,7 @@ from gps.sample.sample_list import SampleList
 
 tasks = ['obstacle_course', 'peg', 'peg_blind_big']
 expts = ['badmm', 'mdgps_lqr', 'mdgps_lqr_new', 'mdgps_nn', 'mdgps_nn_new']
-labels = ['BADMM', 'Off Policy, Classic Step', 'Off Policy, Global Step', 'On Policy, Classic Step', 'On Policy, Global Step']
+labels = ['BADMM (Off Policy)', 'Off Policy, Classic Step', 'Off Policy, Global Step', 'On Policy, Classic Step', 'On Policy, Global Step']
 seeds = [0, 1, 2]
 iters = range(30)
 colors = ['k', 'r', 'm', 'b', 'g']
@@ -114,11 +114,11 @@ for expt, color, label in zip(expts, colors, labels):
         dists = dists.mean(axis=1)
         means.append(dists.mean())
         stdevs.append(dists.std())
-    itrs = range(len(means))
+    itrs = np.arange(len(means)) + 1
     plt.errorbar(itrs, means, stdevs, c=color, label=label)
 #plt.legend()
 plt.xlabel('Iterations')
-plt.xlim((0, iters-1))
+plt.xlim((1, iters))
 plt.ylabel('Distance to target')
 plt.ylim((0, 3.0))
 
@@ -139,14 +139,14 @@ for expt, color, label in zip(expts, colors, labels):
         zs = eepts[:, :, :, 2].mean(axis=1)
         means.append(zs.mean() + 0.5)
         stdevs.append(zs.std())
-    itrs = range(len(means))
+    itrs = np.arange(len(means)) + 1
     plt.errorbar(itrs, means, stdevs, c=color, label=label)
 
 height = 0.1*np.ones(iters)
-plt.plot(range(iters), height, 'k--')
+plt.plot(itrs, height, 'k--')
 plt.legend()
 plt.xlabel('Iterations')
-plt.xlim((0, iters-1))
+plt.xlim((1, iters))
 plt.ylabel('Distance to target')
 plt.ylim((0, 0.5))
 
@@ -167,14 +167,14 @@ for expt, color, label in zip(expts, colors, labels):
         zs = eepts[:, :, :, 2].mean(axis=1)
         means.append(zs.mean() + 0.5)
         stdevs.append(zs.std())
-    itrs = range(len(means))
+    itrs = np.arange(len(means)) + 1
     plt.errorbar(itrs, means, stdevs, c=color, label=label)
 
 height = 0.1*np.ones(iters)
-plt.plot(range(iters), height, 'k--')
+plt.plot(itrs, height, 'k--')
 #plt.legend()
 plt.xlabel('Iterations')
-plt.xlim((0, iters-1))
+plt.xlim((1, iters))
 plt.ylabel('Distance to target')
 plt.ylim((0, 0.5))
 
