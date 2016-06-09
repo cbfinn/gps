@@ -1,7 +1,0 @@
-\hline
-Iteration & BADMM (Off Policy) & Off Policy, Classic Step & Off Policy, Global Step & On Policy, Classic Step & On Policy, Global Step\\
-\hline
-5& 0.00& 11.11& 0.00& 0.00& 0.00\\ 
-10& 59.26& 70.37& 48.15& 37.04& 18.52\\ 
-15& 66.67& 55.56& 66.67& 70.37& 37.04\\ 
-\hline
