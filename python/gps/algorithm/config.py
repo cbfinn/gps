@@ -44,3 +44,15 @@ ALG_BADMM = {
     'exp_step_upper': 0.5,
     'exp_step_lower': 1.0,
 }
+
+# AlgorithmMD
+ALG_MDGPS = {
+    'inner_iterations': 4,
+    'init_pol_wt': 0.01,
+    'policy_sample_mode': 'add',
+    'max_policy_samples': 20,
+    'agent_use_nn_policy': False,
+    'step_rule': 'old',
+    'weighted_kl': False,
+    'use_lg_covar': False,
+}

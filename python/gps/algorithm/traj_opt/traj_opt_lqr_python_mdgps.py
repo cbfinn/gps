@@ -1,6 +1,7 @@
 """ This file defines code for iLQG-based trajectory optimization. """
 import logging
 import copy
+from IPython.core.debugger import Tracer; debug_here = Tracer()
 
 import numpy as np
 from numpy.linalg import LinAlgError
@@ -11,11 +12,10 @@ from gps.algorithm.traj_opt.traj_opt import TrajOpt
 from gps.algorithm.traj_opt.traj_opt_utils import LineSearch, traj_distr_kl, \
         DGD_MAX_ITER, THRESHA, THRESHB
 
-
 LOGGER = logging.getLogger(__name__)
 
 
-class TrajOptLQRPython(TrajOpt):
+class TrajOptLQRPythonMDGPS(TrajOpt):
     """ LQR trajectory optimization, Python implementation. """
     def __init__(self, hyperparams):
         config = copy.deepcopy(TRAJ_OPT_LQR)
@@ -30,7 +30,22 @@ class TrajOptLQRPython(TrajOpt):
         step_mult = algorithm.cur[m].step_mult
         prev_eta = algorithm.cur[m].eta
         traj_info = algorithm.cur[m].traj_info
-        prev_traj_distr = algorithm.cur[m].traj_distr
+
+        # Constrain to previous policy linearization
+        # NOTE: we only copy in necessary params
+        #       (pol_K, pol_k, chol_pol_covar)
+        pol_info = algorithm.cur[m].pol_info
+        prev_nn_traj_distr = algorithm.cur[m].traj_distr.nans_like()
+        prev_nn_traj_distr.K = pol_info.pol_K
+        prev_nn_traj_distr.k = pol_info.pol_k
+
+        # Maybe use other covar?
+        if algorithm._hyperparams['use_lg_covar']:
+            prev_nn_traj_distr.chol_pol_covar = algorithm.cur[m].traj_distr.chol_pol_covar
+            prev_nn_traj_distr.pol_covar = algorithm.cur[m].traj_distr.pol_covar
+        else:
+            prev_nn_traj_distr.chol_pol_covar = pol_info.chol_pol_S
+            prev_nn_traj_distr.pol_covar = pol_info.pol_S
 
         # Set KL-divergence step size (epsilon).
         kl_step = algorithm.base_kl_step * step_mult
@@ -38,8 +53,28 @@ class TrajOptLQRPython(TrajOpt):
         line_search = LineSearch(self._hyperparams['min_eta'])
         min_eta = -np.Inf
 
+        # Set weights for kl divergence
+        if not algorithm._hyperparams['weighted_kl']:
+            weights = np.ones(T)
+        elif algorithm._hyperparams['weighted_kl'] == 'linear':
+            weights = np.linspace(T, 1, T)
+        elif algorithm._hyperparams['weighted_kl'] == 'qmax':
+            weights = algorithm.cur[m].qmax
+        elif algorithm._hyperparams['weighted_kl'] == 'qmax1':
+            weights = algorithm.cur[m].qmax + 1
+        elif algorithm._hyperparams['weighted_kl'] == 'avg_qmax':
+            weights = self.estimate_cost(prev_nn_traj_distr, traj_info)
+            weights = np.cumsum( weights[::-1] )[::-1]
+        elif algorithm._hyperparams['weighted_kl'] == 'avg_qmax1':
+            weights = self.estimate_cost(prev_nn_traj_distr, traj_info) + 1
+            weights = np.cumsum( weights[::-1] )[::-1]
+
+        # Normalize to sum to T
+        weights *= T/weights.sum()
+
+        # Run DGD
         for itr in range(DGD_MAX_ITER):
-            traj_distr, new_eta = self.backward(prev_traj_distr, traj_info,
+            traj_distr, new_eta = self.backward(weights, prev_nn_traj_distr, traj_info,
                                                 prev_eta, algorithm, m)
             new_mu, new_sigma = self.forward(traj_distr, traj_info)
 
@@ -49,7 +84,8 @@ class TrajOptLQRPython(TrajOpt):
 
             # Compute KL divergence between prev and new distribution.
             kl_div = traj_distr_kl(new_mu, new_sigma,
-                                   traj_distr, prev_traj_distr)
+                                   traj_distr, prev_nn_traj_distr, False)
+            kl_div = kl_div.dot(weights)
 
             traj_info.last_kl_step = kl_div
 
@@ -168,7 +204,7 @@ class TrajOptLQRPython(TrajOpt):
                 mu[t+1, idx_x] = Fm[t, :, :].dot(mu[t, :]) + fv[t, :]
         return mu, sigma
 
-    def backward(self, prev_traj_distr, traj_info, eta, algorithm, m):
+    def backward(self, weights, prev_traj_distr, traj_info, eta, algorithm, m):
         """
         Perform LQR backward pass. This computes a new linear Gaussian
         policy object.
@@ -190,8 +226,6 @@ class TrajOptLQRPython(TrajOpt):
         dX = prev_traj_distr.dX
 
         traj_distr = prev_traj_distr.nans_like()
-        if algorithm.cur[m].pol_info:
-            pol_wt = algorithm.cur[m].pol_info.pol_wt
 
         idx_x = slice(dX)
         idx_u = slice(dX, dX+dU)
@@ -213,7 +247,7 @@ class TrajOptLQRPython(TrajOpt):
             Vxx = np.zeros((T, dX, dX))
             Vx = np.zeros((T, dX))
 
-            fCm, fcv = algorithm.compute_costs(m, eta)
+            fCm, fcv = algorithm.compute_costs(m, eta, weights)
 
             # Compute state-action-state function at each time step.
             for t in range(T - 1, -1, -1):
@@ -223,20 +257,13 @@ class TrajOptLQRPython(TrajOpt):
 
                 # Add in the value function from the next time step.
                 if t < T - 1:
-                    if algorithm.cur[m].pol_info:
-                        Qtt = Qtt + \
-                                (pol_wt[t+1] + eta)/(pol_wt[t] + eta) * \
-                                Fm[t, :, :].T.dot(Vxx[t+1, :, :]).dot(Fm[t, :, :])
-                        Qt = Qt + \
-                                (pol_wt[t+1] + eta)/(pol_wt[t] + eta) * \
-                                Fm[t, :, :].T.dot(Vx[t+1, :] +
-                                                Vxx[t+1, :, :].dot(fv[t, :]))
-                    else:
-                        Qtt = Qtt + \
-                                Fm[t, :, :].T.dot(Vxx[t+1, :, :]).dot(Fm[t, :, :])
-                        Qt = Qt + \
-                                Fm[t, :, :].T.dot(Vx[t+1, :] +
-                                                Vxx[t+1, :, :].dot(fv[t, :]))
+                    Qtt = Qtt + \
+                            (weights[t+1]/weights[t]) * \
+                            Fm[t, :, :].T.dot(Vxx[t+1, :, :]).dot(Fm[t, :, :])
+                    Qt = Qt + \
+                            (weights[t+1]/weights[t]) * \
+                            Fm[t, :, :].T.dot(Vx[t+1, :] +
+                                              Vxx[t+1, :, :].dot(fv[t, :]))
 
                 # Symmetrize quadratic component.
                 Qtt = 0.5 * (Qtt + Qtt.T)
@@ -253,7 +280,8 @@ class TrajOptLQRPython(TrajOpt):
                     fail = True
                     break
 
-                if not algorithm.cur[m].pol_info:
+                # Store conditional covariance, inverse, and Cholesky.
+                if algorithm._hyperparams['step_rule'] == 'old':
                     traj_distr.pol_covar[t, :, :] = sp.linalg.solve_triangular(
                         U, sp.linalg.solve_triangular(L, np.eye(dU), lower=True)
                     )

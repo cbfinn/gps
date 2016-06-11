@@ -19,7 +19,7 @@ from gps.gui.gps_training_gui import GPSTrainingGUI
 from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 
 class GPSMain(object):
@@ -115,8 +115,12 @@ class GPSMain(object):
                 self.gui.set_status_text('Press \'go\' to begin.')
             return 0
         else:
-            algorithm_file = self._data_files_dir + 'algorithm_i_%02d.pkl' % itr_load
+            algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr_load
             self.algorithm = self.data_logger.unpickle(algorithm_file)
+            if "step_rule" not in self.algorithm._hyperparams:
+                self.algorithm._hyperparams["step_rule"] = "old"
+            if "use_lg_covar" not in self.algorithm._hyperparams:
+                self.algorithm._hyperparams["use_lg_covar"] = False
             if self.algorithm is None:
                 print("Error: cannot find '%s.'" % algorithm_file)
                 os._exit(1) # called instead of sys.exit(), since this is in a thread
@@ -124,10 +128,13 @@ class GPSMain(object):
             if self.gui:
                 traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
                     ('traj_sample_itr_%02d.pkl' % itr_load))
-                pol_sample_lists = self.data_logger.unpickle(self._data_files_dir +
-                    ('pol_sample_itr_%02d.pkl' % itr_load))
-                self.gui.update(itr_load, self.algorithm, self.agent,
-                    traj_sample_lists, pol_sample_lists)
+                if self.algorithm.cur[0].pol_info:
+                    pol_sample_lists = self.data_logger.unpickle(self._data_files_dir +
+                        ('pol_sample_itr_%02d.pkl' % itr_load))
+                else:
+                    pol_sample_lists = None
+                #self.gui.update(itr_load, self.algorithm, self.agent,
+                #    traj_sample_lists, pol_sample_lists)
                 self.gui.set_status_text(
                     ('Resuming training from algorithm state at iteration %d.\n' +
                     'Press \'go\' to begin.') % itr_load)
@@ -142,7 +149,10 @@ class GPSMain(object):
             i: Sample number.
         Returns: None
         """
-        pol = self.algorithm.cur[cond].traj_distr
+        if 'agent_use_nn_policy' in self.algorithm._hyperparams and self.algorithm.iteration_count > 0:
+            pol = self.algorithm.policy_opt.policy
+        else:
+            pol = self.algorithm.cur[cond].traj_distr
         if self.gui:
             self.gui.set_image_overlays(cond)   # Must call for each new cond.
             redo = True
@@ -214,7 +224,7 @@ class GPSMain(object):
             for i in range(N):
                 pol_samples[cond][i] = self.agent.sample(
                     self.algorithm.policy_opt.policy, self._test_idx[cond],
-                    verbose=True, save=False)
+                    verbose=True, save=False, noisy=False)
         return [SampleList(samples) for samples in pol_samples]
 
     def _log_data(self, itr, traj_sample_lists, pol_sample_lists=None):
@@ -254,6 +264,7 @@ class GPSMain(object):
         if self.gui:
             self.gui.set_status_text('Training complete.')
             self.gui.end_mode()
+        os._exit(0)
 
 
 def main():
@@ -360,8 +371,9 @@ def main():
         import numpy as np
         import matplotlib.pyplot as plt
 
-        random.seed(0)
-        np.random.seed(0)
+        seed = hyperparams.config.get('seed', 0)
+        random.seed(seed)
+        np.random.seed(seed)
 
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:
