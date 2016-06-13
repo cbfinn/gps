@@ -280,29 +280,14 @@ class TrajOptLQRPythonMDGPS(TrajOpt):
                     fail = True
                     break
 
-                # Store conditional covariance, inverse, and Cholesky.
-                if algorithm._hyperparams['step_rule'] == 'old':
-                    traj_distr.pol_covar[t, :, :] = sp.linalg.solve_triangular(
-                        U, sp.linalg.solve_triangular(L, np.eye(dU), lower=True)
-                    )
-                    traj_distr.pol_covar[t, :, :] += 1e-6*np.eye(dU)
-
-                    traj_distr.chol_pol_covar[t, :, :] = sp.linalg.cholesky(
-                        traj_distr.pol_covar[t, :, :]
-                    )
-
-                    traj_distr.inv_pol_covar[t, :, :] = np.linalg.solve(
-                        traj_distr.chol_pol_covar[t, :, :],
-                        np.linalg.solve(traj_distr.chol_pol_covar[t, :, :].T, np.eye(dU))
-                    )
-                else:
-                    traj_distr.inv_pol_covar[t, :, :] = Qtt[idx_u, idx_u]
-                    traj_distr.pol_covar[t, :, :] = sp.linalg.solve_triangular(
-                        U, sp.linalg.solve_triangular(L, np.eye(dU), lower=True)
-                    )
-                    traj_distr.chol_pol_covar[t, :, :] = sp.linalg.cholesky(
-                        traj_distr.pol_covar[t, :, :]
-                    )
+                # Store conditional covariance, inverse, and Cholesky
+                traj_distr.inv_pol_covar[t, :, :] = Qtt[idx_u, idx_u]
+                traj_distr.pol_covar[t, :, :] = sp.linalg.solve_triangular(
+                    U, sp.linalg.solve_triangular(L, np.eye(dU), lower=True)
+                )
+                traj_distr.chol_pol_covar[t, :, :] = sp.linalg.cholesky(
+                    traj_distr.pol_covar[t, :, :]
+                )
 
                 # Compute mean terms.
                 traj_distr.k[t, :] = -sp.linalg.solve_triangular(

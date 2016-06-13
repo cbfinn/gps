@@ -260,14 +260,16 @@ class AlgorithmMDGPS(Algorithm):
 
         # This is the actual cost we have under the current trajectory
         # based on the latest samples.
-        if (self._hyperparams['step_rule'] == 'old'):
+        if (self._hyperparams['step_rule'] == 'classic'):
             new_actual_laplace_cost = self.traj_opt.estimate_cost(
                 cur_traj_distr, self.cur[m].traj_info
             )
-        else:
+        elif (self._hyperparams['step_rule'] == 'global'):
             new_actual_laplace_cost = self.traj_opt.estimate_cost(
                 cur_nn, self.cur[m].traj_info
             )
+        else:
+            raise NotImplementedError
 
         # Measure the entropy of the current trajectory (for printout).
         ent = self._measure_ent(m)

@@ -52,7 +52,7 @@ ALG_MDGPS = {
     'policy_sample_mode': 'add',
     'max_policy_samples': 20,
     'agent_use_nn_policy': False,
-    'step_rule': 'old',
+    'step_rule': 'classic',
     'weighted_kl': False,
     'use_lg_covar': False,
 }
