@@ -48,28 +48,9 @@ class TrajOptLQRPythonMDGPS(TrajOpt):
         line_search = LineSearch(self._hyperparams['min_eta'])
         min_eta = -np.Inf
 
-        # Set weights for kl divergence
-        if not algorithm._hyperparams['weighted_kl']:
-            weights = np.ones(T)
-        elif algorithm._hyperparams['weighted_kl'] == 'linear':
-            weights = np.linspace(T, 1, T)
-        elif algorithm._hyperparams['weighted_kl'] == 'qmax':
-            weights = algorithm.cur[m].qmax
-        elif algorithm._hyperparams['weighted_kl'] == 'qmax1':
-            weights = algorithm.cur[m].qmax + 1
-        elif algorithm._hyperparams['weighted_kl'] == 'avg_qmax':
-            weights = self.estimate_cost(prev_nn_traj_distr, traj_info)
-            weights = np.cumsum( weights[::-1] )[::-1]
-        elif algorithm._hyperparams['weighted_kl'] == 'avg_qmax1':
-            weights = self.estimate_cost(prev_nn_traj_distr, traj_info) + 1
-            weights = np.cumsum( weights[::-1] )[::-1]
-
-        # Normalize to sum to T
-        weights *= T/weights.sum()
-
         # Run DGD
         for itr in range(DGD_MAX_ITER):
-            traj_distr, new_eta = self.backward(weights, prev_nn_traj_distr, traj_info,
+            traj_distr, new_eta = self.backward(prev_nn_traj_distr, traj_info,
                                                 prev_eta, algorithm, m)
             new_mu, new_sigma = self.forward(traj_distr, traj_info)
 
@@ -78,9 +59,7 @@ class TrajOptLQRPythonMDGPS(TrajOpt):
                 min_eta = new_eta
 
             # Compute KL divergence between prev and new distribution.
-            kl_div = traj_distr_kl(new_mu, new_sigma,
-                                   traj_distr, prev_nn_traj_distr, False)
-            kl_div = kl_div.dot(weights)
+            kl_div = traj_distr_kl(new_mu, new_sigma, traj_distr, prev_nn_traj_distr)
 
             traj_info.last_kl_step = kl_div
 
@@ -199,7 +178,7 @@ class TrajOptLQRPythonMDGPS(TrajOpt):
                 mu[t+1, idx_x] = Fm[t, :, :].dot(mu[t, :]) + fv[t, :]
         return mu, sigma
 
-    def backward(self, weights, prev_traj_distr, traj_info, eta, algorithm, m):
+    def backward(self, prev_traj_distr, traj_info, eta, algorithm, m):
         """
         Perform LQR backward pass. This computes a new linear Gaussian
         policy object.
@@ -242,7 +221,7 @@ class TrajOptLQRPythonMDGPS(TrajOpt):
             Vxx = np.zeros((T, dX, dX))
             Vx = np.zeros((T, dX))
 
-            fCm, fcv = algorithm.compute_costs(m, eta, weights)
+            fCm, fcv = algorithm.compute_costs(m, eta)
 
             # Compute state-action-state function at each time step.
             for t in range(T - 1, -1, -1):
@@ -253,10 +232,8 @@ class TrajOptLQRPythonMDGPS(TrajOpt):
                 # Add in the value function from the next time step.
                 if t < T - 1:
                     Qtt = Qtt + \
-                            (weights[t+1]/weights[t]) * \
                             Fm[t, :, :].T.dot(Vxx[t+1, :, :]).dot(Fm[t, :, :])
                     Qt = Qt + \
-                            (weights[t+1]/weights[t]) * \
                             Fm[t, :, :].T.dot(Vx[t+1, :] +
                                               Vxx[t+1, :, :].dot(fv[t, :]))
 

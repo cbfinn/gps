@@ -201,28 +201,6 @@ class AlgorithmMDGPS(Algorithm):
         Args:
             m: Condition
         """
-
-#        # TODO: add flags for options
-#        if hasattr(self._hyperparams, 'agent_use_nn_policy'):
-#            # Get the previous/current NN linearizations
-#            # NOTE: we only pass in K/k/pol_covar, all that's needed
-#            # TODO: make these functions work with pol_info instead
-#            prev_pol_info = self.prev[m].pol_info
-#            prev_traj_distr = self.prev[m].traj_distr.nans_like()
-#            prev_traj_distr.K = prev_pol_info.pol_K
-#            prev_traj_distr.k = prev_pol_info.pol_k
-#            prev_traj_distr.pol_covar = prev_pol_info.pol_S
-#
-#            cur_pol_info = self.cur[m].pol_info
-#            cur_traj_distr = self.cur[m].traj_distr.nans_like()
-#            cur_traj_distr.K = cur_pol_info.pol_K
-#            cur_traj_distr.k = cur_pol_info.pol_k
-#            cur_traj_distr.pol_covar = cur_pol_info.pol_S
-#        else:
-#            prev_traj_distr = self.prev[m].traj_distr
-#            cur_traj_distr = self.cur[m].traj_distr
-
-        # prev=NN, cur=LQR
         # NOTE: we only copy in K/k/pol_covar, only things needed for cost
         prev_pol_info = self.prev[m].pol_info
         prev_nn = self.prev[m].traj_distr.nans_like()
@@ -333,7 +311,7 @@ class AlgorithmMDGPS(Algorithm):
                     0.5 * np.mean(d_pp_d)
         return kl_m, kl
 
-    def compute_costs(self, m, eta, weights):
+    def compute_costs(self, m, eta):
         """ Compute cost estimates used in the LQR backward pass. """
         traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
         pol_info = self.cur[m].pol_info
@@ -357,7 +335,7 @@ class AlgorithmMDGPS(Algorithm):
             PKLv[t, :] = np.concatenate([
                 KB.T.dot(inv_pol_S).dot(kB), -inv_pol_S.dot(kB)
             ])
-            fCm[t, :, :] = (Cm[t, :, :] + PKLm[t, :, :] * eta * weights[t]) / (eta * weights[t])
-            fcv[t, :] = (cv[t, :] + PKLv[t, :] * eta * weights[t]) / (eta * weights[t])
+            fCm[t, :, :] = (Cm[t, :, :] + PKLm[t, :, :] * eta) / (eta)
+            fcv[t, :] = (cv[t, :] + PKLv[t, :] * eta) / (eta)
 
         return fCm, fcv
