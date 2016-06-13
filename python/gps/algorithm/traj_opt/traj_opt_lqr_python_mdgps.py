@@ -39,13 +39,8 @@ class TrajOptLQRPythonMDGPS(TrajOpt):
         prev_nn_traj_distr.K = pol_info.pol_K
         prev_nn_traj_distr.k = pol_info.pol_k
 
-        # Maybe use other covar?
-        if algorithm._hyperparams['use_lg_covar']:
-            prev_nn_traj_distr.chol_pol_covar = algorithm.cur[m].traj_distr.chol_pol_covar
-            prev_nn_traj_distr.pol_covar = algorithm.cur[m].traj_distr.pol_covar
-        else:
-            prev_nn_traj_distr.chol_pol_covar = pol_info.chol_pol_S
-            prev_nn_traj_distr.pol_covar = pol_info.pol_S
+        prev_nn_traj_distr.chol_pol_covar = pol_info.chol_pol_S
+        prev_nn_traj_distr.pol_covar = pol_info.pol_S
 
         # Set KL-divergence step size (epsilon).
         kl_step = algorithm.base_kl_step * step_mult

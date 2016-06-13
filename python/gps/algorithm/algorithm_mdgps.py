@@ -228,20 +228,13 @@ class AlgorithmMDGPS(Algorithm):
         prev_nn = self.prev[m].traj_distr.nans_like()
         prev_nn.K = prev_pol_info.pol_K
         prev_nn.k = prev_pol_info.pol_k
-
-        if self._hyperparams['use_lg_covar']:
-            prev_nn.pol_covar = prev_pol_info.pol_S
-        else:
-            prev_nn.pol_covar = self.prev[m].traj_distr.pol_covar
+        prev_nn.pol_covar = self.prev[m].traj_distr.pol_covar
 
         cur_pol_info = self.cur[m].pol_info
         cur_nn = self.cur[m].traj_distr.nans_like()
         cur_nn.K = cur_pol_info.pol_K
         cur_nn.k = cur_pol_info.pol_k
-        if self._hyperparams['use_lg_covar']:
-            cur_nn.pol_covar = cur_pol_info.pol_S
-        else:
-            cur_nn.pol_covar = self.cur[m].traj_distr.pol_covar
+        cur_nn.pol_covar = self.cur[m].traj_distr.pol_covar
 
         cur_traj_distr = self.cur[m].traj_distr
 
@@ -352,13 +345,10 @@ class AlgorithmMDGPS(Algorithm):
         fCm, fcv = np.zeros(Cm.shape), np.zeros(cv.shape)
         for t in range(T):
             # Policy KL-divergence terms.
-            if self._hyperparams['use_lg_covar']:
-                inv_pol_S = traj_distr.inv_pol_covar[t, :, :]
-            else:
-                inv_pol_S = np.linalg.solve(
-                    pol_info.chol_pol_S[t, :, :],
-                    np.linalg.solve(pol_info.chol_pol_S[t, :, :].T, np.eye(dU))
-                )
+            inv_pol_S = np.linalg.solve(
+                pol_info.chol_pol_S[t, :, :],
+                np.linalg.solve(pol_info.chol_pol_S[t, :, :].T, np.eye(dU))
+            )
             KB, kB = pol_info.pol_K[t, :, :], pol_info.pol_k[t, :]
             PKLm[t, :, :] = np.vstack([
                 np.hstack([KB.T.dot(inv_pol_S).dot(KB), -KB.T.dot(inv_pol_S)]),

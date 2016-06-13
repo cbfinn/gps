@@ -54,5 +54,4 @@ ALG_MDGPS = {
     'agent_use_nn_policy': False,
     'step_rule': 'classic',
     'weighted_kl': False,
-    'use_lg_covar': False,
 }
