@@ -117,10 +117,6 @@ class GPSMain(object):
         else:
             algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr_load
             self.algorithm = self.data_logger.unpickle(algorithm_file)
-            if "step_rule" not in self.algorithm._hyperparams:
-                self.algorithm._hyperparams["step_rule"] = "old"
-            if "use_lg_covar" not in self.algorithm._hyperparams:
-                self.algorithm._hyperparams["use_lg_covar"] = False
             if self.algorithm is None:
                 print("Error: cannot find '%s.'" % algorithm_file)
                 os._exit(1) # called instead of sys.exit(), since this is in a thread
