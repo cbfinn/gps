@@ -14,7 +14,7 @@ THRESHA = 1e-4  # First convergence threshold.
 THRESHB = 1e-3  # Second convergence threshold.
 
 
-def traj_distr_kl(new_mu, new_sigma, new_traj_distr, prev_traj_distr, return_sum=True):
+def traj_distr_kl(new_mu, new_sigma, new_traj_distr, prev_traj_distr):
     """
     Compute KL divergence between new and previous trajectory
     distributions.
@@ -85,10 +85,7 @@ def traj_distr_kl(new_mu, new_sigma, new_traj_distr, prev_traj_distr, return_sum
         )
 
     # Add up divergences across time to get total divergence.
-    if return_sum:
-        return np.sum(kl_div)
-    else:
-        return kl_div
+    return kl_div
 
 
 class LineSearch(object):
