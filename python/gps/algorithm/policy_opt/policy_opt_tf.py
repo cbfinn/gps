@@ -117,7 +117,8 @@ class PolicyOptTf(PolicyOpt):
         # Normalize obs, but only compute normalzation at the beginning.
         if itr == 0 and inner_itr == 1:
             self.policy.x_idx = self.x_idx
-            self.policy.scale = np.diag(1.0 / np.std(obs[:, self.x_idx], axis=0))
+            # 1e-3 to avoid infs if some state dimensions don't change in the
+            # first batch of samples
             self.policy.scale = np.diag(
                 1.0 / np.maximum(np.std(obs[:, self.x_idx], axis=0), 1e-3))
             self.policy.bias = - np.mean(

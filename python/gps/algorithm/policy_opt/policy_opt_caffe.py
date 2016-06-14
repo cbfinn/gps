@@ -137,8 +137,8 @@ class PolicyOptCaffe(PolicyOpt):
 
         # Normalize obs, but only compute normalzation at the beginning.
         if itr == 0 and inner_itr == 1:
-            # 1e-3 to avoid infs if some state dimensions don't change
-            # in the first batch
+            # 1e-3 to avoid infs if some state dimensions don't change in the
+            # first batch of samples
             self.policy.scale = np.diag(1.0 / np.maximum(np.std(obs, axis=0),
                                                          1e-3))
             self.policy.bias = -np.mean(obs.dot(self.policy.scale), axis=0)
