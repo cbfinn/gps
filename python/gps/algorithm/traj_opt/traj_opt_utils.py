@@ -85,7 +85,7 @@ def traj_distr_kl(new_mu, new_sigma, new_traj_distr, prev_traj_distr):
         )
 
     # Add up divergences across time to get total divergence.
-    return kl_div
+    return np.sum(kl_div)
 
 
 class LineSearch(object):
