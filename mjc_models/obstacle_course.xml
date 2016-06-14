@@ -1,4 +1,5 @@
-<mujoco model="linearparticle">
+<mujoco model="obstacle_course">
+    <!-- A 2D particle must navigate around walls to reach a goal state. -->
 
     <compiler inertiafromgeom="true" angle="radian" coordinate="local" />
     <option timestep="0.01" gravity="0 0 0" iterations="20" integrator="Euler" />
