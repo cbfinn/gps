@@ -118,7 +118,10 @@ class PolicyOptTf(PolicyOpt):
         if itr == 0 and inner_itr == 1:
             self.policy.x_idx = self.x_idx
             self.policy.scale = np.diag(1.0 / np.std(obs[:, self.x_idx], axis=0))
-            self.policy.bias = -np.mean(obs[:, self.x_idx].dot(self.policy.scale), axis=0)
+            self.policy.scale = np.diag(
+                1.0 / np.maximum(np.std(obs[:, self.x_idx], axis=0), 1e-3))
+            self.policy.bias = - np.mean(
+                obs[:, self.x_idx].dot(self.policy.scale), axis=0)
         obs[:, self.x_idx] = obs[:, self.x_idx].dot(self.policy.scale) + self.policy.bias
 
         # Assuming that N*T >= self.batch_size.
@@ -150,7 +153,7 @@ class PolicyOptTf(PolicyOpt):
 
         # Optimize variance.
         A = np.sum(tgt_prc_orig, 0) + 2 * N * T * \
-                                      self._hyperparams['ent_reg'] * np.ones((dU, dU))
+                self._hyperparams['ent_reg'] * np.ones((dU, dU))
         A = A / np.sum(tgt_wt)
 
         # TODO - Use dense covariance?

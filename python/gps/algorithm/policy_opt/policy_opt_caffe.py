@@ -137,7 +137,10 @@ class PolicyOptCaffe(PolicyOpt):
 
         # Normalize obs, but only compute normalzation at the beginning.
         if itr == 0 and inner_itr == 1:
-            self.policy.scale = np.diag(1.0 / np.std(obs, axis=0))
+            # 1e-3 to avoid infs if some state dimensions don't change
+            # in the first batch
+            self.policy.scale = np.diag(1.0 / np.maximum(np.std(obs, axis=0),
+                                                         1e-3))
             self.policy.bias = -np.mean(obs.dot(self.policy.scale), axis=0)
         obs = obs.dot(self.policy.scale) + self.policy.bias
 
@@ -166,11 +169,6 @@ class PolicyOptCaffe(PolicyOpt):
                 LOGGER.debug('Caffe iteration %d, average loss %f',
                              i, average_loss / 500)
                 average_loss = 0
-
-            # To run a test:
-            # if i % test_interval:
-            #     print 'Iteration', i, 'testing...'
-            #     solver.test_nets[0].forward()
 
         # Keep track of Caffe iterations for loading solver states.
         self.caffe_iter += self._hyperparams['iterations']
