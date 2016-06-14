@@ -253,7 +253,7 @@ class TrajOptLQRPython(TrajOpt):
                     fail = True
                     break
 
-                # Store conditional covariance, inverse, and Cholesky
+                # Store conditional covariance, inverse, and Cholesky.
                 traj_distr.inv_pol_covar[t, :, :] = Qtt[idx_u, idx_u]
                 traj_distr.pol_covar[t, :, :] = sp.linalg.solve_triangular(
                     U, sp.linalg.solve_triangular(L, np.eye(dU), lower=True)
