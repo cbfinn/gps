@@ -55,10 +55,10 @@ class AlgorithmMDGPS(Algorithm):
         self._update_step_size()  # KL Divergence step size (also fits policy).
 
         # Inner itr = 1
-        self._update_policy(self.iteration_count, 1) # HACK: need to set inner_itr=1
+        self._update_trajectories()
         for m in range(self.M):
             self._update_policy_fit(m)  # Update policy priors.
-        self._update_trajectories()
+        self._update_policy(self.iteration_count, 1) # HACK: need to set inner_itr=1
 
 #        # Run inner loop to compute new policies.
 #        for inner_itr in range(self._hyperparams['inner_iterations']):
@@ -120,7 +120,8 @@ class AlgorithmMDGPS(Algorithm):
             samples = self.cur[m].sample_list
             X = samples.get_X()
             N = len(samples)
-            traj, pol_info = self.cur[m].traj_distr, self.cur[m].pol_info
+            traj, pol_info = self.new_traj_distr[m], self.cur[m].pol_info
+#            traj, pol_info = self.cur[m].traj_distr, self.cur[m].pol_info
             mu = np.zeros((N, T, dU))
             prc = np.zeros((N, T, dU, dU))
             wt = np.zeros((N, T))
