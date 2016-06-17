@@ -54,19 +54,18 @@ class AlgorithmMDGPS(Algorithm):
         self._update_policy_samples()  # Choose samples to use with the policy.
         self._update_step_size()  # KL Divergence step size (also fits policy).
 
+        # Inner itr = 0
+        if self.iteration_count > 0:
+            self._update_policy(self.iteration_count, 0)
         for m in range(self.M):
             self._update_policy_fit(m)  # Update policy priors.
-
         self._update_trajectories()
-        self._update_policy(self.iteration_count, 1) # HACK: need to set inner_itr=1
 
+        # Inner itr = 1
+        self._update_policy(self.iteration_count, 1) # HACK: need to set inner_itr=1
         for m in range(self.M):
             self._update_policy_fit(m)  # Update policy priors.
-
-        # TODO: not sure about this, copied from previous
-        for m in range(self.M):
-            kl_m = self._policy_kl(m)[0]
-            self.cur[m].pol_info.prev_kl = kl_m
+        self._update_trajectories()
 
 #        # Run inner loop to compute new policies.
 #        for inner_itr in range(self._hyperparams['inner_iterations']):
@@ -85,6 +84,11 @@ class AlgorithmMDGPS(Algorithm):
 #                    self.cur[m].pol_info.prev_kl = kl_m
 #
 #            self._update_trajectories()
+
+        # TODO: not sure about this, copied from previous
+        for m in range(self.M):
+            kl_m = self._policy_kl(m)[0]
+            self.cur[m].pol_info.prev_kl = kl_m
 
         self._advance_iteration_variables()
 
