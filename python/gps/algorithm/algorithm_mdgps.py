@@ -52,25 +52,39 @@ class AlgorithmMDGPS(Algorithm):
 
         self._update_dynamics()  # Update dynamics model using all sample.
         self._update_policy_samples()  # Choose samples to use with the policy.
-        self._update_step_size()  # KL Divergence step size.
+        self._update_step_size()  # KL Divergence step size (also fits policy).
 
-        # Run inner loop to compute new policies.
-        for inner_itr in range(self._hyperparams['inner_iterations']):
-            #TODO: Could start from init controller.
-            if self.iteration_count > 0 or inner_itr > 0:
-                # Update the policy.
-                self._update_policy(self.iteration_count, inner_itr)
-            for m in range(self.M):
-                self._update_policy_fit(m)  # Update policy priors.
+        for m in range(self.M):
+            self._update_policy_fit(m)  # Update policy priors.
 
-            # TODO: not sure about this, copied from previous
-            if (self.iteration_count > 0 or inner_itr > 0) and \
-                    (inner_itr == self._hyperparams['inner_iterations'] - 1):
-                for m in range(self.M):
-                    kl_m = self._policy_kl(m)[0]
-                    self.cur[m].pol_info.prev_kl = kl_m
+        self._update_trajectories()
+        self._update_policy(self.iteration_count, 1) # HACK: need to set inner_itr=1
 
-            self._update_trajectories()
+        for m in range(self.M):
+            self._update_policy_fit(m)  # Update policy priors.
+
+        # TODO: not sure about this, copied from previous
+        for m in range(self.M):
+            kl_m = self._policy_kl(m)[0]
+            self.cur[m].pol_info.prev_kl = kl_m
+
+#        # Run inner loop to compute new policies.
+#        for inner_itr in range(self._hyperparams['inner_iterations']):
+#            #TODO: Could start from init controller.
+#            if self.iteration_count > 0 or inner_itr > 0:
+#                # Update the policy.
+#                self._update_policy(self.iteration_count, inner_itr)
+#            for m in range(self.M):
+#                self._update_policy_fit(m)  # Update policy priors.
+#
+#            # TODO: not sure about this, copied from previous
+#            if (self.iteration_count > 0 or inner_itr > 0) and \
+#                    (inner_itr == self._hyperparams['inner_iterations'] - 1):
+#                for m in range(self.M):
+#                    kl_m = self._policy_kl(m)[0]
+#                    self.cur[m].pol_info.prev_kl = kl_m
+#
+#            self._update_trajectories()
 
         self._advance_iteration_variables()
 
