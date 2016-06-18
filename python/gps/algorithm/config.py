@@ -19,6 +19,8 @@ ALG = {
                               # objects for each condition.
     # Trajectory optimization.
     'traj_opt': TrajOptLQRPython({}),
+    # Use maximum entropy term in trajectory optimization.
+    'max_ent_traj': 1.0
     # Dynamics hyperaparams.
     'dynamics': {
         'type': DynamicsLR
