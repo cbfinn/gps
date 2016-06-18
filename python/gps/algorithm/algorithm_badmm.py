@@ -49,6 +49,10 @@ class AlgorithmBADMM(Algorithm):
         self._update_policy_samples()  # Choose samples to use with the policy.
         self._update_step_size()  # KL Divergence step size.
 
+        for m in range(self.M):
+          # save initial kl for debugging / visualization
+          self.cur[m].pol_info.init_kl = self._policy_kl(m)[0]
+
         # Run inner loop to compute new policies.
         for inner_itr in range(self._hyperparams['inner_iterations']):
             #TODO: Could start from init controller.
@@ -127,7 +131,10 @@ class AlgorithmBADMM(Algorithm):
             samples = self.cur[m].sample_list
             X = samples.get_X()
             N = len(samples)
-            traj, pol_info = self.cur[m].traj_distr, self.cur[m].pol_info
+            if inner_itr > 0:
+              traj, pol_info = self.new_traj_distr[m], self.cur[m].pol_info
+            else:
+              traj, pol_info = self.cur[m].traj_distr, self.cur[m].pol_info
             mu = np.zeros((N, T, dU))
             prc = np.zeros((N, T, dU, dU))
             wt = np.zeros((N, T))
@@ -215,7 +222,11 @@ class AlgorithmBADMM(Algorithm):
         samples = self.cur[m].sample_list
         N = len(samples)
         X = samples.get_X()
-        traj, pol_info = self.cur[m].traj_distr, self.cur[m].pol_info
+        if 'new_traj_distr' in dir(self):
+            traj, pol_info = self.new_traj_distr[m], self.cur[m].pol_info
+        else:
+            traj, pol_info = self.cur[m].traj_distr, self.cur[m].pol_info
+
         # Compute trajectory action at each sampled state.
         traj_mu = np.zeros((N, T, dU))
         for i in range(N):
@@ -296,6 +307,7 @@ class AlgorithmBADMM(Algorithm):
         Args:
             m: Condition
         """
+
         # Compute values under Laplace approximation. This is the policy
         # that the previous samples were actually drawn from under the
         # dynamics that were estimated from the previous samples.
@@ -490,7 +502,11 @@ class AlgorithmBADMM(Algorithm):
 
     def compute_costs(self, m, eta):
         """ Compute cost estimates used in the LQR backward pass. """
-        traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
+        if 'new_traj_distr' in dir(self):
+            traj_distr = self.new_traj_distr[m]
+        else:
+            traj_distr = self.cur[m].traj_distr
+        traj_info = self.cur[m].traj_info
         pol_info = self.cur[m].pol_info
         T, dU, dX = traj_distr.T, traj_distr.dU, traj_distr.dX
         Cm, cv = np.copy(traj_info.Cm), np.copy(traj_info.cv)
