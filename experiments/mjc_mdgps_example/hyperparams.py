@@ -53,8 +53,8 @@ agent = {
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
-    'pos_body_offset': [np.array([0.06, 0.06, 0]), np.array([0.06, -0.06, 0]),
-                        np.array([-0.06, -0.06, 0]), np.array([-0.06, 0.06, 0])],
+    'pos_body_offset': [np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0]),
+                        np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -68,9 +68,9 @@ algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
     'iterations': 12,
-    'kl_step': 1.0,
+    'kl_step': 2.0,
     'min_step_mult': 0.01,
-    'max_step_mult': 5.0,
+    'max_step_mult': 1.0,
     'policy_sample_mode': 'replace',
 }
 
@@ -136,7 +136,7 @@ algorithm['traj_opt'] = {
 algorithm['policy_opt'] = {
     'type': PolicyOptCaffe,
     'weights_file_prefix': EXP_DIR + 'policy',
-    'iterations': 6000,
+    'iterations': 4000,
 }
 
 algorithm['policy_prior'] = {
