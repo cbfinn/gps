@@ -27,7 +27,7 @@ if not os.path.exists(common['data_files_dir']):
 # Algorithm
 algorithm = default.algorithm.copy()
 algorithm.update({
-    'agent_use_nn_policy': False,
+    'sample_on_policy': False,
     'step_rule': 'global',
 })
 

@@ -34,11 +34,6 @@ class AlgorithmMDGPS(Algorithm):
             self._hyperparams['policy_opt'], self.dO, self.dU
         )
 
-        # extra stuff to pass parameters to sampling
-        # TODO: this is sloppy, handle better
-        if not self._hyperparams['agent_use_nn_policy']:
-            del self._hyperparams['agent_use_nn_policy']
-
     def iteration(self, sample_lists):
         """
         Run iteration of BADMM-based guided policy search.

@@ -25,6 +25,8 @@ ALG = {
     },
     # Costs.
     'cost': None,  # A list of Cost objects for each condition.
+    # Whether or not to sample with neural net policy (only for badmm/mdgps).
+    'sample_on_policy': False,
 }
 
 
@@ -51,6 +53,5 @@ ALG_MDGPS = {
     'init_pol_wt': 0.01,
     'policy_sample_mode': 'add',
     'max_policy_samples': 20,
-    'agent_use_nn_policy': False,
     'step_rule': 'classic',
 }

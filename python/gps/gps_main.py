@@ -143,7 +143,8 @@ class GPSMain(object):
             i: Sample number.
         Returns: None
         """
-        if 'agent_use_nn_policy' in self.algorithm._hyperparams and self.algorithm.iteration_count > 0:
+        if self.algorithm._hyperparams['sample_on_policy'] \
+                and self.algorithm.iteration_count > 0:
             pol = self.algorithm.policy_opt.policy
         else:
             pol = self.algorithm.cur[cond].traj_distr

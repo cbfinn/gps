@@ -135,7 +135,7 @@ algorithm['traj_opt'] = {
 
 algorithm['policy_opt'] = {
     'type': PolicyOptCaffe,
-    'iterations': 4000,
+    'iterations': 3000,
     'weights_file_prefix': EXP_DIR + 'policy',
 }
 
