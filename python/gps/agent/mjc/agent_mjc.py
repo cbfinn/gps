@@ -103,13 +103,16 @@ class AgentMuJoCo(Agent):
             condition: Which condition setup to run.
             verbose: Whether or not to plot the trial.
             save: Whether or not to store the trial into the samples.
-            noisy: Whether or not to use noise during sampling
+            noisy: Whether or not to use noise during sampling.
         """
         # Create new sample, populate first time step.
         new_sample = self._init_sample(condition)
         mj_X = self._hyperparams['x0'][condition]
         U = np.zeros([self.T, self.dU])
-        noise = generate_noise(self.T, self.dU, self._hyperparams)
+        if noisy:
+            noise = generate_noise(self.T, self.dU, self._hyperparams)
+        else:
+            noise = np.zeros((self.T, self.dU))
         if np.any(self._hyperparams['x0var'][condition] > 0):
             x0n = self._hyperparams['x0var'] * \
                     np.random.randn(self._hyperparams['x0var'].shape)
@@ -125,7 +128,7 @@ class AgentMuJoCo(Agent):
         for t in range(self.T):
             X_t = new_sample.get_X(t=t)
             obs_t = new_sample.get_obs(t=t)
-            mj_U = policy.act(X_t, obs_t, t, noise[t, :] * noisy)
+            mj_U = policy.act(X_t, obs_t, t, noise[t, :])
             U[t, :] = mj_U
             if verbose:
                 self._world[condition].plot(mj_X)

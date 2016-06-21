@@ -143,9 +143,9 @@ class PolicyOptTf(PolicyOpt):
             train_loss = self.solver(feed_dict, self.sess)
 
             average_loss += train_loss
-            if i % 500 == 0 and i != 0:
+            if (i+1) % 500 == 0:
                 LOGGER.debug('tensorflow iteration %d, average loss %f',
-                             i, average_loss / 500)
+                             i+1, average_loss / 500)
                 print ('supervised tf loss is ' + str(average_loss))
                 average_loss = 0
 
@@ -159,6 +159,7 @@ class PolicyOptTf(PolicyOpt):
 
         # TODO - Use dense covariance?
         self.var = 1 / np.diag(A)
+        self.policy.chol_pol_covar = np.diag(np.sqrt(self.var))
 
         return self.policy
 

@@ -165,9 +165,9 @@ class PolicyOptCaffe(PolicyOpt):
             # To get the training loss:
             train_loss = self.solver.net.blobs[blob_names[-1]].data
             average_loss += train_loss
-            if i % 500 == 0 and i != 0:
+            if (i+1) % 500 == 0:
                 LOGGER.debug('Caffe iteration %d, average loss %f',
-                             i, average_loss / 500)
+                             i+1, average_loss / 500)
                 average_loss = 0
 
         # Keep track of Caffe iterations for loading solver states.
