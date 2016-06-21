@@ -47,6 +47,7 @@ class Algorithm(object):
         # IterationData objects for each condition.
         self.cur = [IterationData() for _ in range(self.M)]
         self.prev = [IterationData() for _ in range(self.M)]
+        self.traj_distr = {self.iteration_count: []}
 
         for m in range(self.M):
             self.cur[m].traj_info = TrajectoryInfo()
@@ -56,6 +57,7 @@ class Algorithm(object):
                 self._hyperparams['init_traj_distr'], self._cond_idx[m]
             )
             self.cur[m].traj_distr = init_traj_distr['type'](init_traj_distr)
+            self.traj_distr[self.iteration_count].append(self.cur[m].traj_distr)
 
         self.traj_opt = hyperparams['traj_opt']['type'](
             hyperparams['traj_opt']
@@ -168,12 +170,14 @@ class Algorithm(object):
         self.iteration_count += 1
         self.prev = copy.deepcopy(self.cur)
         self.cur = [IterationData() for _ in range(self.M)]
+        self.traj_distr[self.iteration_count] = []
         for m in range(self.M):
             self.cur[m].traj_info = TrajectoryInfo()
             self.cur[m].traj_info.dynamics = copy.deepcopy(self.prev[m].traj_info.dynamics)
             self.cur[m].step_mult = self.prev[m].step_mult
             self.cur[m].eta = self.prev[m].eta
             self.cur[m].traj_distr = self.new_traj_distr[m]
+            self.traj_distr[self.iteration_count][m] = self.new_traj_distr[m]
         delattr(self, 'new_traj_distr')
 
     def _set_new_mult(self, predicted_impr, actual_impr, m):

@@ -61,11 +61,12 @@ class GenDemo(object):
     	N = 5
     	var_mult = 1.0
     	T = self.algorithm.T
+        demos = {}
 
     	# Store each controller under M conditions into controllers.
     	for i in xrange(M):
     		controllers[i] = self.algorithm.cur[i].traj_distr
-    		self.algorithm.cur[i].demo_list = self._hyperparameter['demo_list'] = []
+    		demos[i] = []
     	controllers_var = copy.copy(controllers)
     	good_indices = range(35)
     	good_indices.extend(range(36, 40))
@@ -81,8 +82,10 @@ class GenDemo(object):
                 	verbose=(i < self._hyperparams['verbose_trials']),
                 	save = True
             	)
-            	self.algorithm.cur[i].demo_list.extend(demo)
+            	demos[i].append(demo)
 
+        for i in xrange(M):
+            self.algorithm.cur[i].demo_list = sample_list(demos[i])
         # Save the demos.
         self.data_logger.pickle(
             self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),

@@ -21,6 +21,10 @@ ALG = {
     'traj_opt': TrajOptLQRPython({}),
     # Use maximum entropy term in trajectory optimization.
     'max_ent_traj': 1.0
+    # Flag if we estimate the demo distribution empirically.
+    'demo_distr_empest': 1.0
+    # Flag if the algorithm is using IOC
+    'ioc': 1
     # Dynamics hyperaparams.
     'dynamics': {
         'type': DynamicsLR
