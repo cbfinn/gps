@@ -16,7 +16,6 @@ For more detailed documentation, visit: rll.berkeley.edu/gps/gui
 """
 import time
 import threading
-from IPython.core.debugger import Tracer; debug_here = Tracer()
 
 import numpy as np
 import matplotlib.pyplot as plt

@@ -129,8 +129,6 @@ class GPSMain(object):
                         ('pol_sample_itr_%02d.pkl' % itr_load))
                 else:
                     pol_sample_lists = None
-                #self.gui.update(itr_load, self.algorithm, self.agent,
-                #    traj_sample_lists, pol_sample_lists)
                 self.gui.set_status_text(
                     ('Resuming training from algorithm state at iteration %d.\n' +
                     'Press \'go\' to begin.') % itr_load)
@@ -260,7 +258,6 @@ class GPSMain(object):
         if self.gui:
             self.gui.set_status_text('Training complete.')
             self.gui.end_mode()
-        os._exit(0)
 
 
 def main():

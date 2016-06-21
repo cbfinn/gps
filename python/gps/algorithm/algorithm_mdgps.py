@@ -1,7 +1,6 @@
 """ This file defines the MD-based GPS algorithm. """
 import copy
 import logging
-from IPython.core.debugger import Tracer; debug_here = Tracer()
 
 import numpy as np
 import scipy as sp

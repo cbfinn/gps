@@ -1,7 +1,6 @@
 """ This file defines code for iLQG-based trajectory optimization. """
 import logging
 import copy
-from IPython.core.debugger import Tracer; debug_here = Tracer()
 
 import numpy as np
 from numpy.linalg import LinAlgError
