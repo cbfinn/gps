@@ -114,7 +114,7 @@ def fit_emp_controllers(demo_x, demo_u):
 
     for t in xrange(T):
         X = np.hstack((np.squeeze(demo_x[:, t, :], np.ones((N, 1)))))
-        U = np.squeeze(demo_u(:, t, :))
+        U = np.squeeze(demo_u[:, t, :])
         result = np.linalg.solve(X, U).T
         traj.K[t, :, :] = result[:, 0: dX]
         traj.k[t, :] = result[:, -1]
@@ -132,5 +132,5 @@ def fit_emp_controllers(demo_x, demo_u):
 def logsum(vec, dim):
     """ Safe sum of log values. """
     maxv = vec.max(dim)
-    maxv[maxv == -np.inf] = ;
+    maxv[maxv == -np.inf] = 0;
     return np.log(np.sum(np.exp(vec - maxv), dim)) + maxv
