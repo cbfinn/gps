@@ -17,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 class AlgorithmMDGPS(Algorithm):
     """
     Sample-based joint policy learning and trajectory optimization with
-    MD-based guided policy search algorithm.
+    (approximate) mirror descent guided policy search algorithm.
     """
     def __init__(self, hyperparams):
         config = copy.deepcopy(ALG_MDGPS)
@@ -106,7 +106,6 @@ class AlgorithmMDGPS(Algorithm):
             X = samples.get_X()
             N = len(samples)
             traj, pol_info = self.new_traj_distr[m], self.cur[m].pol_info
-#            traj, pol_info = self.cur[m].traj_distr, self.cur[m].pol_info
             mu = np.zeros((N, T, dU))
             prc = np.zeros((N, T, dU, dU))
             wt = np.zeros((N, T))
@@ -194,6 +193,7 @@ class AlgorithmMDGPS(Algorithm):
         Args:
             m: Condition
         """
+        # Store the policy linearizations as traj distrs
         # NOTE: we only copy in K/k/pol_covar, only things needed for cost
         prev_pol_info = self.prev[m].pol_info
         prev_nn = self.prev[m].traj_distr.nans_like()

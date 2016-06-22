@@ -15,7 +15,7 @@ from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.cost.cost_utils import RAMP_FINAL_ONLY
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
-from gps.algorithm.traj_opt.traj_opt_lqr_python_mdgps import TrajOptLQRPythonMDGPS
+from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
@@ -130,7 +130,7 @@ algorithm['dynamics'] = {
 }
 
 algorithm['traj_opt'] = {
-    'type': TrajOptLQRPythonMDGPS,
+    'type': TrajOptLQRPython,
 }
 
 algorithm['policy_opt'] = {

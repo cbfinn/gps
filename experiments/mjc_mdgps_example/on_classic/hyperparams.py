@@ -2,10 +2,6 @@
 import imp
 import os.path
 from gps.gui.config import generate_experiment_info
-from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
-from gps.algorithm.traj_opt.traj_opt_lqr_python_mdgps import TrajOptLQRPythonMDGPS
-from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
-from IPython.core.debugger import Tracer; debug_here = Tracer()
 
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 default = imp.load_source('default_hyperparams', BASE_DIR+'/hyperparams.py')
