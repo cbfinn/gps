@@ -100,7 +100,6 @@ class AlgorithmTrajOpt(Algorithm):
 
     def compute_costs(self, m, eta):
         """ Compute cost estimates used in the LQR backward pass. """
-        # TODO: probably a bug here -- traj_distr should be new_traj_distr.
         traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
         fCm, fcv = traj_info.Cm / eta, traj_info.cv / eta
         K, ipc, k = traj_distr.K, traj_distr.inv_pol_covar, traj_distr.k

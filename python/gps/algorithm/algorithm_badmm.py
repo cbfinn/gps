@@ -502,11 +502,7 @@ class AlgorithmBADMM(Algorithm):
 
     def compute_costs(self, m, eta):
         """ Compute cost estimates used in the LQR backward pass. """
-        if 'new_traj_distr' in dir(self):
-            traj_distr = self.new_traj_distr[m]
-        else:
-            traj_distr = self.cur[m].traj_distr
-        traj_info = self.cur[m].traj_info
+        traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
         pol_info = self.cur[m].pol_info
         T, dU, dX = traj_distr.T, traj_distr.dU, traj_distr.dX
         Cm, cv = np.copy(traj_info.Cm), np.copy(traj_info.cv)
