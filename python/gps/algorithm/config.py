@@ -44,6 +44,8 @@ ALG_BADMM = {
 
 # AlgorithmMD
 ALG_MDGPS = {
+    # TODO: remove need for init_pol_wt in MDGPS
+    'init_pol_wt': 0.01,
     'policy_sample_mode': 'add',
     'max_policy_samples': 20,
     'step_rule': 'classic',
