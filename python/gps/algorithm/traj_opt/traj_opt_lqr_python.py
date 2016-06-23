@@ -35,13 +35,7 @@ class TrajOptLQRPython(TrajOpt):
 
         if type(algorithm) == AlgorithmMDGPS:
             # For MDGPS, constrain to previous NN linearization
-            # NOTE: we only copy in necessary params, ignoring inv_pol_covar
-            pol_info = algorithm.cur[m].pol_info
-            prev_traj_distr = algorithm.cur[m].traj_distr.nans_like()
-            prev_traj_distr.K = pol_info.pol_K
-            prev_traj_distr.k = pol_info.pol_k
-            prev_traj_distr.pol_covar = pol_info.pol_S
-            prev_traj_distr.chol_pol_covar = pol_info.chol_pol_S
+            prev_traj_distr = algorithm.cur[m].pol_info.traj_distr()
         else:
             # For BADMM/trajopt, constrain to previous LG controller
             prev_traj_distr = algorithm.cur[m].traj_distr

@@ -191,20 +191,9 @@ class AlgorithmMDGPS(Algorithm):
         Args:
             m: Condition
         """
-        # Store the policy linearizations as traj distrs
-        # NOTE: we only copy in K/k/pol_covar, only things needed for cost
-        prev_pol_info = self.prev[m].pol_info
-        prev_nn = self.prev[m].traj_distr.nans_like()
-        prev_nn.K = prev_pol_info.pol_K
-        prev_nn.k = prev_pol_info.pol_k
-        prev_nn.pol_covar = self.prev[m].traj_distr.pol_covar
-
-        cur_pol_info = self.cur[m].pol_info
-        cur_nn = self.cur[m].traj_distr.nans_like()
-        cur_nn.K = cur_pol_info.pol_K
-        cur_nn.k = cur_pol_info.pol_k
-        cur_nn.pol_covar = self.cur[m].traj_distr.pol_covar
-
+        # Get the necessary linearizations
+        prev_nn = self.prev[m].pol_info.traj_distr()
+        cur_nn = self.cur[m].pol_info.traj_distr()
         cur_traj_distr = self.cur[m].traj_distr
 
         # Compute values under Laplace approximation. This is the policy
