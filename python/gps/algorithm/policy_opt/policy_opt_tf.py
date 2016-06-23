@@ -74,7 +74,7 @@ class PolicyOptTf(PolicyOpt):
                                momentum=self._hyperparams['momentum'],
                                weight_decay=self._hyperparams['weight_decay'])
 
-    def update(self, obs, tgt_mu, tgt_prc, tgt_wt, itr, inner_itr):
+    def update(self, obs, tgt_mu, tgt_prc, tgt_wt):
         """
         Update policy.
         Args:
@@ -115,7 +115,7 @@ class PolicyOptTf(PolicyOpt):
         # TODO: Find entries with very low weights?
 
         # Normalize obs, but only compute normalzation at the beginning.
-        if itr == 0 and inner_itr == 1:
+        if not hasattr(self.policy, 'scale'):
             self.policy.x_idx = self.x_idx
             # 1e-3 to avoid infs if some state dimensions don't change in the
             # first batch of samples

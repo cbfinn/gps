@@ -54,7 +54,7 @@ class AlgorithmBADMM(Algorithm):
             #TODO: Could start from init controller.
             if self.iteration_count > 0 or inner_itr > 0:
                 # Update the policy.
-                self._update_policy(self.iteration_count, inner_itr)
+                self._update_policy()
             for m in range(self.M):
                 self._update_policy_fit(m)  # Update policy priors.
             if self.iteration_count > 0 or inner_itr > 0:
@@ -117,7 +117,7 @@ class AlgorithmBADMM(Algorithm):
             if self.iteration_count >= 1 and self.prev[m].sample_list:
                 self._stepadjust(m)
 
-    def _update_policy(self, itr, inner_itr):
+    def _update_policy(self):
         """ Compute the new policy. """
         dU, dO, T = self.dU, self.dO, self.T
         # Compute target mean, cov, and weight for each sample.
@@ -149,8 +149,7 @@ class AlgorithmBADMM(Algorithm):
             tgt_prc = np.concatenate((tgt_prc, prc))
             tgt_wt = np.concatenate((tgt_wt, wt))
             obs_data = np.concatenate((obs_data, samples.get_obs()))
-        self.policy_opt.update(obs_data, tgt_mu, tgt_prc, tgt_wt,
-                               itr, inner_itr)
+        self.policy_opt.update(obs_data, tgt_mu, tgt_prc, tgt_wt)
 
     def _update_policy_fit(self, m, init=False):
         """

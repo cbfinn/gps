@@ -95,7 +95,7 @@ class PolicyOptCaffe(PolicyOpt):
     # TODO - This assumes that the obs is a vector being passed into the
     #        network in the same place.
     #        (won't work with images or multimodal networks)
-    def update(self, obs, tgt_mu, tgt_prc, tgt_wt, itr, inner_itr):
+    def update(self, obs, tgt_mu, tgt_prc, tgt_wt):
         """
         Update policy.
         Args:
@@ -135,8 +135,8 @@ class PolicyOptCaffe(PolicyOpt):
 
         #TODO: Find entries with very low weights?
 
-        # Normalize obs, but only compute normalzation at the beginning.
-        if itr == 0 and inner_itr == 1:
+        # Normalize obs, but only the first time update is called.
+        if not hasattr(self.policy, 'scale'):
             # 1e-3 to avoid infs if some state dimensions don't change in the
             # first batch of samples
             self.policy.scale = np.diag(1.0 / np.maximum(np.std(obs, axis=0),

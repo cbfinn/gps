@@ -55,13 +55,13 @@ class AlgorithmMDGPS(Algorithm):
             self.new_traj_distr = [
                 self.cur[cond].traj_distr for cond in range(self.M)
             ]
-            self._update_policy(self.iteration_count, 1) # HACK: need to set inner_itr=1
+            self._update_policy()
 
         # Main updates
         # TODO: store init_kl after updating the trajectory
         self._update_step_size()  # KL Divergence step size (also fits policy).
         self._update_trajectories()
-        self._update_policy(self.iteration_count, 1) # HACK: need to set inner_itr=1
+        self._update_policy()
 
         # Store most recent kl divs for GUI output
         for m in range(self.M):
@@ -94,7 +94,7 @@ class AlgorithmMDGPS(Algorithm):
             if self.iteration_count > 0:
                 self._stepadjust(m)
 
-    def _update_policy(self, itr, inner_itr):
+    def _update_policy(self):
         """ Compute the new policy. """
         dU, dO, T = self.dU, self.dO, self.T
         # Compute target mean, cov, and weight for each sample.
@@ -120,8 +120,7 @@ class AlgorithmMDGPS(Algorithm):
             tgt_prc = np.concatenate((tgt_prc, prc))
             tgt_wt = np.concatenate((tgt_wt, wt))
             obs_data = np.concatenate((obs_data, samples.get_obs()))
-        self.policy_opt.update(obs_data, tgt_mu, tgt_prc, tgt_wt,
-                               itr, inner_itr)
+        self.policy_opt.update(obs_data, tgt_mu, tgt_prc, tgt_wt)
 
     def _update_policy_fit(self, m, init=False):
         """
