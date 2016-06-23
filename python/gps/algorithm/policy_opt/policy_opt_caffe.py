@@ -136,7 +136,7 @@ class PolicyOptCaffe(PolicyOpt):
         #TODO: Find entries with very low weights?
 
         # Normalize obs, but only the first time update is called.
-        if not hasattr(self.policy, 'scale'):
+        if self.policy.scale is None or self.policy.bias is None:
             # 1e-3 to avoid infs if some state dimensions don't change in the
             # first batch of samples
             self.policy.scale = np.diag(1.0 / np.maximum(np.std(obs, axis=0),
@@ -195,12 +195,11 @@ class PolicyOptCaffe(PolicyOpt):
         N, T = obs.shape[:2]
 
         # Normalize obs.
-        try:
-            for n in range(N):
-                obs[n, :, :] = obs[n, :, :].dot(self.policy.scale) + \
-                        self.policy.bias
-        except AttributeError:
-            pass  #TODO: Should prob be called before update?
+        if self.policy.scale is None or self.policy.bias is None:
+            pass  # TODO: Should prob be called before update?
+        for n in range(N):
+            obs[n, :, :] = obs[n, :, :].dot(self.policy.scale) + \
+                    self.policy.bias
 
         output = np.zeros((N, T, dU))
         blob_names = self.solver.test_nets[0].blobs.keys()

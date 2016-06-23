@@ -115,7 +115,7 @@ class PolicyOptTf(PolicyOpt):
         # TODO: Find entries with very low weights?
 
         # Normalize obs, but only compute normalzation at the beginning.
-        if not hasattr(self.policy, 'scale'):
+        if self.policy.scale is None or self.policy.bias is None:
             self.policy.x_idx = self.x_idx
             # 1e-3 to avoid infs if some state dimensions don't change in the
             # first batch of samples
@@ -173,13 +173,11 @@ class PolicyOptTf(PolicyOpt):
         N, T = obs.shape[:2]
 
         # Normalize obs.
-        try:
-            for n in range(N):
-                if self.policy.scale is not None and self.policy.bias is not None:
-                    obs[n, :, self.x_idx] = (obs[n, :, self.x_idx].T.dot(self.policy.scale)
-                                             + self.policy.bias).T
-        except AttributeError:
+        if self.policy.scale is None or self.policy.bias is None:
             pass  # TODO: Should prob be called before update?
+        for n in range(N):
+            obs[n, :, self.x_idx] = (obs[n, :, self.x_idx].T.dot(self.policy.scale)
+                                     + self.policy.bias).T
 
         output = np.zeros((N, T, dU))
 
