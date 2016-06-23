@@ -22,6 +22,8 @@ class PolicyOptTf(PolicyOpt):
 
         PolicyOpt.__init__(self, config, dO, dU)
 
+        tf.set_random_seed(self._hyperparams['random_seed'])
+
         self.tf_iter = 0
         self.checkpoint_file = self._hyperparams['checkpoint_prefix']
         self.batch_size = self._hyperparams['batch_size']
