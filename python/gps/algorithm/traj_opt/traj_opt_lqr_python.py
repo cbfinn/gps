@@ -240,19 +240,14 @@ class TrajOptLQRPython(TrajOpt):
                 # Add in the value function from the next time step.
                 if t < T - 1:
                     if type(algorithm) == AlgorithmBADMM:
-                        Qtt = Qtt + \
-                                (pol_wt[t+1] + eta)/(pol_wt[t] + eta) * \
-                                Fm[t, :, :].T.dot(Vxx[t+1, :, :]).dot(Fm[t, :, :])
-                        Qt = Qt + \
-                                (pol_wt[t+1] + eta)/(pol_wt[t] + eta) * \
-                                Fm[t, :, :].T.dot(Vx[t+1, :] +
-                                                Vxx[t+1, :, :].dot(fv[t, :]))
+                        multiplier = (pol_wt[t+1] + eta)/(pol_wt[t] + eta)
                     else:
-                        Qtt = Qtt + \
-                                Fm[t, :, :].T.dot(Vxx[t+1, :, :]).dot(Fm[t, :, :])
-                        Qt = Qt + \
-                                Fm[t, :, :].T.dot(Vx[t+1, :] +
-                                                Vxx[t+1, :, :].dot(fv[t, :]))
+                        multiplier = 1.0
+                    Qtt = Qtt + multiplier * \
+                            Fm[t, :, :].T.dot(Vxx[t+1, :, :]).dot(Fm[t, :, :])
+                    Qt = Qt + multiplier * \
+                            Fm[t, :, :].T.dot(Vx[t+1, :] +
+                                            Vxx[t+1, :, :].dot(fv[t, :]))
 
                 # Symmetrize quadratic component.
                 Qtt = 0.5 * (Qtt + Qtt.T)

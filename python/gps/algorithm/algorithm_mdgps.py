@@ -36,7 +36,7 @@ class AlgorithmMDGPS(Algorithm):
 
     def iteration(self, sample_lists):
         """
-        Run iteration of BADMM-based guided policy search.
+        Run iteration of MDGPS-based guided policy search.
 
         Args:
             sample_lists: List of SampleList objects for each condition.
@@ -72,7 +72,6 @@ class AlgorithmMDGPS(Algorithm):
 
     def _update_policy_samples(self):
         """ Update the list of samples to use with the policy. """
-        #TODO: Handle synthetic samples.
         max_policy_samples = self._hyperparams['max_policy_samples']
         if self._hyperparams['policy_sample_mode'] == 'add':
             for m in range(self.M):

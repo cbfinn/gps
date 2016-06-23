@@ -44,8 +44,6 @@ ALG_BADMM = {
 
 # AlgorithmMD
 ALG_MDGPS = {
-    'inner_iterations': 4,
-    'init_pol_wt': 0.01,
     'policy_sample_mode': 'add',
     'max_policy_samples': 20,
     'step_rule': 'classic',
