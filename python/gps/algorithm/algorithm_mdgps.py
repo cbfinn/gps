@@ -57,11 +57,13 @@ class AlgorithmMDGPS(Algorithm):
             ]
             self._update_policy()
 
-        # Main updates
+        # Main updates.
         # TODO: store init_kl after updating the trajectory
         self._update_step_size()  # KL Divergence step size (also fits policy).
         self._update_trajectories()
         self._update_policy()
+        for m in range(self.M):
+            self._update_policy_fit(m)  # Update policy priors.
 
         # Store most recent kl divs for GUI output
         for m in range(self.M):
