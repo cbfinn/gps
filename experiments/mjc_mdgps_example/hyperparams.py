@@ -24,6 +24,9 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
 from gps.gui.config import generate_experiment_info
 
+from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
+from gps.algorithm.policy_opt.tf_model_example import example_tf_network
+
 
 SENSOR_DIMS = {
     JOINT_ANGLES: 7,
@@ -134,7 +137,14 @@ algorithm['traj_opt'] = {
 }
 
 algorithm['policy_opt'] = {
-    'type': PolicyOptCaffe,
+#    'type': PolicyOptCaffe,
+    'type': PolicyOptTf,
+    'network_params': {
+        'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
+                        END_EFFECTOR_POINT_VELOCITIES],
+        'sensor_dims': SENSOR_DIMS,
+    },
+    'network_model': example_tf_network,
     'iterations': 3000,
     'weights_file_prefix': EXP_DIR + 'policy',
 }
