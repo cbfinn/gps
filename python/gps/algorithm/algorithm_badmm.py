@@ -49,6 +49,10 @@ class AlgorithmBADMM(Algorithm):
         self._update_policy_samples()  # Choose samples to use with the policy.
         self._update_step_size()  # KL Divergence step size.
 
+        for m in range(self.M):
+          # save initial kl for debugging / visualization
+          self.cur[m].pol_info.init_kl = self._policy_kl(m)[0]
+
         # Run inner loop to compute new policies.
         for inner_itr in range(self._hyperparams['inner_iterations']):
             #TODO: Could start from init controller.
