@@ -1,7 +1,6 @@
 """ This file defines general utility functions and classes. """
 import numpy as np
 
-
 class BundleType(object):
     """
     This class bundles many fields, similar to a record or a mutable
@@ -92,3 +91,9 @@ def get_ee_points(offsets, ee_pos, ee_rot):
         3 x N array of end effector points.
     """
     return ee_rot.dot(offsets.T) + ee_pos.T
+
+def logsum(vec, dim):
+    """ Safe sum of log values. """
+    maxv = vec.max(dim)
+    maxv[maxv == -np.inf] = 0
+    return np.log(np.sum(np.exp(vec - maxv), dim)) + maxv

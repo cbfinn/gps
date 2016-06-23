@@ -177,7 +177,7 @@ class Algorithm(object):
             self.cur[m].step_mult = self.prev[m].step_mult
             self.cur[m].eta = self.prev[m].eta
             self.cur[m].traj_distr = self.new_traj_distr[m]
-            self.traj_distr[self.iteration_count][m] = self.new_traj_distr[m]
+            self.traj_distr[self.iteration_count].append(self.new_traj_distr[m])
         delattr(self, 'new_traj_distr')
 
     def _set_new_mult(self, predicted_impr, actual_impr, m):

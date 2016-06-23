@@ -3,14 +3,16 @@ import logging
 
 import numpy as np
 
-from gps.algorithm.algorithm import Algorithm
-from gps.algorithm.algorithm_utils import fit_emp_controllers, logsum
 
+from gps.algorithm.algorithm import Algorithm
+from gps.utility.general_utils import logsum
+from gps.algorithm.algorithm_utils import fit_emp_controllers
+from gps.algorithm.cost.cost_ioc_quad import CostIOCQuadratic
 
 LOGGER = logging.getLogger(__name__)
 
 
-class AlgorithmTrajOpt(lAgorithm):
+class AlgorithmTrajOpt(Algorithm):
     """ Sample-based trajectory optimization. """
     def __init__(self, hyperparams):
         Algorithm.__init__(self, hyperparams)
@@ -112,11 +114,12 @@ class AlgorithmTrajOpt(lAgorithm):
         M = len(self.prev)
         ix = range(self.dX)
         iu = range(self.dX, self.dX + self.dU)
-        init_samples = 5
-        demo_sum, samples_sum, demoU, demoX = {}, {}, {}, {}
-        for i in xrange(self.M):
-            demoU[i] = self.cur[i].demo_list.get_U()
-            demoX[i] = self.cur[i].demo_list.get_X()
+        init_samples = self.init_samples
+        demo_sum, samples_sum = {}, {}
+        # demoU = {i: self.demo_list.get_U() for i in xrange(self.M)}
+        # demoX = {i: self.demo_list.get_X() for i in xrange(self.M)}
+        demoX = self.demoX
+        demoU = self.demoU
 
         # itration_count + 1 distributions to evaluate
         # T: summed over time
@@ -128,11 +131,9 @@ class AlgorithmTrajOpt(lAgorithm):
         for i in xrange(Md):
             if self._hyperparams['demo_distr_empest']:
                 demo_traj[i] = fit_emp_controllers(demoX[i], demoU[i])
-            # Use LQR estimations?
-
         for i in xrange(M):
             # This code assumes a fixed number of samples per iteration/controller
-            samples_prob[i] = np.zeros((itr + Md, self.T, (self.N / M) * (itr - 1) + init_samples))
+            samples_prob[i] = np.zeros((itr + Md, self.T, (self.N / M) * itr + init_samples))
             demos_prob[i] = np.zeros((itr + Md, self.T, demoX[i].shape[0]))
             sample_i_X = self.cur[i].sample_list.get_X()
             sample_i_U = self.cur[i].sample_list.get_U()
@@ -141,6 +142,7 @@ class AlgorithmTrajOpt(lAgorithm):
                 traj = self.traj_distr[itr_i][i]
                 for j in xrange(sample_i_X.shape[0]):
                     for t in xrange(self.T - 1):
+                        # Need to add traj.ref here?
                         diff = traj.k[t, :] + \
                                 traj.K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
                         samples_prob[i][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff)), 0) - \
@@ -160,10 +162,10 @@ class AlgorithmTrajOpt(lAgorithm):
             samples_sum[i] = logsum(samples_prob_T[i], 0)
 
         # Assume only one condition for the samples.
-        assert Md == M or M == 1
+        assert Md == 1
         for idx in xrange(Md):
             if M == 1:
-                i = 1
+                i = 0
             else:
                 i = idx
             # Evaluate demo prob. under sample distributions.
@@ -189,6 +191,18 @@ class AlgorithmTrajOpt(lAgorithm):
             demos_sum[idx] = logsum(demos_prob_T[idx], 0)
 
         self.samples_prob = samples_sum
+        self.demos_prob = demos_sum # The matlab code doesn't store this, which is confusing.
+
+        # For testing purposes.
+        print "sample sum iteration " + "itr: " + samples_sum
+        print "demo sum iteration " + "itr: " + demos_sum
+
+        # Update the learned cost
+        cost_ioc_quad = self.cost # set the type of cost to be cost_ioc_quad here.
+        self.learned_cost = cost_ioc_quad.update(demoU, demoX, self.demoO, demos_sum, sampleU, sampleX,\
+                                                sampleO, samples_sum, itr, eta, self) # still need to get sample U/X/O and eta
+        
+
 
 
 
@@ -197,10 +211,7 @@ class AlgorithmTrajOpt(lAgorithm):
         """ Compute cost estimates used in the LQR backward pass. """
         traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
         multiplier = self._hyperparams["max_ent_traj"]
-        if multiplier:
-            fCm, fcv = traj_info.Cm / (eta + multiplier), traj_info.cv / (eta + multiplier)
-        else:
-            fCm, fcv = traj_info.Cm / eta, traj_info.cv / eta
+        fCm, fcv = traj_info.Cm / (eta + multiplier), traj_info.cv / (eta + multiplier)
         K, ipc, k = traj_distr.K, traj_distr.inv_pol_covar, traj_distr.k
 
         # Add in the trajectory divergence term.

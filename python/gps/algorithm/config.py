@@ -20,19 +20,33 @@ ALG = {
     # Trajectory optimization.
     'traj_opt': TrajOptLQRPython({}),
     # Use maximum entropy term in trajectory optimization.
-    'max_ent_traj': 1.0
+    'max_ent_traj': 0.0,
     # Flag if we estimate the demo distribution empirically.
-    'demo_distr_empest': 1.0
+    'demo_distr_empest': False,
     # Flag if the algorithm is using IOC
-    'ioc': 1
+    'ioc': False,
     # Dynamics hyperaparams.
     'dynamics': {
         'type': DynamicsLR
     },
     # Costs.
     'cost': None,  # A list of Cost objects for each condition.
+    # List of demonstrations of all conditions for the current iteration used in cost learning.
+    'demo_list': None, 
+    # Number of demos.
+    'num_demos': 5,
+    # Demo conditions.
+    'demo_cond': 40,
+    # variance multiplier for demos.
+    'var_mult': 1,
+    # verbose when generating demos.
+    "demo_verbose": False
 }
 
+# Good indices.
+good_indices = range(35)
+good_indices.extend(range(36, 40))
+ALG['good_indices'] = good_indices
 
 # AlgorithmBADMM
 ALG_BADMM = {

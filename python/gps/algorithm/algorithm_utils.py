@@ -2,6 +2,7 @@
 import numpy as np
 
 from gps.utility.general_utils import BundleType
+from gps.algorithm.policy.lin_gauss_policy import LinearGaussianPolicy
 
 
 class IterationData(BundleType):
@@ -15,7 +16,6 @@ class IterationData(BundleType):
             'cs': None,  # Sample costs of the current iteration.
             'step_mult': 1.0,  # KL step multiplier for the current iteration.
             'eta': 1.0,  # Dual variable used in LQR backward pass.
-            'demo_list': None # List of demonstrations for the current iteration.
         }
         BundleType.__init__(self, variables)
 
@@ -105,7 +105,7 @@ def fit_emp_controllers(demo_x, demo_u):
     dU = np.shape(demo_u)[2]
     N = np.shape(demo_u)[0]
 
-    K = np.zeros((T, dU. dX))
+    K = np.zeros((T, dU, dX))
     k = np.zeros((T, dU))
     pol_covar = np.zeros((T, dU, dU))
     chol_pol_covar = np.zeros((T, dU, dU))
@@ -113,9 +113,9 @@ def fit_emp_controllers(demo_x, demo_u):
     traj = LinearGaussianPolicy(K, k, pol_covar, chol_pol_covar, inv_pol_covar)
 
     for t in xrange(T):
-        X = np.hstack((np.squeeze(demo_x[:, t, :], np.ones((N, 1)))))
+        X = np.hstack((np.squeeze(demo_x[:, t, :]), np.ones((N, 1))))
         U = np.squeeze(demo_u[:, t, :])
-        result = np.linalg.solve(X, U).T
+        result = np.linalg.pinv(X).dot(U).T
         traj.K[t, :, :] = result[:, 0: dX]
         traj.k[t, :] = result[:, -1]
 
@@ -123,14 +123,8 @@ def fit_emp_controllers(demo_x, demo_u):
         for n in xrange(N):
             diff = demo_u[n, t, :] - (traj.K[t, :, :].dot(demo_x[n, t, :]) + traj.k[t, :])
             sig += diff.dot(diff.T)
-        traj.pol_covar[t, :, :] = sig / N + 10**(-12) * np.eye(dU)
+        traj.pol_covar[t, :, :] = sig / N + 1e-12 * np.eye(dU)
 
         traj.chol_pol_covar[t, :, :] = np.linalg.cholesky(traj.pol_covar[t, :, :])
         traj.inv_pol_covar[t, :, :] = np.linalg.pinv(traj.pol_covar[t, :, :])
     return traj
-
-def logsum(vec, dim):
-    """ Safe sum of log values. """
-    maxv = vec.max(dim)
-    maxv[maxv == -np.inf] = 0;
-    return np.log(np.sum(np.exp(vec - maxv), dim)) + maxv
