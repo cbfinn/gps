@@ -49,6 +49,7 @@ class PolicyInfo(BundleType):
             'pol_S': np.zeros((T, dU, dU)),  # Policy linearization covariance.
             'chol_pol_S': np.zeros((T, dU, dU)),  # Cholesky decomp of covar.
             'prev_kl': None,  # Previous KL divergence.
+            'init_kl': None,  # The initial KL divergence, before the iteration.
             'policy_samples': [],  # List of current policy samples.
             'policy_prior': None,  # Current prior for policy linearization.
         }
