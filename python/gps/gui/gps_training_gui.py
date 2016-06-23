@@ -322,8 +322,8 @@ class GPSTrainingGUI(object):
                     axis1=1, axis2=2)))
             itr_data += ' | %8.2f %8.2f %8.2f' % (cost, step, entropy)
             if pol_sample_lists is not None:
-                kl_div_i = algorithm.cur[m].pol_info.init_kl.sum()
-                kl_div_f = algorithm.cur[m].pol_info.prev_kl.sum()
+                kl_div_i = algorithm.cur[m].pol_info.init_kl.mean()
+                kl_div_f = algorithm.cur[m].pol_info.prev_kl.mean()
                 itr_data += ' %8.2f %8.2f %8.2f' % (pol_costs[m], kl_div_i, kl_div_f)
         self.append_output_text(itr_data)
 

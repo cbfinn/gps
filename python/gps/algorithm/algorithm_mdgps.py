@@ -57,16 +57,18 @@ class AlgorithmMDGPS(Algorithm):
             ]
             self._update_policy()
 
-        # Main updates.
-        # TODO: store init_kl after updating the trajectory
+        # C-step
         self._update_step_size()  # KL Divergence step size (also fits policy).
         self._update_trajectories()
+        for m in range(self.M):
+            # Save initial kl for debugging / visualization.
+            self.cur[m].pol_info.init_kl = self._policy_kl(m)[0]
+
+        # S-step
         self._update_policy()
         for m in range(self.M):
             self._update_policy_fit(m)  # Update policy priors.
-
-        # Store most recent kl divs for GUI output
-        for m in range(self.M):
+            # Save final kl for debugging / visualization.
             kl_m = self._policy_kl(m)[0]
             self.cur[m].pol_info.prev_kl = kl_m
 
@@ -262,7 +264,7 @@ class AlgorithmMDGPS(Algorithm):
             traj, pol_info = self.prev[m].traj_distr, self.cur[m].pol_info
             samples = self.prev[m].sample_list
         else:
-            traj, pol_info = self.cur[m].traj_distr, self.cur[m].pol_info
+            traj, pol_info = self.new_traj_distr[m], self.cur[m].pol_info
             samples = self.cur[m].sample_list
         N = len(samples)
         X, obs = samples.get_X(), samples.get_obs()
