@@ -40,7 +40,9 @@ ALG = {
     # variance multiplier for demos.
     'var_mult': 1,
     # verbose when generating demos.
-    "demo_verbose": False
+    "demo_verbose": False,
+    # Demo condition during training.
+    'demo_M': 1
 }
 
 # Good indices.

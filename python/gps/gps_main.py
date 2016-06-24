@@ -57,27 +57,9 @@ class GPSMain(object):
 				iteration, and resumes training at the next iteration.
 		Returns: None
 		"""
-		import numpy as np
-		import numpy.matlib
 
 		itr_start = self._initialize(itr_load)
-		# Read the demonstrations (for test only)
-		matfile = self._data_files_dir + 'samples_sim_12-30_stationary_maxent_pointmass_python.mat'
-		demo_file = self._data_files_dir + 'demoX_and_U_and_phi.mat'
-		mat = scipy.io.loadmat(matfile)
-		demo_params = scipy.io.loadmat(demo_file)
-		# Demo conditions
-		M = mat['X'].shape[1]
-		# Num of demos.
-		N = mat['demoX'][0, 0].shape[2]
-		# demoX and demoU
-		# demoX = {i: mat['demoX'][0, :][i].T for i in xrange(M)}
-		# demoU = {i: mat['demoU'][0, :][i].T for i in xrange(M)}
-		# number of demos we want.
-		Md = len(demo_params['demo_x'])
-		self.algorithm.demoX = {i: demo_params['demo_x'][0, :][i].T for i in xrange(Md)}
-		self.algorithm.demoU = {i: demo_params['demo_u'][0, :][i].T for i in xrange(Md)}
-		self.algorithm.demoO = {i: demo_params['demo_phi'][0, :][i].T for i in xrange(Md)}
+		self.demo_gen.generate()
 		for itr in range(itr_start, self._hyperparams['iterations']):
 			for cond in self._train_idx:
 				for i in range(self._hyperparams['num_samples']):
@@ -387,9 +369,9 @@ def main():
 		random.seed(0)
 		np.random.seed(0)
 		gps = GPSMain(hyperparams.config)
-		gps.algorithm._hyperparams['max_ent_traj'] = 1.0
-		gps.algorithm._hyperparams['demo_distr_empest'] = True
-		gps.algorithm._hyperparams['ioc'] = True
+		# gps.algorithm._hyperparams['max_ent_traj'] = 1.0
+		# gps.algorithm._hyperparams['demo_distr_empest'] = True
+		# gps.algorithm._hyperparams['ioc'] = True
 		if hyperparams.config['gui_on']:
 			run_gps = threading.Thread(
 				target=lambda: gps.run(itr_load=resume_training_itr)

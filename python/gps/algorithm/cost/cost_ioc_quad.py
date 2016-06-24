@@ -12,10 +12,10 @@ from gps.algorithm.cost.cost import Cost
 
 class CostIOCQuadratic(Cost):
 	""" Set up weighted quadratic norm loss with learned parameters. """
-	def __init__(self, hyperparams):
-        config = copy.deepcopy(COST_IOC_QUADRATIC) # Set this up in the config?
-        config.update(hyperparams)
-        Cost.__init__(self, config)
+	  def __init__(self, hyperparams):
+	      config = copy.deepcopy(COST_IOC_QUADRATIC) # Set this up in the config?
+	      config.update(hyperparams)
+	      Cost.__init__(self, config)
 
         self._dO = -1  # TODO(kevin) - set this, probably easist via hyperparams
         # By default using caffe

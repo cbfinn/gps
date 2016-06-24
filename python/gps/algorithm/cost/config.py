@@ -46,6 +46,7 @@ COST_ACTION = {
     'wu': np.array([]),  # Torque penalties, must be 1 x dU numpy array.
 }
 
+<<<<<<< HEAD
 # config options for any cost function learned through IOC
 IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
     'iterations': 5000,  # Number of training iterations.
@@ -62,6 +63,7 @@ IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
     'gpu_id': 0,
 }
 
+#CostIOCQuadratic
 COST_IOC_QUADRATIC = {
     'network_arch_params' = {}  # includes info to construct model
 }
