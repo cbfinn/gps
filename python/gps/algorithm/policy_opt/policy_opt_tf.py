@@ -4,12 +4,16 @@ import logging
 
 import numpy as np
 
+# NOTE: Order of these imports matters for some reason.
+# Changing it can lead to segmentation faults on some machines.
+
+from gps.algorithm.policy_opt.config import POLICY_OPT_TF
 import tensorflow as tf
 
 from gps.algorithm.policy.tf_policy import TfPolicy
 from gps.algorithm.policy_opt.policy_opt import PolicyOpt
-from gps.algorithm.policy_opt.config import POLICY_OPT_TF
 from gps.algorithm.policy_opt.tf_utils import TfSolver
+
 
 LOGGER = logging.getLogger(__name__)
 
