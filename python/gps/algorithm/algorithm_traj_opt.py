@@ -115,17 +115,15 @@ class AlgorithmTrajOpt(Algorithm):
         ix = range(self.dX)
         iu = range(self.dX, self.dX + self.dU)
         init_samples = self.init_samples
-        demo_sum, samples_sum = {}, {}
-        # demoU = {i: self.demo_list.get_U() for i in xrange(self.M)}
-        # demoX = {i: self.demo_list.get_X() for i in xrange(self.M)}
-        demoX = self.demoX
-        demoU = self.demoU
-
         # itration_count + 1 distributions to evaluate
         # T: summed over time
-        samples_prob, demos_prob, samples_prob_T, demos_prob_T = {}, {}, {}, {}
+        samples_logprob, demos_logprob = {}, {}
         # number of demo distributions
-        Md = len(demoX)
+        Md = self._hyperparams['demo_Md']
+        demos_logiw, samples_logiw = {}, {}
+        demoU = {i: self.demo_list.get_U() for i in xrange(self.Md)}
+        demoX = {i: self.demo_list.get_X() for i in xrange(self.Md)}
+        demoO = {i: self.demo_list.get_obs() for i in xrange(self.Md)}
         demo_traj = {}
         # estimate demo distributions empirically
         for i in xrange(Md):
@@ -133,19 +131,19 @@ class AlgorithmTrajOpt(Algorithm):
                 demo_traj[i] = fit_emp_controllers(demoX[i], demoU[i])
         for i in xrange(M):
             # This code assumes a fixed number of samples per iteration/controller
-            samples_prob[i] = np.zeros((itr + Md, self.T, (self.N / M) * itr + init_samples))
-            demos_prob[i] = np.zeros((itr + Md, self.T, demoX[i].shape[0]))
+            samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
+            demos_logprob[i] = np.zeros((itr + Md + 1, self.T, demoX[i].shape[0]))
             sample_i_X = self.cur[i].sample_list.get_X()
             sample_i_U = self.cur[i].sample_list.get_U()
             # Evaluate sample prob under sample distributions
-            for itr_i in xrange(itr):
+            for itr_i in xrange(itr + 1):
                 traj = self.traj_distr[itr_i][i]
                 for j in xrange(sample_i_X.shape[0]):
                     for t in xrange(self.T - 1):
                         # Need to add traj.ref here?
                         diff = traj.k[t, :] + \
                                 traj.K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
-                        samples_prob[i][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff)), 0) - \
+                        samples_logprob[i][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff)), 0) - \
                                                         np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
 
             # Evaluate sample prob under demo distribution.
@@ -154,12 +152,10 @@ class AlgorithmTrajOpt(Algorithm):
                     for t in xrange(self.T - 1):
                         diff = demo_traj[itr_i].k[t, :] + \
                                 demo_traj[itr_i].K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
-                        samples_prob[i][itr + itr_i, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
+                        samples_logprob[i][itr + itr_i + 1, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
                                                         np.sum(np.log(np.diag(demo_traj[itr_i].chol_pol_covar[t, :, :])))
-            # Sum over time.
-            samples_prob_T[i] = np.sum(samples_prob[i], 1)
-            # Sum over the distributions.
-            samples_sum[i] = logsum(samples_prob_T[i], 0)
+            # Sum over the distributions and time.
+            samples_logiw[i] = logsum(np.sum(samples_logprob[i], 1), 0)
 
         # Assume only one condition for the samples.
         assert Md == 1
@@ -169,13 +165,13 @@ class AlgorithmTrajOpt(Algorithm):
             else:
                 i = idx
             # Evaluate demo prob. under sample distributions.
-            for itr_i in xrange(itr):
+            for itr_i in xrange(itr + 1):
                 traj = self.traj_distr[itr_i][i]
                 for j in xrange(demoX[idx].shape[0]):
                     for t in xrange(self.T - 1):
                         diff = traj.k[t, :] + \
                                 traj.K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
-                        demos_prob[idx][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff)), 0) - \
+                        demos_logprob[idx][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff)), 0) - \
                                                         np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
             # Evaluate demo prob. under demo distributions.
             for itr_i in xrange(Md):
@@ -183,24 +179,19 @@ class AlgorithmTrajOpt(Algorithm):
                     for t in xrange(self.T - 1):
                         diff = demo_traj[itr_i].k[t, :] + \
                                 demo_traj[itr_i].K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
-                        demos_prob[idx][itr + itr_i, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
+                        demos_logprob[idx][itr + itr_i + 1, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
                                                         np.sum(np.log(np.diag(demo_traj[itr_i].chol_pol_covar[t, :, :])))
-            # Sum over time.
-            demos_prob_T[idx] = np.sum(demos_prob[idx], 1)
-            # Sum over the distributions.
-            demos_sum[idx] = logsum(demos_prob_T[idx], 0)
+            # Sum over the distributions and time.
+            demos_logiw[idx] = logsum(np.sum(demos_logprob[idx], 1), 0)
 
-        self.samples_prob = samples_sum
-        self.demos_prob = demos_sum # The matlab code doesn't store this, which is confusing.
-
-        # For testing purposes.
-        print "sample sum iteration " + "itr: " + samples_sum
-        print "demo sum iteration " + "itr: " + demos_sum
 
         # Update the learned cost
+        sampleU = {i: self.cur[i].sample_list.get_U() for i in xrange(M)}
+        sampleX = {i: self.cur[i].sample_list.get_X() for i in xrange(M)}
+        sampleO = {i: self.cur[i].sample_list.get_obs() for i in xrange(M)}
         cost_ioc_quad = self.cost # set the type of cost to be cost_ioc_quad here.
-        self.learned_cost = cost_ioc_quad.update(demoU, demoX, self.demoO, demos_sum, sampleU, sampleX,\
-                                                sampleO, samples_sum, itr, eta, self) # still need to get sample U/X/O and eta
+        self.learned_cost = cost_ioc_quad.update(demoU, demoX, demoO, demos_logiw, sampleU, sampleX,\
+                                                sampleO, samples_logiw, itr, eta, self) # Do we need eta here? Eta is different for different conditions.
         
 
 

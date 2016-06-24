@@ -96,4 +96,5 @@ def logsum(vec, dim):
     """ Safe sum of log values. """
     maxv = vec.max(dim)
     maxv[maxv == -np.inf] = 0
+    # print vec
     return np.log(np.sum(np.exp(vec - maxv), dim)) + maxv

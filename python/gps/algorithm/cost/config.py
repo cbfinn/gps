@@ -45,3 +45,6 @@ COST_SUM = {
 COST_ACTION = {
     'wu': np.array([]),  # Torque penalties, must be 1 x dU numpy array.
 }
+
+# CostIOCQuad
+COST_IOC_QUADRATIC = {}
