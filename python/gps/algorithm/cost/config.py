@@ -48,14 +48,18 @@ COST_ACTION = {
 
 # config options for any cost function learned through IOC
 IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
-  'iterations': 5000,  # number of training iterations
-  'demo_batch_size': 5,  # number of demos per mini-batch
-  'sample_batch_size': 5,  # number of samples per mini-batch
-  'lr': 0.001,  # base learning rate
-  'lr_policy': 'fixed',  # learning rate policy
-  'solver_type': 'Adam',  # solver type (e.g. 'SGD', 'Adam')
-  'use_gpu': 1,  # Whether or not to use the GPU for caffe training.
-  'gpu_id': 0,
+    'iterations': 5000,  # Number of training iterations.
+    'demo_batch_size': 5,  # Number of demos per mini-batch.
+    'sample_batch_size': 5,  # Number of samples per mini-batch.
+    'lr': 0.001,  # Base learning rate (by default it's fixed).
+    'lr_policy': 'fixed',  # Learning rate policy.
+    'solver_type': 'Adam',  # solver type (e.g. 'SGD', 'Adam')
+    'momentum': 0.9,  # Momentum.
+    'weight_decay': 0.0,  # Weight decay.
+    'random_seed': 1,  # Random seed.
+    # Set gpu usage.
+    'use_gpu': 1,  # Whether or not to use the GPU for caffe training.
+    'gpu_id': 0,
 }
 
 COST_IOC_QUADRATIC = {
