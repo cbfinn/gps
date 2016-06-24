@@ -179,11 +179,11 @@ class PolicyOptTf(PolicyOpt):
         N, T = obs.shape[:2]
 
         # Normalize obs.
-        if self.policy.scale is None or self.policy.bias is None:
-            pass  # TODO: Should prob be called before update?
-        for n in range(N):
-            obs[n, :, self.x_idx] = (obs[n, :, self.x_idx].T.dot(self.policy.scale)
-                                     + self.policy.bias).T
+        if self.policy.scale is not None:
+            # TODO: Should prob be called before update?
+            for n in range(N):
+                obs[n, :, self.x_idx] = (obs[n, :, self.x_idx].T.dot(self.policy.scale)
+                                         + self.policy.bias).T
 
         output = np.zeros((N, T, dU))
 
