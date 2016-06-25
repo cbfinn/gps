@@ -18,6 +18,8 @@ class CostIOCQuadratic(Cost):
 	      Cost.__init__(self, config)
 
         self._dO = -1  # TODO(kevin) - set this, probably easist via hyperparams
+        self._T = -1  # TODO(kevin) - set this, probably easist via hyperparams
+
         # By default using caffe
         if self._hyperparams['use_gpu']:
             caffe.set_device(self._hyperparams['gpu_id'])
@@ -97,13 +99,13 @@ class CostIOCQuadratic(Cost):
         network_arch_params['dim_input'] = self._dO
         network_arch_params['demo_batch_size'] = self._hyperparams['demo_batch_size']
         network_arch_params['sample_batch_size'] = self._hyperparams['sample_batch_size']
+        network_arch_params['T'] = self._T
         network_arch_params['phase'] = TRAIN
         solver_param.train_net_param.CopyFrom(
             self._hyperparams['network_model'](**network_arch_params)
         )
 
         # For running forward in python.
-        network_arch_params['batch_size'] = 1
         network_arch_params['phase'] = TEST
         solver_param.test_net_param.add().CopyFrom(
             self._hyperparams['network_model'](**network_arch_params)

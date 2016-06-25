@@ -45,6 +45,8 @@ class IOCLoss(caffe.Layer):
         # assume that bottom[0] is the demo features in a NdxTxF matrix where F
         # is the number of features in the last layer, and bottom[1] stores
         # the sample features
+        # also assume that bottom[2] is demo log importance weights and
+        # bottom[3] is sample log importance weights
 
         # TODO(kevin) implement this (look at ioc_loss_layer.cpp in caffe)
         # python/gps/algorithm/policy_opt/policy_layers.py might also be helpful
