@@ -1,5 +1,6 @@
 """ This file defines quadratic cost function. """
 import copy
+import logging
 import numpy as np
 import tempfile
 
@@ -9,6 +10,9 @@ from google.protobuf.text_format import MessageToString
 
 from gps.algorithm.cost.config import COST_IOC_QUADRATIC
 from gps.algorithm.cost.cost import Cost
+
+LOGGER = logging.getLogger(__name__)
+
 
 class CostIOCQuadratic(Cost):
 	""" Set up weighted quadratic norm loss with learned parameters. """
@@ -26,6 +30,9 @@ class CostIOCQuadratic(Cost):
             caffe.set_mode_gpu()
         else:
             caffe.set_mode_cpu()
+
+        self.demo_batch_size = self._hyperparams['demo_batch_size']
+        self.sample_batch_size = self._hyperparams['sample_batch_size']
 
         self._init_solver()
 
@@ -63,24 +70,64 @@ class CostIOCQuadratic(Cost):
 
 
     # TODO - we might want to make the demos and samples input as SampleList objects, rather than arrays.
+    # TODO - also we might want to exclude demoU/sampleU since we generally don't use them
+    # TODO - change name of dlogis/slogis to d_log_iw and s_log_iw.
     def update(self, demoU, demoX, demoO, dlogis, sampleU, sampleX, sampleO, slogis, ...
     			itr, algorithm):
-    	"""
-    	Learn cost function with generic function representation.
-    	Args:
-    		demoU: the actions of demonstrations.
-    		demoX: the states of demonstrations.
-    		demoO: the observations of demonstrations.
-    		dlogis: importance weights for demos.
-    		sampleU: the actions of samples.
-    		sampleX: the states of samples.
-    		sampleO: the observations of samples.
-    		slogis: importance weights for samples.
-    		itr: current iteration.
-    		algorithm: current algorithm object.
-    	"""
-    	# TODO(chelsea) - start to implement this, and a function to construct the cost network
-    	pass
+        """
+        Learn cost function with generic function representation.
+        Args:
+            demoU: the actions of demonstrations.
+            demoX: the states of demonstrations.
+            demoO: the observations of demonstrations.
+            dlogis: importance weights for demos.
+            sampleU: the actions of samples.
+            sampleX: the states of samples.
+            sampleO: the observations of samples.
+            slogis: importance weights for samples.
+            itr: current iteration.
+            algorithm: current algorithm object.
+        """
+    	  Nd = demoO.shape[0]
+    	  Ns = sampleO.shape[0]
+    	  # TODO(chelsea) - start to implement this
+
+        blob_names = self.solver.net.blobs.keys()
+        dbatches_per_epoch = np.floor(Nd*self._T / self.demo_batch_size)
+        sbatches_per_epoch = np.floor(Ns*self._T / self.sample_batch_size)
+
+        demo_idx = range(Nd*T)
+        sample_idx = range(Nd*T)
+        average_loss = 0
+        np.random.shuffle(demo_idx)
+        np.random.shuffle(sample_idx)
+
+        for i in range(self._hyperparams['iterations']):
+            # Load in data for this batch.
+            d_start_idx = int(i * self.demo_batch_size %
+                              (dbatches_per_epoch * self.demo_batch_size))
+            s_start_idx = int(i * self.sample_batch_size %
+                              (sbatches_per_epoch * self.sample_batch_size))
+            d_idx_i = demo_idx[d_start_idx:d_start_idx+self.demo_batch_size]
+            s_idx_i = sample_idx[s_start_idx:s_start_idx+self.sample_batch_size]
+            self.solver.net.blobs[blob_names[0]].data[:] = demoO[d_idx_i]
+            self.solver.net.blobs[blob_names[1]].data[:] = dlogis[d_idx_i]
+            self.solver.net.blobs[blob_names[2]].data[:] = sampleO[s_idx_i]
+            self.solver.net.blobs[blob_names[3]].data[:] = slogis[s_idx_i]
+
+            self.solver.step(1)
+
+            train_loss = self.solver.net.blobs[blob_names[-1]].data
+            average_loss += train_loss
+            if i % 500 == 0 and i != 0:
+                LOGGER.debug('Caffe iteration %d, average loss %f',
+                             i, average_loss / 500)
+                average_loss = 0
+
+        # Keep track of Caffe iterations for loading solver states.
+        self.caffe_iter += self._hyperparams['iterations']
+
+        self.solver.test_nets[0].share_with(self.solver.net)
 
     def _init_solver(self):
         """ Helper method to initialize the solver. """
@@ -121,3 +168,26 @@ class CostIOCQuadratic(Cost):
         f.close()
         self.solver = caffe.get_solver(f.name)
 
+    # For pickling.
+    def __getstate__(self):
+        self.solver.snapshot()
+        return {
+            'hyperparams': self._hyperparams,
+            'dO': self._dO,
+            'T': self._T,
+            'caffe_iter': self.caffe_iter,
+        }
+
+    # For unpickling.
+    def __setstate__(self, state):
+        # TODO - finalize this once __init__ is finalized (setting dO and T)
+        self.__init__(state['hyperparams'], state['dO'], state['T'])
+        self.caffe_iter = state['caffe_iter']
+        self.solver.restore(
+            self._hyperparams['weights_file_prefix'] + '_iter_' +
+            str(self.caffe_iter) + '.solverstate'
+        )
+        self.solver.test_nets[0].copy_from(
+            self._hyperparams['weights_file_prefix'] + '_iter_' +
+            str(self.caffe_iter) + '.caffemodel'
+        )
