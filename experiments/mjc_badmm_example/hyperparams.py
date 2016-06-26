@@ -81,7 +81,7 @@ algorithm = {
     'init_pol_wt': 0.01,
     'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
     'fixed_lg_step': 3,
-    'kl_step': 2.0,
+    'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 1.0,
     'sample_decrease_var': 0.05,
@@ -151,7 +151,7 @@ algorithm['traj_opt'] = {
 algorithm['policy_opt'] = {
     'type': PolicyOptCaffe,
     'weights_file_prefix': EXP_DIR + 'policy',
-    'iterations': 4000,
+    'iterations': 8000, # used to be 4k
 }
 
 algorithm['policy_prior'] = {
