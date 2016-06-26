@@ -2,6 +2,7 @@
 import numpy as np
 
 from gps.utility.general_utils import BundleType
+from gps.algorithm.policy.lin_gauss_policy import LinearGaussianPolicy
 
 
 class IterationData(BundleType):
@@ -54,6 +55,19 @@ class PolicyInfo(BundleType):
             'policy_prior': None,  # Current prior for policy linearization.
         }
         BundleType.__init__(self, variables)
+
+    def traj_distr(self):
+        """ Create a trajectory distribution object from policy info. """
+        T, dU, dX = self.pol_K.shape
+        # Compute inverse policy covariance
+        inv_pol_S = np.empty_like(self.chol_pol_S)
+        for t in range(T):
+            inv_pol_S[t, :, :] = np.linalg.solve(
+                self.chol_pol_S[t, :, :],
+                np.linalg.solve(self.chol_pol_S[t, :, :].T, np.eye(dU))
+            )
+        return LinearGaussianPolicy(self.pol_K, self.pol_k, self.pol_S,
+                self.chol_pol_S, inv_pol_S)
 
 
 def estimate_moments(X, mu, covar):

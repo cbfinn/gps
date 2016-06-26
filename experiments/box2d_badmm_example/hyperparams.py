@@ -142,7 +142,7 @@ config = {
     'iterations': 10,
     'num_samples': 5,
     'verbose_trials': 5,
-    'verbose_policy_trials': 1,
+    'verbose_policy_trials': 0,
     'common': common,
     'agent': agent,
     'gui_on': True,
