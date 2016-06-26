@@ -19,8 +19,6 @@ from gps.gui.gps_training_gui import GPSTrainingGUI
 from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
-
 
 class GPSMain(object):
     """ Main class to run algorithms and experiments. """
@@ -120,7 +118,7 @@ class GPSMain(object):
             if self.algorithm is None:
                 print("Error: cannot find '%s.'" % algorithm_file)
                 os._exit(1) # called instead of sys.exit(), since this is in a thread
-                
+
             if self.gui:
                 traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
                     ('traj_sample_itr_%02d.pkl' % itr_load))
@@ -269,6 +267,8 @@ def main():
                         help='resume training from iter N')
     parser.add_argument('-p', '--policy', metavar='N', type=int,
                         help='take N policy samples (for BADMM only)')
+    parser.add_argument('-s', '--silent', action='store_false',
+                        help='silent debug print outs')
     args = parser.parse_args()
 
     exp_name = args.experiment
@@ -280,6 +280,11 @@ def main():
     gps_dir = '/'.join(str.split(gps_filepath, '/')[:-3]) + '/'
     exp_dir = gps_dir + 'experiments/' + exp_name + '/'
     hyperparams_file = exp_dir + 'hyperparams.py'
+
+    if args.silent:
+      logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+    else:
+      logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
     if args.new:
         from shutil import copy
