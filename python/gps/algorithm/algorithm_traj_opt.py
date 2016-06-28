@@ -26,6 +26,9 @@ class AlgorithmTrajOpt(Algorithm):
         self.N = 0
         for m in range(self.M):
             self.cur[m].sample_list = sample_lists[m]
+            prev_samples = self.sample_list[m].get_samples()
+            prev_samples.append(sample_list[m].get_samples())
+            self.sample_list[m] = SampleList(prev_samples)
             self.N += len(sample_lists[m])
 
         # Update dynamics model using all samples.
@@ -133,8 +136,8 @@ class AlgorithmTrajOpt(Algorithm):
             # This code assumes a fixed number of samples per iteration/controller
             samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
             demos_logprob[i] = np.zeros((itr + Md + 1, self.T, demoX[i].shape[0]))
-            sample_i_X = self.cur[i].sample_list.get_X()
-            sample_i_U = self.cur[i].sample_list.get_U()
+            sample_i_X = self.sample_list[i].get_X()
+            sample_i_U = self.sample_list[i].get_U()
             # Evaluate sample prob under sample distributions
             for itr_i in xrange(itr + 1):
                 traj = self.traj_distr[itr_i][i]
@@ -186,12 +189,18 @@ class AlgorithmTrajOpt(Algorithm):
 
 
         # Update the learned cost
-        sampleU = {i: self.cur[i].sample_list.get_U() for i in xrange(M)}
-        sampleX = {i: self.cur[i].sample_list.get_X() for i in xrange(M)}
-        sampleO = {i: self.cur[i].sample_list.get_obs() for i in xrange(M)}
+        # Transform all the dictionaries to arrays
+        demoU_arr =  np.vstack((self.demo_list.get_U() for i in xrange(self.Md)))
+        demoX_arr =  np.vstack((self.demo_list.get_X() for i in xrange(self.Md)))
+        demoO_arr =  np.vstack((self.demo_list.get_obs() for i in xrange(self.Md)))
+        sampleU_arr = np.vstack((self.sample_list[i].get_U() for i in xrange(M)))
+        sampleX_arr = np.vstack((self.sample_list[i].get_X() for i in xrange(M)))
+        sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
+        demos_logiw = np.vstack((demos_logiw[i] for i in xrange(Md)))
+        samples_logiw = np.vstack((samples_logiw[i] for i in xrange(M)))
         cost_ioc_quad = self.cost # set the type of cost to be cost_ioc_quad here.
-        self.learned_cost = cost_ioc_quad.update(demoU, demoX, demoO, demos_logiw, sampleU, sampleX,\
-                                                sampleO, samples_logiw, itr, eta, self) # Do we need eta here? Eta is different for different conditions.
+        self.learned_cost = cost_ioc_quad.update(demoU_arr, demoX_arr, demoO_arr, demos_logiw, sampleU_arr, sampleX_arr, \
+                                                sampleO_arr, samples_logiw, itr, self)
         
 
 
