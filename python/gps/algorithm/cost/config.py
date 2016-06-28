@@ -71,7 +71,7 @@ COST_IOC_QUADRATIC = {
     'network_arch_params': {},  # includes info to construct model
     'network_model': construct_quad_cost_net,
     'dO': -1, # Number of features
-    'T': -1 # the time horizon
+    'T': -1, # the time horizon
     'wu': np.array([]) # Torque penalties, must be 1 x dU numpy array.
 }
 

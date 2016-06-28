@@ -57,9 +57,16 @@ class GPSMain(object):
 				iteration, and resumes training at the next iteration.
 		Returns: None
 		"""
+		import numpy as np
+		import numpy.matlib
 
 		itr_start = self._initialize(itr_load)
-		self.demo_gen.generate()
+		# Read the demonstrations (for test only)
+		matfile = self._data_files_dir + 'samples_sim_12-30_stationary_maxent_pointmass_python.mat'
+		demo_file = self._data_files_dir + 'demoX_and_U_and_phi.mat'
+		mat = scipy.io.loadmat(matfile)
+		demo_params = scipy.io.loadmat(demo_file)
+		# self.demo_gen.generate()
 		for itr in range(itr_start, self._hyperparams['iterations']):
 			for cond in self._train_idx:
 				for i in range(self._hyperparams['num_samples']):

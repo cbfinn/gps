@@ -211,14 +211,14 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
     else:
         raise Exception('Unknown network phase')
 
-    ip_out = L.InnerProduct(net_input, num_output=dim_hidden[i],
+    ip_out = L.InnerProduct(net_input, num_output=dim_hidden,
                             weight_filler=dict(type='gaussian', std=0.01),
                             bias_filler=dict(type='constant', value=0),
                             axis=2)
 
     # Dot product operation with two layers
     dot_prod1 = L.Eltwise(ip_out, ip_out, operation=EltwiseParameter.PROD)
-    dot_prod2 = L.InnerProduct(dot_prod1, num_output=1
+    dot_prod2 = L.InnerProduct(dot_prod1, num_output=1,
                                weight_filler=dict(type='constant', value=1),
                                bias_filler=dict(type='constant', value=0),
                                param=[dict(lr_mult=0), dict(lr_mult=0)])

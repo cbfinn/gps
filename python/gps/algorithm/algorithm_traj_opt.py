@@ -199,8 +199,8 @@ class AlgorithmTrajOpt(Algorithm):
         demos_logiw = np.vstack((demos_logiw[i] for i in xrange(Md)))
         samples_logiw = np.vstack((samples_logiw[i] for i in xrange(M)))
         cost_ioc_quad = self.cost # set the type of cost to be cost_ioc_quad here.
-        self.learned_cost = cost_ioc_quad.update(demoU_arr, demoX_arr, demoO_arr, demos_logiw, sampleU_arr, sampleX_arr, \
-                                                sampleO_arr, samples_logiw, itr, self)
+        cost_ioc_quad.update(demoU_arr, demoX_arr, demoO_arr, demos_logiw, sampleU_arr, sampleX_arr, \
+                                                sampleO_arr, samples_logiw)
         
 
 
