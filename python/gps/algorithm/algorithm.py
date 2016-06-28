@@ -9,6 +9,7 @@ import numpy as np
 from gps.algorithm.config import ALG
 from gps.algorithm.algorithm_utils import IterationData, TrajectoryInfo
 from gps.utility.general_utils import extract_condition
+from gps.sample.sample_list import SampleList
 
 
 LOGGER = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ class Algorithm(object):
         self.cur = [IterationData() for _ in range(self.M)]
         self.prev = [IterationData() for _ in range(self.M)]
         self.traj_distr = {self.iteration_count: []}
+        self.sample_list = {i: SampleList([]) for i in range(self.M)}
 
         for m in range(self.M):
             self.cur[m].traj_info = TrajectoryInfo()

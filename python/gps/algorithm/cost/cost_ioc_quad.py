@@ -21,8 +21,8 @@ class CostIOCQuadratic(Cost):
 	      config.update(hyperparams)
 	      Cost.__init__(self, config)
 
-        self._dO = self._hyperparams['dO']  # TODO(kevin) - set this, probably easist via hyperparams
-        self._T = self._hyperparams['T']  # TODO(kevin) - set this, probably easist via hyperparams
+        self._dO = self._hyperparams['dO']
+        self._T = self._hyperparams['T']
 
         # By default using caffe
         if self._hyperparams['use_gpu']:
@@ -45,8 +45,8 @@ class CostIOCQuadratic(Cost):
         """
         # TODO - right now, we're going to assume that Obs = X
         T = sample.T
-        obs = sample.get_obs()  # TODO(kevin) - this might not be the right function.
-        dO = obs.shape[1]
+        obs = sample.get_obs()
+        dO = self._dO
         # Initialize terms.
         l = np.zeros(T)
         lu = np.zeros((T, dU))
@@ -69,7 +69,7 @@ class CostIOCQuadratic(Cost):
         lu = self._hyperparams['wu'] * sample_u
         luu = np.tile(np.diag(self._hyperparams['wu']), [T, 1, 1])
         # TODO(kevin) set lx and lxx assuming that A is the correct matrix (following the matlab code)
-        dldy = A.dot(np.vstack((obs.T, np.zeros((1, T))))) # Assuming A is a dX x (dO + 1) matrix
+        dldx = A.dot(np.vstack((obs.T, np.zeros((1, T))))) # Assuming A is a dX x (dO + 1) matrix
         lx = dldy.T[:, range(dO)]
         lxx = A[range(dO), range(dO)]
         return l, lx, lu, lxx, luu, lux
