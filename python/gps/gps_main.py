@@ -272,7 +272,7 @@ def main():
                         help='resume training from iter N')
     parser.add_argument('-p', '--policy', metavar='N', type=int,
                         help='take N policy samples (for BADMM only)')
-    parser.add_argument('-s', '--silent', action='store_false',
+    parser.add_argument('-s', '--silent', action='store_true',
                         help='silent debug print outs')
     args = parser.parse_args()
 
@@ -287,9 +287,9 @@ def main():
     hyperparams_file = exp_dir + 'hyperparams.py'
 
     if args.silent:
-      logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
     else:
-      logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
     if args.new:
         from shutil import copy
