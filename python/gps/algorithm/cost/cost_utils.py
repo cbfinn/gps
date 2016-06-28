@@ -218,7 +218,7 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
 
     # Dot product operation with two layers
     dot_prod1 = L.Eltwise(ip_out, ip_out, operation=EltwiseParameter.PROD)
-    dot_prod2 = L.InnerProduct(dot_prod1, num_output=1,
+    all_costs = L.InnerProduct(dot_prod1, num_output=1
                                weight_filler=dict(type='constant', value=1),
                                bias_filler=dict(type='constant', value=0),
                                param=[dict(lr_mult=0), dict(lr_mult=0)])
