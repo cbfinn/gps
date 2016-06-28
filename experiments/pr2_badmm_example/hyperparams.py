@@ -22,7 +22,7 @@ from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.gui.target_setup_gui import load_pose_from_npz
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION, \
-        TRIAL_ARM, AUXILIARY_ARM, JOINT_SPACE
+        TRIAL_ARM, AUXILIARY_ARM, JOINT_SPACE, IMAGE_FEAT
 from gps.utility.general_utils import get_ee_points
 from gps.gui.config import generate_experiment_info
 
@@ -114,7 +114,7 @@ agent = {
                       END_EFFECTOR_POINT_VELOCITIES],
     'end_effector_points': EE_POINTS,
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-                    END_EFFECTOR_POINT_VELOCITIES],
+                    END_EFFECTOR_POINT_VELOCITIES, IMAGE_FEAT],
 }
 
 algorithm = {
