@@ -95,9 +95,9 @@ algorithm['dynamics'] = {
     'regularization': 1e-6,
     'prior': {
         'type': DynamicsPriorGMM,
-        'max_clusters': 2,
+        'max_clusters': 20,
         'min_samples_per_cluster': 40,
-        'max_samples': 20,
+        'max_samples': 2,
     }
 }
 
