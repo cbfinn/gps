@@ -63,10 +63,10 @@ class Agent(object):
                                                    self._meta_idx)}
 
     @abc.abstractmethod
-    def sample(self, policy, condition, verbose=True, save=True):
+    def sample(self, policy, condition, verbose=True, save=True, noisy=True):
         """
         Draw a sample from the environment, using the specified policy
-        and under the specified condition.
+        and under the specified condition, with or without noise.
         """
         raise NotImplementedError("Must be implemented in subclass.")
 

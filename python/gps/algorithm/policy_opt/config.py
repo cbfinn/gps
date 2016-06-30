@@ -22,6 +22,7 @@ GENERIC_CONFIG = {
     # set gpu usage.
     'use_gpu': 1,  # Whether or not to use the GPU for caffe training.
     'gpu_id': 0,
+    'random_seed': 1,
 }
 
 
@@ -32,7 +33,6 @@ POLICY_OPT_CAFFE = {
                                             # create NetParameter.
     'network_arch_params': {},  # Arguments to pass to method above.
     'weights_file_prefix': '',
-    'random_seed': 1,
 }
 
 POLICY_OPT_CAFFE.update(GENERIC_CONFIG)
