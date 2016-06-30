@@ -63,9 +63,14 @@ class GPSMain(object):
 		itr_start = self._initialize(itr_load)
 		# Read the demonstrations (for test only)
 		matfile = self._data_files_dir + 'samples_sim_12-30_stationary_maxent_pointmass_python.mat'
-		demo_file = self._data_files_dir + 'demoX_and_U_and_phi.mat'
+		demo_file = self._data_files_dir + 'demoX_and_demoU_and_demoO.mat'
 		mat = scipy.io.loadmat(matfile)
 		demo_params = scipy.io.loadmat(demo_file)
+		# number of demos we want.
+		Md = len(demo_params['demo_x'])
+		self.algorithm.demoX = {i: demo_params['demo_x'][0, :][i].T for i in xrange(Md)}
+		self.algorithm.demoU = {i: demo_params['demo_u'][0, :][i].T for i in xrange(Md)}
+		self.algorithm.demoO = {i: demo_params['demo_o'][0, :][i].T for i in xrange(Md)}
 		# self.demo_gen.generate()
 		for itr in range(itr_start, self._hyperparams['iterations']):
 			for cond in self._train_idx:
@@ -78,8 +83,11 @@ class GPSMain(object):
 			]
 
 			self._take_iteration(itr, traj_sample_lists)
-			pol_sample_lists = self._take_policy_samples()
-			self._log_data(itr, traj_sample_lists, pol_sample_lists)
+			if not self.algorithm._hyperparams['ioc']:
+				pol_sample_lists = self._take_policy_samples()
+				self._log_data(itr, traj_sample_lists, pol_sample_lists)
+			else:
+				self._log_data(itr, traj_sample_lists)
 
 		self._end()
 

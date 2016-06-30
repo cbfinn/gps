@@ -140,6 +140,7 @@ class Algorithm(object):
             cs[n, :] = l
 
             # Assemble matrix and vector.
+            # import pdb; pdb.set_trace()
             cv[n, :, :] = np.c_[lx, lu]
             Cm[n, :, :, :] = np.concatenate(
                 (np.c_[lxx, np.transpose(lux, [0, 2, 1])], np.c_[lux, luu]),

@@ -47,6 +47,8 @@ class CostIOCQuadratic(Cost):
 		T = sample.T
 		obs = sample.get_obs()
 		dO = self._dO
+		dU = sample.dU
+		dX = sample.dX
 		# Initialize terms.
 		l = np.zeros(T)
 		lu = np.zeros((T, dU))
@@ -55,23 +57,27 @@ class CostIOCQuadratic(Cost):
 		lxx = np.zeros((T, dX, dX))
 		lux = np.zeros((T, dU, dX))
 
-		for i in range(T):
+		blob_names = self.solver.net.blobs.keys()
+		for t in range(T):
 		  # Feed in data and collect output
 		  self.solver.test_nets[0].blobs[blob_names[0]].data[:] = obs[t]
 		  l[t] = self.solver.test_nets[0].forward().values()[0][0]
 
 		# Get weights array from caffe (M in the old codebase)
 		# TODO(chelsea?) - figure out which array it is from the below list
-		A = self.solver.test_nets[0].params
+		params = self.solver.test_nets[0].params.values()
+		weighted_array = np.r_[np.c_[params[0][0].data, np.array([params[0][1].data]).T], np.zeros((1, params[0][0].data.shape[1] + 1))]
+		A = weighted_array.T.dot(weighted_array)
 		# TODO(kevin) add torque penalty to l and set lu
 		sample_u = sample.get_U()
 		l += 0.5 * np.sum(self._hyperparams['wu'] * (sample_u ** 2), axis=1)
 		lu = self._hyperparams['wu'] * sample_u
 		luu = np.tile(np.diag(self._hyperparams['wu']), [T, 1, 1])
 		# TODO(kevin) set lx and lxx assuming that A is the correct matrix (following the matlab code)
-		dldx = A.dot(np.vstack((obs.T, np.zeros((1, T))))) # Assuming A is a dX x (dO + 1) matrix
-		lx = dldy.T[:, range(dO)]
-		lxx = A[range(dO), range(dO)]
+		dldx = A.dot(np.vstack((obs.T, np.zeros((1, T))))) # Assuming A is a (dX + 1) x (dO + 1) matrix
+		lx = dldx.T[:, range(dO)]
+		for t in xrange(T):
+			lxx[t, :, :] = A[range(dO), range(dO)]
 		return l, lx, lu, lxx, luu, lux
 
 
@@ -94,13 +100,12 @@ class CostIOCQuadratic(Cost):
 		Nd = demoO.shape[0]
 		Ns = sampleO.shape[0]
 		# TODO(chelsea) - start to implement this
-
 		blob_names = self.solver.net.blobs.keys()
-		dbatches_per_epoch = np.floor(Nd*self._T / self.demo_batch_size)
-		sbatches_per_epoch = np.floor(Ns*self._T / self.sample_batch_size)
+		dbatches_per_epoch = np.floor(Nd / self.demo_batch_size)
+		sbatches_per_epoch = np.floor(Ns / self.sample_batch_size)
 
-		demo_idx = range(Nd*T)
-		sample_idx = range(Nd*T)
+		demo_idx = range(Nd)
+		sample_idx = range(Ns)
 		average_loss = 0
 		np.random.shuffle(demo_idx)
 		np.random.shuffle(sample_idx)
@@ -163,9 +168,10 @@ class CostIOCQuadratic(Cost):
 
 		# These are required by Caffe to be set, but not used.
 		solver_param.test_iter.append(1)
-		solver_param.test_iter.append(1)
+		# solver_param.test_iter.append(1)
 		solver_param.test_interval = 1000000
 
+		# import pdb; pdb.set_trace()
 		f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
 		f.write(MessageToString(solver_param))
 		f.close()

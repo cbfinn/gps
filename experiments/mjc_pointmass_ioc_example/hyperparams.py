@@ -28,7 +28,7 @@ SENSOR_DIMS = {
 }
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/mjc_pointmass_example/'
+EXP_DIR = BASE_DIR + '/../experiments/mjc_pointmass_ioc_example/'
 
 
 common = {
@@ -63,6 +63,9 @@ agent = {
 algorithm = {
     # 'type': AlgorithmBADMM,
     'type': AlgorithmTrajOpt,
+    'ioc' : 1,
+    'demo_distr_empest': True,
+    'max_ent_traj': 1.0,
     'conditions': common['conditions'],
     'iterations': 10,
     'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-2]),
@@ -86,12 +89,13 @@ algorithm['init_traj_distr'] = {
 
 algorithm['cost'] = {
     'type': CostIOCQuadratic,
-    'data_types' : {
-        JOINT_ANGLES: {
-            'wp': np.ones(SENSOR_DIMS[ACTION]),
-            'target_state': np.array([0.5, 0.5]),
-        },
-    },
+    # 'data_types' : {
+    #     JOINT_ANGLES: {
+    #         'wp': np.ones(SENSOR_DIMS[ACTION]),
+    #         'target_state': np.array([0.5, 0.5]),
+    #     },
+    # },
+    'wu': np.array([1e-2, 1e-2])
 }
 
 algorithm['dynamics'] = {

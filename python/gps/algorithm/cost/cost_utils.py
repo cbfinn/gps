@@ -218,16 +218,16 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
 
     # Dot product operation with two layers
     dot_prod1 = L.Eltwise(ip_out, ip_out, operation=EltwiseParameter.PROD)
-    all_costs = L.InnerProduct(dot_prod1, num_output=1
+    all_costs = L.InnerProduct(dot_prod1, num_output=1,
                                weight_filler=dict(type='constant', value=1),
                                bias_filler=dict(type='constant', value=0),
                                param=[dict(lr_mult=0), dict(lr_mult=0)])
 
     if phase == TRAIN:
-        demo_costs, sample_costs = L.Slice(all_costs, axis=0, slice_point=demo_batch_size)
+        demo_costs, sample_costs = L.Slice(all_costs, axis=0, slice_point=demo_batch_size, ntop=2)
 
         out = L.Python(demo_costs, sample_costs, d_log_iw, s_log_iw, loss_weight=1.0,
-                       python_param=dict(module='policy_layers',
+                       python_param=dict(module='ioc_layers',
                                          layer='IOCLoss'))
         # TODO - add regularizers, maybe with python loss layers
     else:
