@@ -27,13 +27,14 @@ class AlgorithmTrajOpt(Algorithm):
         Args:
             sample_lists: List of SampleList objects for each condition.
         """
-        self.N = 0
+        self.N = sum(len(self.sample_list[i]) for i in self.sample_list.keys())
         for m in range(self.M):
             self.cur[m].sample_list = sample_lists[m]
             prev_samples = self.sample_list[m].get_samples()
             prev_samples.extend(sample_lists[m].get_samples())
             self.sample_list[m] = SampleList(prev_samples)
             self.N += len(sample_lists[m])
+        print self.N
 
         # Update dynamics model using all samples.
         self._update_dynamics()
@@ -214,9 +215,6 @@ class AlgorithmTrajOpt(Algorithm):
             cost_ioc_quad = self.cost[i] # set the type of cost to be cost_ioc_quad here.
             cost_ioc_quad.update(demoU_arr, demoX_arr, demoO_arr, demos_logiw, sampleU_arr, sampleX_arr, \
                                                     sampleO_arr, samples_logiw)
-        
-
-
 
 
 

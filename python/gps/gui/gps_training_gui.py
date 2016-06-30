@@ -82,7 +82,8 @@ class GPSTrainingGUI(object):
         self._gs_action_output          = self._gs[2:3,  0:4]
         self._gs_status_output          = self._gs[3:4,  0:4]
         self._gs_cost_plotter           = self._gs[2:4,  4:8]
-        self._gs_algthm_output          = self._gs[4:8,  0:8]
+        self._gs_gt_cost_plotter        = self._gs[5:7,  4:8]
+        self._gs_algthm_output          = self._gs[4:8,  0:4]
         if config['image_on']:
             self._gs_traj_visualizer    = self._gs[8:16, 0:4]
             self._gs_image_visualizer   = self._gs[8:16, 4:8]
@@ -100,6 +101,8 @@ class GPSTrainingGUI(object):
                 font_family='monospace')
         self._cost_plotter = MeanPlotter(self._fig, self._gs_cost_plotter,
                 color='blue', label='mean cost')
+        self._gt_cost_plotter = MeanPlotter(self._fig, self._gs_gt_cost_plotter,
+                color='red', label='ground truth cost')
         self._traj_visualizer = Plotter3D(self._fig, self._gs_traj_visualizer,
                 num_plots=self._hyperparams['conditions'])
         if config['image_on']:
@@ -217,22 +220,27 @@ class GPSTrainingGUI(object):
     def set_action_text(self, text):
         self._action_output.set_text(text)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def set_action_bgcolor(self, color, alpha=1.0):
         self._action_output.set_bgcolor(color, alpha)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def set_status_text(self, text):
         self._status_output.set_text(text)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def set_output_text(self, text):
         self._algthm_output.set_text(text)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def append_output_text(self, text):
         self._algthm_output.append_text(text)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def start_display_calculating(self):
         self._calculating_run.set()
@@ -269,6 +277,10 @@ class GPSTrainingGUI(object):
             self._first_update = False
 
         costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
+        if algorithm._hyperparams['ioc']:
+            gt_costs = [np.mean(np.sum(algorithm.prev[m].cgt, axis=1)) for m in range(algorithm.M)]
+            # self._update_iteration_data(itr, algorithm, gt_costs)
+            self._gt_cost_plotter.update(gt_costs, t=itr)
         self._update_iteration_data(itr, algorithm, costs)
         self._cost_plotter.update(costs, t=itr)
         if END_EFFECTOR_POINTS in agent.x_data_types:

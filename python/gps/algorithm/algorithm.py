@@ -68,6 +68,10 @@ class Algorithm(object):
             hyperparams['cost']['type'](hyperparams['cost'])
             for _ in range(self.M)
         ]
+        self.gt_cost = [
+            hyperparams['gt_cost']['type'](hyperparams['gt_cost'])
+            for _ in range(self.M)
+        ]
         self.base_kl_step = self._hyperparams['kl_step']
 
     @abc.abstractmethod
@@ -132,10 +136,16 @@ class Algorithm(object):
         cc = np.zeros((N, T))
         cv = np.zeros((N, T, dX+dU))
         Cm = np.zeros((N, T, dX+dU, dX+dU))
+        if self._hyperparams['ioc']:
+            cgt = np.zeros((N, T))
         for n in range(N):
             sample = self.cur[cond].sample_list[n]
             # Get costs.
             l, lx, lu, lxx, luu, lux = self.cost[cond].eval(sample)
+            # Compute the ground truth cost
+            if self._hyperparams['ioc']:
+                l_gt, _, _, _, _, _ = self.gt_cost[cond].eval(sample)
+                cgt[n, :] = l_gt
             cc[n, :] = l
             cs[n, :] = l
 
@@ -163,6 +173,10 @@ class Algorithm(object):
         self.cur[cond].traj_info.Cm = np.mean(Cm, 0)  # Quadratic term (matrix).
 
         self.cur[cond].cs = cs  # True value of cost.
+        if self._hyperparams['ioc']:
+            self.cur[cond].cgt = cgt
+        
+
 
     def _advance_iteration_variables(self):
         """

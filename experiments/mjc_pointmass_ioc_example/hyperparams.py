@@ -64,7 +64,7 @@ agent = {
 algorithm = {
     # 'type': AlgorithmBADMM,
     'type': AlgorithmTrajOpt,
-    'ioc' : 1,
+    'ioc' : True,
     'demo_distr_empest': True,
     'max_ent_traj': 1.0,
     'conditions': common['conditions'],

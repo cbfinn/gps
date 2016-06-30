@@ -174,7 +174,6 @@ class CostIOCQuadratic(Cost):
 		# solver_param.test_iter.append(1)
 		solver_param.test_interval = 1000000
 
-		# import pdb; pdb.set_trace()
 		f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
 		f.write(MessageToString(solver_param))
 		f.close()
