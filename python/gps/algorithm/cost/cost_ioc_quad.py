@@ -99,17 +99,19 @@ class CostIOCQuadratic(Cost):
     	  # TODO(chelsea) - start to implement this
 
         blob_names = self.solver.net.blobs.keys()
-        dbatches_per_epoch = np.floor(Nd*self._T / self.demo_batch_size)
-        sbatches_per_epoch = np.floor(Ns*self._T / self.sample_batch_size)
+        dbatches_per_epoch = np.floor(Nd / self.demo_batch_size)
+        sbatches_per_epoch = np.floor(Ns / self.sample_batch_size)
 
-        demo_idx = range(Nd*T)
-        sample_idx = range(Nd*T)
+        demo_idx = range(Nd)
+        sample_idx = range(Ns)
         average_loss = 0
         np.random.shuffle(demo_idx)
         np.random.shuffle(sample_idx)
 
         for i in range(self._hyperparams['iterations']):
             # Load in data for this batch.
+            # TODO - this might cut off the last few samples, preventing them
+            # from being used.
             d_start_idx = int(i * self.demo_batch_size %
                               (dbatches_per_epoch * self.demo_batch_size))
             s_start_idx = int(i * self.sample_batch_size %
