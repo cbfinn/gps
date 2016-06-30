@@ -57,8 +57,14 @@ class AlgorithmMDGPS(Algorithm):
             ]
             self._update_policy()
 
-        # C-step
+        # Step adjustment
         self._update_step_size()  # KL Divergence step size (also fits policy).
+        for m in range(self.M):
+            pol_info = self.cur[m].pol_info
+            # Explicitly store the current pol_info, need for step size calc
+            self.cur[m].init_pol_info = copy.deepcopy(pol_info)
+
+        # C-step
         self._update_trajectories()
         for m in range(self.M):
             # Save initial kl for debugging / visualization.
@@ -196,7 +202,9 @@ class AlgorithmMDGPS(Algorithm):
             m: Condition
         """
         # Get the necessary linearizations
-        prev_nn = self.prev[m].pol_info.traj_distr()
+        # TODO: right now the moving parts are complicated, and we need to
+        # use this hacky 'init_size_pol_info'. Need to refactor.
+        prev_nn = self.prev[m].init_pol_info.traj_distr()
         cur_nn = self.cur[m].pol_info.traj_distr()
         cur_traj_distr = self.cur[m].traj_distr
 

@@ -16,15 +16,13 @@ from gps.algorithm.cost.cost_utils import RAMP_FINAL_ONLY
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
+from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.policy.policy_prior import PolicyPrior
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
 from gps.gui.config import generate_experiment_info
-
-from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 
 
 SENSOR_DIMS = {
@@ -55,8 +53,8 @@ agent = {
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
-    'pos_body_offset': [np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0]),
-                        np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0])],
+    'pos_body_offset': [np.array([-0.08, -0.08, 0]), np.array([-0.08, -0.08, 0]),
+                        np.array([0.08, 0.08, 0]), np.array([0.08, -0.08, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -127,7 +125,7 @@ algorithm['dynamics'] = {
         'type': DynamicsPriorGMM,
         'max_clusters': 20,
         'min_samples_per_cluster': 40,
-        'max_samples': 40,
+        'max_samples': 20,
     },
 }
 
@@ -136,14 +134,8 @@ algorithm['traj_opt'] = {
 }
 
 algorithm['policy_opt'] = {
-    'type': PolicyOptTf,
-    'network_params': {
-        'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-                        END_EFFECTOR_POINT_VELOCITIES],
-        'sensor_dims': SENSOR_DIMS,
-    },
-    'network_model': example_tf_network,
-    'iterations': 3000,
+    'type': PolicyOptCaffe,
+    'iterations': 4000,
     'weights_file_prefix': EXP_DIR + 'policy',
 }
 
@@ -151,7 +143,7 @@ algorithm['policy_prior'] = {
     'type': PolicyPriorGMM,
     'max_clusters': 20,
     'min_samples_per_cluster': 40,
-    'max_samples': 40,
+    'max_samples': 20,
 }
 
 config = {
