@@ -33,6 +33,7 @@ class CostIOCQuadratic(Cost):
 
 		self.demo_batch_size = self._hyperparams['demo_batch_size']
 		self.sample_batch_size = self._hyperparams['sample_batch_size']
+		self.caffe_iter = 0
 
 		self._init_solver()
 
@@ -112,6 +113,8 @@ class CostIOCQuadratic(Cost):
 
 		for i in range(self._hyperparams['iterations']):
 			# Load in data for this batch.
+			# TODO - this might cut off the last few samples, preventing them
+            # from being used.
 			d_start_idx = int(i * self.demo_batch_size %
 							  (dbatches_per_epoch * self.demo_batch_size))
 			s_start_idx = int(i * self.sample_batch_size %

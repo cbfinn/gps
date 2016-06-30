@@ -17,9 +17,9 @@ class AlgorithmTrajOpt(Algorithm):
     """ Sample-based trajectory optimization. """
     def __init__(self, hyperparams):
         Algorithm.__init__(self, hyperparams)
-        self.policy_opt = self._hyperparams['policy_opt']['type'](
-                self._hyperparams['policy_opt'], self.dO, self.dU
-                )
+        # self.policy_opt = self._hyperparams['policy_opt']['type'](
+        #         self._hyperparams['policy_opt'], self.dO, self.dU
+        #         )
 
     def iteration(self, sample_lists):
         """
@@ -208,8 +208,8 @@ class AlgorithmTrajOpt(Algorithm):
         sampleU_arr = np.vstack((self.sample_list[i].get_U() for i in xrange(M)))
         sampleX_arr = np.vstack((self.sample_list[i].get_X() for i in xrange(M)))
         sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
-        demos_logiw = np.vstack((demos_logiw[i] for i in xrange(Md)))
-        samples_logiw = np.vstack((samples_logiw[i] for i in xrange(M)))
+        demos_logiw = np.vstack((demos_logiw[i] for i in xrange(Md))).T
+        samples_logiw = np.vstack((samples_logiw[i] for i in xrange(M))).T
         for i in xrange(M):
             cost_ioc_quad = self.cost[i] # set the type of cost to be cost_ioc_quad here.
             cost_ioc_quad.update(demoU_arr, demoX_arr, demoO_arr, demos_logiw, sampleU_arr, sampleX_arr, \
