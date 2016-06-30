@@ -21,7 +21,7 @@ from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
 from gps.utility.generate_demo import GenDemo
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 
 class GPSMain(object):

@@ -121,7 +121,7 @@ def fit_emp_controllers(demo_x, demo_u):
 
         sig = np.zeros((dU, dU))
         for n in xrange(N):
-            diff = demo_u[n, t, :] - (traj.K[t, :, :].dot(demo_x[n, t, :]) + traj.k[t, :])
+            diff = (demo_u[n, t, :] - (traj.K[t, :, :].dot(demo_x[n, t, :]) + traj.k[t, :])).reshape(dU, -1)
             sig += diff.dot(diff.T)
         traj.pol_covar[t, :, :] = sig / N + 1e-12 * np.eye(dU)
 

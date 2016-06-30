@@ -11,6 +11,7 @@ from gps.agent.mjc.agent_mjc import AgentMuJoCo
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.cost.cost_ioc_quad import CostIOCQuadratic
+from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
@@ -83,6 +84,8 @@ algorithm['init_traj_distr'] = {
     'init_var': 1.0,
     'stiffness': 10.0,
     'stiffness_vel': 10.0,
+    # 'stiffness': 0.0,
+    # 'stiffness_vel': 0.0,
     'dt': agent['dt'],
     'T': agent['T'],
 }
@@ -96,6 +99,16 @@ algorithm['cost'] = {
     #     },
     # },
     'wu': np.array([0, 0])
+}
+
+algorithm['gt_cost'] = {
+    'type': CostState,
+    'data_types' : {
+        JOINT_ANGLES: {
+            'wp': np.ones(SENSOR_DIMS[ACTION]),
+            'target_state': np.array([0.5, 0.5]),
+        },
+    },
 }
 
 algorithm['dynamics'] = {
