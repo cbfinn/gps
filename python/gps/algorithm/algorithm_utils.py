@@ -11,6 +11,7 @@ class IterationData(BundleType):
         variables = {
             'sample_list': None,  # List of samples for the current iteration.
             'traj_info': None,  # Current TrajectoryInfo object.
+            'init_pol_info': None, # Initial PolicyInfo object
             'pol_info': None,  # Current PolicyInfo object.
             'traj_distr': None,  # Initial trajectory distribution.
             'cs': None,  # Sample costs of the current iteration.
