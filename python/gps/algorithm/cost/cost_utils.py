@@ -205,9 +205,9 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
             'shape': [{'dim': (1, T, dim_input)}]
         })
         net_input = L.Python(ntop=1,
-                             python_param=dict(module='policy_layers',
+                             python_param=dict(module='ioc_layers',
                                                param_str=data_layer_info,
-                                               layer='PolicyDataLayer'))
+                                               layer='IOCDataLayer'))
     else:
         raise Exception('Unknown network phase')
 
