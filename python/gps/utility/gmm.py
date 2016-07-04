@@ -177,8 +177,13 @@ class GMM(object):
             ll = np.sum(logsum(logobs, axis=1))
             LOGGER.debug('GMM itr %d/%d. Log likelihood: %f',
                          itr, max_iterations, ll)
+            if ll < prevll:
+                # TODO: Why does log-likelihood decrease sometimes?
+                LOGGER.debug('Log-likelihood decreased! Ending on itr=%d/%d',
+                             itr, max_iterations)
+                break
             if np.abs(ll-prevll) < 1e-2:
-                LOGGER.debug('GMM convergenced on itr=%d/%d',
+                LOGGER.debug('GMM converged on itr=%d/%d',
                              itr, max_iterations)
                 break
             prevll = ll

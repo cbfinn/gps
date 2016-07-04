@@ -4,12 +4,16 @@ import logging
 
 import numpy as np
 
+# NOTE: Order of these imports matters for some reason.
+# Changing it can lead to segmentation faults on some machines.
+
+from gps.algorithm.policy_opt.config import POLICY_OPT_TF
 import tensorflow as tf
 
 from gps.algorithm.policy.tf_policy import TfPolicy
 from gps.algorithm.policy_opt.policy_opt import PolicyOpt
-from gps.algorithm.policy_opt.config import POLICY_OPT_TF
 from gps.algorithm.policy_opt.tf_utils import TfSolver
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -21,6 +25,8 @@ class PolicyOptTf(PolicyOpt):
         config.update(hyperparams)
 
         PolicyOpt.__init__(self, config, dO, dU)
+
+        tf.set_random_seed(self._hyperparams['random_seed'])
 
         self.tf_iter = 0
         self.checkpoint_file = self._hyperparams['checkpoint_prefix']
@@ -74,7 +80,7 @@ class PolicyOptTf(PolicyOpt):
                                momentum=self._hyperparams['momentum'],
                                weight_decay=self._hyperparams['weight_decay'])
 
-    def update(self, obs, tgt_mu, tgt_prc, tgt_wt, itr, inner_itr):
+    def update(self, obs, tgt_mu, tgt_prc, tgt_wt):
         """
         Update policy.
         Args:
@@ -115,10 +121,14 @@ class PolicyOptTf(PolicyOpt):
         # TODO: Find entries with very low weights?
 
         # Normalize obs, but only compute normalzation at the beginning.
-        if itr == 0 and inner_itr == 1:
+        if self.policy.scale is None or self.policy.bias is None:
             self.policy.x_idx = self.x_idx
-            self.policy.scale = np.diag(1.0 / np.std(obs[:, self.x_idx], axis=0))
-            self.policy.bias = -np.mean(obs[:, self.x_idx].dot(self.policy.scale), axis=0)
+            # 1e-3 to avoid infs if some state dimensions don't change in the
+            # first batch of samples
+            self.policy.scale = np.diag(
+                1.0 / np.maximum(np.std(obs[:, self.x_idx], axis=0), 1e-3))
+            self.policy.bias = - np.mean(
+                obs[:, self.x_idx].dot(self.policy.scale), axis=0)
         obs[:, self.x_idx] = obs[:, self.x_idx].dot(self.policy.scale) + self.policy.bias
 
         # Assuming that N*T >= self.batch_size.
@@ -139,9 +149,9 @@ class PolicyOptTf(PolicyOpt):
             train_loss = self.solver(feed_dict, self.sess)
 
             average_loss += train_loss
-            if i % 500 == 0 and i != 0:
+            if (i+1) % 500 == 0:
                 LOGGER.debug('tensorflow iteration %d, average loss %f',
-                             i, average_loss / 500)
+                             i+1, average_loss / 500)
                 print ('supervised tf loss is ' + str(average_loss))
                 average_loss = 0
 
@@ -150,11 +160,12 @@ class PolicyOptTf(PolicyOpt):
 
         # Optimize variance.
         A = np.sum(tgt_prc_orig, 0) + 2 * N * T * \
-                                      self._hyperparams['ent_reg'] * np.ones((dU, dU))
+                self._hyperparams['ent_reg'] * np.ones((dU, dU))
         A = A / np.sum(tgt_wt)
 
         # TODO - Use dense covariance?
         self.var = 1 / np.diag(A)
+        self.policy.chol_pol_covar = np.diag(np.sqrt(self.var))
 
         return self.policy
 
@@ -168,13 +179,11 @@ class PolicyOptTf(PolicyOpt):
         N, T = obs.shape[:2]
 
         # Normalize obs.
-        try:
+        if self.policy.scale is not None:
+            # TODO: Should prob be called before update?
             for n in range(N):
-                if self.policy.scale is not None and self.policy.bias is not None:
-                    obs[n, :, self.x_idx] = (obs[n, :, self.x_idx].T.dot(self.policy.scale)
-                                             + self.policy.bias).T
-        except AttributeError:
-            pass  # TODO: Should prob be called before update?
+                obs[n, :, self.x_idx] = (obs[n, :, self.x_idx].T.dot(self.policy.scale)
+                                         + self.policy.bias).T
 
         output = np.zeros((N, T, dU))
 

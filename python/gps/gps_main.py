@@ -19,12 +19,17 @@ from gps.gui.gps_training_gui import GPSTrainingGUI
 from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
-
 
 class GPSMain(object):
     """ Main class to run algorithms and experiments. """
-    def __init__(self, config):
+    def __init__(self, config, quit_on_end=False):
+        """
+        Initialize GPSMain
+        Args:
+            config: Hyperparameters for experiment
+            quit_on_end: When true, quit automatically on completion
+        """
+        self._quit_on_end = quit_on_end
         self._hyperparams = config
         self._conditions = config['common']['conditions']
         if 'train_conditions' in config['common']:
@@ -115,19 +120,20 @@ class GPSMain(object):
                 self.gui.set_status_text('Press \'go\' to begin.')
             return 0
         else:
-            algorithm_file = self._data_files_dir + 'algorithm_i_%02d.pkl' % itr_load
+            algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr_load
             self.algorithm = self.data_logger.unpickle(algorithm_file)
             if self.algorithm is None:
                 print("Error: cannot find '%s.'" % algorithm_file)
                 os._exit(1) # called instead of sys.exit(), since this is in a thread
-                
+
             if self.gui:
                 traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
                     ('traj_sample_itr_%02d.pkl' % itr_load))
-                pol_sample_lists = self.data_logger.unpickle(self._data_files_dir +
-                    ('pol_sample_itr_%02d.pkl' % itr_load))
-                self.gui.update(itr_load, self.algorithm, self.agent,
-                    traj_sample_lists, pol_sample_lists)
+                if self.algorithm.cur[0].pol_info:
+                    pol_sample_lists = self.data_logger.unpickle(self._data_files_dir +
+                        ('pol_sample_itr_%02d.pkl' % itr_load))
+                else:
+                    pol_sample_lists = None
                 self.gui.set_status_text(
                     ('Resuming training from algorithm state at iteration %d.\n' +
                     'Press \'go\' to begin.') % itr_load)
@@ -142,7 +148,11 @@ class GPSMain(object):
             i: Sample number.
         Returns: None
         """
-        pol = self.algorithm.cur[cond].traj_distr
+        if self.algorithm._hyperparams['sample_on_policy'] \
+                and self.algorithm.iteration_count > 0:
+            pol = self.algorithm.policy_opt.policy
+        else:
+            pol = self.algorithm.cur[cond].traj_distr
         if self.gui:
             self.gui.set_image_overlays(cond)   # Must call for each new cond.
             redo = True
@@ -214,7 +224,7 @@ class GPSMain(object):
             for i in range(N):
                 pol_samples[cond][i] = self.agent.sample(
                     self.algorithm.policy_opt.policy, self._test_idx[cond],
-                    verbose=True, save=False)
+                    verbose=True, save=False, noisy=False)
         return [SampleList(samples) for samples in pol_samples]
 
     def _log_data(self, itr, traj_sample_lists, pol_sample_lists=None):
@@ -254,7 +264,9 @@ class GPSMain(object):
         if self.gui:
             self.gui.set_status_text('Training complete.')
             self.gui.end_mode()
-
+            if self._quit_on_end:
+                # Quit automatically (for running sequential expts)
+                os._exit(1)
 
 def main():
     """ Main function to be run. """
@@ -268,7 +280,11 @@ def main():
     parser.add_argument('-r', '--resume', metavar='N', type=int,
                         help='resume training from iter N')
     parser.add_argument('-p', '--policy', metavar='N', type=int,
-                        help='take N policy samples (for BADMM only)')
+                        help='take N policy samples (for BADMM/MDGPS only)')
+    parser.add_argument('-s', '--silent', action='store_true',
+                        help='silent debug print outs')
+    parser.add_argument('-q', '--quit', action='store_true',
+                        help='quit GUI automatically when finished')
     args = parser.parse_args()
 
     exp_name = args.experiment
@@ -280,6 +296,11 @@ def main():
     gps_dir = '/'.join(str.split(gps_filepath, '/')[:-3]) + '/'
     exp_dir = gps_dir + 'experiments/' + exp_name + '/'
     hyperparams_file = exp_dir + 'hyperparams.py'
+
+    if args.silent:
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+    else:
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
     if args.new:
         from shutil import copy
@@ -333,8 +354,9 @@ def main():
         import numpy as np
         import matplotlib.pyplot as plt
 
-        random.seed(0)
-        np.random.seed(0)
+        seed = hyperparams.config.get('random_seed', 0)
+        random.seed(seed)
+        np.random.seed(seed)
 
         data_files_dir = exp_dir + 'data_files/'
         data_filenames = os.listdir(data_files_dir)
@@ -360,10 +382,11 @@ def main():
         import numpy as np
         import matplotlib.pyplot as plt
 
-        random.seed(0)
-        np.random.seed(0)
+        seed = hyperparams.config.get('random_seed', 0)
+        random.seed(seed)
+        np.random.seed(seed)
 
-        gps = GPSMain(hyperparams.config)
+        gps = GPSMain(hyperparams.config, args.quit)
         if hyperparams.config['gui_on']:
             run_gps = threading.Thread(
                 target=lambda: gps.run(itr_load=resume_training_itr)
