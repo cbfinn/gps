@@ -16,13 +16,15 @@ from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.algorithm.policy.policy_prior import PolicyPrior
-from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, ACTION
+from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
 from gps.gui.config import generate_experiment_info
 
 
 SENSOR_DIMS = {
     JOINT_ANGLES: 2,
     JOINT_VELOCITIES: 2,
+    END_EFFECTOR_POINTS: 3,
+    END_EFFECTOR_POINT_VELOCITIES: 3,
     ACTION: 2,
 }
 
@@ -53,8 +55,8 @@ agent = {
     'conditions': common['conditions'],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
-    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],
-    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
 }
 
 algorithm = {
