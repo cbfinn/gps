@@ -83,9 +83,16 @@ class AlgorithmTrajOpt(Algorithm):
 
         # This is the actual cost we have under the current trajectory
         # based on the latest samples.
-        new_actual_laplace_obj = self.traj_opt.estimate_cost(
-            self.cur[m].traj_distr, self.cur[m].traj_info
-        )
+        if self._hyperparams['ioc']:
+          # use prevous cost to estimate cost of current traj distr.
+          self._eval_cost(m, prev_cost=True)
+          new_actual_laplace_obj = self.traj_opt.estimate_cost(
+              self.cur[m].traj_distr, self.cur[m].prevcost_traj_info
+          )
+        else:
+          new_actual_laplace_obj = self.traj_opt.estimate_cost(
+              self.cur[m].traj_distr, self.cur[m].traj_info
+          )
 
         # Measure the entropy of the current trajectory (for printout).
         ent = self._measure_ent(m)

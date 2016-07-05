@@ -121,11 +121,12 @@ class Algorithm(object):
             self.new_traj_distr[cond], self.cur[cond].eta = \
                     self.traj_opt.update(cond, self)
 
-    def _eval_cost(self, cond):
+    def _eval_cost(self, cond, prev_cost=False):
         """
         Evaluate costs for all samples for a condition.
         Args:
             cond: Condition to evaluate cost on.
+            prev: Whether or not to use previous_cost (for ioc stepadjust)
         """
         # Constants.
         T, dX, dU = self.T, self.dX, self.dU
@@ -141,7 +142,10 @@ class Algorithm(object):
         for n in range(N):
             sample = self.cur[cond].sample_list[n]
             # Get costs.
-            l, lx, lu, lxx, luu, lux = self.cost[cond].eval(sample)
+            if prev_cost:
+              l, lx, lu, lxx, luu, lux = self.previous_cost[cond].eval(sample)
+            else:
+              l, lx, lu, lxx, luu, lux = self.cost[cond].eval(sample)
             # Compute the ground truth cost
             if self._hyperparams['ioc']:
                 l_gt, _, _, _, _, _ = self.gt_cost[cond].eval(sample)
@@ -168,14 +172,18 @@ class Algorithm(object):
             cv[n, :, :] += cv_update
 
         # Fill in cost estimate.
-        self.cur[cond].traj_info.cc = np.mean(cc, 0)  # Constant term (scalar).
-        self.cur[cond].traj_info.cv = np.mean(cv, 0)  # Linear term (vector).
-        self.cur[cond].traj_info.Cm = np.mean(Cm, 0)  # Quadratic term (matrix).
+        if prev_cost:
+          traj_info = self.cur[cond].prevcost_traj_info
+        else:
+          traj_info = self.cur[cond].traj_info
+          self.cur[cond].cs = cs  # True value of cost.
+        traj_info.cc = np.mean(cc, 0)  # Constant term (scalar).
+        traj_info.cv = np.mean(cv, 0)  # Linear term (vector).
+        traj_info.Cm = np.mean(Cm, 0)  # Quadratic term (matrix).
 
-        self.cur[cond].cs = cs  # True value of cost.
         if self._hyperparams['ioc']:
             self.cur[cond].cgt = cgt
-        
+
 
 
     def _advance_iteration_variables(self):
@@ -187,6 +195,7 @@ class Algorithm(object):
         self.prev = copy.deepcopy(self.cur)
         self.cur = [IterationData() for _ in range(self.M)]
         self.traj_distr[self.iteration_count] = []
+        self.previous_cost = []
         for m in range(self.M):
             self.cur[m].traj_info = TrajectoryInfo()
             self.cur[m].traj_info.dynamics = copy.deepcopy(self.prev[m].traj_info.dynamics)
@@ -194,6 +203,8 @@ class Algorithm(object):
             self.cur[m].eta = self.prev[m].eta
             self.cur[m].traj_distr = self.new_traj_distr[m]
             self.traj_distr[self.iteration_count].append(self.new_traj_distr[m])
+            if self.hyperparams['ioc']:
+              self.prevous_cost[i] = copy.deepcopy(self.cost[i])
         delattr(self, 'new_traj_distr')
 
     def _set_new_mult(self, predicted_impr, actual_impr, m):
