@@ -78,17 +78,17 @@ class GPSTrainingGUI(object):
 
         # Assign GUI component locations.
         self._gs = gridspec.GridSpec(16, 8)
-        self._gs_action_panel           = self._gs[0:2,  0:8]
-        self._gs_action_output          = self._gs[2:3,  0:4]
-        self._gs_status_output          = self._gs[3:4,  0:4]
-        self._gs_cost_plotter           = self._gs[2:4,  4:8]
-        self._gs_gt_cost_plotter        = self._gs[5:7,  4:8]
-        self._gs_algthm_output          = self._gs[4:8,  0:4]
+        self._gs_action_panel           = self._gs[0:1,  0:8]
+        self._gs_action_output          = self._gs[1:2,  0:4]
+        self._gs_status_output          = self._gs[2:3,  0:4]
+        self._gs_cost_plotter           = self._gs[1:3,  4:8]
+        self._gs_gt_cost_plotter        = self._gs[4:6,  4:8]
+        self._gs_algthm_output          = self._gs[3:9,  0:4]
         if config['image_on']:
-            self._gs_traj_visualizer    = self._gs[8:16, 0:4]
-            self._gs_image_visualizer   = self._gs[8:16, 4:8]
+            self._gs_traj_visualizer    = self._gs[9:16, 0:4]
+            self._gs_image_visualizer   = self._gs[9:16, 4:8]
         else:
-            self._gs_traj_visualizer    = self._gs[8:16, 0:8]
+            self._gs_traj_visualizer    = self._gs[9:16, 0:8]
 
         # Create GUI components.
         self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 4, actions_arr)
@@ -278,9 +278,10 @@ class GPSTrainingGUI(object):
         costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
         if algorithm._hyperparams['ioc']:
             gt_costs = [np.mean(np.sum(algorithm.prev[m].cgt, axis=1)) for m in range(algorithm.M)]
-            # self._update_iteration_data(itr, algorithm, gt_costs)
+            self._update_iteration_data(itr, algorithm, gt_costs)
             self._gt_cost_plotter.update(gt_costs, t=itr)
-        self._update_iteration_data(itr, algorithm, costs)
+        else:
+            self._update_iteration_data(itr, algorithm, costs)
         self._cost_plotter.update(costs, t=itr)
         if END_EFFECTOR_POINTS in agent.x_data_types:
             self._update_trajectory_visualizations(algorithm, agent,
