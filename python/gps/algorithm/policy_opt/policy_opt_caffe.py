@@ -137,13 +137,8 @@ class PolicyOptCaffe(PolicyOpt):
 
         # Normalize obs, but only compute normalzation at the beginning.
         if itr == 0 and inner_itr == 1:
-            # self.policy.scale = np.diag(1.0 / np.std(obs, axis=0))
-            # self.policy.bias = -np.mean(obs.dot(self.policy.scale), axis=0)
-            self.policy.scale = np.eye(np.diag(1.0 / (np.std(obs, axis=0) + 1e-8)).shape[0])
-            self.policy.bias = np.zeros((-np.mean(obs.dot(self.policy.scale), axis=0)).shape)
-            print "scale is", self.policy.scale, "instead of",np.diag(1.0 / np.std(obs, axis=0))
-            print "bias is", self.policy.bias, "instead of",-np.mean(obs.dot(self.policy.scale), axis=0)
-
+            self.policy.scale = np.diag(1.0 / np.std(obs, axis=0))
+            self.policy.bias = -np.mean(obs.dot(self.policy.scale), axis=0)
         obs = obs.dot(self.policy.scale) + self.policy.bias
 
         blob_names = self.solver.net.blobs.keys()
