@@ -6,7 +6,7 @@ import numpy as np
 
 from gps.algorithm.algorithm import Algorithm
 from gps.utility.general_utils import logsum
-from gps.algorithm.algorithm_utils import fit_emp_controllers
+from gps.algorithm.algorithm_utils import fit_emp_controller
 from gps.algorithm.cost.cost_ioc_quad import CostIOCQuadratic
 from gps.sample.sample_list import SampleList
 
@@ -145,7 +145,7 @@ class AlgorithmTrajOpt(Algorithm):
         # estimate demo distributions empirically
         for i in xrange(Md):
             if self._hyperparams['demo_distr_empest']:
-                demo_traj[i] = fit_emp_controllers(demoX[i], demoU[i])
+                demo_traj[i] = fit_emp_controller(demoX[i], demoU[i])
         for i in xrange(M):
             # This code assumes a fixed number of samples per iteration/controller
             samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
@@ -157,10 +157,9 @@ class AlgorithmTrajOpt(Algorithm):
                 traj = self.traj_distr[itr_i][i]
                 for j in xrange(sample_i_X.shape[0]):
                     for t in xrange(self.T - 1):
-                        # Need to add traj.ref here?
                         diff = traj.k[t, :] + \
                                 traj.K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
-                        samples_logprob[i][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff)), 0) - \
+                        samples_logprob[i][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
                                                         np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
 
             # Evaluate sample prob under demo distribution.
@@ -169,7 +168,7 @@ class AlgorithmTrajOpt(Algorithm):
                     for t in xrange(self.T - 1):
                         diff = demo_traj[itr_i].k[t, :] + \
                                 demo_traj[itr_i].K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
-                        samples_logprob[i][itr + itr_i + 1, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
+                        samples_logprob[i][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff))) - \
                                                         np.sum(np.log(np.diag(demo_traj[itr_i].chol_pol_covar[t, :, :])))
             # Sum over the distributions and time.
 
@@ -189,7 +188,7 @@ class AlgorithmTrajOpt(Algorithm):
                     for t in xrange(self.T - 1):
                         diff = traj.k[t, :] + \
                                 traj.K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
-                        demos_logprob[idx][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff)), 0) - \
+                        demos_logprob[idx][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
                                                         np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
             # Evaluate demo prob. under demo distributions.
             for itr_i in xrange(Md):
@@ -197,7 +196,7 @@ class AlgorithmTrajOpt(Algorithm):
                     for t in xrange(self.T - 1):
                         diff = demo_traj[itr_i].k[t, :] + \
                                 demo_traj[itr_i].K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
-                        demos_logprob[idx][itr + itr_i + 1, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
+                        demos_logprob[idx][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
                                                         np.sum(np.log(np.diag(demo_traj[itr_i].chol_pol_covar[t, :, :])))
             # Sum over the distributions and time.
             demos_logiw[idx] = logsum(np.sum(demos_logprob[idx], 1), 0)

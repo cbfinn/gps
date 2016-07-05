@@ -176,6 +176,8 @@ class Algorithm(object):
         if prev_cost:
           traj_info = self.cur[cond].prevcost_traj_info
           traj_info.dynamics = self.cur[cond].traj_info.dynamics
+          traj_info.x0sigma = self.cur[cond].traj_info.x0sigma
+          traj_info.x0mu = self.cur[cond].traj_info.x0mu
         else:
           traj_info = self.cur[cond].traj_info
           self.cur[cond].cs = cs  # True value of cost.

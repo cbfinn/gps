@@ -100,7 +100,7 @@ def gauss_fit_joint_prior(pts, mu0, Phi, m, n0, dwts, dX, dU, sig_reg):
     dynsig = 0.5 * (dynsig + dynsig.T)
     return fd, fc, dynsig
 
-def fit_emp_controllers(demo_x, demo_u):
+def fit_emp_controller(demo_x, demo_u):
     """ Fit the conditional covariance of u|x of a set of demonstrations. """
     T = np.shape(demo_u)[1]
     dX = np.shape(demo_x)[2]
