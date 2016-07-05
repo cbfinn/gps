@@ -34,8 +34,6 @@ class AlgorithmTrajOpt(Algorithm):
             prev_samples.extend(sample_lists[m].get_samples())
             self.sample_list[m] = SampleList(prev_samples)
             self.N += len(sample_lists[m])
-        print self.N
-
         # Update dynamics model using all samples.
         self._update_dynamics()
 
@@ -129,13 +127,13 @@ class AlgorithmTrajOpt(Algorithm):
         # number of demo distributions
         Md = self._hyperparams['demo_M']
         demos_logiw, samples_logiw = {}, {}
-        # demoU = {i: self.demo_list.get_U() for i in xrange(Md)}
-        # demoX = {i: self.demo_list.get_X() for i in xrange(Md)}
-        # demoO = {i: self.demo_list.get_obs() for i in xrange(Md)}
+        demoU = {i: self.demoU for i in xrange(Md)}
+        demoX = {i: self.demoX for i in xrange(Md)}
+        demoO = {i: self.demoO for i in xrange(Md)}
         # For testing purpose.
-        demoX = self.demoX
-        demoU = self.demoU
-        demoO = self.demoO
+        # demoX = self.demoX
+        # demoU = self.demoU
+        # demoO = self.demoO
         demo_traj = {}
         # estimate demo distributions empirically
         for i in xrange(Md):
@@ -167,6 +165,7 @@ class AlgorithmTrajOpt(Algorithm):
                         samples_logprob[i][itr + itr_i + 1, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
                                                         np.sum(np.log(np.diag(demo_traj[itr_i].chol_pol_covar[t, :, :])))
             # Sum over the distributions and time.
+
             samples_logiw[i] = logsum(np.sum(samples_logprob[i], 1), 0)
 
         # Assume only one condition for the samples.
@@ -203,9 +202,6 @@ class AlgorithmTrajOpt(Algorithm):
         # demoX_arr =  np.vstack((self.demo_list.get_X() for i in xrange(Md)))
         # demoO_arr =  np.vstack((self.demo_list.get_obs() for i in xrange(Md)))
         # For testing purpose.
-        demoU_arr =  np.vstack((self.demoU[i] for i in xrange(Md)))
-        demoX_arr =  np.vstack((self.demoX[i] for i in xrange(Md)))
-        demoO_arr =  np.vstack((self.demoO[i] for i in xrange(Md)))
         sampleU_arr = np.vstack((self.sample_list[i].get_U() for i in xrange(M)))
         sampleX_arr = np.vstack((self.sample_list[i].get_X() for i in xrange(M)))
         sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
@@ -213,7 +209,7 @@ class AlgorithmTrajOpt(Algorithm):
         samples_logiw = np.vstack((samples_logiw[i] for i in xrange(M))).T
         for i in xrange(M):
             cost_ioc_quad = self.cost[i] # set the type of cost to be cost_ioc_quad here.
-            cost_ioc_quad.update(demoU_arr, demoX_arr, demoO_arr, demos_logiw, sampleU_arr, sampleX_arr, \
+            cost_ioc_quad.update(self.demoU, self.demoX, self.demoO, demos_logiw, sampleU_arr, sampleX_arr, \
                                                     sampleO_arr, samples_logiw)
 
 

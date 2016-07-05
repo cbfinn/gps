@@ -275,7 +275,6 @@ class GPSTrainingGUI(object):
         if self._first_update:
             self._output_column_titles(algorithm)
             self._first_update = False
-
         costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
         if algorithm._hyperparams['ioc']:
             gt_costs = [np.mean(np.sum(algorithm.prev[m].cgt, axis=1)) for m in range(algorithm.M)]

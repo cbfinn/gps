@@ -75,15 +75,16 @@ class IOCLoss(caffe.Layer):
             sc[i] += s_log_iw[i]
             if -sc[i] > max_val:
                 max_val = -sc[i]
-
         # Do a safe log-sum-exp operation.
         max_val = np.max((max_val, np.max(-dc)))
         dc = np.exp(-dc - max_val)
         sc = np.exp(-sc - max_val)
-
         self._partition = np.sum(dc, axis = 0) + np.sum(sc, axis = 0)
         loss += np.log(self._partition) + max_val
         top[0].data[...] = loss
+        self._demo_counts = dc
+        self._sample_counts = sc
+
 
     def backward(self, top, propagate_down, bottom):
         # compute backward pass (derivative of objective w.r.t. bottom)
@@ -101,5 +102,6 @@ class IOCLoss(caffe.Layer):
         for i in xrange(self.num_samples):
             for t in xrange(self.T):
                 sample_bottom_diff[i * self.T + t] = (-sc[i] / self._partition)
+
         bottom[0].diff[...] = demo_bottom_diff * loss_weight
         bottom[1].diff[...] = sample_bottom_diff * loss_weight

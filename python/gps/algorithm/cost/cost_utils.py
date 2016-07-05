@@ -184,7 +184,6 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
 
     # Needed for Caffe to find defined python layers.
     sys.path.append('/'.join(str.split(current_path, '/')[:-1]))
-
     if phase == TRAIN:
         data_layer_info = json.dumps({
             'shape': [{'dim': (demo_batch_size, T, dim_input)},

@@ -11,19 +11,23 @@ from gps.agent.mjc.agent_mjc import AgentMuJoCo
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.cost.cost_state import CostState
+from gps.algorithm.cost.cost_action import CostAction
+from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.algorithm.policy.policy_prior import PolicyPrior
-from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, ACTION
+from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
 from gps.gui.config import generate_experiment_info
 
 
 SENSOR_DIMS = {
     JOINT_ANGLES: 2,
     JOINT_VELOCITIES: 2,
+    END_EFFECTOR_POINTS: 3,
+    END_EFFECTOR_POINT_VELOCITIES: 3,
     ACTION: 2,
 }
 
@@ -56,8 +60,8 @@ agent = {
     'conditions': common['conditions'],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
-    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],
-    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
 }
 
 algorithm = {
@@ -73,6 +77,7 @@ algorithm = {
     'max_step_mult': 1.0,
     'sample_decrease_var': 0.05,
     'sample_increase_var': 0.1,
+    'max_ent_traj': 1.0
 }
 
 algorithm['init_traj_distr'] = {
@@ -84,7 +89,7 @@ algorithm['init_traj_distr'] = {
     'T': agent['T'],
 }
 
-algorithm['cost'] = {
+state_cost = {
     'type': CostState,
     'data_types' : {
         JOINT_ANGLES: {
@@ -92,6 +97,17 @@ algorithm['cost'] = {
             'target_state': np.array([0.5, 0.5]),
         },
     },
+}
+
+action_cost = {
+    'type': CostAction,
+    'wu': np.array([1e-2, 1e-2])
+}
+
+algorithm['cost'] = {
+    'type': CostSum,
+    'costs': [state_cost, action_cost],
+    'weights': [1.0, 1.0],
 }
 
 algorithm['dynamics'] = {
@@ -109,15 +125,15 @@ algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
 }
 
-algorithm['policy_opt'] = {
-    'type': PolicyOptCaffe,
-    'weights_file_prefix': EXP_DIR + 'policy',
-    'iterations': 10000,
-    'network_arch_params': {
-        'n_layers': 2,
-        'dim_hidden': [20],
-    },
-}
+# algorithm['policy_opt'] = {
+#     'type': PolicyOptCaffe,
+#     'weights_file_prefix': EXP_DIR + 'policy',
+#     'iterations': 10000,
+#     'network_arch_params': {
+#         'n_layers': 2,
+#         'dim_hidden': [20],
+#     },
+# }
 
 algorithm['policy_prior'] = {
     'type': PolicyPrior,
