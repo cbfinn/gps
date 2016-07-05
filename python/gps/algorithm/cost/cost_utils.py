@@ -4,6 +4,7 @@ import numpy as np
 import sys
 
 try:
+  import caffe
   from caffe import layers as L
   from caffe.proto.caffe_pb2 import TRAIN, TEST, EltwiseParameter
 except ImportError:
@@ -182,6 +183,8 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
     if dim_hidden is None:
         dim_hidden = 42
 
+    n = caffe.NetSpec()
+
     # Needed for Caffe to find defined python layers.
     sys.path.append('/'.join(str.split(current_path, '/')[:-1]))
     if phase == TRAIN:
@@ -192,44 +195,52 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
                       {'dim': (sample_batch_size, 1)}]
         })
 
-        [demos, d_log_iw, samples, s_log_iw] = L.Python(
+        [n.demos, n.d_log_iw, n.samples, n.s_log_iw] = L.Python(
             ntop=4, python_param=dict(
                 module='ioc_layers', param_str=data_layer_info,
                 layer='IOCDataLayer'
             )
         )
-        net_input = L.Concat(demos, samples, axis=0)
+        n.net_input = L.Concat(n.demos, n.samples, axis=0)
     elif phase == TEST:
         data_layer_info = json.dumps({
             'shape': [{'dim': (1, T, dim_input)}]
         })
-        net_input = L.Python(ntop=1,
-                             python_param=dict(module='ioc_layers',
-                                               param_str=data_layer_info,
-                                               layer='IOCDataLayer'))
+        n.net_input = L.Python(ntop=1,
+                               python_param=dict(module='ioc_layers',
+                                                 param_str=data_layer_info,
+                                                 layer='IOCDataLayer'))
     else:
         raise Exception('Unknown network phase')
 
-    ip_out = L.InnerProduct(net_input, num_output=dim_hidden,
-                            weight_filler=dict(type='gaussian', std=0.01),
-                            bias_filler=dict(type='constant', value=0),
-                            axis=2)
+    n.ip_out = L.InnerProduct(n.net_input, num_output=dim_hidden,
+                              weight_filler=dict(type='gaussian', std=0.01),
+                              bias_filler=dict(type='constant', value=0),
+                              axis=2)
 
     # Dot product operation with two layers
-    dot_prod1 = L.Eltwise(ip_out, ip_out, operation=EltwiseParameter.PROD)
-    all_costs = L.InnerProduct(dot_prod1, num_output=1,
-                               weight_filler=dict(type='constant', value=1),
-                               bias_filler=dict(type='constant', value=0),
-                               param=[dict(lr_mult=0), dict(lr_mult=0)])
+    n.dot_prod1 = L.Eltwise(n.ip_out, n.ip_out, operation=EltwiseParameter.PROD)
+    n.all_costs = L.InnerProduct(n.dot_prod1, num_output=1, axis=2,
+                                 weight_filler=dict(type='constant', value=1),
+                                 bias_filler=dict(type='constant', value=0),
+                                 param=[dict(lr_mult=0), dict(lr_mult=0)])
 
     if phase == TRAIN:
-        demo_costs, sample_costs = L.Slice(all_costs, axis=0, slice_point=demo_batch_size, ntop=2)
+        n.demo_costs, n.sample_costs = L.Slice(n.all_costs, axis=0, slice_point=demo_batch_size, ntop=2)
 
-        out = L.Python(demo_costs, sample_costs, d_log_iw, s_log_iw, loss_weight=1.0,
-                       python_param=dict(module='ioc_layers',
-                                         layer='IOCLoss'))
-        # TODO - add regularizers, maybe with python loss layers
-    else:
-        out = all_costs
+        # regularization
+        n.costs_prev, _ = L.Slice(n.all_costs, axis=1, slice_point=T-2, ntop=2)
+        _, n.costs_next = L.Slice(n.all_costs, axis=1, slice_point=2, ntop=2)
+        _, n.costs_cur, _ = L.Slice(n.all_costs, axis=1, slice_point=[1,T-1], ntop=3)
+        # cur-prev
+        n.slope_prev = L.Eltwise(n.costs_cur, n.costs_prev, operation=EltwiseParameter.SUM, coeff=[1,-1])
+        # next-cur
+        n.slope_next = L.Eltwise(n.costs_next, n.costs_cur, operation=EltwiseParameter.SUM, coeff=[1,-1])
+        # TODO - add hyperparam for loss weight.
+        n.reg = L.EuclideanLoss(n.slope_next, n.slope_prev, loss_weight=0.1)
 
-    return out.to_proto()
+        n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, loss_weight=1.0,
+                         python_param=dict(module='ioc_layers',
+                                           layer='IOCLoss'))
+
+    return n.to_proto()

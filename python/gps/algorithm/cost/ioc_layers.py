@@ -97,11 +97,11 @@ class IOCLoss(caffe.Layer):
 
         for i in xrange(self.num_demos):
             for t in xrange(self.T):
-                demo_bottom_diff[i * self.T + t] = (1.0 / self.num_demos - (dc[i] / self._partition))
+                demo_bottom_diff[i, t] = (1.0 / self.num_demos - (dc[i] / self._partition))
 
         for i in xrange(self.num_samples):
             for t in xrange(self.T):
-                sample_bottom_diff[i * self.T + t] = (-sc[i] / self._partition)
+                sample_bottom_diff[i, t] = (-sc[i] / self._partition)
 
         bottom[0].diff[...] = demo_bottom_diff * loss_weight
         bottom[1].diff[...] = sample_bottom_diff * loss_weight

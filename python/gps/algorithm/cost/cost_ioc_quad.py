@@ -64,23 +64,20 @@ class CostIOCQuadratic(Cost):
 		lxx = np.zeros((T, dX, dX))
 		lux = np.zeros((T, dU, dX))
 
-		blob_names = self.solver.net.blobs.keys()
-		for t in range(T):
-		  # Feed in data and collect output
-		  self.solver.test_nets[0].blobs[blob_names[0]].data[:] = obs[t]
-		  l[t] = self.solver.test_nets[0].forward().values()[0][0]
+		blob_names = self.solver.test_nets[0].blobs.keys()
+		self.solver.test_nets[0].blobs[blob_names[0]].data[:] = obs
+		l = self.solver.test_nets[0].forward().values()[0][0].reshape(T)
 
 		# Get weights array from caffe (M in the old codebase)
-		# TODO(chelsea?) - figure out which array it is from the below list
 		params = self.solver.test_nets[0].params.values()
 		weighted_array = np.r_[np.c_[params[0][0].data, np.array([params[0][1].data]).T], np.zeros((1, params[0][0].data.shape[1] + 1))]
 		A = weighted_array.T.dot(weighted_array)
-		# TODO(kevin) add torque penalty to l and set lu
+
 		sample_u = sample.get_U()
 		l += 0.5 * np.sum(self._hyperparams['wu'] * (sample_u ** 2), axis=1)
 		lu = self._hyperparams['wu'] * sample_u
 		luu = np.tile(np.diag(self._hyperparams['wu']), [T, 1, 1])
-		# TODO(kevin) set lx and lxx assuming that A is the correct matrix (following the matlab code)
+
 		dldx = A.dot(np.vstack((obs.T, np.zeros((1, T))))) # Assuming A is a (dX + 1) x (dO + 1) matrix
 		lx = dldx.T[:, range(dO)]
 		for t in xrange(T):
@@ -106,7 +103,6 @@ class CostIOCQuadratic(Cost):
 		"""
 		Nd = demoO.shape[0]
 		Ns = sampleO.shape[0]
-		# TODO(chelsea) - start to implement this
 		blob_names = self.solver.net.blobs.keys()
 		dbatches_per_epoch = np.floor(Nd / self.demo_batch_size)
 		sbatches_per_epoch = np.floor(Ns / self.sample_batch_size)
