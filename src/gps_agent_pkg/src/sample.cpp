@@ -175,7 +175,6 @@ void Sample::get_data(int t, Eigen::VectorXd &data, std::vector<gps::SampleType>
     int total_size = 0;
     for(int i=0; i<datatypes.size(); i++){
 	int dtype = (int)datatypes[i];
-	ROS_INFO("get data for type %d", dtype);
 	if(dtype >= internal_data_size_.size()){
 	    ROS_ERROR("Requested size of dtype %d, but internal_data_size_ only has %d elements", dtype,
 		      internal_data_size_.size());

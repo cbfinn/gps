@@ -51,7 +51,7 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 2,
+    'conditions': 1,
 }
 
 x0s = []
@@ -216,7 +216,7 @@ config = {
     'iterations': algorithm['iterations'],
     'common': common,
     'verbose_trials': 0,
-    'verbose_policy_trials': 1,
+#    'verbose_policy_trials': 1,
     'agent': agent,
     'gui_on': True,
     'algorithm': algorithm,
