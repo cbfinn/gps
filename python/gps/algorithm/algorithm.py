@@ -175,6 +175,7 @@ class Algorithm(object):
         # Fill in cost estimate.
         if prev_cost:
           traj_info = self.cur[cond].prevcost_traj_info
+          traj_info.dynamics = self.cur[cond].traj_info.dynamics
         else:
           traj_info = self.cur[cond].traj_info
           self.cur[cond].cs = cs  # True value of cost.
@@ -204,8 +205,9 @@ class Algorithm(object):
             self.cur[m].eta = self.prev[m].eta
             self.cur[m].traj_distr = self.new_traj_distr[m]
             self.traj_distr[self.iteration_count].append(self.new_traj_distr[m])
-            if self.hyperparams['ioc']:
-              self.prevous_cost[i] = copy.deepcopy(self.cost[i])
+            if self._hyperparams['ioc']:
+              self.cur[m].prevcost_traj_info = TrajectoryInfo()
+              self.previous_cost.append(self.cost[m].copy())
         delattr(self, 'new_traj_distr')
 
     def _set_new_mult(self, predicted_impr, actual_impr, m):

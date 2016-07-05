@@ -37,6 +37,12 @@ class CostIOCQuadratic(Cost):
 
 		self._init_solver()
 
+	def copy(self):
+	  new_cost = CostIOCQuadratic(self._hyperparams)
+	  self.solver.test_nets[0].share_with(new_cost.solver.net)
+	  self.solver.test_nets[0].share_with(new_cost.solver.test_nets[0])
+	  return new_cost
+
 
 	def eval(self, sample):
 		"""
