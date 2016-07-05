@@ -28,7 +28,6 @@ class GPSMain(object):
 	""" Main class to run algorithms and experiments. """
 	def __init__(self, config):
 		self._hyperparams = config
-		self.demo_gen = GenDemo(config)
 		self._conditions = config['common']['conditions']
 		if 'train_conditions' in config['common']:
 			self._train_idx = config['common']['train_conditions']
@@ -46,8 +45,10 @@ class GPSMain(object):
 		self.gui = GPSTrainingGUI(config['common']) if config['gui_on'] else None
 
 		config['algorithm']['agent'] = self.agent
-		self.demo_gen.algorithm = self.algorithm = config['algorithm']['type'](config['algorithm'])
+		self.algorithm = config['algorithm']['type'](config['algorithm'])
 		self.algorithm.init_samples = self._hyperparams['num_samples']
+		if self.algorithm._hyperparams['ioc']:
+			self.demo_gen = GenDemo(config)
 
 	def run(self, itr_load=None):
 		"""
@@ -62,16 +63,23 @@ class GPSMain(object):
 
 		itr_start = self._initialize(itr_load)
 		# Read the demonstrations (for test only)
-		matfile = self._data_files_dir + 'samples_sim_12-30_stationary_maxent_pointmass_python.mat'
-		demo_file = self._data_files_dir + 'demoX_and_demoU_and_demoO.mat'
-		mat = scipy.io.loadmat(matfile)
-		demo_params = scipy.io.loadmat(demo_file)
+		# matfile = self._data_files_dir + 'samples_sim_12-30_stationary_maxent_pointmass_python.mat'
+		# demo_file = self._data_files_dir + 'demoX_and_demoU_and_demoO.mat'
+		# mat = scipy.io.loadmat(matfile)
+		# demo_params = scipy.io.loadmat(demo_file)
 		# number of demos we want.
-		Md = len(demo_params['demo_x'])
-		self.algorithm.demoX = {i: demo_params['demo_x'][0, :][i].T for i in xrange(Md)}
-		self.algorithm.demoU = {i: demo_params['demo_u'][0, :][i].T for i in xrange(Md)}
-		self.algorithm.demoO = {i: demo_params['demo_o'][0, :][i].T for i in xrange(Md)}
-		# self.demo_gen.generate()
+		# Md = len(demo_params['demo_x'])
+		# self.algorithm.demoX = {i: demo_params['demo_x'][0, :][i].T for i in xrange(Md)}
+		# self.algorithm.demoU = {i: demo_params['demo_u'][0, :][i].T for i in xrange(Md)}
+		# self.algorithm.demoO = {i: demo_params['demo_o'][0, :][i].T for i in xrange(Md)}
+		if self.algorithm._hyperparams['ioc']:
+			self.demo_gen.generate()
+			# algorithm_file = self._data_files_dir + 'demos.pkl'
+			# demo_algo = self.data_logger.unpickle(algorithm_file)
+			demo_algo = self.demo_gen.algorithm
+			self.algorithm.demoX = demo_algo.demo_list.get_X()
+			self.algorithm.demoU = demo_algo.demo_list.get_U()
+			self.algorithm.demoO = demo_algo.demo_list.get_obs()
 		for itr in range(itr_start, self._hyperparams['iterations']):
 			for cond in self._train_idx:
 				for i in range(self._hyperparams['num_samples']):
@@ -83,11 +91,11 @@ class GPSMain(object):
 			]
 
 			self._take_iteration(itr, traj_sample_lists)
-			if not self.algorithm._hyperparams['ioc']:
-				pol_sample_lists = self._take_policy_samples()
-				self._log_data(itr, traj_sample_lists, pol_sample_lists)
-			else:
-				self._log_data(itr, traj_sample_lists)
+			# if not self.algorithm._hyperparams['ioc']:
+			# 	pol_sample_lists = self._take_policy_samples()
+			# 	self._log_data(itr, traj_sample_lists, pol_sample_lists)
+			# else:
+			self._log_data(itr, traj_sample_lists)
 
 		self._end()
 

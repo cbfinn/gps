@@ -70,7 +70,7 @@ IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
 COST_IOC_QUADRATIC = {
     'network_arch_params': {},  # includes info to construct model
     'network_model': construct_quad_cost_net,
-    'dO': 4, # Number of features (here for pointmass_ioc only)
+    'dO': 10, # Number of features (here for pointmass_ioc only)
     'T': 100, # the time horizon (here for pointmass_ioc only)
     'wu': np.array([]) # Torque penalties, must be 1 x dU numpy array.
 }

@@ -68,10 +68,11 @@ class Algorithm(object):
             hyperparams['cost']['type'](hyperparams['cost'])
             for _ in range(self.M)
         ]
-        self.gt_cost = [
-            hyperparams['gt_cost']['type'](hyperparams['gt_cost'])
-            for _ in range(self.M)
-        ]
+        if self._hyperparams['ioc']:
+            self.gt_cost = [
+                hyperparams['gt_cost']['type'](hyperparams['gt_cost'])
+                for _ in range(self.M)
+            ]
         self.base_kl_step = self._hyperparams['kl_step']
 
     @abc.abstractmethod
