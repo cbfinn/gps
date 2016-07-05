@@ -18,7 +18,7 @@ sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
 from gps.gui.gps_training_gui import GPSTrainingGUI
 from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
-os.environ['GLOG_minloglevel'] = '2' 
+
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 
@@ -64,18 +64,10 @@ class GPSMain(object):
                 self.agent.get_samples(cond, -self._hyperparams['num_samples'])
                 for cond in self._train_idx
             ]
-            print "Got traj samples"
             self._take_iteration(itr, traj_sample_lists)
-            print "took iteration"
             pol_sample_lists = self._take_policy_samples()
-            print "took pol sample"
             self._log_data(itr, traj_sample_lists, pol_sample_lists)
-            print "logged data"
-            print "--------------------------------------------------------"
-            print "ITR ", itr
-            if itr % 3 == 0:
-                import IPython
-                IPython.embed()
+
         self._end()
 
     def test_policy(self, itr, N):
