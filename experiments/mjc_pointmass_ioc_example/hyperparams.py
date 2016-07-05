@@ -16,7 +16,7 @@ from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
-from gps.algorithm.policy.lin_gauss_init import init_lqr
+from gps.algorithm.policy.lin_gauss_init import init_pd
 from gps.algorithm.policy.policy_prior import PolicyPrior
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
 from gps.gui.config import generate_experiment_info
@@ -63,33 +63,27 @@ agent = {
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'smooth_noise': False,
 }
 
 algorithm = {
-    # 'type': AlgorithmBADMM,
     'type': AlgorithmTrajOpt,
     'ioc' : True,
     'demo_distr_empest': True,
     'max_ent_traj': 1.0,
     'conditions': common['conditions'],
     'iterations': 20,
-    'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-2]),
-    'policy_dual_rate': 0.2,
-    'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
-    'fixed_lg_step': 3,
+    'kl_step': 1.0,
     'min_step_mult': 0.01,
-    'max_step_mult': 1.0,
-    'sample_decrease_var': 0.05,
-    'sample_increase_var': 0.1,
+    'max_step_mult': 4.0,
 }
 
 algorithm['init_traj_distr'] = {
-    'type': init_lqr,
+    'type': init_pd,
     'init_var': 1.0,
-    'stiffness': 10.0,
-    'stiffness_vel': 10.0,
-    # 'stiffness': 0.0,
-    # 'stiffness_vel': 0.0,
+    'pos_gains': 0.0,
+    'vel_gains_mult': 0.0,
+    'dQ': SENSOR_DIMS[ACTION],
     'dt': agent['dt'],
     'T': agent['T'],
 }
@@ -120,8 +114,8 @@ algorithm['dynamics'] = {
     'regularization': 1e-6,
     'prior': {
         'type': DynamicsPriorGMM,
-        'max_clusters': 2,
-        'min_samples_per_cluster': 40,
+        'max_clusters': 40,
+        'min_samples_per_cluster': 20,
         'max_samples': 20,
     }
 }
