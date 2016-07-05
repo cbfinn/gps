@@ -176,7 +176,6 @@ class AgentROS(Agent):
             sample = msg_to_sample(sample_msg, self)
             if save:
                 self._samples[condition].append(sample)
-
             return sample
         else:
             self._trial_service.publish(trial_command)
