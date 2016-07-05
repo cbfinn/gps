@@ -22,7 +22,7 @@ from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.gui.target_setup_gui import load_pose_from_npz
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION, \
-        TRIAL_ARM, AUXILIARY_ARM, JOINT_SPACE, IMAGE_FEAT
+        TRIAL_ARM, AUXILIARY_ARM, JOINT_SPACE
 from gps.utility.general_utils import get_ee_points
 from gps.gui.config import generate_experiment_info
 
@@ -31,7 +31,7 @@ EE_POINTS = np.array([[0.02, -0.025, 0.05], [0.02, -0.025, -0.05],
                       [0.02, 0.05, 0.0]])
 
 SENSOR_DIMS = {
-    JOINT_ANGLES: 7,
+    JOINT_ANGLES: 2,
     JOINT_VELOCITIES: 7,
     END_EFFECTOR_POINTS: 3 * EE_POINTS.shape[0],
     END_EFFECTOR_POINT_VELOCITIES: 3 * EE_POINTS.shape[0],
@@ -115,7 +115,7 @@ agent = {
                       END_EFFECTOR_POINT_VELOCITIES],
     'end_effector_points': EE_POINTS,
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-                    END_EFFECTOR_POINT_VELOCITIES, IMAGE_FEAT],
+                    END_EFFECTOR_POINT_VELOCITIES],
 }
 
 algorithm = {
@@ -216,7 +216,7 @@ config = {
     'iterations': algorithm['iterations'],
     'common': common,
     'verbose_trials': 0,
-#    'verbose_policy_trials': 1,
+    'verbose_policy_trials': 1,
     'agent': agent,
     'gui_on': True,
     'algorithm': algorithm,

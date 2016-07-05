@@ -16,7 +16,6 @@ Sensor* Sensor::create_sensor(SensorType type, ros::NodeHandle& n, RobotPlugin *
         return CameraSensor(n,plugin);
     */
     case ROSTopicSensorType:
-	ROS_INFO("creating a rostopicsensor");
 	return (Sensor *) (new ROSTopicSensor(n,plugin));
 
     default:
