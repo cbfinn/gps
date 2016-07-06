@@ -57,9 +57,10 @@ agent = {
     #        np.array([1., 0., 0., 0.]), np.array([1., 1., 0., 0.])],
     'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
-    'substeps': 5,
+    'substeps': 1,
     'conditions': common['conditions'],
     'T': 100,
+    'point_linear': True,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
@@ -104,8 +105,8 @@ algorithm['gt_cost'] = {
     'data_types' : {
         JOINT_ANGLES: {
             'wp': np.ones(SENSOR_DIMS[ACTION]),
-            'target_state': np.array([0.5, 0.5]),
-        },
+            'target_state': np.array([0.0, 0.0]),
+        }
     },
 }
 
@@ -130,7 +131,7 @@ algorithm['policy_prior'] = {
 
 config = {
     'iterations': algorithm['iterations'],
-    'num_samples': 5,
+    'num_samples': 10,
     'verbose_trials': 1,
     'verbose_policy_trials': 1,
     'common': common,
