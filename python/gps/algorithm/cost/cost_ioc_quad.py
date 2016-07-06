@@ -66,22 +66,26 @@ class CostIOCQuadratic(Cost):
 
 		blob_names = self.solver.test_nets[0].blobs.keys()
 		self.solver.test_nets[0].blobs[blob_names[0]].data[:] = obs
-		l = self.solver.test_nets[0].forward().values()[0][0].reshape(T)
+		l = 0.5*self.solver.test_nets[0].forward().values()[0][0].reshape(T)
 
 		# Get weights array from caffe (M in the old codebase)
 		params = self.solver.test_nets[0].params.values()
-		weighted_array = np.r_[np.c_[params[0][0].data, np.array([params[0][1].data]).T], np.zeros((1, params[0][0].data.shape[1] + 1))]
+		weighted_array = np.c_[params[0][0].data, np.array([params[0][1].data]).T]
 		A = weighted_array.T.dot(weighted_array)
+		#obs_bias = np.vstack((obs.T, np.ones((1, T))))
+		#Ax = weighted_array.dot(obs_bias)
+		#test_l = 0.5*np.sum(Ax**2, axis=0)
+		#test_l = 0.5*np.diag(Ax.T.dot(Ax))
 
 		sample_u = sample.get_U()
 		l += 0.5 * np.sum(self._hyperparams['wu'] * (sample_u ** 2), axis=1)
 		lu = self._hyperparams['wu'] * sample_u
 		luu = np.tile(np.diag(self._hyperparams['wu']), [T, 1, 1])
 
-		dldx = A.dot(np.vstack((obs.T, np.zeros((1, T))))) # Assuming A is a (dX + 1) x (dO + 1) matrix
-		lx = dldx.T[:, range(dO)]
+		dldx = A.dot(np.vstack((obs.T, np.ones((1, T))))) # Assuming A is a (dX + 1) x (dO + 1) matrix
+		lx = dldx.T[:, :dO]
 		for t in xrange(T):
-			lxx[t, :, :] = A[range(dO), range(dO)]
+		  lxx[t, :, :] = A[:dO,:dO]
 		return l, lx, lu, lxx, luu, lux
 
 
@@ -127,7 +131,6 @@ class CostIOCQuadratic(Cost):
 			self.solver.net.blobs[blob_names[1]].data[:] = dlogis[d_idx_i]
 			self.solver.net.blobs[blob_names[2]].data[:] = sampleO[s_idx_i]
 			self.solver.net.blobs[blob_names[3]].data[:] = slogis[s_idx_i]
-			# import pdb; pdb.set_trace()
 			self.solver.step(1)
 			train_loss = self.solver.net.blobs[blob_names[-1]].data
 			average_loss += train_loss
