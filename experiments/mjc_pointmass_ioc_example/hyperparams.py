@@ -124,16 +124,6 @@ algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
 }
 
-# algorithm['policy_opt'] = {
-#     'type': PolicyOptCaffe,
-#     'weights_file_prefix': EXP_DIR + 'policy',
-#     'iterations': 10000,
-#     'network_arch_params': {
-#         'n_layers': 2,
-#         'dim_hidden': [20],
-#     },
-# }
-
 algorithm['policy_prior'] = {
     'type': PolicyPrior,
 }

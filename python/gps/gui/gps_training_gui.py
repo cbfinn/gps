@@ -338,8 +338,8 @@ class GPSTrainingGUI(object):
         for m in range(algorithm.M):
             self._traj_visualizer.clear(m)
             self._traj_visualizer.set_lim(i=m, xlim=xlim, ylim=ylim, zlim=zlim)
-            self._update_linear_gaussian_controller_plots(algorithm, agent, m)
             self._update_samples_plots(traj_sample_lists, m, 'green', 'Trajectory Samples')
+            self._update_linear_gaussian_controller_plots(algorithm, agent, m)
             if pol_sample_lists:
                 self._update_samples_plots(pol_sample_lists,  m, 'blue',  'Policy Samples')
         self._traj_visualizer.draw()    # this must be called explicitly
