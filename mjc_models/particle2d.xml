@@ -1,7 +1,7 @@
 <mujoco model="linearparticle">
 
     <compiler inertiafromgeom="true" angle="radian" coordinate="local" />
-    <option timestep="0.01" gravity="0 0 0" iterations="20" integrator="RK4" />
+    <option timestep="0.01" gravity="0 0 0" iterations="20" integrator="Euler" />
     <default>
         <joint limited="false" damping="1" />
         <geom contype="2" conaffinity="1" condim="1" friction=".5 .1 .1" density="1000" margin="0.002" />
