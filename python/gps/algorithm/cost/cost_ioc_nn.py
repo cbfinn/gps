@@ -1,4 +1,4 @@
-""" This file defines quadratic cost function. """
+""" This file defines neural network cost function. """
 import copy
 import logging
 import numpy as np
@@ -8,16 +8,16 @@ import caffe
 from caffe.proto.caffe_pb2 import SolverParameter, TRAIN, TEST
 from google.protobuf.text_format import MessageToString
 
-from gps.algorithm.cost.config import COST_IOC_QUADRATIC
+from gps.algorithm.cost.config import COST_IOC_NN
 from gps.algorithm.cost.cost import Cost
 
 LOGGER = logging.getLogger(__name__)
 
 
-class CostIOCQuadratic(Cost):
-	""" Set up weighted quadratic norm loss with learned parameters. """
+class CostIOCNN(Cost):
+	""" Set up weighted neural network norm loss with learned parameters. """
 	def __init__(self, hyperparams):
-		config = copy.deepcopy(COST_IOC_QUADRATIC) # Set this up in the config?
+		config = copy.deepcopy(COST_IOC_NN) # Set this up in the config?
 		config.update(hyperparams)
 		Cost.__init__(self, config)
 
@@ -38,7 +38,7 @@ class CostIOCQuadratic(Cost):
 		self._init_solver()
 
 	def copy(self):
-	  new_cost = CostIOCQuadratic(self._hyperparams)
+	  new_cost = CostIOCNN(self._hyperparams)
 	  self.solver.test_nets[0].share_with(new_cost.solver.net)
 	  self.solver.test_nets[0].share_with(new_cost.solver.test_nets[0])
 	  return new_cost
@@ -72,16 +72,19 @@ class CostIOCQuadratic(Cost):
 		params = self.solver.test_nets[0].params.values()
 		weighted_array = np.c_[params[0][0].data, np.array([params[0][1].data]).T]
 		A = weighted_array.T.dot(weighted_array)
+		feat = None #intermediate features of shape Txdf
+		df = feat.shape[1] # feature dimensions
+		dfdx = np.zeros((T, df, dX))
 
 		sample_u = sample.get_U()
 		l += 0.5 * np.sum(self._hyperparams['wu'] * (sample_u ** 2), axis=1)
 		lu = self._hyperparams['wu'] * sample_u
 		luu = np.tile(np.diag(self._hyperparams['wu']), [T, 1, 1])
 
-		dldx = A.dot(np.vstack((obs.T, np.ones((1, T))))) # Assuming A is a (dX + 1) x (dO + 1) matrix
-		lx = dldx.T[:, :dO]
+		dldf = A.dot(np.vstack((feat.T, np.ones((1, T))))) # Assuming A is a (df + 1) x (df + 1) matrix
 		for t in xrange(T):
-		  lxx[t, :, :] = A[:dO,:dO]
+			lx[t, :] = dfdx[t, :, :].T.dot(dldf[range(df), t])
+		  	lxx[t, :, :] = dfdx[t, :, :].T.dot(A[range(df),range(df)]).dot(dfdx[t, :, :])
 		return l, lx, lu, lxx, luu, lux
 
 

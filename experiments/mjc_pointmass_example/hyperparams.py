@@ -42,8 +42,8 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    # 'conditions': 4,
-    'conditions': 1,
+    'conditions': 4,
+    # 'conditions': 1,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -52,9 +52,9 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/particle2d.xml',
-    # 'x0': [np.array([0., 0., 0., 0.]), np.array([0., 1., 0., 0.]),
-    #        np.array([1., 0., 0., 0.]), np.array([1., 1., 0., 0.])],
-    'x0': [np.array([-1., 1., 0., 0.])],
+    'x0': [np.array([-1., 1., 0., 0.]), np.array([1., 1., 0., 0.]),
+           np.array([1., -1., 0., 0.]), np.array([-1., -1., 0., 0.])],
+    # 'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],

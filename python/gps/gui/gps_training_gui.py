@@ -289,6 +289,7 @@ class GPSTrainingGUI(object):
 
         self._fig.canvas.draw()
         self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
+        # import pdb; pdb.set_trace()
 
     def _output_column_titles(self, algorithm):
         """
