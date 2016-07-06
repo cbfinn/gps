@@ -89,9 +89,14 @@ algorithm['init_traj_distr'] = {
 state_cost = {
     'type': CostState,
     'l2': 10,
+    'l1': 0,
     'alpha': 1e-4,
     'data_types' : {
         JOINT_ANGLES: {
+            'wp': np.ones(SENSOR_DIMS[ACTION]),
+            'target_state': np.array([0.0, 0.0]),
+        },
+        JOINT_VELOCITIES: {
             'wp': np.ones(SENSOR_DIMS[ACTION]),
             'target_state': np.array([0.0, 0.0]),
         },
