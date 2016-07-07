@@ -239,8 +239,14 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
         # TODO - add hyperparam for loss weight.
         n.reg = L.EuclideanLoss(n.slope_next, n.slope_prev, loss_weight=0.1)
 
-        n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, loss_weight=1.0,
+        n.dummy = L.DummyData(ntop=1, shape=dict(dim=[1]), data_filler=dict(type='constant',value=1))
+        n.logZ = L.InnerProduct(n.dummy, axis=0, num_output=1,
+                             weight_filler=dict(type='constant', value=1),
+                             bias_filler=dict(type='constant', value=0))
+        n.Z = L.Exp(n.logZ, base=2.6)
+
+        n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, n.Z, loss_weight=1.0,
                          python_param=dict(module='ioc_layers',
-                                           layer='IOCLoss'))
+                                           layer='IOCLossMod'))
 
     return n.to_proto()

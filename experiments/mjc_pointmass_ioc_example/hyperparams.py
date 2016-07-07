@@ -97,7 +97,8 @@ algorithm['cost'] = {
     #         'target_state': np.array([0.5, 0.5]),
     #     },
     # },
-    'wu': np.array([1e-2, 1e-2])
+    'wu': np.array([1e-2, 1e-2]),
+    'iterations': 10000,
 }
 
 algorithm['gt_cost'] = {
@@ -131,7 +132,7 @@ algorithm['policy_prior'] = {
 
 config = {
     'iterations': algorithm['iterations'],
-    'num_samples': 10,
+    'num_samples': 5,
     'verbose_trials': 1,
     'verbose_policy_trials': 1,
     'common': common,

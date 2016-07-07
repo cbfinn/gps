@@ -90,6 +90,10 @@ class GPSMain(object):
 				for cond in self._train_idx
 			]
 
+			if itr > 0:
+			  self.gui.update(itr, self.algorithm, self.agent,
+			    traj_sample_lists, None)
+
 			self._take_iteration(itr, traj_sample_lists)
 			# if not self.algorithm._hyperparams['ioc']:
 			# 	pol_sample_lists = self._take_policy_samples()
@@ -149,7 +153,7 @@ class GPSMain(object):
 			if self.algorithm is None:
 				print("Error: cannot find '%s.'" % algorithm_file)
 				os._exit(1) # called instead of sys.exit(), since this is in a thread
-				
+
 			if self.gui:
 				traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
 					('traj_sample_itr_%02d.pkl' % itr_load))

@@ -374,7 +374,7 @@ class GPSTrainingGUI(object):
         # Calculate mean and covariance for end effector points
         eept_idx = agent.get_idx_x(END_EFFECTOR_POINTS)
         start, end = eept_idx[0], eept_idx[-1]
-        mu, sigma = algorithm.traj_opt.forward(algorithm.prev[m].traj_distr, algorithm.prev[m].traj_info)
+        mu, sigma = algorithm.traj_opt.forward(algorithm.cur[m].traj_distr, algorithm.prev[m].traj_info)
         mu_eept, sigma_eept = mu[:, start:end+1], sigma[:, start:end+1, start:end+1]
 
         # Linear Gaussian Controller Distributions (Red)

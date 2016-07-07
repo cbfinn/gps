@@ -148,8 +148,10 @@ class AlgorithmTrajOpt(Algorithm):
                 demo_traj[i] = fit_emp_controller(demoX[i], demoU[i])
         for i in xrange(M):
             # This code assumes a fixed number of samples per iteration/controller
-            samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
-            demos_logprob[i] = np.zeros((itr + Md + 1, self.T, demoX[i].shape[0]))
+            #samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
+            #demos_logprob[i] = np.zeros((itr + Md + 1, self.T, demoX[i].shape[0]))
+            samples_logprob[i] = np.zeros((itr + 1, self.T, (self.N / M) * itr + init_samples))
+            demos_logprob[i] = np.zeros((itr + 1, self.T, demoX[i].shape[0]))
             sample_i_X = self.sample_list[i].get_X()
             sample_i_U = self.sample_list[i].get_U()
             # Evaluate sample prob under sample distributions
@@ -163,13 +165,13 @@ class AlgorithmTrajOpt(Algorithm):
                                                         np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
 
             # Evaluate sample prob under demo distribution.
-            for itr_i in xrange(Md):
-                for j in range(sample_i_X.shape[0]):
-                    for t in xrange(self.T - 1):
-                        diff = demo_traj[itr_i].k[t, :] + \
-                                demo_traj[itr_i].K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
-                        samples_logprob[i][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff))) - \
-                                                        np.sum(np.log(np.diag(demo_traj[itr_i].chol_pol_covar[t, :, :])))
+            #for itr_i in xrange(Md):
+            #    for j in range(sample_i_X.shape[0]):
+            #        for t in xrange(self.T - 1):
+            #            diff = demo_traj[itr_i].k[t, :] + \
+            #                    demo_traj[itr_i].K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
+            #            samples_logprob[i][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff))) - \
+            #                                            np.sum(np.log(np.diag(demo_traj[itr_i].chol_pol_covar[t, :, :])))
             # Sum over the distributions and time.
 
             samples_logiw[i] = logsum(np.sum(samples_logprob[i], 1), 0)
@@ -191,13 +193,13 @@ class AlgorithmTrajOpt(Algorithm):
                         demos_logprob[idx][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
                                                         np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
             # Evaluate demo prob. under demo distributions.
-            for itr_i in xrange(Md):
-                for j in range(demoX[idx].shape[0]):
-                    for t in xrange(self.T - 1):
-                        diff = demo_traj[itr_i].k[t, :] + \
-                                demo_traj[itr_i].K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
-                        demos_logprob[idx][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
-                                                        np.sum(np.log(np.diag(demo_traj[itr_i].chol_pol_covar[t, :, :])))
+            #for itr_i in xrange(Md):
+            #    for j in range(demoX[idx].shape[0]):
+            #        for t in xrange(self.T - 1):
+            #            diff = demo_traj[itr_i].k[t, :] + \
+            #                    demo_traj[itr_i].K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
+            #            demos_logprob[idx][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
+            #                                            np.sum(np.log(np.diag(demo_traj[itr_i].chol_pol_covar[t, :, :])))
             # Sum over the distributions and time.
             demos_logiw[idx] = logsum(np.sum(demos_logprob[idx], 1), 0)
 
