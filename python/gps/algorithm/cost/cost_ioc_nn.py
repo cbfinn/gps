@@ -41,8 +41,38 @@ class CostIOCNN(Cost):
 	  new_cost = CostIOCNN(self._hyperparams)
 	  self.solver.test_nets[0].share_with(new_cost.solver.net)
 	  self.solver.test_nets[0].share_with(new_cost.solver.test_nets[0])
+	  self.solver.test_nets[0].share_with(new_cost.solver.test_nets[1])
 	  return new_cost
 
+# TODO - cache dfdx, or add option to not compute it when necessary
+	def compute_dfdx(self, obs):
+	  """
+	  Evaluate the jacobian of the features w.r.t. the input.
+	  Args:
+	    obs: The vector of observations of a single sample
+	  Returns:
+	    feat: The features (byproduct of computing dfdx)
+	    dydx: The jacobians dfdx
+	  """
+	  blob_names = self.solver.test_nets[1].blobs.keys()
+	  feat_shape = self.solver.net_nets[1].blobs[blob_names[-1]].data[:].shape
+	  dF = feat_shape[-1]
+	  out = np.zeros((feat_shape))
+
+	  T, dX = obs.shape
+	  dfdx = np.zeros((T, dF, dX))
+
+	  for i in range(dF):
+	      self.solver.test_nets[1].blobs[blob_names[0]].data[:] = obs
+	      feat = self.solver.test_nets[1].forward().values()[0][0].reshape((T, -1))
+	      out = out * 0.0
+	      out[:, i] = 1.0
+	      self.solver.test_nets[1].blobs[blob_names[-1]].data[:] = out*0
+	      # TODO - make sure that this will backprop all the way to data layer.
+	      # Also make sure indexing is correct
+	      dfdx[:, i, :] = self.solver.net_nets[1].backward().values()[0]
+
+	  return feat, dfdx
 
 	def eval(self, sample):
 		"""
@@ -72,9 +102,9 @@ class CostIOCNN(Cost):
 		params = self.solver.test_nets[0].params.values()
 		weighted_array = np.c_[params[0][0].data, np.array([params[0][1].data]).T]
 		A = weighted_array.T.dot(weighted_array)
-		feat = None #intermediate features of shape Txdf
-		df = feat.shape[1] # feature dimensions
-		dfdx = np.zeros((T, df, dX))
+
+		# get intermediate features
+		feat, dydx = self.compute_dfdx(obs)
 
 		sample_u = sample.get_U()
 		l += 0.5 * np.sum(self._hyperparams['wu'] * (sample_u ** 2), axis=1)
@@ -86,7 +116,6 @@ class CostIOCNN(Cost):
 			lx[t, :] = dfdx[t, :, :].T.dot(dldf[range(df), t])
 		  	lxx[t, :, :] = dfdx[t, :, :].T.dot(A[range(df),range(df)]).dot(dfdx[t, :, :])
 		return l, lx, lu, lxx, luu, lux
-
 
 	# TODO - we might want to make the demos and samples input as SampleList objects, rather than arrays.
 	# TODO - also we might want to exclude demoU/sampleU since we generally don't use them
@@ -172,6 +201,11 @@ class CostIOCNN(Cost):
 			self._hyperparams['network_model'](**network_arch_params)
 		)
 
+		network_arch_params['phase'] = 'forward_feat'
+		solver_param.test_net_param.add().CopyFrom(
+			self._hyperparams['network_model'](**network_arch_params)
+		)
+
 		# These are required by Caffe to be set, but not used.
 		solver_param.test_iter.append(1)
 		# solver_param.test_iter.append(1)
@@ -202,6 +236,10 @@ class CostIOCNN(Cost):
 			str(self.caffe_iter) + '.solverstate'
 		)
 		self.solver.test_nets[0].copy_from(
+			self._hyperparams['weights_file_prefix'] + '_iter_' +
+			str(self.caffe_iter) + '.caffemodel'
+		)
+		self.solver.test_nets[1].copy_from(
 			self._hyperparams['weights_file_prefix'] + '_iter_' +
 			str(self.caffe_iter) + '.caffemodel'
 		)
