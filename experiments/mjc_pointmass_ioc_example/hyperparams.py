@@ -98,6 +98,8 @@ algorithm['cost'] = {
     #     },
     # },
     'wu': np.array([1e-2, 1e-2])
+    'dO': 10,
+    'T': 100,
 }
 
 algorithm['gt_cost'] = {
