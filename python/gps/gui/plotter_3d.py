@@ -33,6 +33,7 @@ class Plotter3D:
         self._axarr = [plt.subplot(self._gs_plots[i], projection='3d') for i in range(num_plots)]
         self._lims = [None for i in range(num_plots)]
         self._plots = [[] for i in range(num_plots)]
+        self._3D = [True for i in range(num_plots)]
 
         for ax in self._axarr:
             ax.tick_params(pad=0)
@@ -62,10 +63,27 @@ class Plotter3D:
             zs[np.any(np.c_[zs < zlim[0], zs > zlim[1]], axis=1)] = np.nan
 
         # Create and add plot
-        plot = self._axarr[i].plot(xs, ys, zs=zs, linestyle=linestyle,
-                linewidth=linewidth, marker=marker, markersize=markersize,
-                markeredgewidth=markeredgewidth, color=color, alpha=alpha,
-                label=label)[0]
+        if np.any(zs):
+            plot = self._axarr[i].plot(xs, ys, zs=zs, linestyle=linestyle,
+                    linewidth=linewidth, marker=marker, markersize=markersize,
+                    markeredgewidth=markeredgewidth, color=color, alpha=alpha,
+                    label=label)[0]
+        else:
+            if self._3D[i]:
+                self._3D[i] = False
+                self._axarr[i] = plt.subplot(self._gs_plots[i])
+                for ax in self._axarr:
+                    ax.tick_params(pad=0)
+                    ax.locator_params(nbins=5)
+                    for item in (ax.get_xticklabels() + ax.get_yticklabels()):
+                        item.set_fontsize(10)
+                self.set_title(i, 'Condition %d' % (i))
+                self._fig.canvas.draw()
+                self._fig.canvas.flush_events()
+            plot = self._axarr[i].plot(xs, ys, linestyle=linestyle,
+                    linewidth=linewidth, marker=marker, markersize=markersize,
+                    markeredgewidth=markeredgewidth, color=color, alpha=alpha,
+                    label=label)[0]
         self._plots[i].append(plot)
 
     def plot_3d_points(self, i, points, linestyle='-', linewidth=1.0,
