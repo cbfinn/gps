@@ -69,7 +69,7 @@ class CostIOCNN(Cost):
 	      feat = self.solver.test_nets[1].forward().values()[0][0]
 	      # construct output diff
 	      out_diff = out_diff * 0.0
-	      out_diff[:, i] = 1.0
+	      out_diff[:, :, i] = 1.0
 	      top_diff = {blob_names[-1]: out_diff}
 	      dfdx[:, i, :] = self.solver.test_nets[1].backward(diffs=[blob_names[0]], **top_diff).values()[0]
 

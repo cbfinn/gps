@@ -206,7 +206,7 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
         data_layer_info = json.dumps({
             'shape': [{'dim': (1, T, dim_input)}]
         })
-        n.net_input = L.Python(ntop=1, force_backward=True,
+        n.net_input = L.Python(ntop=1,
                                python_param=dict(module='ioc_layers',
                                                  param_str=data_layer_info,
                                                  layer='IOCDataLayer'))
@@ -310,7 +310,6 @@ def construct_nn_cost_net(num_hidden=3, dim_hidden=None, dim_input=27, T=100,
 
     # Necessary for computing gradients
     loss_weight = 1.0 if phase == 'forward_feat' else 0.0
-    if phase == 'forward_feat': loss_weight = 1.0
     n.feat = L.InnerProduct(n.layer, num_output=dim_hidden,
                             weight_filler=dict(type='gaussian', std=0.01),
                             bias_filler=dict(type='constant', value=0),
@@ -347,5 +346,8 @@ def construct_nn_cost_net(num_hidden=3, dim_hidden=None, dim_input=27, T=100,
                          python_param=dict(module='ioc_layers',
                                            layer='IOCLoss'))
 
-    return n.to_proto()
+    net = n.to_proto()
+    if phase == 'forward_feat':
+      net.force_backward = True
+    return net
 
