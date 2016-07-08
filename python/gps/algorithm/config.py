@@ -32,8 +32,8 @@ ALG = {
     # Costs.
     'cost': None,  # A list of Cost objects for each condition.
     # List of demonstrations of all conditions for the current iteration used in cost learning.
-    'demo_list': None, 
-    # Number of demos.
+    'demo_list': None,
+    # Number of demos per condition.
     'num_demos': 10,
     # Demo conditions.
     'demo_cond': 4,

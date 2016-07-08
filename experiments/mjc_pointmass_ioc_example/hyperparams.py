@@ -11,6 +11,7 @@ from gps.agent.mjc.agent_mjc import AgentMuJoCo
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.cost.cost_ioc_quad import CostIOCQuadratic
+from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
@@ -53,8 +54,8 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/particle2d.xml',
-    # 'x0': [np.array([0., 0., 0., 0.]), np.array([0., 1., 0., 0.]),
-    #        np.array([1., 0., 0., 0.]), np.array([1., 1., 0., 0.])],
+    #'x0': [np.array([0., 0., 0., 0.]), np.array([0., 1., 0., 0.]),
+    #       np.array([1., 0., 0., 0.]), np.array([1., 1., 0., 0.])],
     'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
     'substeps': 1,
@@ -77,6 +78,8 @@ algorithm = {
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
+    'demo_cond': 4,
+    'num_demos': 10,
 }
 
 algorithm['init_traj_distr'] = {
@@ -90,16 +93,18 @@ algorithm['init_traj_distr'] = {
 }
 
 algorithm['cost'] = {
-    'type': CostIOCQuadratic,
+    #'type': CostIOCQuadratic,
+    'type': CostIOCNN,
     # 'data_types' : {
     #     JOINT_ANGLES: {
     #         'wp': np.ones(SENSOR_DIMS[ACTION]),
     #         'target_state': np.array([0.5, 0.5]),
     #     },
     # },
-    'wu': np.array([1e-2, 1e-2])
+    'wu': np.array([1e-2, 1e-2]),
     'dO': 10,
     'T': 100,
+    'iterations': 5000,
 }
 
 algorithm['gt_cost'] = {

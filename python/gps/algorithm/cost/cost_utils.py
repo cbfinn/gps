@@ -206,7 +206,7 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
         data_layer_info = json.dumps({
             'shape': [{'dim': (1, T, dim_input)}]
         })
-        n.net_input = L.Python(ntop=1,
+        n.net_input = L.Python(ntop=1, force_backward=True,
                                python_param=dict(module='ioc_layers',
                                                  param_str=data_layer_info,
                                                  layer='IOCDataLayer'))
@@ -301,14 +301,20 @@ def construct_nn_cost_net(num_hidden=3, dim_hidden=None, dim_input=27, T=100,
         raise Exception('Unknown network phase')
 
     n.layer = n.net_input
-    for i in range(dim_hidden):
+    for i in range(num_hidden-1):
         n.layer = L.InnerProduct(n.layer, num_output=dim_hidden,
                                  weight_filler=dict(type='gaussian', std=0.01),
                                  bias_filler=dict(type='constant', value=0),
                                  axis=2)
         n.layer = L.ReLU(n.layer, in_place=True)
-    n.feat = n.layer
 
+    # Necessary for computing gradients
+    loss_weight = 1.0 if phase == 'forward_feat' else 0.0
+    if phase == 'forward_feat': loss_weight = 1.0
+    n.feat = L.InnerProduct(n.layer, num_output=dim_hidden,
+                            weight_filler=dict(type='gaussian', std=0.01),
+                            bias_filler=dict(type='constant', value=0),
+                            axis=2, loss_weight=loss_weight)
 
     if phase != 'forward_feat':
         n.Ax = L.InnerProduct(n.feat, num_output=dim_hidden,

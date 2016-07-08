@@ -44,7 +44,8 @@ class CostIOCNN(Cost):
 	  self.solver.test_nets[0].share_with(new_cost.solver.test_nets[1])
 	  return new_cost
 
-# TODO - cache dfdx, or add option to not compute it when necessary
+
+  # TODO - cache dfdx / add option to not compute it when necessary
 	def compute_dfdx(self, obs):
 	  """
 	  Evaluate the jacobian of the features w.r.t. the input.
@@ -55,24 +56,25 @@ class CostIOCNN(Cost):
 	    dydx: The jacobians dfdx
 	  """
 	  blob_names = self.solver.test_nets[1].blobs.keys()
-	  feat_shape = self.solver.net_nets[1].blobs[blob_names[-1]].data[:].shape
+	  feat_shape = self.solver.test_nets[1].blobs[blob_names[-1]].data[:].shape
 	  dF = feat_shape[-1]
-	  out = np.zeros((feat_shape))
+	  out_diff = np.zeros((feat_shape))
 
 	  T, dX = obs.shape
 	  dfdx = np.zeros((T, dF, dX))
 
 	  for i in range(dF):
 	      self.solver.test_nets[1].blobs[blob_names[0]].data[:] = obs
-	      feat = self.solver.test_nets[1].forward().values()[0][0].reshape((T, -1))
-	      out = out * 0.0
-	      out[:, i] = 1.0
-	      self.solver.test_nets[1].blobs[blob_names[-1]].data[:] = out*0
-	      # TODO - make sure that this will backprop all the way to data layer.
-	      # Also make sure indexing is correct
-	      dfdx[:, i, :] = self.solver.net_nets[1].backward().values()[0]
+	      # run forward pass before running backward pass
+	      feat = self.solver.test_nets[1].forward().values()[0][0]
+	      # construct output diff
+	      out_diff = out_diff * 0.0
+	      out_diff[:, i] = 1.0
+	      top_diff = {blob_names[-1]: out_diff}
+	      dfdx[:, i, :] = self.solver.test_nets[1].backward(diffs=[blob_names[0]], **top_diff).values()[0]
 
 	  return feat, dfdx
+
 
 	def eval(self, sample):
 		"""
@@ -100,11 +102,11 @@ class CostIOCNN(Cost):
 
 		# Get weights array from caffe (M in the old codebase)
 		params = self.solver.test_nets[0].params.values()
-		weighted_array = np.c_[params[0][0].data, np.array([params[0][1].data]).T]
+		weighted_array = np.c_[params[-2][0].data, np.array([params[-2][1].data]).T]
 		A = weighted_array.T.dot(weighted_array)
 
 		# get intermediate features
-		feat, dydx = self.compute_dfdx(obs)
+		feat, dfdx = self.compute_dfdx(obs)
 
 		sample_u = sample.get_U()
 		l += 0.5 * np.sum(self._hyperparams['wu'] * (sample_u ** 2), axis=1)
@@ -112,9 +114,10 @@ class CostIOCNN(Cost):
 		luu = np.tile(np.diag(self._hyperparams['wu']), [T, 1, 1])
 
 		dldf = A.dot(np.vstack((feat.T, np.ones((1, T))))) # Assuming A is a (df + 1) x (df + 1) matrix
+		dF = feat.shape[1]
 		for t in xrange(T):
-			lx[t, :] = dfdx[t, :, :].T.dot(dldf[range(df), t])
-		  	lxx[t, :, :] = dfdx[t, :, :].T.dot(A[range(df),range(df)]).dot(dfdx[t, :, :])
+		  lx[t, :] = dfdx[t, :, :].T.dot(dldf[:dF, t])
+		  lxx[t, :, :] = dfdx[t, :, :].T.dot(A[:dF,:dF]).dot(dfdx[t, :, :])
 		return l, lx, lu, lxx, luu, lux
 
 	# TODO - we might want to make the demos and samples input as SampleList objects, rather than arrays.
@@ -208,7 +211,7 @@ class CostIOCNN(Cost):
 
 		# These are required by Caffe to be set, but not used.
 		solver_param.test_iter.append(1)
-		# solver_param.test_iter.append(1)
+		solver_param.test_iter.append(1)
 		solver_param.test_interval = 1000000
 
 		f = tempfile.NamedTemporaryFile(mode='w+', delete=False)

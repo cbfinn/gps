@@ -7,7 +7,6 @@ import numpy as np
 from gps.algorithm.algorithm import Algorithm
 from gps.utility.general_utils import logsum
 from gps.algorithm.algorithm_utils import fit_emp_controller
-from gps.algorithm.cost.cost_ioc_quad import CostIOCQuadratic
 from gps.sample.sample_list import SampleList
 
 LOGGER = logging.getLogger(__name__)
@@ -133,10 +132,12 @@ class AlgorithmTrajOpt(Algorithm):
         samples_logprob, demos_logprob = {}, {}
         # number of demo distributions
         Md = self._hyperparams['demo_M']
+        # TODO - multiple demo conditions isn't implemented correctly.
+        # (but usually we just use 1, so it's okay)
         demos_logiw, samples_logiw = {}, {}
-        demoU = {i: self.demoU for i in xrange(Md)}
-        demoX = {i: self.demoX for i in xrange(Md)}
-        demoO = {i: self.demoO for i in xrange(Md)}
+        demoU = {i: self.demoU for i in xrange(M)}
+        demoX = {i: self.demoX for i in xrange(M)}
+        demoO = {i: self.demoO for i in xrange(M)}
         # For testing purpose.
         # demoX = self.demoX
         # demoU = self.demoU
@@ -211,11 +212,12 @@ class AlgorithmTrajOpt(Algorithm):
         sampleU_arr = np.vstack((self.sample_list[i].get_U() for i in xrange(M)))
         sampleX_arr = np.vstack((self.sample_list[i].get_X() for i in xrange(M)))
         sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
-        demos_logiw = np.vstack((demos_logiw[i] for i in xrange(Md))).T
-        samples_logiw = np.vstack((samples_logiw[i] for i in xrange(M))).T
+        demos_logiw = np.hstack((demos_logiw[i] for i in xrange(Md))).reshape((-1, 1))
+        samples_logiw = np.hstack([samples_logiw[i] for i in xrange(M)]).reshape((-1, 1))
+        # TODO - not sure if we want one cost function per condition...
         for i in xrange(M):
-            cost_ioc_quad = self.cost[i] # set the type of cost to be cost_ioc_quad here.
-            cost_ioc_quad.update(self.demoU, self.demoX, self.demoO, demos_logiw, sampleU_arr, sampleX_arr, \
+            cost_ioc = self.cost[i]
+            cost_ioc.update(self.demoU, self.demoX, self.demoO, demos_logiw, sampleU_arr, sampleX_arr, \
                                                     sampleO_arr, samples_logiw)
 
 
