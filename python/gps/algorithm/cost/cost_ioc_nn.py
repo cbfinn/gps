@@ -122,19 +122,18 @@ class CostIOCNN(Cost):
 
 	# TODO - we might want to make the demos and samples input as SampleList objects, rather than arrays.
 	# TODO - also we might want to exclude demoU/sampleU since we generally don't use them
-	# TODO - change name of dlogis/slogis to d_log_iw and s_log_iw.
-	def update(self, demoU, demoX, demoO, dlogis, sampleU, sampleX, sampleO, slogis):
+	def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw):
 		"""
 		Learn cost function with generic function representation.
 		Args:
 			demoU: the actions of demonstrations.
 			demoX: the states of demonstrations.
 			demoO: the observations of demonstrations.
-			dlogis: importance weights for demos.
+			d_log_iw: log importance weights for demos.
 			sampleU: the actions of samples.
 			sampleX: the states of samples.
 			sampleO: the observations of samples.
-			slogis: importance weights for samples.
+			s_log_iw: log importance weights for samples.
 		"""
 		Nd = demoO.shape[0]
 		Ns = sampleO.shape[0]
@@ -145,30 +144,31 @@ class CostIOCNN(Cost):
 		demo_idx = range(Nd)
 		sample_idx = range(Ns)
 		average_loss = 0
-		np.random.shuffle(demo_idx)
-		np.random.shuffle(sample_idx)
 
 		for i in range(self._hyperparams['iterations']):
-			# Load in data for this batch.
-			# TODO - this might cut off the last few samples, preventing them
-            # from being used.
-			d_start_idx = int(i * self.demo_batch_size %
-							  (dbatches_per_epoch * self.demo_batch_size))
-			s_start_idx = int(i * self.sample_batch_size %
-							  (sbatches_per_epoch * self.sample_batch_size))
-			d_idx_i = demo_idx[d_start_idx:d_start_idx+self.demo_batch_size]
-			s_idx_i = sample_idx[s_start_idx:s_start_idx+self.sample_batch_size]
-			self.solver.net.blobs[blob_names[0]].data[:] = demoO[d_idx_i]
-			self.solver.net.blobs[blob_names[1]].data[:] = dlogis[d_idx_i]
-			self.solver.net.blobs[blob_names[2]].data[:] = sampleO[s_idx_i]
-			self.solver.net.blobs[blob_names[3]].data[:] = slogis[s_idx_i]
-			self.solver.step(1)
-			train_loss = self.solver.net.blobs[blob_names[-1]].data
-			average_loss += train_loss
-			if i % 500 == 0 and i != 0:
-				LOGGER.debug('Caffe iteration %d, average loss %f',
-							 i, average_loss / 500)
-				average_loss = 0
+		  # Randomly sample batches
+		  np.random.shuffle(demo_idx)
+		  np.random.shuffle(sample_idx)
+
+		  # Load in data for this batch.
+		  d_start_idx = int(i * self.demo_batch_size %
+		      (dbatches_per_epoch * self.demo_batch_size))
+		  s_start_idx = int(i * self.sample_batch_size %
+		      (sbatches_per_epoch * self.sample_batch_size))
+		  d_idx_i = demo_idx[d_start_idx:d_start_idx+self.demo_batch_size]
+		  s_idx_i = sample_idx[s_start_idx:s_start_idx+self.sample_batch_size]
+		  self.solver.net.blobs[blob_names[0]].data[:] = demoO[d_idx_i]
+		  self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[d_idx_i]
+		  self.solver.net.blobs[blob_names[2]].data[:] = sampleO[s_idx_i]
+		  self.solver.net.blobs[blob_names[3]].data[:] = s_log_iw[s_idx_i]
+		  self.solver.step(1)
+		  train_loss = self.solver.net.blobs[blob_names[-1]].data
+		  average_loss += train_loss
+		  if i % 500 == 0 and i != 0:
+		    LOGGER.debug('Caffe iteration %d, average loss %f',
+		                 i, average_loss / 500)
+		    average_loss = 0
+
 
 		# Keep track of Caffe iterations for loading solver states.
 		self.caffe_iter += self._hyperparams['iterations']

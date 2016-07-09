@@ -95,12 +95,6 @@ algorithm['init_traj_distr'] = {
 algorithm['cost'] = {
     #'type': CostIOCQuadratic,
     'type': CostIOCNN,
-    # 'data_types' : {
-    #     JOINT_ANGLES: {
-    #         'wp': np.ones(SENSOR_DIMS[ACTION]),
-    #         'target_state': np.array([0.5, 0.5]),
-    #     },
-    # },
     'wu': np.array([1e-2, 1e-2]),
     'dO': 10,
     'T': 100,
