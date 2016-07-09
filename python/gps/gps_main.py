@@ -152,7 +152,7 @@ class GPSMain(object):
 			if self.algorithm is None:
 				print("Error: cannot find '%s.'" % algorithm_file)
 				os._exit(1) # called instead of sys.exit(), since this is in a thread
-				
+
 			if self.gui:
 				traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
 					('traj_sample_itr_%02d.pkl' % itr_load))
@@ -395,9 +395,6 @@ def main():
 		random.seed(0)
 		np.random.seed(0)
 		gps = GPSMain(hyperparams.config)
-		# gps.algorithm._hyperparams['max_ent_traj'] = 1.0
-		# gps.algorithm._hyperparams['demo_distr_empest'] = True
-		# gps.algorithm._hyperparams['ioc'] = True
 		if hyperparams.config['gui_on']:
 			run_gps = threading.Thread(
 				target=lambda: gps.run(itr_load=resume_training_itr)
