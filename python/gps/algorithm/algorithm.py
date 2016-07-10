@@ -5,6 +5,7 @@ import copy
 import logging
 
 import numpy as np
+from numpy.linalg import LinAlgError
 
 from gps.algorithm.config import ALG
 from gps.algorithm.algorithm_utils import IterationData, TrajectoryInfo
@@ -49,6 +50,8 @@ class Algorithm(object):
         self.cur = [IterationData() for _ in range(self.M)]
         self.prev = [IterationData() for _ in range(self.M)]
         self.traj_distr = {self.iteration_count: []}
+        self.traj_info = {self.iteration_count: []}
+        self.kl_div = {self.iteration_count:[]}
         self.sample_list = {i: SampleList([]) for i in range(self.M)}
 
         for m in range(self.M):
@@ -60,6 +63,7 @@ class Algorithm(object):
             )
             self.cur[m].traj_distr = init_traj_distr['type'](init_traj_distr)
             self.traj_distr[self.iteration_count].append(self.cur[m].traj_distr)
+            self.traj_info[self.iteration_count].append(self.cur[m].traj_info)
 
         self.traj_opt = hyperparams['traj_opt']['type'](
             hyperparams['traj_opt']
@@ -200,6 +204,8 @@ class Algorithm(object):
         self.prev = copy.deepcopy(self.cur)
         self.cur = [IterationData() for _ in range(self.M)]
         self.traj_distr[self.iteration_count] = []
+        self.traj_info[self.iteration_count] = []
+        self.kl_div[self.iteration_count] = []
         self.previous_cost = []
         for m in range(self.M):
             self.cur[m].traj_info = TrajectoryInfo()
@@ -208,6 +214,7 @@ class Algorithm(object):
             self.cur[m].eta = self.prev[m].eta
             self.cur[m].traj_distr = self.new_traj_distr[m]
             self.traj_distr[self.iteration_count].append(self.new_traj_distr[m])
+            self.traj_info[self.iteration_count].append(self.cur[m].traj_info)
             if self._hyperparams['ioc']:
               self.cur[m].prevcost_traj_info = TrajectoryInfo()
               self.previous_cost.append(self.cost[m].copy())
@@ -246,3 +253,47 @@ class Algorithm(object):
                 np.log(np.diag(self.cur[m].traj_distr.chol_pol_covar[t, :, :]))
             )
         return ent
+
+    def _traj_samples(self, X, U, traj_distr, traj_info, N):
+        """ Sample from a particular trajectory distribution. """
+        # Constants.
+        dX = X.shape[2]
+        dU = U.shape[2]
+        T = X.shape[1]
+        ix = range(dX)
+        iu = range(dX, dX + dU)
+
+        # Allocate space.
+        pX = np.zeros(N, T, dX)
+        pU = np.zeros(N, T, dU)
+        pProb = np.zeros(N, T, 1)
+        mu, sigma = self.traj_opt.forward(traj_distr, traj_info)
+        for t in xrange(T):
+            samps = np.random.randn(dX, N)
+            sigma[t, ix, ix] = 0.5 * (sigma[t, ix, ix] + sigma[t, ix, ix].T)
+            # Full version. Assuming policy synthetic samples distro fix bound is 2.
+            var_limit = self._hyperparams['policy_synthetic_samples_distro_fix_bound'] # Assuming to be 2
+            pemp = np.maximum(np.mean(X[:, t, :] - mu[t, ix], 0), 1e-3)
+            sigt = np.diag(1 / np.sqrt(pemp)).dot(sigma[t, ix, ix]).dot(np.diag(1 / np.sqrt(pemp)))
+            vec, val = np.linalg.eig(sigt)
+            val = np.minimum(val, var_limit)
+            sigt = vec.dot(val).dot(vec.T)
+            sigma[t, ix, ix] = np.diag(np.sqrt(pemp)).dot(sigt).dot(np.diag(np.sqrt(pemp)))
+            # Fix small eigenvalues only.
+            vec, val = np.linalg.eig(sigma[t, ix, ix])
+            val = np.maximum(np.real(np.diag(val)), 1e-6)
+            sigma[t, ix, ix] = vec.dot(np.diag(val)).dot(vec.T)
+
+            # Store sample probabilities.
+            pProb[:, t, :] = -0.5 * np.sum(samps**2, 1) - 0.5 * np.sum(np.log(val))
+            # Draw samples.
+            try:
+                samps = mu[t, ix] + np.linalg.cholesky(sigma[t, ix, ix].T.dot(samps))
+            except LinAlgError as e:
+                LOGGER.debug('Policy sample matrix is not positive definite.')
+                _, L = np.linalg.qr(np.sqrt(np.diag(val)).dot(vec.T))
+                samps = mu[t, ix] + L.T.dot(samps)
+            pX[:, t, :] = samps.T
+            pU[:, t, :] = (traj_distr.K[t, :, :].dot(samps) + traj.k[t, :] + \
+                            traj.chol_pol_covar[t, :, :].T.dot(np.random.randn(Du, N))).T
+        return pX, pU, pProb

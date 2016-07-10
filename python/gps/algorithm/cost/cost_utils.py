@@ -246,7 +246,7 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
     return n.to_proto()
 
 
-def construct_nn_cost_net(num_hidden=3, dim_hidden=None, dim_input=27, T=100,
+def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                           demo_batch_size=5, sample_batch_size=5, phase=TRAIN):
     """
     Construct an anonymous network (no layer names) for a quadratic cost

@@ -392,8 +392,8 @@ def main():
 		import numpy as np
 		import matplotlib.pyplot as plt
 
-		random.seed(0)
-		np.random.seed(0)
+		random.seed(1)
+		np.random.seed(1)
 		gps = GPSMain(hyperparams.config)
 		if hyperparams.config['gui_on']:
 			run_gps = threading.Thread(
