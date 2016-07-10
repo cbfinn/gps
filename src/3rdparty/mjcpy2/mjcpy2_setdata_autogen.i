@@ -58,7 +58,6 @@
     _cadihk(d, "qLDiagSqrtInv", m_data->qLDiagSqrtInv);
     _cadihk(d, "efc_type", m_data->efc_type);
     _cadihk(d, "efc_id", m_data->efc_id);
-    _cadihk(d, "efc_signature", m_data->efc_signature);
     _cadihk(d, "efc_rownnz", m_data->efc_rownnz);
     _cadihk(d, "efc_rowadr", m_data->efc_rowadr);
     _cadihk(d, "efc_colind", m_data->efc_colind);
