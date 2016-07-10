@@ -242,14 +242,24 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
         #n.demo_slope, _ = L.Slice(n.slope_prev, axis=0, slice_point=demo_batch_size, ntop=2)
         #n.demo_slope = L.Reshape(n.demo_slope, shape=[-1,1])
 
-        n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, loss_weight=1.0,
+        n.dummy = L.DummyData(ntop=1, shape=dict(dim=[1]), data_filler=dict(type='constant',value=0))
+        # init logZ or Z to 1, only learn the bias
+        # (also might be good to reduce lr on bias)
+        n.logZ = L.InnerProduct(n.dummy, axis=0, num_output=1,
+                             weight_filler=dict(type='constant', value=0),
+                             bias_filler=dict(type='constant', value=1),
+                             param=[dict(lr_mult=1), dict(lr_mult=1)])
+        n.Z = L.Exp(n.logZ, base=2.6)
+
+        n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, n.Z, loss_weight=1.0,
                          python_param=dict(module='ioc_layers',
-                                           layer='IOCLoss'))
+                                           layer='IOCLossMod'))
+
 
     return n.to_proto()
 
 
-def construct_nn_cost_net(num_hidden=3, dim_hidden=None, dim_input=27, T=100,
+def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                           demo_batch_size=5, sample_batch_size=5, phase=TRAIN):
     """
     Construct an anonymous network (no layer names) for a quadratic cost
@@ -345,10 +355,13 @@ def construct_nn_cost_net(num_hidden=3, dim_hidden=None, dim_input=27, T=100,
         # TODO - add hyperparam for loss weight.
         n.reg = L.EuclideanLoss(n.slope_next, n.slope_prev, loss_weight=0.1)
 
-        n.dummy = L.DummyData(ntop=1, shape=dict(dim=[1]), data_filler=dict(type='constant',value=1))
+        n.dummy = L.DummyData(ntop=1, shape=dict(dim=[1]), data_filler=dict(type='constant',value=0))
+        # init logZ or Z to 1, only learn the bias
+        # (also might be good to reduce lr on bias)
         n.logZ = L.InnerProduct(n.dummy, axis=0, num_output=1,
-                             weight_filler=dict(type='constant', value=1),
-                             bias_filler=dict(type='constant', value=0))
+                             weight_filler=dict(type='constant', value=0),
+                             bias_filler=dict(type='constant', value=1),
+                             param=[dict(lr_mult=1), dict(lr_mult=1)])
         n.Z = L.Exp(n.logZ, base=2.6)
 
         n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, n.Z, loss_weight=1.0,

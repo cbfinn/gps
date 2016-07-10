@@ -93,9 +93,9 @@ class GPSMain(object):
 				for cond in self._train_idx
 			]
 
-			if itr > 0:
-			  self.gui.update(itr, self.algorithm, self.agent,
-			    traj_sample_lists, None)
+			#if itr > 0:
+			#  self.gui.update(itr, self.algorithm, self.agent,
+			#    traj_sample_lists, None)
 
 			self._take_iteration(itr, traj_sample_lists)
 			# if not self.algorithm._hyperparams['ioc']:

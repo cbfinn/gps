@@ -127,6 +127,8 @@ class CostIOCQuadratic(Cost):
 			self.solver.net.blobs[blob_names[1]].data[:] = dlogis[d_idx_i]
 			self.solver.net.blobs[blob_names[2]].data[:] = sampleO[s_idx_i]
 			self.solver.net.blobs[blob_names[3]].data[:] = slogis[s_idx_i]
+			#if i == 5:
+			#  import pdb; pdb.set_trace()
 			self.solver.step(1)
 			train_loss = self.solver.net.blobs[blob_names[-1]].data
 			average_loss += train_loss

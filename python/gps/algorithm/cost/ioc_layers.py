@@ -173,6 +173,8 @@ class IOCLossMod(caffe.Layer):
         top[0].data[...] = loss
         self._demo_counts = dc
         self._sample_counts = sc
+        if np.isnan(loss):
+          import pdb; pdb.set_trace()
 
 
     def backward(self, top, propagate_down, bottom):
@@ -188,16 +190,21 @@ class IOCLossMod(caffe.Layer):
         Z_diff = 0
 
         for i in xrange(self.num_demos):
-            for t in xrange(self.T):
-                demo_bottom_diff[i, t] = (1.0 / self.num_demos - (dc[i] / self._partition))
-
-            dc[i] = 0.5 * np.sum(bottom[0].data[i,:])
-            Z_diff += np.exp(-2.0*0.5*np.sum(bottom[0].data[i,:])) / (self._partition * Z_tilde*np.exp(self._d_log_iw[i])**2)
+            #for t in xrange(self.T):
+            #    demo_bottom_diff[i, t] = (1.0 / self.num_demos - (dc[i] / self._partition))
+            demo_bottom_diff[i, :] = (1.0 / self.num_demos) - (dc[i] / self._partition)
+            max_val = max(-np.sum(bottom[0].data[i,:]), 2*self._d_log_iw[i])
+            Z_diff += np.exp(-2.0*0.5*np.sum(bottom[0].data[i,:])-max_val) / (self._partition * Z_tilde*np.exp(2*self._d_log_iw[i])-max_val)
 
         for i in xrange(self.num_samples):
-            for t in xrange(self.T):
-                sample_bottom_diff[i, t] = (-sc[i] / self._partition)
-            Z_diff += np.exp(-2.0*0.5*np.sum(bottom[1].data[i,:])) / (self._partition * Z_tilde*np.exp(self._s_log_iw[i])**2)
+            #for t in xrange(self.T):
+            #    sample_bottom_diff[i, t] = (-sc[i] / self._partition)
+            sample_bottom_diff[i,:] = (-sc[i] / self._partition)
+            max_val = max(-np.sum(bottom[1].data[i,:]), 2*self._s_log_iw[i])
+            Z_diff += np.exp(-2.0*0.5*np.sum(bottom[1].data[i,:])-max_val) / (self._partition * Z_tilde*np.exp(2*self._s_log_iw[i]-max_val))
+
+        if np.isnan(Z_diff) or np.isinf(Z_diff):
+          import pdb; pdb.set_trace()
 
         bottom[0].diff[...] = demo_bottom_diff * loss_weight
         bottom[1].diff[...] = sample_bottom_diff * loss_weight
