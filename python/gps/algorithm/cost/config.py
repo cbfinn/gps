@@ -4,8 +4,10 @@ import numpy as np
 from gps.algorithm.cost.cost_utils import RAMP_CONSTANT, evallogl2term
 try:
   from gps.algorithm.cost.cost_utils import construct_quad_cost_net
+  from gps.algorithm.cost.cost_utils import construct_nn_cost_net
 except ImportError:
   construct_quad_cost_net = None
+  construct_nn_cost_net = None
 
 
 # CostFK
@@ -70,9 +72,20 @@ IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
 COST_IOC_QUADRATIC = {
     'network_arch_params': {},  # includes info to construct model
     'network_model': construct_quad_cost_net,
-    'dO': 10, # Number of features (here for pointmass_ioc only)
-    'T': 100, # the time horizon (here for pointmass_ioc only)
+    'dO':0, # Number of features (here for pointmass_ioc only)
+    'T': 0, # the time horizon (here for pointmass_ioc only)
     'wu': np.array([]) # Torque penalties, must be 1 x dU numpy array.
 }
 
 COST_IOC_QUADRATIC.update(IOC_CONFIG)
+
+#CostIOCNN
+COST_IOC_NN = {
+    'network_arch_params': {},  # includes info to construct model
+    'network_model': construct_nn_cost_net,
+    'dO':0, # Number of features (here for pointmass_ioc only)
+    'T': 0, # the time horizon (here for pointmass_ioc only)
+    'wu': np.array([]) # Torque penalties, must be 1 x dU numpy array.
+}
+
+COST_IOC_NN.update(IOC_CONFIG)

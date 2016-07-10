@@ -51,12 +51,10 @@ class AgentMuJoCo(Agent):
         # Initialize Mujoco worlds. If there's only one xml file, create a single world object,
         # otherwise create a different world for each condition.
         if not isinstance(filename, list):
-            self._world = mjcpy.MJCWorld(filename)
-            self._model = self._world.get_model()
-            self._world = [self._world
+            self._world = [mjcpy.MJCWorld(filename)
                            for _ in range(self._hyperparams['conditions'])]
-            self._model = [copy.deepcopy(self._model)
-                           for _ in range(self._hyperparams['conditions'])]
+            self._model = [self._world[i].get_model()
+                           for i in range(self._hyperparams['conditions'])]
         else:
             for i in range(self._hyperparams['conditions']):
                 self._world.append(mjcpy.MJCWorld(self._hyperparams['filename'][i]))

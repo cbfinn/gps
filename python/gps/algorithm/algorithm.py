@@ -129,6 +129,7 @@ class Algorithm(object):
             cond: Condition to evaluate cost on.
             prev: Whether or not to use previous_cost (for ioc stepadjust)
         """
+        # TODO - add option for using synthetic samples (for nn cost)
         # Constants.
         T, dX, dU = self.T, self.dX, self.dU
         N = len(self.cur[cond].sample_list)

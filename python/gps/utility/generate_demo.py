@@ -60,8 +60,8 @@ class GenDemo(object):
 		T = self.algorithm.T
 		demos = []
 		controllers = {}
-		M = self.algorithm._hyperparams['demo_M']
-		N = self.algorithm._hyperparams['demo_cond']
+		M = self.algorithm._hyperparams['demo_cond']
+		N = self.algorithm._hyperparams['num_demos']
 
 		# Store each controller under M conditions into controllers.
 		for i in xrange(M):
@@ -81,11 +81,12 @@ class GenDemo(object):
 				)
 				demos.append(demo)
 		shuffle(demos)
-		self.algorithm.demo_list =  SampleList(demos)
+		demo_list =  SampleList(demos)
+		demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs()}
 		# Save the demos.
 		self.data_logger.pickle(
 			self._data_files_dir + 'demos.pkl',
-			copy.copy(self.algorithm)
+			copy.copy(demo_store)
 		)
 
 		# Plot the demonstrations.

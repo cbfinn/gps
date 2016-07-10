@@ -73,13 +73,16 @@ class GPSMain(object):
 		# self.algorithm.demoU = {i: demo_params['demo_u'][0, :][i].T for i in xrange(Md)}
 		# self.algorithm.demoO = {i: demo_params['demo_o'][0, :][i].T for i in xrange(Md)}
 		if self.algorithm._hyperparams['ioc']:
-			self.demo_gen.generate()
-			# algorithm_file = self._data_files_dir + 'demos.pkl'
-			# demo_algo = self.data_logger.unpickle(algorithm_file)
-			demo_algo = self.demo_gen.algorithm
-			self.algorithm.demoX = demo_algo.demo_list.get_X()
-			self.algorithm.demoU = demo_algo.demo_list.get_U()
-			self.algorithm.demoO = demo_algo.demo_list.get_obs()
+			demo_file = self._data_files_dir + 'demos.pkl'
+			demos = self.data_logger.unpickle(demo_file)
+			if demos is None:
+				self.demo_gen.generate()
+				demo_file = self._data_files_dir + 'demos.pkl'
+				demos = self.data_logger.unpickle(demo_file)
+			# demo_algo = self.demo_gen.algorithm
+			self.algorithm.demoX = demos['demoX']
+			self.algorithm.demoU = demos['demoU']
+			self.algorithm.demoO = demos['demoO']
 		for itr in range(itr_start, self._hyperparams['iterations']):
 			for cond in self._train_idx:
 				for i in range(self._hyperparams['num_samples']):
@@ -396,9 +399,6 @@ def main():
 		random.seed(0)
 		np.random.seed(0)
 		gps = GPSMain(hyperparams.config)
-		# gps.algorithm._hyperparams['max_ent_traj'] = 1.0
-		# gps.algorithm._hyperparams['demo_distr_empest'] = True
-		# gps.algorithm._hyperparams['ioc'] = True
 		if hyperparams.config['gui_on']:
 			run_gps = threading.Thread(
 				target=lambda: gps.run(itr_load=resume_training_itr)
