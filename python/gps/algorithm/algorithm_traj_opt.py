@@ -49,9 +49,11 @@ class AlgorithmTrajOpt(Algorithm):
 
         # Computing KL-divergence between sample distribution and demo distribution
         itr = self.iteration_count
-        for i in xrange(self.M):
-            mu, sigma = self.traj_opt.forward(self.traj_distr[itr][m], self.traj_info[itr][m])
-            self.kl_div[self.iteration_count].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][m], self.demo_traj[i]))
+        if self._hyperparams['ioc']:
+            for i in xrange(self.M):
+                mu, sigma = self.traj_opt.forward(self.traj_distr[itr][m], self.traj_info[itr][m])
+                # KL divergence between current traj. distribution and gt distribution
+                self.kl_div[self.iteration_count].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][m], self.demo_traj[i]))
 
         self._advance_iteration_variables()
 

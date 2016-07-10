@@ -255,7 +255,10 @@ class Algorithm(object):
         return ent
 
     def _traj_samples(self, X, U, traj_distr, traj_info, N):
-        """ Sample from a particular trajectory distribution. """
+        """
+        Sample from a particular trajectory distribution,
+        under the estimated dynamics.
+        """
         # Constants.
         dX = X.shape[2]
         dU = U.shape[2]
