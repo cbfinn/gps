@@ -110,13 +110,13 @@ class CostIOCQuadratic(Cost):
 		demo_idx = range(Nd)
 		sample_idx = range(Ns)
 		average_loss = 0
-		np.random.shuffle(demo_idx)
-		np.random.shuffle(sample_idx)
 
 		for i in range(self._hyperparams['iterations']):
+			# Randomly sample batches
+			np.random.shuffle(demo_idx)
+			np.random.shuffle(sample_idx)
+
 			# Load in data for this batch.
-			# TODO - this might cut off the last few samples, preventing them
-            # from being used.
 			d_start_idx = int(i * self.demo_batch_size %
 							  (dbatches_per_epoch * self.demo_batch_size))
 			s_start_idx = int(i * self.sample_batch_size %
