@@ -54,8 +54,8 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/particle2d.xml',
-    #'x0': [np.array([0., 0., 0., 0.]), np.array([0., 1., 0., 0.]),
-    #       np.array([1., 0., 0., 0.]), np.array([1., 1., 0., 0.])],
+    #'x0': [np.array([-1., 1., 0., 0.]), np.array([1., 1., 0., 0.]),
+    #       np.array([1., -1., 0., 0.]), np.array([-1., -1., 0., 0.])],
     'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
     'substeps': 1,

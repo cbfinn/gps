@@ -33,6 +33,7 @@ PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = BASE_DIR + '/../experiments/mjc_peg_ioc_example/'
+DEMO_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
 
 
 common = {
@@ -40,6 +41,7 @@ common = {
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
     'data_files_dir': EXP_DIR + 'data_files/',
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': 1,
@@ -91,9 +93,12 @@ demo_agent = {
 
 algorithm = {
     'type': AlgorithmTrajOpt,
+    'ioc' : True,
+    'demo_distr_empest': True,
+    'max_ent_traj': 1.0,
     'conditions': common['conditions'],
     'iterations': 20,
-    'demo_cond': 25,
+    'demo_cond': 20,
     'num_demos': 2,
 }
 
@@ -132,7 +137,8 @@ algorithm['cost'] = {
     'type': CostIOCNN,
     'wu': 5e-5 / PR2_GAINS,
     'T': 100,
-    'd0': 26,
+    'dO': 26,
+    'iterations': 5000,
 }
 
 algorithm['gt_cost'] = {

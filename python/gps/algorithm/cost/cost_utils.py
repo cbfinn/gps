@@ -228,7 +228,7 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
     if phase == TRAIN:
         n.demo_costs, n.sample_costs = L.Slice(n.all_costs, axis=0, slice_point=demo_batch_size, ntop=2)
 
-        # regularization
+        # smoothness regularization
         n.costs_prev, _ = L.Slice(n.all_costs, axis=1, slice_point=T-2, ntop=2)
         _, n.costs_next = L.Slice(n.all_costs, axis=1, slice_point=2, ntop=2)
         _, n.costs_cur, _ = L.Slice(n.all_costs, axis=1, slice_point=[1,T-1], ntop=3)
@@ -236,8 +236,11 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
         n.slope_prev = L.Eltwise(n.costs_cur, n.costs_prev, operation=EltwiseParameter.SUM, coeff=[1,-1])
         # next-cur
         n.slope_next = L.Eltwise(n.costs_next, n.costs_cur, operation=EltwiseParameter.SUM, coeff=[1,-1])
-        # TODO - add hyperparam for loss weight.
-        n.reg = L.EuclideanLoss(n.slope_next, n.slope_prev, loss_weight=0.1)
+        n.reg = L.EuclideanLoss(n.slope_next, n.slope_prev, loss_weight=0.1)  # TODO - make loss weight a hyperparam
+
+        # TODO - finish implementing hinge loss here, need python hinge layer, or make zeros
+        #n.demo_slope, _ = L.Slice(n.slope_prev, axis=0, slice_point=demo_batch_size, ntop=2)
+        #n.demo_slope = L.Reshape(n.demo_slope, shape=[-1,1])
 
         n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, loss_weight=1.0,
                          python_param=dict(module='ioc_layers',
