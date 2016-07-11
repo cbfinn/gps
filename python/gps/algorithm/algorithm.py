@@ -178,6 +178,9 @@ class Algorithm(object):
             cv[n, :, :] += cv_update
 
         # Fill in cost estimate.
+        # TODO - do we need a separate traj_info object when using synthetic samples?
+        # TODO or is it okay to rewrite the existing one? # if we need a separate one, is it
+        # TODO best to just rewrite it?
         if prev_cost:
           traj_info = self.cur[cond].prevcost_traj_info
           traj_info.dynamics = self.cur[cond].traj_info.dynamics

@@ -233,6 +233,7 @@ class AlgorithmTrajOpt(Algorithm):
 
     def compute_costs(self, m, eta):
         """ Compute cost estimates used in the LQR backward pass. """
+        # TODO generate synethic samples here if desired? (or somewhere else)?
         traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
         multiplier = self._hyperparams["max_ent_traj"]
         fCm, fcv = traj_info.Cm / (eta + multiplier), traj_info.cv / (eta + multiplier)

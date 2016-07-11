@@ -47,9 +47,6 @@ class GPSMain(object):
 		config['algorithm']['agent'] = self.agent
 		self.algorithm = config['algorithm']['type'](config['algorithm'])
 		self.algorithm.init_samples = self._hyperparams['num_samples']
-		if self.algorithm._hyperparams['ioc']:
-			self.demo_gen = GenDemo(config)
-			self.demo_gen.ioc_algo = self.algorithm
 
 	def run(self, itr_load=None):
 		"""
@@ -77,10 +74,11 @@ class GPSMain(object):
 			demo_file = self._data_files_dir + 'demos.pkl'
 			demos = self.data_logger.unpickle(demo_file)
 			if demos is None:
-				self.demo_gen.generate()
-				demo_file = self._data_files_dir + 'demos.pkl'
-				demos = self.data_logger.unpickle(demo_file)
-			# demo_algo = self.demo_gen.algorithm
+			  self.demo_gen = GenDemo(config)
+			  self.demo_gen.ioc_algo = self.algorithm
+			  self.demo_gen.generate()
+			  demo_file = self._data_files_dir + 'demos.pkl'
+			  demos = self.data_logger.unpickle(demo_file)
 			self.algorithm.demoX = demos['demoX']
 			self.algorithm.demoU = demos['demoU']
 			self.algorithm.demoO = demos['demoO']
