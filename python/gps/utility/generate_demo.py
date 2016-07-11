@@ -27,7 +27,7 @@ class GenDemo(object):
 	def __init__(self, config):
 		self._hyperparameter = config
 		self._conditions = config['common']['conditions']
-		self.agent = config['agent']['type'](config['agent'])
+		self.agent = config['demo_agent']['type'](config['demo_agent'])
 		# if 'train_conditions' in config['common']:
 		# 	self._train_idx = config['common']['train_conditions']
 		# 	self._test_idx = config['common']['test_conditions']
@@ -60,10 +60,11 @@ class GenDemo(object):
 		T = self.algorithm.T
 		demos = []
 		controllers = {}
-		M = self.algorithm._hyperparams['demo_cond']
-		N = self.algorithm._hyperparams['num_demos']
+		M = self.ioc_algo._hyperparams['demo_cond']
+		N = self.ioc_algo._hyperparams['num_demos']
 
 		# Store each controller under M conditions into controllers.
+		# import pdb; pdb.set_trace()
 		for i in xrange(M):
 			controllers[i] = self.algorithm.cur[i].traj_distr
 		controllers_var = copy.copy(controllers)

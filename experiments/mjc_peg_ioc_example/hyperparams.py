@@ -43,6 +43,7 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': 1,
+    'demo_conditions': 25,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -60,6 +61,26 @@ agent = {
     # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
     #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
     'pos_body_offset': [np.array([0, 0.2, 0])],
+    'T': 100,
+    'sensor_dims': SENSOR_DIMS,
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
+                      END_EFFECTOR_POINT_VELOCITIES],
+    'obs_include': [],
+    'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
+}
+
+demo_agent = {
+    'type': AgentMuJoCo,
+    'filename': './mjc_models/pr2_arm3d.xml',
+    'x0': generate_x0(np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
+                      np.zeros(7)]), common['demo_conditions']),
+    'dt': 0.05,
+    'substeps': 5,
+    'conditions': common['demo_conditions'],
+    'pos_body_idx': generate_pos_idx(common['demo_conditions']),
+    # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
+    #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
+    'pos_body_offset': generate_pos_body_offset(common['demo_conditions']),
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -146,6 +167,7 @@ config = {
     'verbose_trials': 1,
     'common': common,
     'agent': agent,
+    'demo_agent': demo_agent,
     'gui_on': True,
     'algorithm': algorithm,
 }

@@ -44,7 +44,7 @@ common = {
     'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    # 'conditions': 4,
+    'demo_conditions': 4,
     'conditions': 1,
 }
 
@@ -60,6 +60,23 @@ agent = {
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
+    'T': 100,
+    'point_linear': True,
+    'sensor_dims': SENSOR_DIMS,
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'smooth_noise': False,
+}
+
+demo_agent = {
+    'type': AgentMuJoCo,
+    'filename': './mjc_models/particle2d.xml',
+    'x0': [np.array([-1., 1., 0., 0.]), np.array([1., 1., 0., 0.]),
+           np.array([1., -1., 0., 0.]), np.array([-1., -1., 0., 0.])],
+    # 'x0': [np.array([-1., 1., 0., 0.])],
+    'dt': 0.05,
+    'substeps': 1,
+    'conditions': common['demo_conditions'],
     'T': 100,
     'point_linear': True,
     'sensor_dims': SENSOR_DIMS,
@@ -144,6 +161,7 @@ config = {
     'verbose_policy_trials': 1,
     'common': common,
     'agent': agent,
+    'demo_agent': demo_agent,
     'gui_on': True,
     'algorithm': algorithm,
 }

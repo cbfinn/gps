@@ -49,6 +49,7 @@ class GPSMain(object):
 		self.algorithm.init_samples = self._hyperparams['num_samples']
 		if self.algorithm._hyperparams['ioc']:
 			self.demo_gen = GenDemo(config)
+			self.demo_gen.ioc_algo = self.algorithm
 
 	def run(self, itr_load=None):
 		"""
