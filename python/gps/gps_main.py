@@ -351,9 +351,15 @@ def main():
 				 (exp_name, hyperparams_file))
 
 	hyperparams = imp.load_source('hyperparams', hyperparams_file)
+
+	import matplotlib.pyplot as plt
+	import random
+	import numpy as np
+	random.seed(0)
+	np.random.seed(0)
+
 	if args.targetsetup:
 		try:
-			import matplotlib.pyplot as plt
 			from gps.agent.ros.agent_ros import AgentROS
 			from gps.gui.target_setup_gui import TargetSetupGUI
 
@@ -365,13 +371,6 @@ def main():
 		except ImportError:
 			sys.exit('ROS required for target setup.')
 	elif test_policy_N:
-		import random
-		import numpy as np
-		import matplotlib.pyplot as plt
-
-		random.seed(0)
-		np.random.seed(0)
-
 		data_files_dir = exp_dir + 'data_files/'
 		data_filenames = os.listdir(data_files_dir)
 		algorithm_prefix = 'algorithm_itr_'
@@ -392,12 +391,6 @@ def main():
 		else:
 			gps.test_policy(itr=current_itr, N=test_policy_N)
 	else:
-		import random
-		import numpy as np
-		import matplotlib.pyplot as plt
-
-		random.seed(0)
-		np.random.seed(0)
 		gps = GPSMain(hyperparams.config)
 		if hyperparams.config['gui_on']:
 			run_gps = threading.Thread(

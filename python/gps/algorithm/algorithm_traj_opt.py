@@ -8,6 +8,7 @@ from gps.algorithm.algorithm import Algorithm
 from gps.utility.general_utils import logsum
 from gps.algorithm.algorithm_utils import fit_emp_controller
 from gps.sample.sample_list import SampleList
+from gps.algorithm.traj_opt.traj_opt_utils import traj_distr_kl
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,6 +46,14 @@ class AlgorithmTrajOpt(Algorithm):
         # Run inner loop to compute new policies.
         for _ in range(self._hyperparams['inner_iterations']):
             self._update_trajectories()
+
+        # Computing KL-divergence between sample distribution and demo distribution
+        itr = self.iteration_count
+        if self._hyperparams['ioc']:
+            for i in xrange(self.M):
+                mu, sigma = self.traj_opt.forward(self.traj_distr[itr][m], self.traj_info[itr][m])
+                # KL divergence between current traj. distribution and gt distribution
+                self.kl_div[self.iteration_count].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][m], self.demo_traj[i]))
 
         self._advance_iteration_variables()
 
@@ -142,11 +151,11 @@ class AlgorithmTrajOpt(Algorithm):
         # demoX = self.demoX
         # demoU = self.demoU
         # demoO = self.demoO
-        demo_traj = {}
+        self.demo_traj = {}
         # estimate demo distributions empirically
         for i in xrange(Md):
             if self._hyperparams['demo_distr_empest']:
-                demo_traj[i] = fit_emp_controller(demoX[i], demoU[i])
+                self.demo_traj[i] = fit_emp_controller(demoX[i], demoU[i])
         for i in xrange(M):
             # This code assumes a fixed number of samples per iteration/controller
             #samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
