@@ -73,7 +73,7 @@ algorithm = {
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
-    'max_ent_traj': 1.0
+    'max_ent_traj': 1.0,
 }
 
 algorithm['init_traj_distr'] = {

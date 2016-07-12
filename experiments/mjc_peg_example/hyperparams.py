@@ -73,6 +73,9 @@ algorithm = {
     'conditions': common['conditions'],
     'iterations': 10,
     'max_ent_traj': 1.0,  # NOTE - this was not set to 1 when initial demos were generated
+    'agent_x0': agent['x0'],
+    'agent_pos_body_idx': agent['pos_body_idx'],
+    'agent_pos_body_offset': agent['pos_body_offset'],
 }
 
 algorithm['init_traj_distr'] = {
@@ -126,7 +129,7 @@ algorithm['policy_opt'] = {}
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': 5,
-    'verbose_trials': 1,
+    'verbose_trials': 0,
     'common': common,
     'agent': agent,
     'gui_on': True,

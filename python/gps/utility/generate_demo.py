@@ -27,7 +27,7 @@ class GenDemo(object):
 	def __init__(self, config):
 		self._hyperparameter = config
 		self._conditions = config['common']['conditions']
-		self.agent = config['demo_agent']['type'](config['demo_agent'])
+		
 		# if 'train_conditions' in config['common']:
 		# 	self._train_idx = config['common']['train_conditions']
 		# 	self._test_idx = config['common']['test_conditions']
@@ -54,7 +54,11 @@ class GenDemo(object):
 		if self.algorithm is None:
 			print("Error: cannot find '%s.'" % algorithm_file)
 			os._exit(1) # called instead of sys.exit(), since t
-		
+		# Keep the initial states of the agent the sames as the demonstrations.
+		config['demo_agent']['x0'] = self.algorithm._hyperparams['agent_x0']
+		config['demo_agent']['pos_body_idx'] = self.algorithm._hyperparams['agent_pos_body_idx']
+		config['demo_agent']['pos_body_offset'] = self.algorithm._hyperparams['agent_pos_body_offset']
+		self.agent = config['demo_agent']['type'](config['demo_agent'])
 		# Roll out the demonstrations from controllers
 		var_mult = self.algorithm._hyperparams['var_mult']
 		T = self.algorithm.T
