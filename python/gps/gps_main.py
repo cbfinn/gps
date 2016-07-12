@@ -46,7 +46,6 @@ class GPSMain(object):
 
 		config['algorithm']['agent'] = self.agent
 		self.algorithm = config['algorithm']['type'](config['algorithm'])
-		import pdb; pdb.set_trace()
 		self.algorithm.init_samples = self._hyperparams['num_samples']
 
 	def run(self, itr_load=None):
