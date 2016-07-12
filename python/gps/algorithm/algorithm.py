@@ -133,10 +133,18 @@ class Algorithm(object):
             cond: Condition to evaluate cost on.
             prev: Whether or not to use previous_cost (for ioc stepadjust)
         """
-        # TODO - add option for using synthetic samples (for nn cost)
         # Constants.
         T, dX, dU = self.T, self.dX, self.dU
-        N = len(self.cur[cond].sample_list)
+
+        # TODO - add option for using synthetic samples (for nn cost)
+        synN = 0  # self._hyperparams['synthetic_cost_samples']
+        if synN >= 0:
+          all_samples = SampleList(self.cur[cond].syn_sample_list.get_samples() +
+              self.cur[cond].sample_list.get_samples())
+        else:
+          all_samples = self.cur[cond].sample_list
+        N = len(all_samples)
+
 
         # Compute cost.
         cs = np.zeros((N, T))
@@ -146,7 +154,7 @@ class Algorithm(object):
         if self._hyperparams['ioc']:
             cgt = np.zeros((N, T))
         for n in range(N):
-            sample = self.cur[cond].sample_list[n]
+            sample = all_samples[n]
             # Get costs.
             if prev_cost:
               l, lx, lu, lxx, luu, lux = self.previous_cost[cond].eval(sample)
@@ -178,9 +186,6 @@ class Algorithm(object):
             cv[n, :, :] += cv_update
 
         # Fill in cost estimate.
-        # TODO - do we need a separate traj_info object when using synthetic samples?
-        # TODO or is it okay to rewrite the existing one? # if we need a separate one, is it
-        # TODO best to just rewrite it?
         if prev_cost:
           traj_info = self.cur[cond].prevcost_traj_info
           traj_info.dynamics = self.cur[cond].traj_info.dynamics
@@ -188,14 +193,13 @@ class Algorithm(object):
           traj_info.x0mu = self.cur[cond].traj_info.x0mu
         else:
           traj_info = self.cur[cond].traj_info
-          self.cur[cond].cs = cs  # True value of cost.
+          self.cur[cond].cs = cs[synN:]  # True value of cost.
         traj_info.cc = np.mean(cc, 0)  # Constant term (scalar).
         traj_info.cv = np.mean(cv, 0)  # Linear term (vector).
         traj_info.Cm = np.mean(Cm, 0)  # Quadratic term (matrix).
 
         if self._hyperparams['ioc']:
             self.cur[cond].cgt = cgt
-
 
 
     def _advance_iteration_variables(self):
