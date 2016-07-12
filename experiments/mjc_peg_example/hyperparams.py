@@ -72,6 +72,7 @@ algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
     'iterations': 10,
+    'max_ent_traj': 1.0,  # NOTE - this was not set to 1 when initial demos were generated
 }
 
 algorithm['init_traj_distr'] = {

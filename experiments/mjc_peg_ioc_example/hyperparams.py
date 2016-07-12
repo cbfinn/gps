@@ -95,45 +95,46 @@ demo_agent = {
 
 algorithm = {
     'type': AlgorithmTrajOpt,
-    'ioc' : True,
-    'demo_distr_empest': True,
-    'max_ent_traj': 1.0,
     'conditions': common['conditions'],
-    'iterations': 20,
+    'ioc' : True,
+    'kl_step': 0.5,
+    'max_ent_traj': 1.0,
+    'demo_distr_empest': True,
     'demo_cond': 20,
     'num_demos': 2,
+    'iterations': 20,
 }
 
 algorithm['init_traj_distr'] = {
     'type': init_lqr,
     'init_gains':  1.0 / PR2_GAINS,
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-    'init_var': 1.0,
+    'init_var': 5.0,
     'stiffness': 1.0,
     'stiffness_vel': 0.5,
     'dt': agent['dt'],
     'T': agent['T'],
 }
 
-# torque_cost = {
-#     'type': CostAction,
-#     'wu': 5e-5 / PR2_GAINS,
-# }
+torque_cost = {
+    'type': CostAction,
+    'wu': 5e-5 / PR2_GAINS,
+}
 
-# fk_cost = {
-#     'type': CostFK,
-#     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
-#     'wp': np.array([1, 1, 1, 1, 1, 1]),
-#     'l1': 0.1,
-#     'l2': 10.0,
-#     'alpha': 1e-5,
-# }
+fk_cost = {
+    'type': CostFK,
+    'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
+    'wp': np.array([1, 1, 1, 1, 1, 1]),
+    'l1': 0.1,
+    'l2': 10.0,
+    'alpha': 1e-5,
+}
 
-# algorithm['cost'] = {
-#     'type': CostSum,
-#     'costs': [torque_cost, fk_cost],
-#     'weights': [1.0, 1.0],
-# }
+algorithm['gt_cost'] = {
+    'type': CostSum,
+    'costs': [torque_cost, fk_cost],
+    'weights': [1.0, 1.0],
+}
 
 algorithm['cost'] = {
     'type': CostIOCNN,
@@ -143,14 +144,14 @@ algorithm['cost'] = {
     'iterations': 5000,
 }
 
-algorithm['gt_cost'] = {
-    'type': CostFK,
-    'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
-    'wp': np.array([1, 1, 1, 1, 1, 1]),
-    'l1': 0.1,
-    'l2': 10.0,
-    'alpha': 1e-5,
-}
+# algorithm['gt_cost'] = {
+#     'type': CostFK,
+#     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
+#     'wp': np.array([1, 1, 1, 1, 1, 1]),
+#     'l1': 0.1,
+#     'l2': 10.0,
+#     'alpha': 1e-5,
+# }
 
 algorithm['dynamics'] = {
     'type': DynamicsLRPrior,
