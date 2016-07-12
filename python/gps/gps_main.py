@@ -48,6 +48,20 @@ class GPSMain(object):
 		self.algorithm = config['algorithm']['type'](config['algorithm'])
 		self.algorithm.init_samples = self._hyperparams['num_samples']
 
+		if self.algorithm._hyperparams['ioc']:
+			demo_file = self._data_files_dir + 'demos.pkl'
+			demos = self.data_logger.unpickle(demo_file)
+			if demos is None:
+			  self.demo_gen = GenDemo(config)
+			  self.demo_gen.ioc_algo = self.algorithm
+			  self.demo_gen.generate()
+			  demo_file = self._data_files_dir + 'demos.pkl'
+			  demos = self.data_logger.unpickle(demo_file)
+			self.algorithm.demoX = demos['demoX']
+			self.algorithm.demoU = demos['demoU']
+			self.algorithm.demoO = demos['demoO']
+
+
 	def run(self, itr_load=None):
 		"""
 		Run training by iteratively sampling and taking an iteration.
@@ -70,18 +84,6 @@ class GPSMain(object):
 		# self.algorithm.demoX = {i: demo_params['demo_x'][0, :][i].T for i in xrange(Md)}
 		# self.algorithm.demoU = {i: demo_params['demo_u'][0, :][i].T for i in xrange(Md)}
 		# self.algorithm.demoO = {i: demo_params['demo_o'][0, :][i].T for i in xrange(Md)}
-		if self.algorithm._hyperparams['ioc']:
-			demo_file = self._data_files_dir + 'demos.pkl'
-			demos = self.data_logger.unpickle(demo_file)
-			if demos is None:
-			  self.demo_gen = GenDemo(config)
-			  self.demo_gen.ioc_algo = self.algorithm
-			  self.demo_gen.generate()
-			  demo_file = self._data_files_dir + 'demos.pkl'
-			  demos = self.data_logger.unpickle(demo_file)
-			self.algorithm.demoX = demos['demoX']
-			self.algorithm.demoU = demos['demoU']
-			self.algorithm.demoO = demos['demoO']
 		for itr in range(itr_start, self._hyperparams['iterations']):
 			for cond in self._train_idx:
 				for i in range(self._hyperparams['num_samples']):
