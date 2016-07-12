@@ -25,9 +25,9 @@ from gps.sample.sample_list import SampleList
 class GenDemo(object):
 	""" Generator of demos. """
 	def __init__(self, config):
-		self._hyperparameter = config
+		self._hyperparams = config
 		self._conditions = config['common']['conditions']
-		
+
 		# if 'train_conditions' in config['common']:
 		# 	self._train_idx = config['common']['train_conditions']
 		# 	self._test_idx = config['common']['test_conditions']
@@ -42,7 +42,7 @@ class GenDemo(object):
 
 
 	def generate(self):
-		""" 
+		"""
 		 Generate demos and save them in a file for experiment.
 		 Returns: None.
 		"""
@@ -55,10 +55,11 @@ class GenDemo(object):
 			print("Error: cannot find '%s.'" % algorithm_file)
 			os._exit(1) # called instead of sys.exit(), since t
 		# Keep the initial states of the agent the sames as the demonstrations.
-		config['demo_agent']['x0'] = self.algorithm._hyperparams['agent_x0']
-		config['demo_agent']['pos_body_idx'] = self.algorithm._hyperparams['agent_pos_body_idx']
-		config['demo_agent']['pos_body_offset'] = self.algorithm._hyperparams['agent_pos_body_offset']
-		self.agent = config['demo_agent']['type'](config['demo_agent'])
+		agent_config = self._hyperparams['demo_agent']
+		agent_config['x0'] = self.algorithm._hyperparams['agent_x0']
+		agent_config['pos_body_idx'] = self.algorithm._hyperparams['agent_pos_body_idx']
+		agent_config['pos_body_offset'] = self.algorithm._hyperparams['agent_pos_body_offset']
+		self.agent = agent_config['type'](agent_config)
 		# Roll out the demonstrations from controllers
 		var_mult = self.algorithm._hyperparams['var_mult']
 		T = self.algorithm.T
@@ -68,7 +69,6 @@ class GenDemo(object):
 		N = self.ioc_algo._hyperparams['num_demos']
 
 		# Store each controller under M conditions into controllers.
-		# import pdb; pdb.set_trace()
 		for i in xrange(M):
 			controllers[i] = self.algorithm.cur[i].traj_distr
 		controllers_var = copy.copy(controllers)
