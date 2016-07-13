@@ -2,13 +2,16 @@
 import json
 import numpy as np
 import sys
+from gps.utility.general_utils import disable_caffe_logs
 
+unset = disable_caffe_logs()
 try:
   import caffe
   from caffe import layers as L
   from caffe.proto.caffe_pb2 import TRAIN, TEST, EltwiseParameter
 except ImportError:
   L, TRAIN, TEST, EltwiseParameter = None, None, None, None
+disable_caffe_logs(unset)
 
 from gps.algorithm.cost import __file__ as current_path
 
