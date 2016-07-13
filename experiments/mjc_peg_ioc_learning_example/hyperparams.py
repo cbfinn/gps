@@ -32,8 +32,8 @@ SENSOR_DIMS = {
 PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/mjc_peg_ioc_example/'
-DEMO_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
+EXP_DIR = BASE_DIR + '/../experiments/mjc_peg_ioc_learning_example/'
+DEMO_DIR = BASE_DIR + '/../experiments/mjc_badmm_example/'
 
 
 common = {
@@ -77,14 +77,14 @@ demo_agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/pr2_arm3d.xml',
     'x0': generate_x0(np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
-                      np.zeros(7)]), 25),
+                      np.zeros(7)]), common['conditions']),
     'dt': 0.05,
     'substeps': 5,
-    'conditions': 25,
-    'pos_body_idx': generate_pos_idx(25),
+    'conditions': common['conditions'],
+    'pos_body_idx': generate_pos_idx(common['conditions']),
     # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
     #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    'pos_body_offset': generate_pos_body_offset(25),
+    'pos_body_offset': generate_pos_body_offset(common['conditions']),
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,

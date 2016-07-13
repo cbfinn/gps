@@ -138,7 +138,7 @@ class Algorithm(object):
 
         # TODO - add option for using synthetic samples (for nn cost)
         synN = 0  # self._hyperparams['synthetic_cost_samples']
-        if synN >= 0:
+        if synN > 0:
           all_samples = SampleList(self.cur[cond].syn_sample_list.get_samples() +
               self.cur[cond].sample_list.get_samples())
         else:

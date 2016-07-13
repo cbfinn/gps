@@ -20,6 +20,10 @@ from random import shuffle
 sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
 from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
+from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
+        END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
+        END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
+        CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE
 # from gps.algorithm.policy.lin_gauss_policy import LinearGaussianPolicy  # Maybe useful if we unpickle the file as controllers
 
 class GenDemo(object):
@@ -56,23 +60,25 @@ class GenDemo(object):
 			os._exit(1) # called instead of sys.exit(), since t
 		# Keep the initial states of the agent the sames as the demonstrations.
 		agent_config = self._hyperparams['demo_agent']
-		agent_config['x0'] = self.algorithm._hyperparams['agent_x0']
-		agent_config['pos_body_idx'] = self.algorithm._hyperparams['agent_pos_body_idx']
-		agent_config['pos_body_offset'] = self.algorithm._hyperparams['agent_pos_body_offset']
+		if agent_config['filename'] == './mjc_models/pr2_arm3d.xml':
+			agent_config['x0'] = self.algorithm._hyperparams['agent_x0']
+			agent_config['pos_body_idx'] = self.algorithm._hyperparams['agent_pos_body_idx']
+			agent_config['pos_body_offset'] = self.algorithm._hyperparams['agent_pos_body_offset']
 		self.agent = agent_config['type'](agent_config)
 		# Roll out the demonstrations from controllers
 		var_mult = self.algorithm._hyperparams['var_mult']
 		T = self.algorithm.T
 		demos = []
 		controllers = {}
-		M = self.ioc_algo._hyperparams['demo_cond']
+
+		M = agent_config['conditions']
+		good_conds = self.ioc_algo._hyperparams['demo_cond']
 		N = self.ioc_algo._hyperparams['num_demos']
 
 		# Store each controller under M conditions into controllers.
 		for i in xrange(M):
 			controllers[i] = self.algorithm.cur[i].traj_distr
 		controllers_var = copy.copy(controllers)
-		good_indices = self.algorithm._hyperparams['good_indices'] # Do we still need this?
 		for i in xrange(M):
 
 			# Increase controller variance.
@@ -85,8 +91,19 @@ class GenDemo(object):
 					save = True
 				)
 				demos.append(demo)
-		shuffle(demos)
-		demo_list =  SampleList(demos)
+
+		# Filter out worst (M - good_conds) demos.
+		target_position = agent_config['target_end_effector'][:3]
+		dists_to_target = np.zeros(M)
+		for i in xrange(M):
+			demo_end_effector = demos[i].get(END_EFFECTOR_POINTS)
+			dists_to_target[i] = np.amin(np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
+		good_indices = dists_to_target.argsort()[:good_conds - M].tolist()
+		filtered_demos = []
+		for i in xrange(good_conds):
+			filtered_demos.append(demos[i])
+		shuffle(filtered_demos)
+		demo_list =  SampleList(filtered_demos)
 		demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs()}
 		# Save the demos.
 		self.data_logger.pickle(
@@ -94,5 +111,3 @@ class GenDemo(object):
 			copy.copy(demo_store)
 		)
 
-		# Plot the demonstrations.
-		# Maybe use GUI here?
