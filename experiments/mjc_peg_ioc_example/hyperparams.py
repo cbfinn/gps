@@ -45,7 +45,7 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': 1,
-    'demo_conditions': 20,
+    # 'demo_conditions': 20,
     # 'demo_conditions': 25,
 }
 
@@ -63,7 +63,7 @@ agent = {
     'pos_body_idx': np.array([1]),
     # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
     #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    'pos_body_offset': [np.array([0, 0.2, 0])],
+    'pos_body_offset': [np.array([0, 0.0, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -100,11 +100,13 @@ algorithm = {
     'conditions': common['conditions'],
     'ioc' : True,
     'kl_step': 0.5,
+    'max_step_mult': 2.0,
+    'min_step_mult': 0.01,
     'max_ent_traj': 1.0,
     'demo_distr_empest': True,
-    'demo_cond': 20,
+    'demo_cond': 15,
     # 'demo_cond': 25,
-    'num_demos': 2,
+    'num_demos': 3,
     'iterations': 20,
 }
 
@@ -115,6 +117,7 @@ algorithm['init_traj_distr'] = {
     'init_var': 5.0,
     'stiffness': 1.0,
     'stiffness_vel': 0.5,
+    'final_weight': 50.0,
     'dt': agent['dt'],
     'T': agent['T'],
 }
@@ -175,7 +178,7 @@ algorithm['policy_opt'] = {}
 
 config = {
     'iterations': algorithm['iterations'],
-    'num_samples': 5,
+    'num_samples': 50,
     'verbose_trials': 1,
     'common': common,
     'agent': agent,
