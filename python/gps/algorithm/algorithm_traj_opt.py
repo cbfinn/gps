@@ -51,9 +51,9 @@ class AlgorithmTrajOpt(Algorithm):
         itr = self.iteration_count
         if self._hyperparams['ioc']:
             for i in xrange(self.M):
-                mu, sigma = self.traj_opt.forward(self.traj_distr[itr][m], self.traj_info[itr][m])
+                mu, sigma = self.traj_opt.forward(self.traj_distr[itr][i], self.traj_info[itr][i])
                 # KL divergence between current traj. distribution and gt distribution
-                self.kl_div[self.iteration_count].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][m], self.demo_traj[i]))
+                self.kl_div[self.iteration_count].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][i], self.demo_traj[i]))
 
         self._advance_iteration_variables()
 

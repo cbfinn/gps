@@ -121,7 +121,6 @@ class GenDemo(object):
 			bad_indices = np.argmax(dists_to_target)
 			self._hyperparams['agent']['pos_body_offset'] = [agent_config['pos_body_offset'][bad_indices]]
 			self.ioc_algo._hyperparams['demo_cond'] = len(good_indices)
-			import pdb; pdb.set_trace()
 		filtered_demos = []
 		for i in good_indices:
 			filtered_demos.append(demos[i])

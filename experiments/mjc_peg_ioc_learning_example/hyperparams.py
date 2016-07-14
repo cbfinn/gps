@@ -94,7 +94,7 @@ demo_agent = {
                     END_EFFECTOR_POINT_VELOCITIES],
     'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
-    'success_upper_bound': 0.10,
+    'success_upper_bound': 0.08,
     'failure_lower_bound': 0.15,
 }
 
@@ -108,7 +108,7 @@ algorithm = {
     'demo_cond': 20,
     # 'demo_cond': 25,
     'num_demos': 2,
-    'iterations': 20,
+    'iterations': 15,
 }
 
 algorithm['init_traj_distr'] = {
@@ -118,6 +118,7 @@ algorithm['init_traj_distr'] = {
     'init_var': 5.0,
     'stiffness': 1.0,
     'stiffness_vel': 0.5,
+    'final_weight': 50.0,
     'dt': agent['dt'],
     'T': agent['T'],
 }
@@ -178,7 +179,7 @@ algorithm['policy_opt'] = {}
 
 config = {
     'iterations': algorithm['iterations'],
-    'num_samples': 5,
+    'num_samples': 50,
     'verbose_trials': 1,
     'common': common,
     'agent': agent,
