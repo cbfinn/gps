@@ -91,7 +91,7 @@ algorithm = {
     'demo_distr_empest': True,
     'max_ent_traj': 1.0,
     'conditions': common['conditions'],
-    'iterations': 20,
+    'iterations': 15,
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
