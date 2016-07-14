@@ -41,11 +41,12 @@ common = {
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
     'data_files_dir': EXP_DIR + 'data_files/',
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': 1,
-    'demo_conditions': 20,
+    'demo_conditions': 30,
+    'learning_from_prior': True,
     # 'demo_conditions': 25,
 }
 
@@ -77,14 +78,14 @@ demo_agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/pr2_arm3d.xml',
     'x0': generate_x0(np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
-                      np.zeros(7)]), common['conditions']),
+                      np.zeros(7)]), common['demo_conditions']),
     'dt': 0.05,
     'substeps': 5,
-    'conditions': common['conditions'],
-    'pos_body_idx': generate_pos_idx(common['conditions']),
+    'conditions': common['demo_conditions'],
+    'pos_body_idx': generate_pos_idx(common['demo_conditions']),
     # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
     #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    'pos_body_offset': generate_pos_body_offset(common['conditions']),
+    'pos_body_offset': generate_pos_body_offset(common['demo_conditions']),
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -93,6 +94,8 @@ demo_agent = {
                     END_EFFECTOR_POINT_VELOCITIES],
     'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
+    'success_upper_bound': 0.10,
+    'failure_lower_bound': 0.15,
 }
 
 algorithm = {
