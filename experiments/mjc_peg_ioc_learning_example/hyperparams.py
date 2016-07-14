@@ -46,7 +46,6 @@ common = {
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': 1,
     'demo_conditions': 30,
-    'learning_from_prior': True,
     # 'demo_conditions': 25,
 }
 
@@ -102,14 +101,15 @@ algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
     'ioc' : True,
-    'learning_from_prior': common['learning_from_prior'],
+    'learning_from_prior': True,
     'kl_step': 0.5,
     'max_ent_traj': 1.0,
     'demo_distr_empest': True,
     'demo_cond': 20,
     # 'demo_cond': 25,
     'num_demos': 2,
-    'iterations': 15,
+    'iterations': 20,
+    'synthetic_cost_samples': 100,
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
 }
 
@@ -181,7 +181,7 @@ algorithm['policy_opt'] = {}
 
 config = {
     'iterations': algorithm['iterations'],
-    'num_samples': 50,
+    'num_samples': 5,
     'verbose_trials': 1,
     'common': common,
     'agent': agent,

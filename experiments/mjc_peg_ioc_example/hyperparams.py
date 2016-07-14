@@ -46,7 +46,6 @@ common = {
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': 1,
     # 'demo_conditions': 20,
-    'learning_from_prior': False,
     # 'demo_conditions': 25,
 }
 

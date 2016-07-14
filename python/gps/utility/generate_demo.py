@@ -31,7 +31,6 @@ class GenDemo(object):
 	def __init__(self, config):
 		self._hyperparams = config
 		self._conditions = config['common']['conditions']
-		self._learning = config['common']['learning_from_prior']
 
 		# if 'train_conditions' in config['common']:
 		# 	self._train_idx = config['common']['train_conditions']
@@ -61,6 +60,7 @@ class GenDemo(object):
 			os._exit(1) # called instead of sys.exit(), since t
 
 		# Keep the initial states of the agent the sames as the demonstrations.
+		self._learning = self.ioc_algo._hyperparams['learning_from_prior'] # if the experiment is learning from prior experience
 		agent_config = self._hyperparams['demo_agent']
 		if agent_config['filename'] == './mjc_models/pr2_arm3d.xml' and not self._learning:
 			agent_config['x0'] = self.algorithm._hyperparams['agent_x0']
@@ -122,7 +122,7 @@ class GenDemo(object):
 		filtered_demos = []
 		for i in good_indices:
 			filtered_demos.append(demos[i])
-		import pdb; pdb.set_trace()
+		# import pdb; pdb.set_trace()
 		shuffle(filtered_demos)
 		demo_list =  SampleList(filtered_demos)
 		demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs()}

@@ -25,6 +25,8 @@ ALG = {
     'demo_distr_empest': False,
     # Flag if the algorithm is using IOC
     'ioc': False,
+    # Flag if the algorithm is learning from prior experience
+    'learning_from_prior': False,
     # Dynamics hyperaparams.
     'dynamics': {
         'type': DynamicsLR
