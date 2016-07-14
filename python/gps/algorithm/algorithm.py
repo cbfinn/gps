@@ -10,6 +10,7 @@ from numpy.linalg import LinAlgError
 from gps.algorithm.config import ALG
 from gps.algorithm.algorithm_utils import IterationData, TrajectoryInfo
 from gps.utility.general_utils import extract_condition, disable_caffe_logs
+from gps.sample.sample import Sample
 from gps.sample.sample_list import SampleList
 
 
@@ -136,15 +137,20 @@ class Algorithm(object):
         # Constants.
         T, dX, dU = self.T, self.dX, self.dU
 
-        # TODO - add option for using synthetic samples (for nn cost)
-        synN = 0  # self._hyperparams['synthetic_cost_samples']
+        synN = self._hyperparams['synthetic_cost_samples']
         if synN > 0:
-          all_samples = SampleList(self.cur[cond].syn_sample_list.get_samples() +
-              self.cur[cond].sample_list.get_samples())
+            agent = self.cur[cond].sample_list.get_samples()[0].agent
+            X, U, _ = self._traj_samples(cond, synN)
+            syn_samples = []
+            for i in range(synN):
+                sample = Sample(agent)
+                sample.set_XU(X[i, :, :], U[i, :, :])
+                syn_samples.append(sample)
+            all_samples = SampleList(syn_samples +
+                self.cur[cond].sample_list.get_samples())
         else:
           all_samples = self.cur[cond].sample_list
         N = len(all_samples)
-
 
         # Compute cost.
         cs = np.zeros((N, T))
@@ -161,7 +167,7 @@ class Algorithm(object):
             else:
               l, lx, lu, lxx, luu, lux = self.cost[cond].eval(sample)
             # Compute the ground truth cost
-            if self._hyperparams['ioc']:
+            if self._hyperparams['ioc'] and n >= synN:
                 l_gt, _, _, _, _, _ = self.gt_cost[cond].eval(sample)
                 cgt[n, :] = l_gt
             cc[n, :] = l
@@ -199,7 +205,7 @@ class Algorithm(object):
         traj_info.Cm = np.mean(Cm, 0)  # Quadratic term (matrix).
 
         if self._hyperparams['ioc']:
-            self.cur[cond].cgt = cgt
+            self.cur[cond].cgt = cgt[synN:]
 
 
     def _advance_iteration_variables(self):
@@ -261,51 +267,51 @@ class Algorithm(object):
             )
         return ent
 
-    def _traj_samples(self, X, U, traj_distr, traj_info, N):
+    def _traj_samples(self, condition, N):
         """
         Sample from a particular trajectory distribution,
         under the estimated dynamics.
         """
         # Constants.
-        dX = X.shape[2]
-        dU = U.shape[2]
-        T = X.shape[1]
-        ix = range(dX)
-        iu = range(dX, dX + dU)
+        T, dX, dU = self.T, self.dX, self.dU
+
+        X = self.cur[condition].sample_list.get_X()
+        U = self.cur[condition].sample_list.get_U()
+        traj_info = self.cur[condition].traj_info
+        traj_distr = self.cur[condition].traj_distr
 
         # Allocate space.
-        pX = np.zeros(N, T, dX)
-        pU = np.zeros(N, T, dU)
-        pProb = np.zeros(N, T, 1)
+        pX = np.zeros((N, T, dX))
+        pU = np.zeros((N, T, dU))
+        pProb = np.zeros((N, T))
         mu, sigma = self.traj_opt.forward(traj_distr, traj_info)
         for t in xrange(T):
             samps = np.random.randn(dX, N)
-            sigma[t, ix, ix] = 0.5 * (sigma[t, ix, ix] + sigma[t, ix, ix].T)
+            sigma[t, :dX, :dX] = 0.5 * (sigma[t, :dX, :dX] + sigma[t, :dX, :dX].T)
             # Full version. Assuming policy synthetic samples distro fix bound is 2.
-            var_limit = self._hyperparams['policy_synthetic_samples_distro_fix_bound'] # Assuming to be 2
-            pemp = np.maximum(np.mean(X[:, t, :] - mu[t, ix], 0), 1e-3)
-            sigt = np.diag(1 / np.sqrt(pemp)).dot(sigma[t, ix, ix]).dot(np.diag(1 / np.sqrt(pemp)))
-            vec, val = np.linalg.eig(sigt)
+            var_limit = 2 #self._hyperparams['policy_synthetic_samples_distro_fix_bound'] # Assuming to be 2
+            pemp = np.maximum(np.mean(X[:, t, :] - mu[t, :dX], 0), 1e-3)
+            sigt = np.diag(1 / np.sqrt(pemp)).dot(sigma[t, :dX, :dX]).dot(np.diag(1 / np.sqrt(pemp)))
+            val, vec = np.linalg.eig(sigt)
+            val = np.diag(val)
             val = np.minimum(val, var_limit)
             sigt = vec.dot(val).dot(vec.T)
-            sigma[t, ix, ix] = np.diag(np.sqrt(pemp)).dot(sigt).dot(np.diag(np.sqrt(pemp)))
+            sigma[t, :dX, :dX] = np.diag(np.sqrt(pemp)).dot(sigt).dot(np.diag(np.sqrt(pemp)))
             # Fix small eigenvalues only.
-            vec, val = np.linalg.eig(sigma[t, ix, ix])
-            val = np.maximum(np.real(np.diag(val)), 1e-6)
-            sigma[t, ix, ix] = vec.dot(np.diag(val)).dot(vec.T)
+            val, vec = np.linalg.eig(sigma[t, :dX, :dX])
+            val = np.maximum(np.real(val), 1e-6)
+            sigma[t, :dX, :dX] = vec.dot(np.diag(val)).dot(vec.T)
 
             # Store sample probabilities.
-            pProb[:, t, :] = -0.5 * np.sum(samps**2, 1) - 0.5 * np.sum(np.log(val))
+            pProb[:, t] = -0.5 * np.sum(samps**2, 0) - 0.5 * np.sum(np.log(val))
             # Draw samples.
             try:
-                samps = mu[t, ix] + np.linalg.cholesky(sigma[t, ix, ix].T.dot(samps))
+                samps = mu[t, :dX].reshape(dX, 1) + np.linalg.cholesky(sigma[t, :dX, :dX]).T.dot(samps)
             except LinAlgError as e:
                 LOGGER.debug('Policy sample matrix is not positive definite.')
                 _, L = np.linalg.qr(np.sqrt(np.diag(val)).dot(vec.T))
-                samps = mu[t, ix] + L.T.dot(samps)
+                samps = mu[t, :dX].reshape(dX, 1) + L.T.dot(samps)
             pX[:, t, :] = samps.T
-            pU[:, t, :] = (traj_distr.K[t, :, :].dot(samps) + traj.k[t, :] + \
-                            traj.chol_pol_covar[t, :, :].T.dot(np.random.randn(Du, N))).T
-        # TODO - get ahold of the agent and use unpack_data_x to make a new sample object
-        # maybe just pass in the method??? is the method pickle-able?
+            pU[:, t, :] = (traj_distr.K[t, :, :].dot(samps) + traj_distr.k[t, :].reshape(dU, 1) + \
+                            traj_distr.chol_pol_covar[t, :, :].T.dot(np.random.randn(dU, N))).T
         return pX, pU, pProb

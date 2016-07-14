@@ -108,6 +108,7 @@ algorithm = {
     # 'demo_cond': 25,
     'num_demos': 3,
     'iterations': 20,
+    'synthetic_cost_samples': 100,
 }
 
 algorithm['init_traj_distr'] = {
@@ -178,7 +179,7 @@ algorithm['policy_opt'] = {}
 
 config = {
     'iterations': algorithm['iterations'],
-    'num_samples': 50,
+    'num_samples': 5,
     'verbose_trials': 1,
     'common': common,
     'agent': agent,

@@ -94,10 +94,8 @@ class Sample(object):
     def set_XU(self, X, U):
         """ Helper method for setting sample data using state vector. """
         for data_type in self.agent.x_data_types:
-            self.set(data_type, self.agent.unpack_data_X(X, [data_type]))
+            self.set(data_type, self.agent.unpack_data_x(X, [data_type]))
         self.set(ACTION, U)
-        import pdb; pdb.set_trace()
-        # TODO - check that self.get_X() == X
 
     # For pickling.
     def __getstate__(self):

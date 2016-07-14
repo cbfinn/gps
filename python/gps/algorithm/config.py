@@ -42,7 +42,9 @@ ALG = {
     # verbose when generating demos.
     "demo_verbose": False,
     # Demo condition during training.
-    'demo_M': 1
+    'demo_M': 1,
+    # Number of synthetic samples used to estimate the cost.
+    'synthetic_cost_samples': 0,
 }
 
 # Good indices.
