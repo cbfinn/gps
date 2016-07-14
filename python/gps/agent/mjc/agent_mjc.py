@@ -79,7 +79,7 @@ class AgentMuJoCo(Agent):
         self.eepts0 = []
         for i in range(self._hyperparams['conditions']):
             if END_EFFECTOR_POINTS in self.x_data_types:
-                self.eepts0[i] = self._world[i].get_data()['site_xpos'].flatten()
+                self.eepts0.append(self._world[i].get_data()['site_xpos'].flatten())
                 self.x0.append(
                     np.concatenate([self._hyperparams['x0'][i], self.eepts0[i], np.zeros_like(self.eepts0[i])])
                 )
