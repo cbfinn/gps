@@ -9,6 +9,10 @@ from gps.utility.general_utils import logsum
 from gps.algorithm.algorithm_utils import fit_emp_controller
 from gps.sample.sample_list import SampleList
 from gps.algorithm.traj_opt.traj_opt_utils import traj_distr_kl
+from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
+        END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
+        END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
+        CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -53,8 +57,16 @@ class AlgorithmTrajOpt(Algorithm):
             for i in xrange(self.M):
                 mu, sigma = self.traj_opt.forward(self.traj_distr[itr][i], self.traj_info[itr][i])
                 # KL divergence between current traj. distribution and gt distribution
-                self.kl_div[self.iteration_count].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][i], self.demo_traj[i]))
+                self.kl_div[itr].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][i], self.demo_traj[i]))
 
+        if self._hyperparams['learning_from_prior']:
+            for i in xrange(self.M):
+                target_position = self._hyperparams['target_end_effector'][:3]
+                cur_samples = sample_lists[m].get_samples()
+                sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
+                dists = [np.amin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
+                         for i in xrange(len(cur_samples))]
+                self.dists_to_target[itr].append(sum(dists) / len(cur_samples))   
         self._advance_iteration_variables()
 
     def _update_step_size(self):

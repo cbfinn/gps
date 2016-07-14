@@ -57,9 +57,12 @@ class GPSMain(object):
 			  self.demo_gen.generate()
 			  demo_file = self._data_files_dir + 'demos.pkl'
 			  demos = self.data_logger.unpickle(demo_file)
+			config['agent']['pos_body_offset'] = demos['pos_body_offset']
+			self.agent = config['agent']['type'](config['agent'])
 			self.algorithm.demoX = demos['demoX']
 			self.algorithm.demoU = demos['demoU']
 			self.algorithm.demoO = demos['demoO']
+			import pdb; pdb.set_trace()
 
 
 	def run(self, itr_load=None):

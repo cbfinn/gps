@@ -306,9 +306,12 @@ class GPSTrainingGUI(object):
             if algorithm.prev[0].pol_info is not None:
                 condition_titles += ' %8s %8s' % ('', '')
                 itr_data_fields  += ' %8s %8s' % ('kl_div_i', 'kl_div_f')
-            if algorithm._hyperparams['ioc']:
+            if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
                 condition_titles += ' %8s' % ('')
                 itr_data_fields  += ' %8s' % ('kl_div')
+            if algorithm._hyperparams['learning_from_prior']:
+                condition_titles += ' %8s' % ('')
+                itr_data_fields  += ' %8s' % ('mean_dist')
         self.append_output_text(condition_titles)
         self.append_output_text(itr_data_fields)
 
@@ -330,8 +333,10 @@ class GPSTrainingGUI(object):
                 kl_div_i = algorithm.prev[m].pol_info.prev_kl[0]
                 kl_div_f = algorithm.prev[m].pol_info.prev_kl[-1]
                 itr_data += ' %8.2f %8.2f' % (kl_div_i, kl_div_f)
-            if algorithm._hyperparams['ioc']:
+            if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
                 itr_data += ' %8.2f' % (algorithm.kl_div[itr][m])
+            if algorithm._hyperparams['learning_from_prior']:
+                itr_data += ' %8.2f' % (algorithm.dists_to_target[itr][m])
         self.append_output_text(itr_data)
 
     def _update_trajectory_visualizations(self, algorithm, agent,

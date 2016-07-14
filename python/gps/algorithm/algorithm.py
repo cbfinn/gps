@@ -52,6 +52,7 @@ class Algorithm(object):
         self.traj_distr = {self.iteration_count: []}
         self.traj_info = {self.iteration_count: []}
         self.kl_div = {self.iteration_count:[]}
+        self.dists_to_target = {self.iteration_count:[]}
         self.sample_list = {i: SampleList([]) for i in range(self.M)}
 
         for m in range(self.M):
@@ -213,6 +214,7 @@ class Algorithm(object):
         self.traj_distr[self.iteration_count] = []
         self.traj_info[self.iteration_count] = []
         self.kl_div[self.iteration_count] = []
+        self.dists_to_target[self.iteration_count] = []
         self.previous_cost = []
         for m in range(self.M):
             self.cur[m].traj_info = TrajectoryInfo()

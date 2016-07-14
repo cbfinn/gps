@@ -100,12 +100,11 @@ class GenDemo(object):
 			pol = self.algorithm.policy_opt.policy
 			for i in xrange(M):
 				# Gather demos.
-				for j in xrange(N):
-					demo = self.agent.sample(
-						pol, i,
-						verbose=(i < self._hyperparams['verbose_trials'])
-						)
-					demos.append(demo)
+				demo = self.agent.sample(
+					pol, i,
+					verbose=(i < self._hyperparams['verbose_trials'])
+					)
+				demos.append(demo)
 
 		# Filter out worst (M - good_conds) demos.
 		target_position = agent_config['target_end_effector'][:3]
@@ -119,14 +118,16 @@ class GenDemo(object):
 			good_indicators = (dists_to_target <= agent_config['success_upper_bound']).tolist()
 			good_indices = [i for i in xrange(len(good_indicators)) if good_indicators[i]]
 			bad_indices = np.argmax(dists_to_target)
-			self._hyperparams['agent']['pos_body_offset'] = [agent_config['pos_body_offset'][bad_indices]]
 			self.ioc_algo._hyperparams['demo_cond'] = len(good_indices)
 		filtered_demos = []
 		for i in good_indices:
 			filtered_demos.append(demos[i])
+		import pdb; pdb.set_trace()
 		shuffle(filtered_demos)
 		demo_list =  SampleList(filtered_demos)
 		demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs()}
+		if self._learning:
+			demo_store['pos_body_offset'] = [agent_config['pos_body_offset'][bad_indices]]
 		# Save the demos.
 		self.data_logger.pickle(
 			self._data_files_dir + 'demos.pkl',

@@ -64,7 +64,7 @@ agent = {
     'pos_body_idx': np.array([1]),
     # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
     #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    'pos_body_offset': [np.array([0, 0.2, 0])],
+    'pos_body_offset': [np.array([0, 0.0, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -102,6 +102,7 @@ algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
     'ioc' : True,
+    'learning_from_prior': common['learning_from_prior'],
     'kl_step': 0.5,
     'max_ent_traj': 1.0,
     'demo_distr_empest': True,
@@ -109,6 +110,7 @@ algorithm = {
     # 'demo_cond': 25,
     'num_demos': 2,
     'iterations': 15,
+    'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
 }
 
 algorithm['init_traj_distr'] = {
