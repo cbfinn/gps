@@ -9,7 +9,7 @@ from numpy.linalg import LinAlgError
 
 from gps.algorithm.config import ALG
 from gps.algorithm.algorithm_utils import IterationData, TrajectoryInfo
-from gps.utility.general_utils import extract_condition
+from gps.utility.general_utils import extract_condition, disable_caffe_logs
 from gps.sample.sample_list import SampleList
 
 
@@ -306,4 +306,6 @@ class Algorithm(object):
             pX[:, t, :] = samps.T
             pU[:, t, :] = (traj_distr.K[t, :, :].dot(samps) + traj.k[t, :] + \
                             traj.chol_pol_covar[t, :, :].T.dot(np.random.randn(Du, N))).T
+        # TODO - get ahold of the agent and use unpack_data_x to make a new sample object
+        # maybe just pass in the method??? is the method pickle-able?
         return pX, pU, pProb
