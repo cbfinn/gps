@@ -77,12 +77,13 @@ class AgentMuJoCo(Agent):
 
         # Initialize x0.
         self.x0 = []
+        self.eepts0 = []
         for i in range(self._hyperparams['conditions']):
             if END_EFFECTOR_POINTS in self.x_data_types:
                 # initial eepts
-                self.eepts0 = self._world[i].get_data()['site_xpos'].flatten()
+                self.eepts0.append(self._world[i].get_data()['site_xpos'].flatten())
                 self.x0.append(
-                    np.concatenate([self._hyperparams['x0'][i], self.eepts0, np.zeros_like(self.eepts0)])
+                    np.concatenate([self._hyperparams['x0'][i], self.eepts0[i], np.zeros_like(self.eepts0[i])])
                 )
             else:
                 self.x0.append(self._hyperparams['x0'][i])
@@ -158,7 +159,7 @@ class AgentMuJoCo(Agent):
         sample.set(JOINT_VELOCITIES,
                    self._hyperparams['x0'][condition][self._vel_idx], t=0)
         self._data = self._world[condition].get_data()
-        eepts = self.eepts0
+        eepts = self.eepts0[condition]
         sample.set(END_EFFECTOR_POINTS, eepts, t=0)
         sample.set(END_EFFECTOR_POINT_VELOCITIES, np.zeros_like(eepts), t=0)
         jac = np.zeros([eepts.shape[0], self._model[condition]['nq']])
