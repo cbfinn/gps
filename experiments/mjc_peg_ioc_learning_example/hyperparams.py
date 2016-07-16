@@ -84,7 +84,7 @@ demo_agent = {
     'pos_body_idx': generate_pos_idx(common['demo_conditions']),
     # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
     #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    'pos_body_offset': generate_pos_body_offset(common['demo_conditions']),
+    'pos_body_offset': generate_pos_body_offset(common['demo_conditions']), # the second argument is a multiplier
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -108,7 +108,7 @@ algorithm = {
     'demo_cond': 20,
     # 'demo_cond': 25,
     'num_demos': 2,
-    'iterations': 20,
+    'iterations': 15,
     'synthetic_cost_samples': 100,
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
 }

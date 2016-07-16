@@ -120,8 +120,23 @@ class GenDemo(object):
 			bad_indices = np.argmax(dists_to_target)
 			self.ioc_algo._hyperparams['demo_cond'] = len(good_indices)
 		filtered_demos = []
+		self.ioc_algo.demo_conditions = []
+		self.ioc_algo.failed_conditions = []
+		exp_dir = self._data_files_dir.replace("data_files", "")
+		with open(exp_dir + 'log.txt', 'a') as f:
+			f.write('\nThe demo conditions are: \n')
 		for i in good_indices:
 			filtered_demos.append(demos[i])
+			self.ioc_algo.demo_conditions.append(agent_config['pos_body_offset'][i])
+			with open(exp_dir + 'log.txt', 'a') as f:
+				f.write('\n' + str(agent_config['pos_body_offset'][i]) + '\n')
+		with open(exp_dir + 'log.txt', 'a') as f:
+			f.write('\nThe failed badmm conditions are: \n')
+		for i in xrange(M):
+			if i not in good_indices:
+				self.ioc_algo.failed_conditions.append(agent_config['pos_body_offset'][i])
+				with open(exp_dir + 'log.txt', 'a') as f:
+					f.write('\n' + str(agent_config['pos_body_offset'][i]) + '\n')
 		# import pdb; pdb.set_trace()
 		shuffle(filtered_demos)
 		demo_list =  SampleList(filtered_demos)

@@ -16,6 +16,7 @@ For more detailed documentation, visit: rll.berkeley.edu/gps/gui
 """
 import time
 import threading
+import sys
 
 import numpy as np
 import matplotlib.pyplot as plt

@@ -62,7 +62,7 @@ class GPSMain(object):
 			self.algorithm.demoX = demos['demoX']
 			self.algorithm.demoU = demos['demoU']
 			self.algorithm.demoO = demos['demoO']
-			import pdb; pdb.set_trace()
+			# import pdb; pdb.set_trace()
 
 
 	def run(self, itr_load=None):
@@ -103,8 +103,8 @@ class GPSMain(object):
 			# 	self._log_data(itr, traj_sample_lists, pol_sample_lists)
 			# else:
 			self._log_data(itr, traj_sample_lists)
-
 		self._end()
+		return None
 
 	def test_policy(self, itr, N):
 		"""
@@ -390,6 +390,85 @@ def main():
 			plt.show()
 		else:
 			gps.test_policy(itr=current_itr, N=test_policy_N)
+	elif exp_name == "mjc_peg_ioc_learning_example":
+		ioc_conditions = [np.array([random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), \
+						random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)])]) for i in xrange(20)]
+		top_bottom = [np.array([np.random.uniform(-0.08, 0.08), \
+						random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)])]) for i in xrange(15)]
+		left_right = [np.array([random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), \
+						np.random.uniform(-0.08, 0.08)]) for i in xrange(15)]
+		ioc_conditions.extend(top_bottom)
+		ioc_conditions.extend(left_right)
+		exp_iter = hyperparams.config['algorithm']['iterations']
+		data_files_dir = exp_dir + 'data_files/'
+		mean_dists = []
+		pos_body_offset_dists = [np.linalg.norm(ioc_conditions[i]) for i in xrange(len(ioc_conditions))]
+		for i in xrange(len(ioc_conditions)):
+			hyperparams = imp.load_source('hyperparams', hyperparams_file)
+			# hyperparams.config['gui_on'] = False
+			hyperparams.config['algorithm']['ioc_cond'] = ioc_conditions[i]
+			gps = GPSMain(hyperparams.config)
+			gps.agent._hyperparams['pos_body_offset'] = [ioc_conditions[i]]
+			# import pdb; pdb.set_trace()
+			if hyperparams.config['gui_on']:
+				# run_gps = threading.Thread(
+				# 	target=lambda: gps.run(itr_load=resume_training_itr)
+				# )
+				# run_gps.daemon = True
+				# run_gps.start()
+				gps.run(itr_load=resume_training_itr)
+				plt.close()
+				# plt.ioff()
+				# plt.show()
+			else:
+				gps.run(itr_load=resume_training_itr)
+				# continue
+			if i == 0:
+				demo_conditions = gps.algorithm.demo_conditions
+				failed_conditions = gps.algorithm.failed_conditions
+			mean_dists.append(gps.algorithm.dists_to_target[exp_iter - 1][0])
+			print "iteration " + repr(i) + ": mean dist is " + repr(mean_dists[i]) 
+		with open(exp_dir + 'log.txt', 'a') as f:
+			f.write('\nThe 50 IOC conditions are: \n' + str(ioc_conditions) + '\n')
+		plt.plot(pos_body_offset_dists, mean_dists, 'ro')
+		plt.title("Learning from prior experience using peg insertion")
+		plt.xlabel('pos body offset distances to the origin')
+		plt.ylabel('mean distances to the target')
+		plt.savefig(data_files_dir + 'learning_from_prior.png')
+		plt.close()
+
+		from matplotlib.patches import Rectangle
+
+		ioc_conditions_x = [ioc_conditions[i][0] for i in xrange(len(ioc_conditions))]
+		ioc_conditions_y = [ioc_conditions[i][1] for i in xrange(len(ioc_conditions))]
+		mean_dists = np.around(mean_dists, decimals=2)
+		failed_ioc_x = [ioc_conditions_x[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] > 0.08]
+		failed_ioc_y = [ioc_conditions_y[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] > 0.08]
+		success_ioc_x = [ioc_conditions_x[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] <= 0.08]
+		success_ioc_y = [ioc_conditions_y[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] <= 0.08]
+		demo_conditions_x = [demo_conditions[i][0] for i in xrange(len(demo_conditions))]
+		demo_conditions_y = [demo_conditions[i][1] for i in xrange(len(demo_conditions))]
+		failed_conditions_x = [failed_conditions[i][0] for i in xrange(len(failed_conditions))]
+		failed_conditions_y = [failed_conditions[i][1] for i in xrange(len(failed_conditions))]
+		subplt = plt.subplot()
+		subplt.plot(demo_conditions_x, demo_conditions_y, 'go')
+		subplt.plot(failed_conditions_x, failed_conditions_y, 'rx')
+		subplt.plot(success_ioc_x, success_ioc_y, 'g^')
+		subplt.plot(failed_ioc_x, failed_ioc_y, 'rv')
+		# plt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc= (1, 1))
+		for i, txt in enumerate(mean_dists):
+			subplt.annotate(txt, (ioc_conditions_x[i], ioc_conditions_y[i]))
+		ax = plt.gca()
+		ax.add_patch(Rectangle((-0.08, -0.08), 0.16, 0.16, fill = False, edgecolor = 'blue'))
+		box = subplt.get_position()
+		subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
+		subplt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
+						shadow=True, ncol=2)
+		plt.title("Distribution of neural network and IOC's initial conditions")
+		# plt.xlabel('width')
+		# plt.ylabel('length')
+		plt.savefig(data_files_dir + 'distribution_of_conditions.png')
+		plt.show()
 	else:
 		gps = GPSMain(hyperparams.config)
 		if hyperparams.config['gui_on']:
