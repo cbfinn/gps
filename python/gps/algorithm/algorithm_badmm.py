@@ -505,6 +505,7 @@ class AlgorithmBADMM(Algorithm):
         pol_info = self.cur[m].pol_info
         T, dU, dX = traj_distr.T, traj_distr.dU, traj_distr.dX
         Cm, cv = np.copy(traj_info.Cm), np.copy(traj_info.cv)
+        multiplier = self._hyperparams['max_ent_traj']
 
         # Modify policy action via Lagrange multiplier.
         cv[:, dX:] -= pol_info.lambda_k

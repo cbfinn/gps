@@ -1,6 +1,6 @@
 """ This file defines general utility functions and classes. """
 import numpy as np
-
+import os
 
 class BundleType(object):
     """
@@ -92,3 +92,24 @@ def get_ee_points(offsets, ee_pos, ee_rot):
         3 x N array of end effector points.
     """
     return ee_rot.dot(offsets.T) + ee_pos.T
+
+def logsum(vec, dim):
+    """ Safe sum of log values. """
+    maxv = vec.max(dim)
+    maxv[maxv == -np.inf] = 0
+    # print vec
+    return np.log(np.sum(np.exp(vec - maxv), dim)) + maxv
+
+def disable_caffe_logs(unset_glog_level=None):
+    """
+    Function that disables caffe printouts
+    """
+    if unset_glog_level is None:
+        if 'GLOG_minloglevel' not in os.environ:
+            os.environ['GLOG_minloglevel'] = '2'
+            unset_glog_level = True
+        else:
+            unset_glog_level = False
+        return unset_glog_level
+    elif unset_glog_level:
+        del os.environ['GLOG_minloglevel']

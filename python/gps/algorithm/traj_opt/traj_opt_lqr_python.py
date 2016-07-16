@@ -45,6 +45,7 @@ class TrajOptLQRPython(TrajOpt):
 
         line_search = LineSearch(self._hyperparams['min_eta'])
         min_eta = -np.Inf
+        #import pdb; pdb.set_trace()
 
         for itr in range(DGD_MAX_ITER):
             traj_distr, new_eta = self.backward(prev_traj_distr, traj_info,

@@ -26,7 +26,8 @@ class AgentMuJoCo(Agent):
         config.update(hyperparams)
         Agent.__init__(self, config)
         self._setup_conditions()
-        self._setup_world(hyperparams['filename'])
+        self._setup_world(config['filename'])
+        self._linear = config['point_linear']
 
     def _setup_conditions(self):
         """
@@ -79,6 +80,7 @@ class AgentMuJoCo(Agent):
         self.eepts0 = []
         for i in range(self._hyperparams['conditions']):
             if END_EFFECTOR_POINTS in self.x_data_types:
+                # initial eepts
                 self.eepts0.append(self._world[i].get_data()['site_xpos'].flatten())
                 self.x0.append(
                     np.concatenate([self._hyperparams['x0'][i], self.eepts0[i], np.zeros_like(self.eepts0[i])])
@@ -105,7 +107,6 @@ class AgentMuJoCo(Agent):
             noisy: Whether or not to use noise during sampling.
         """
         # Create new sample, populate first time step.
-        new_sample = self._init_sample(condition)
         mj_X = self._hyperparams['x0'][condition]
         U = np.zeros([self.T, self.dU])
         if noisy:
@@ -124,6 +125,11 @@ class AgentMuJoCo(Agent):
                 self._model[condition]['body_pos'][idx, :] += \
                         var * np.random.randn(1, 3)
         self._world[condition].set_model(self._model[condition])
+        if self._linear:
+          dt = self._hyperparams['dt']
+          F = np.array([[ 1, 0, dt, 0, dt**2., 0], [0, 1, 0, dt, 0, dt**2.],
+                        [0, 0, 1, 0, dt, 0], [0, 0, 0, 1, 0, dt]])
+        new_sample = self._init_sample(condition)
         for t in range(self.T):
             X_t = new_sample.get_X(t=t)
             obs_t = new_sample.get_obs(t=t)
@@ -133,6 +139,9 @@ class AgentMuJoCo(Agent):
                 self._world[condition].plot(mj_X)
             if (t + 1) < self.T:
                 for _ in range(self._hyperparams['substeps']):
+                  if self._linear:
+                    mj_X = F.dot(np.r_[mj_X, mj_U])
+                  else:
                     mj_X, _ = self._world[condition].step(mj_X, mj_U)
                 #TODO: Some hidden state stuff will go here.
                 self._data = self._world[condition].get_data()
@@ -198,7 +207,10 @@ class AgentMuJoCo(Agent):
         """
         sample.set(JOINT_ANGLES, np.array(mj_X[self._joint_idx]), t=t+1)
         sample.set(JOINT_VELOCITIES, np.array(mj_X[self._vel_idx]), t=t+1)
-        curr_eepts = self._data['site_xpos'].flatten()
+        if self._linear:
+          curr_eepts = np.r_[mj_X[self._joint_idx], [0.]]
+        else:
+          curr_eepts = self._data['site_xpos'].flatten()
         sample.set(END_EFFECTOR_POINTS, curr_eepts, t=t+1)
         prev_eepts = sample.get(END_EFFECTOR_POINTS, t=t)
         eept_vels = (curr_eepts - prev_eepts) / self._hyperparams['dt']

@@ -48,7 +48,7 @@ class DynamicsLRPrior(Dynamics):
             mu0, Phi, m, n0 = self.prior.eval(dX, dU, xux)
 
             xux_mean = np.mean(xux, axis=0)
-            empsig = (xux - xux_mean).T.dot(xux - xux_mean) / (N - 1)
+            empsig = (xux - xux_mean).T.dot(xux - xux_mean) / (N)
             empsig = 0.5 * (empsig + empsig.T)
 
             sigma = (N * empsig + Phi + (N * m) / (N + m) *

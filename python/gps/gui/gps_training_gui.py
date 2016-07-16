@@ -16,6 +16,7 @@ For more detailed documentation, visit: rll.berkeley.edu/gps/gui
 """
 import time
 import threading
+import sys
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -78,16 +79,17 @@ class GPSTrainingGUI(object):
 
         # Assign GUI component locations.
         self._gs = gridspec.GridSpec(16, 8)
-        self._gs_action_panel           = self._gs[0:2,  0:8]
-        self._gs_action_output          = self._gs[2:3,  0:4]
-        self._gs_status_output          = self._gs[3:4,  0:4]
-        self._gs_cost_plotter           = self._gs[2:4,  4:8]
-        self._gs_algthm_output          = self._gs[4:8,  0:8]
+        self._gs_action_panel           = self._gs[0:1,  0:8]
+        self._gs_action_output          = self._gs[1:2,  0:4]
+        self._gs_status_output          = self._gs[2:3,  0:4]
+        self._gs_cost_plotter           = self._gs[1:3,  4:8]
+        self._gs_gt_cost_plotter        = self._gs[4:6,  4:8]
+        self._gs_algthm_output          = self._gs[3:9,  0:4]
         if config['image_on']:
-            self._gs_traj_visualizer    = self._gs[8:16, 0:4]
-            self._gs_image_visualizer   = self._gs[8:16, 4:8]
+            self._gs_traj_visualizer    = self._gs[9:16, 0:4]
+            self._gs_image_visualizer   = self._gs[9:16, 4:8]
         else:
-            self._gs_traj_visualizer    = self._gs[8:16, 0:8]
+            self._gs_traj_visualizer    = self._gs[9:16, 0:8]
 
         # Create GUI components.
         self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 4, actions_arr)
@@ -100,6 +102,8 @@ class GPSTrainingGUI(object):
                 font_family='monospace')
         self._cost_plotter = MeanPlotter(self._fig, self._gs_cost_plotter,
                 color='blue', label='mean cost')
+        self._gt_cost_plotter = MeanPlotter(self._fig, self._gs_gt_cost_plotter,
+                color='red', label='ground truth cost')
         self._traj_visualizer = Plotter3D(self._fig, self._gs_traj_visualizer,
                 num_plots=self._hyperparams['conditions'])
         if config['image_on']:
@@ -217,22 +221,27 @@ class GPSTrainingGUI(object):
     def set_action_text(self, text):
         self._action_output.set_text(text)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def set_action_bgcolor(self, color, alpha=1.0):
         self._action_output.set_bgcolor(color, alpha)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def set_status_text(self, text):
         self._status_output.set_text(text)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def set_output_text(self, text):
         self._algthm_output.set_text(text)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def append_output_text(self, text):
         self._algthm_output.append_text(text)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def start_display_calculating(self):
         self._calculating_run.set()
@@ -268,9 +277,13 @@ class GPSTrainingGUI(object):
             policy_titles = pol_sample_lists != None
             self._output_column_titles(algorithm, policy_titles)
             self._first_update = False
-
         costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
-        self._update_iteration_data(itr, algorithm, costs, pol_sample_lists)
+        if algorithm._hyperparams['ioc']:
+            gt_costs = [np.mean(np.sum(algorithm.prev[m].cgt, axis=1)) for m in range(algorithm.M)]
+            self._update_iteration_data(itr, algorithm, gt_costs, pol_sample_lists)
+            self._gt_cost_plotter.update(gt_costs, t=itr)
+        else:
+            self._update_iteration_data(itr, algorithm, costs, pol_sample_lists)
         self._cost_plotter.update(costs, t=itr)
         if END_EFFECTOR_POINTS in agent.x_data_types:
             self._update_trajectory_visualizations(algorithm, agent,
@@ -278,6 +291,7 @@ class GPSTrainingGUI(object):
 
         self._fig.canvas.draw()
         self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
+        # import pdb; pdb.set_trace()
 
     def _output_column_titles(self, algorithm, policy_titles=False):
         """
@@ -295,6 +309,15 @@ class GPSTrainingGUI(object):
         for m in range(algorithm.M):
             condition_titles += ' | %8s %9s %-7d' % ('', 'condition', m)
             itr_data_fields  += ' | %8s %8s %8s' % ('  cost  ', '  step  ', 'entropy ')
+            if algorithm.prev[0].pol_info is not None:
+                condition_titles += ' %8s %8s' % ('', '')
+                itr_data_fields  += ' %8s %8s' % ('kl_div_i', 'kl_div_f')
+            if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
+                condition_titles += ' %8s' % ('')
+                itr_data_fields  += ' %8s' % ('kl_div')
+            if algorithm._hyperparams['learning_from_prior']:
+                condition_titles += ' %8s' % ('')
+                itr_data_fields  += ' %8s' % ('mean_dist')
             if policy_titles:
                 condition_titles += ' %8s %8s %8s' % ('', '', '')
                 itr_data_fields  += ' %8s %8s %8s' % ('pol_cost', 'kl_div_i', 'kl_div_f')
@@ -321,6 +344,14 @@ class GPSTrainingGUI(object):
             entropy = 2*np.sum(np.log(np.diagonal(algorithm.prev[m].traj_distr.chol_pol_covar,
                     axis1=1, axis2=2)))
             itr_data += ' | %8.2f %8.2f %8.2f' % (cost, step, entropy)
+            if algorithm.prev[0].pol_info is not None:
+                kl_div_i = algorithm.prev[m].pol_info.prev_kl[0]
+                kl_div_f = algorithm.prev[m].pol_info.prev_kl[-1]
+                itr_data += ' %8.2f %8.2f' % (kl_div_i, kl_div_f)
+            if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
+                itr_data += ' %8.2f' % (algorithm.kl_div[itr][m])
+            if algorithm._hyperparams['learning_from_prior']:
+                itr_data += ' %8.2f' % (algorithm.dists_to_target[itr][m])
             if pol_sample_lists is not None:
                 kl_div_i = algorithm.cur[m].pol_info.init_kl.mean()
                 kl_div_f = algorithm.cur[m].pol_info.prev_kl.mean()
@@ -337,8 +368,8 @@ class GPSTrainingGUI(object):
         for m in range(algorithm.M):
             self._traj_visualizer.clear(m)
             self._traj_visualizer.set_lim(i=m, xlim=xlim, ylim=ylim, zlim=zlim)
-            self._update_linear_gaussian_controller_plots(algorithm, agent, m)
             self._update_samples_plots(traj_sample_lists, m, 'green', 'Trajectory Samples')
+            self._update_linear_gaussian_controller_plots(algorithm, agent, m)
             if pol_sample_lists:
                 self._update_samples_plots(pol_sample_lists,  m, 'blue',  'Policy Samples')
         self._traj_visualizer.draw()    # this must be called explicitly

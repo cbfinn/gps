@@ -1,4 +1,4 @@
-""" Hyperparameters for MJC 2D navigation policy optimization. """
+""" Hyperparameters for MJC 2D navigation policy optimization using ioc. """
 from __future__ import division
 
 from datetime import datetime
@@ -10,9 +10,9 @@ from gps import __file__ as gps_filepath
 from gps.agent.mjc.agent_mjc import AgentMuJoCo
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
+from gps.algorithm.cost.cost_ioc_quad import CostIOCQuadratic
+from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.cost.cost_state import CostState
-from gps.algorithm.cost.cost_action import CostAction
-from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
@@ -32,7 +32,8 @@ SENSOR_DIMS = {
 }
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/mjc_pointmass_example/'
+EXP_DIR = BASE_DIR + '/../experiments/mjc_pointmass_ioc_example/'
+DEMO_DIR = BASE_DIR + '/../experiments/mjc_pointmass_example/'
 
 
 common = {
@@ -40,10 +41,11 @@ common = {
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
     'data_files_dir': EXP_DIR + 'data_files/',
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 4,
-    # 'conditions': 1,
+    'demo_conditions': 4,
+    'conditions': 1,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -52,9 +54,9 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/particle2d.xml',
-    'x0': [np.array([-1., 1., 0., 0.]), np.array([1., 1., 0., 0.]),
-           np.array([1., -1., 0., 0.]), np.array([-1., -1., 0., 0.])],
-    # 'x0': [np.array([-1., 1., 0., 0.])],
+    #'x0': [np.array([-1., 1., 0., 0.]), np.array([1., 1., 0., 0.]),
+    #       np.array([1., -1., 0., 0.]), np.array([-1., -1., 0., 0.])],
+    'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
@@ -66,14 +68,35 @@ agent = {
     'smooth_noise': False,
 }
 
+demo_agent = {
+    'type': AgentMuJoCo,
+    'filename': './mjc_models/particle2d.xml',
+    'x0': [np.array([-1., 1., 0., 0.]), np.array([1., 1., 0., 0.]),
+           np.array([1., -1., 0., 0.]), np.array([-1., -1., 0., 0.])],
+    # 'x0': [np.array([-1., 1., 0., 0.])],
+    'dt': 0.05,
+    'substeps': 1,
+    'conditions': common['demo_conditions'],
+    'T': 100,
+    'point_linear': True,
+    'sensor_dims': SENSOR_DIMS,
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'smooth_noise': False,
+}
+
 algorithm = {
     'type': AlgorithmTrajOpt,
+    'ioc' : True,
+    'demo_distr_empest': True,
+    'max_ent_traj': 1.0,
     'conditions': common['conditions'],
-    'iterations': 10,
+    'iterations': 15,
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
-    'max_ent_traj': 1.0,
+    'demo_cond': 4,
+    'num_demos': 10,
 }
 
 algorithm['init_traj_distr'] = {
@@ -86,7 +109,16 @@ algorithm['init_traj_distr'] = {
     'T': agent['T'],
 }
 
-state_cost = {
+algorithm['cost'] = {
+    #'type': CostIOCQuadratic,
+    'type': CostIOCNN,
+    'wu': np.array([1e-2, 1e-2]),
+    'dO': 10,
+    'T': 100,
+    'iterations': 5000,
+}
+
+algorithm['gt_cost'] = {
     'type': CostState,
     'l2': 10,
     'l1': 0,
@@ -101,17 +133,6 @@ state_cost = {
             'target_state': np.array([0.0, 0.0]),
         },
     },
-}
-
-action_cost = {
-    'type': CostAction,
-    'wu': np.array([1e-2, 1e-2])
-}
-
-algorithm['cost'] = {
-    'type': CostSum,
-    'costs': [state_cost, action_cost],
-    'weights': [1.0, 1.0],
 }
 
 algorithm['dynamics'] = {
@@ -129,16 +150,6 @@ algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
 }
 
-# algorithm['policy_opt'] = {
-#     'type': PolicyOptCaffe,
-#     'weights_file_prefix': EXP_DIR + 'policy',
-#     'iterations': 10000,
-#     'network_arch_params': {
-#         'n_layers': 2,
-#         'dim_hidden': [20],
-#     },
-# }
-
 algorithm['policy_prior'] = {
     'type': PolicyPrior,
 }
@@ -150,6 +161,7 @@ config = {
     'verbose_policy_trials': 1,
     'common': common,
     'agent': agent,
+    'demo_agent': demo_agent,
     'gui_on': True,
     'algorithm': algorithm,
 }

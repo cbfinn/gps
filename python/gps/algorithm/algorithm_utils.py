@@ -10,11 +10,14 @@ class IterationData(BundleType):
     def __init__(self):
         variables = {
             'sample_list': None,  # List of samples for the current iteration.
+            'syn_sample_list': None,  # List of synthetic samples
             'traj_info': None,  # Current TrajectoryInfo object.
+            'prevcost_traj_info': None, # Current TrajectoryInfo object using previous IOC cost.
             'init_pol_info': None, # Initial PolicyInfo object
             'pol_info': None,  # Current PolicyInfo object.
             'traj_distr': None,  # Initial trajectory distribution.
             'cs': None,  # Sample costs of the current iteration.
+            'cgt': None, # Ground truth sample cost of the current iteration.
             'step_mult': 1.0,  # KL step multiplier for the current iteration.
             'eta': 1.0,  # Dual variable used in LQR backward pass.
         }
@@ -112,3 +115,34 @@ def gauss_fit_joint_prior(pts, mu0, Phi, m, n0, dwts, dX, dU, sig_reg):
     dynsig = sigma[dX:dX+dU, dX:dX+dU] - fd.dot(sigma[:dX, :dX]).dot(fd.T)
     dynsig = 0.5 * (dynsig + dynsig.T)
     return fd, fc, dynsig
+
+def fit_emp_controller(demo_x, demo_u):
+    """ Fit the conditional covariance of u|x of a set of demonstrations. """
+    T = np.shape(demo_u)[1]
+    dX = np.shape(demo_x)[2]
+    dU = np.shape(demo_u)[2]
+    N = np.shape(demo_u)[0]
+
+    K = np.zeros((T, dU, dX))
+    k = np.zeros((T, dU))
+    pol_covar = np.zeros((T, dU, dU))
+    chol_pol_covar = np.zeros((T, dU, dU))
+    inv_pol_covar = np.zeros((T, dU, dU))
+    traj = LinearGaussianPolicy(K, k, pol_covar, chol_pol_covar, inv_pol_covar)
+
+    for t in xrange(T):
+        X = np.hstack((np.squeeze(demo_x[:, t, :]), np.ones((N, 1))))
+        U = np.squeeze(demo_u[:, t, :])
+        result = np.linalg.pinv(X).dot(U).T
+        traj.K[t, :, :] = result[:, 0: dX]
+        traj.k[t, :] = result[:, -1]
+
+        sig = np.zeros((dU, dU))
+        for n in xrange(N):
+            diff = (demo_u[n, t, :] - (traj.K[t, :, :].dot(demo_x[n, t, :]) + traj.k[t, :])).reshape(dU, -1)
+            sig += diff.dot(diff.T)
+        traj.pol_covar[t, :, :] = sig / N + 1e-12 * np.eye(dU)
+
+        traj.chol_pol_covar[t, :, :] = np.linalg.cholesky(traj.pol_covar[t, :, :])
+        traj.inv_pol_covar[t, :, :] = np.linalg.pinv(traj.pol_covar[t, :, :])
+    return traj

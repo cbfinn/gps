@@ -16,14 +16,40 @@ ALG = {
                               # objects for each condition.
     # Trajectory optimization.
     'traj_opt': None,
+    # Use maximum entropy term in trajectory optimization.
+    'max_ent_traj': 0.0,
+    # Flag if we estimate the demo distribution empirically.
+    'demo_distr_empest': False,
+    # Flag if the algorithm is using IOC
+    'ioc': False,
+    # Flag if the algorithm is learning from prior experience
+    'learning_from_prior': False,
     # Dynamics hyperaparams.
     'dynamics': None,
     # Costs.
     'cost': None,  # A list of Cost objects for each condition.
+    # List of demonstrations of all conditions for the current iteration used in cost learning.
+    'demo_list': None,
+    # Number of demos per condition.
+    'num_demos': 10,
+    # Demo conditions.
+    'demo_cond': 4,
+    # variance multiplier for demos.
+    'var_mult': 1,
+    # verbose when generating demos.
+    "demo_verbose": False,
+    # Demo condition during training.
+    'demo_M': 1,
+    # Number of synthetic samples used to estimate the cost.
+    'synthetic_cost_samples': 0,
     # Whether or not to sample with neural net policy (only for badmm/mdgps).
     'sample_on_policy': False,
 }
 
+# Good indices.
+good_indices = range(35)
+good_indices.extend(range(36, 40))
+ALG['good_indices'] = good_indices
 
 # AlgorithmBADMM
 ALG_BADMM = {
