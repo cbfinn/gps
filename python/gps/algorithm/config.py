@@ -1,7 +1,4 @@
 """ Default configuration and hyperparameter values for algorithms. """
-from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-from gps.algorithm.dynamics.dynamics_lr import DynamicsLR
-
 
 # Algorithm
 ALG = {
@@ -18,7 +15,7 @@ ALG = {
     'init_traj_distr': None,  # A list of initial LinearGaussianPolicy
                               # objects for each condition.
     # Trajectory optimization.
-    'traj_opt': TrajOptLQRPython({}),
+    'traj_opt': None,
     # Use maximum entropy term in trajectory optimization.
     'max_ent_traj': 0.0,
     # Flag if we estimate the demo distribution empirically.
@@ -28,9 +25,7 @@ ALG = {
     # Flag if the algorithm is learning from prior experience
     'learning_from_prior': False,
     # Dynamics hyperaparams.
-    'dynamics': {
-        'type': DynamicsLR
-    },
+    'dynamics': None,
     # Costs.
     'cost': None,  # A list of Cost objects for each condition.
     # List of demonstrations of all conditions for the current iteration used in cost learning.
@@ -47,6 +42,8 @@ ALG = {
     'demo_M': 1,
     # Number of synthetic samples used to estimate the cost.
     'synthetic_cost_samples': 0,
+    # Whether or not to sample with neural net policy (only for badmm/mdgps).
+    'sample_on_policy': False,
 }
 
 # Good indices.
@@ -69,4 +66,13 @@ ALG_BADMM = {
     'exp_step_decrease': 0.5,
     'exp_step_upper': 0.5,
     'exp_step_lower': 1.0,
+}
+
+# AlgorithmMD
+ALG_MDGPS = {
+    # TODO: remove need for init_pol_wt in MDGPS
+    'init_pol_wt': 0.01,
+    'policy_sample_mode': 'add',
+    'max_policy_samples': 20,
+    'step_rule': 'classic',
 }

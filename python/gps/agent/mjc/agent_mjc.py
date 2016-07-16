@@ -95,7 +95,7 @@ class AgentMuJoCo(Agent):
                                        cam_pos[0], cam_pos[1], cam_pos[2],
                                        cam_pos[3], cam_pos[4], cam_pos[5])
 
-    def sample(self, policy, condition, verbose=True, save=True):
+    def sample(self, policy, condition, verbose=True, save=True, noisy=True):
         """
         Runs a trial and constructs a new sample containing information
         about the trial.
@@ -104,11 +104,15 @@ class AgentMuJoCo(Agent):
             condition: Which condition setup to run.
             verbose: Whether or not to plot the trial.
             save: Whether or not to store the trial into the samples.
+            noisy: Whether or not to use noise during sampling.
         """
         # Create new sample, populate first time step.
         mj_X = self._hyperparams['x0'][condition]
         U = np.zeros([self.T, self.dU])
-        noise = generate_noise(self.T, self.dU, self._hyperparams)
+        if noisy:
+            noise = generate_noise(self.T, self.dU, self._hyperparams)
+        else:
+            noise = np.zeros((self.T, self.dU))
         if np.any(self._hyperparams['x0var'][condition] > 0):
             x0n = self._hyperparams['x0var'] * \
                     np.random.randn(self._hyperparams['x0var'].shape)

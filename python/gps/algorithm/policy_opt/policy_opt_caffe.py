@@ -39,7 +39,7 @@ class PolicyOptCaffe(PolicyOpt):
 
         self.policy = CaffePolicy(self.solver.test_nets[0],
                                   self.solver.test_nets[1],
-                                  np.zeros(dU))
+                                  self.var)
 
     def init_solver(self):
         """ Helper method to initialize the solver. """
@@ -95,7 +95,7 @@ class PolicyOptCaffe(PolicyOpt):
     # TODO - This assumes that the obs is a vector being passed into the
     #        network in the same place.
     #        (won't work with images or multimodal networks)
-    def update(self, obs, tgt_mu, tgt_prc, tgt_wt, itr, inner_itr):
+    def update(self, obs, tgt_mu, tgt_prc, tgt_wt):
         """
         Update policy.
         Args:
@@ -135,9 +135,12 @@ class PolicyOptCaffe(PolicyOpt):
 
         #TODO: Find entries with very low weights?
 
-        # Normalize obs, but only compute normalzation at the beginning.
-        if itr == 0 and inner_itr == 1:
-            self.policy.scale = np.diag(1.0 / np.std(obs, axis=0))
+        # Normalize obs, but only the first time update is called.
+        if self.policy.scale is None or self.policy.bias is None:
+            # 1e-3 to avoid infs if some state dimensions don't change in the
+            # first batch of samples
+            self.policy.scale = np.diag(1.0 / np.maximum(np.std(obs, axis=0),
+                                                         1e-3))
             self.policy.bias = -np.mean(obs.dot(self.policy.scale), axis=0)
         obs = obs.dot(self.policy.scale) + self.policy.bias
 
@@ -162,15 +165,10 @@ class PolicyOptCaffe(PolicyOpt):
             # To get the training loss:
             train_loss = self.solver.net.blobs[blob_names[-1]].data
             average_loss += train_loss
-            if i % 500 == 0 and i != 0:
+            if (i+1) % 500 == 0:
                 LOGGER.debug('Caffe iteration %d, average loss %f',
-                             i, average_loss / 500)
+                             i+1, average_loss / 500)
                 average_loss = 0
-
-            # To run a test:
-            # if i % test_interval:
-            #     print 'Iteration', i, 'testing...'
-            #     solver.test_nets[0].forward()
 
         # Keep track of Caffe iterations for loading solver states.
         self.caffe_iter += self._hyperparams['iterations']
@@ -184,6 +182,7 @@ class PolicyOptCaffe(PolicyOpt):
         self.var = 1 / np.diag(A)
 
         self.policy.net.share_with(self.solver.net)
+        self.policy.chol_pol_covar = np.diag(np.sqrt(self.var))
         return self.policy
 
     def prob(self, obs):
@@ -196,12 +195,11 @@ class PolicyOptCaffe(PolicyOpt):
         N, T = obs.shape[:2]
 
         # Normalize obs.
-        try:
+        if self.policy.scale is not None:
+            # TODO: Should prob be called before update?
             for n in range(N):
                 obs[n, :, :] = obs[n, :, :].dot(self.policy.scale) + \
                         self.policy.bias
-        except AttributeError:
-            pass  #TODO: Should prob be called before update?
 
         output = np.zeros((N, T, dU))
         blob_names = self.solver.test_nets[0].blobs.keys()

@@ -11,6 +11,8 @@ from gps.algorithm.traj_opt.traj_opt import TrajOpt
 from gps.algorithm.traj_opt.traj_opt_utils import LineSearch, traj_distr_kl, \
         DGD_MAX_ITER, THRESHA, THRESHB
 
+from gps.algorithm.algorithm_badmm import AlgorithmBADMM
+from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -30,7 +32,13 @@ class TrajOptLQRPython(TrajOpt):
         step_mult = algorithm.cur[m].step_mult
         prev_eta = algorithm.cur[m].eta
         traj_info = algorithm.cur[m].traj_info
-        prev_traj_distr = algorithm.cur[m].traj_distr
+
+        if type(algorithm) == AlgorithmMDGPS:
+            # For MDGPS, constrain to previous NN linearization
+            prev_traj_distr = algorithm.cur[m].pol_info.traj_distr()
+        else:
+            # For BADMM/trajopt, constrain to previous LG controller
+            prev_traj_distr = algorithm.cur[m].traj_distr
 
         # Set KL-divergence step size (epsilon).
         kl_step = algorithm.base_kl_step * step_mult
@@ -192,6 +200,10 @@ class TrajOptLQRPython(TrajOpt):
 
         traj_distr = prev_traj_distr.nans_like()
 
+        # Store pol_wt if necessary
+        if type(algorithm) == AlgorithmBADMM:
+            pol_wt = algorithm.cur[m].pol_info.pol_wt
+
         idx_x = slice(dX)
         idx_u = slice(dX, dX+dU)
 
@@ -222,13 +234,15 @@ class TrajOptLQRPython(TrajOpt):
 
                 # Add in the value function from the next time step.
                 if t < T - 1:
-                    #TODO: Should multiply by
-                    #      (pol_wt[t+1] + eta)/(pol_wt[t] + eta) here.
-                    Qtt = Qtt + \
+                    if type(algorithm) == AlgorithmBADMM:
+                        multiplier = (pol_wt[t+1] + eta)/(pol_wt[t] + eta)
+                    else:
+                        multiplier = 1.0
+                    Qtt = Qtt + multiplier * \
                             Fm[t, :, :].T.dot(Vxx[t+1, :, :]).dot(Fm[t, :, :])
-                    Qt = Qt + \
+                    Qt = Qt + multiplier * \
                             Fm[t, :, :].T.dot(Vx[t+1, :] +
-                                              Vxx[t+1, :, :].dot(fv[t, :]))
+                                            Vxx[t+1, :, :].dot(fv[t, :]))
 
                 # Symmetrize quadratic component.
                 Qtt = 0.5 * (Qtt + Qtt.T)

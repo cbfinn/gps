@@ -42,7 +42,7 @@ class ImageVisualizer(object):
         """
         # Real-time image
         self._t = 0
-        self._data = []
+        self._current_image = None
         self._crop_size = cropsize
 
         # Image overlay
@@ -94,7 +94,7 @@ class ImageVisualizer(object):
             ch, cw = self._crop_size[0], self._crop_size[1]
             image = image[(h/2-ch/2):(h/2-ch/2+ch), (w/2-cw/2):(w/2-cw/2+cw), :]
 
-        self._data.append(image)
+        self._current_image = image
         self._plot.set_array(image)
         self.draw()
 
@@ -108,9 +108,7 @@ class ImageVisualizer(object):
         self.update(image)
 
     def get_current_image(self):
-        if not self._data:
-            return None
-        return self._data[-1]
+        return self._current_image
 
     def set_initial_image(self, image, alpha=0.3):
         if image is None:

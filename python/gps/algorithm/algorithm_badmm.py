@@ -49,12 +49,16 @@ class AlgorithmBADMM(Algorithm):
         self._update_policy_samples()  # Choose samples to use with the policy.
         self._update_step_size()  # KL Divergence step size.
 
+        for m in range(self.M):
+            # save initial kl for debugging / visualization
+            self.cur[m].pol_info.init_kl = self._policy_kl(m)[0]
+
         # Run inner loop to compute new policies.
         for inner_itr in range(self._hyperparams['inner_iterations']):
             #TODO: Could start from init controller.
             if self.iteration_count > 0 or inner_itr > 0:
                 # Update the policy.
-                self._update_policy(self.iteration_count, inner_itr)
+                self._update_policy(inner_itr)
             for m in range(self.M):
                 self._update_policy_fit(m)  # Update policy priors.
             if self.iteration_count > 0 or inner_itr > 0:
@@ -117,7 +121,7 @@ class AlgorithmBADMM(Algorithm):
             if self.iteration_count >= 1 and self.prev[m].sample_list:
                 self._stepadjust(m)
 
-    def _update_policy(self, itr, inner_itr):
+    def _update_policy(self, inner_itr):
         """ Compute the new policy. """
         dU, dO, T = self.dU, self.dO, self.T
         # Compute target mean, cov, and weight for each sample.
@@ -127,7 +131,10 @@ class AlgorithmBADMM(Algorithm):
             samples = self.cur[m].sample_list
             X = samples.get_X()
             N = len(samples)
-            traj, pol_info = self.cur[m].traj_distr, self.cur[m].pol_info
+            if inner_itr > 0:
+              traj, pol_info = self.new_traj_distr[m], self.cur[m].pol_info
+            else:
+              traj, pol_info = self.cur[m].traj_distr, self.cur[m].pol_info
             mu = np.zeros((N, T, dU))
             prc = np.zeros((N, T, dU, dU))
             wt = np.zeros((N, T))
@@ -140,7 +147,7 @@ class AlgorithmBADMM(Algorithm):
                     mu[i, t, :] = \
                             (traj.K[t, :, :].dot(X[i, t, :]) + traj.k[t, :]) - \
                             np.linalg.solve(
-                                prc[i, t, :, :],  #TODO: Divide by pol_wt[t].
+                                prc[i, t, :, :] / pol_info.pol_wt[t],  #TODO: Divide by pol_wt[t].
                                 pol_info.lambda_K[t, :, :].dot(X[i, t, :]) + \
                                         pol_info.lambda_k[t, :]
                             )
@@ -149,8 +156,7 @@ class AlgorithmBADMM(Algorithm):
             tgt_prc = np.concatenate((tgt_prc, prc))
             tgt_wt = np.concatenate((tgt_wt, wt))
             obs_data = np.concatenate((obs_data, samples.get_obs()))
-        self.policy_opt.update(obs_data, tgt_mu, tgt_prc, tgt_wt,
-                               itr, inner_itr)
+        self.policy_opt.update(obs_data, tgt_mu, tgt_prc, tgt_wt)
 
     def _update_policy_fit(self, m, init=False):
         """
@@ -215,7 +221,11 @@ class AlgorithmBADMM(Algorithm):
         samples = self.cur[m].sample_list
         N = len(samples)
         X = samples.get_X()
-        traj, pol_info = self.cur[m].traj_distr, self.cur[m].pol_info
+        if 'new_traj_distr' in dir(self):
+            traj, pol_info = self.new_traj_distr[m], self.cur[m].pol_info
+        else:
+            traj, pol_info = self.cur[m].traj_distr, self.cur[m].pol_info
+
         # Compute trajectory action at each sampled state.
         traj_mu = np.zeros((N, T, dU))
         for i in range(N):
@@ -296,6 +306,7 @@ class AlgorithmBADMM(Algorithm):
         Args:
             m: Condition
         """
+
         # Compute values under Laplace approximation. This is the policy
         # that the previous samples were actually drawn from under the
         # dynamics that were estimated from the previous samples.
