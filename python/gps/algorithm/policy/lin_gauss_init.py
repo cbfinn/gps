@@ -5,7 +5,7 @@ import scipy as sp
 
 from gps.algorithm.dynamics.dynamics_utils import guess_dynamics
 from gps.algorithm.policy.lin_gauss_policy import LinearGaussianPolicy
-from gps.algorithm.policy.config import INIT_LG_PD, INIT_LG_LQR
+from gps.algorithm.policy.config import INIT_LG_PD, INIT_LG_LQR, INIT_LG_DEMO
 
 
 def init_lqr(hyperparams):
@@ -140,3 +140,23 @@ def init_pd(hyperparams):
     invPSig = (1.0 / config['init_var']) * np.tile(np.eye(dU), [T, 1, 1])
 
     return LinearGaussianPolicy(K, k, PSig, cholPSig, invPSig)
+
+def init_demo(hyperparams):
+    """
+    Initialize the linear_Gaussian controller with a demo.
+    """
+    config = copy.deepcopy(INIT_LG_LQR)
+    config.update(hyperparams)
+    x0, dX, dU = config['x0'], config['dX'], config['dU']
+    dt, T = config['dt'], config['T']
+    init_demo_x = config['init_demo_x']
+    init_demo_u = config['init_demo_u']
+
+    init_controller = init_lqr(hyperparams)
+    ref = np.hstack((init_demo_x, init_demo_u))
+    idx_x = slice(dX)  # Slices out state.
+    idx_u = slice(dX, dX+dU)  # Slices out actions.
+    for t in xrange(init_controller.K.shape[0]):
+        init_controller.k[t, :] += -init_controller.K[t, :, :].dot(ref[t, idx_x]) + ref[t, idx_u]
+    return init_controller
+

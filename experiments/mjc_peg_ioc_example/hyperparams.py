@@ -15,7 +15,7 @@ from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-from gps.algorithm.policy.lin_gauss_init import init_lqr
+from gps.algorithm.policy.lin_gauss_init import init_demo
 from gps.utility.demo_utils import generate_pos_body_offset, generate_x0, generate_pos_idx
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
@@ -44,7 +44,7 @@ common = {
     'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 1,
+    'conditions': 4,
     # 'demo_conditions': 20,
     # 'demo_conditions': 25,
 }
@@ -61,9 +61,9 @@ agent = {
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
-    # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
-    #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    'pos_body_offset': [np.array([0, 0.0, 0])],
+    'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
+                        np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
+    # 'pos_body_offset': [np.array([0, 0.0, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -98,6 +98,7 @@ demo_agent = {
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
+    'learning_from_prior': False,
     'ioc' : True,
     'kl_step': 0.5,
     'max_step_mult': 2.0,
@@ -112,7 +113,7 @@ algorithm = {
 }
 
 algorithm['init_traj_distr'] = {
-    'type': init_lqr,
+    'type': init_demo,
     'init_gains':  1.0 / PR2_GAINS,
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
     'init_var': 5.0,

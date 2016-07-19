@@ -57,7 +57,7 @@ class AlgorithmTrajOpt(Algorithm):
             for i in xrange(self.M):
                 mu, sigma = self.traj_opt.forward(self.traj_distr[itr][i], self.traj_info[itr][i])
                 # KL divergence between current traj. distribution and gt distribution
-                self.kl_div[itr].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][i], self.demo_traj[i]))
+                self.kl_div[itr].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][i], self.demo_traj[0])) # Assuming Md == 1
 
         if self._hyperparams['learning_from_prior']:
             for i in xrange(self.M):

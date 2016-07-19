@@ -15,7 +15,7 @@ from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-from gps.algorithm.policy.lin_gauss_init import init_lqr
+from gps.algorithm.policy.lin_gauss_init import init_demo
 from gps.utility.demo_utils import generate_pos_body_offset, generate_x0, generate_pos_idx
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
@@ -114,7 +114,7 @@ algorithm = {
 }
 
 algorithm['init_traj_distr'] = {
-    'type': init_lqr,
+    'type': init_demo,
     'init_gains':  1.0 / PR2_GAINS,
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
     'init_var': 5.0,
@@ -153,14 +153,6 @@ algorithm['cost'] = {
     'iterations': 5000,
 }
 
-# algorithm['gt_cost'] = {
-#     'type': CostFK,
-#     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
-#     'wp': np.array([1, 1, 1, 1, 1, 1]),
-#     'l1': 0.1,
-#     'l2': 10.0,
-#     'alpha': 1e-5,
-# }
 
 algorithm['dynamics'] = {
     'type': DynamicsLRPrior,
