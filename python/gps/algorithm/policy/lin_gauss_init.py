@@ -143,20 +143,19 @@ def init_pd(hyperparams):
 
 def init_demo(hyperparams):
     """
-    Initialize the linear_Gaussian controller with a demo.
+    Initialize the linear Gaussian controller with a demo.
     """
     config = copy.deepcopy(INIT_LG_LQR)
     config.update(hyperparams)
-    x0, dX, dU = config['x0'], config['dX'], config['dU']
-    dt, T = config['dt'], config['T']
+    dX, dU, T = config['dX'], config['dU'], config['T']
     init_demo_x = config['init_demo_x']
     init_demo_u = config['init_demo_u']
 
-    init_controller = init_lqr(hyperparams)
+    init_controller = init_lqr(config)
     ref = np.hstack((init_demo_x, init_demo_u))
     idx_x = slice(dX)  # Slices out state.
     idx_u = slice(dX, dX+dU)  # Slices out actions.
-    for t in xrange(init_controller.K.shape[0]):
+    for t in xrange(T):
         init_controller.k[t, :] += -init_controller.K[t, :, :].dot(ref[t, idx_x]) + ref[t, idx_u]
     return init_controller
 

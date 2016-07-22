@@ -15,7 +15,7 @@ from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-from gps.algorithm.policy.lin_gauss_init import init_demo
+from gps.algorithm.policy.lin_gauss_init import init_demo, init_lqr
 from gps.utility.demo_utils import generate_pos_body_offset, generate_x0, generate_pos_idx
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
@@ -44,8 +44,8 @@ common = {
     'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 4,
-    # 'demo_conditions': 20,
+    'conditions': 1,
+    'demo_conditions': 15, # Does this do anything? (demo cond defined below)
     # 'demo_conditions': 25,
 }
 
@@ -61,9 +61,9 @@ agent = {
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
-    'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
-                        np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    # 'pos_body_offset': [np.array([0, 0.0, 0])],
+    #'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
+    #                    np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
+    'pos_body_offset': [np.array([0, -0.1, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -106,20 +106,33 @@ algorithm = {
     'max_ent_traj': 1.0,
     'demo_distr_empest': True,
     'demo_cond': 15,
-    # 'demo_cond': 25,
-    'num_demos': 3,
-    'iterations': 20,
+    'num_demos': 3,  # per condition
+    'iterations': 15,
     'synthetic_cost_samples': 100,
 }
 
+# random init
+#algorithm['init_traj_distr'] = {
+#    'type': init_lqr,
+#    'init_gains':  1.0 / PR2_GAINS,
+#   'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
+#    'init_var': 5.0,
+#    'stiffness': 1.0,
+#    'stiffness_vel': 0.5,
+#    'final_weight': 50.0,
+#    'dt': agent['dt'],
+#    'T': agent['T'],
+#}
+
+# demo init
 algorithm['init_traj_distr'] = {
     'type': init_demo,
-    'init_gains':  1.0 / PR2_GAINS,
+    'init_gains':  0.2 / PR2_GAINS,
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-    'init_var': 5.0,
-    'stiffness': 1.0,
+    'init_var': 1.5,
+    'stiffness': 0.5,
     'stiffness_vel': 0.5,
-    'final_weight': 50.0,
+    'final_weight': 10.0,
     'dt': agent['dt'],
     'T': agent['T'],
 }
@@ -181,7 +194,7 @@ algorithm['policy_opt'] = {}
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': 5,
-    'verbose_trials': 1,
+    'verbose_trials': 5,
     'common': common,
     'agent': agent,
     'demo_agent': demo_agent,
