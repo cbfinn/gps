@@ -97,7 +97,7 @@ algorithm = {
     'conditions': common['conditions'],
     'learning_from_prior': True,
     'ioc' : True,
-    'iterations': 20,
+    'iterations': 1,
     'kl_step': 1.0,
     'min_step_mult': 0.05,
     'max_step_mult': 3.0,

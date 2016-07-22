@@ -487,8 +487,8 @@ def main():
 		mean_dists_global_dict, mean_dists_no_global_dict, success_rates_global_dict, \
 				success_rates_no_global_dict = {}, {}, {}, {}
 		for itr in xrange(3):
-			# random.seed(itr)
-			# np.random.seed(itr)
+			random.seed(itr)
+			np.random.seed(itr)
 			hyperparams = imp.load_source('hyperparams', hyperparams_file)
 			hyperparams.config['algorithm']['init_traj_distr']['type'] = init_lqr
 			hyperparams.config['algorithm']['global_cost'] = False
@@ -500,14 +500,14 @@ def main():
 				os.makedirs(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/')
 			gps_global = GPSMain(hyperparams.config)
 			pol_iter = gps_global.algorithm._hyperparams['iterations']
-			for i in xrange(pol_iter):
-				if hyperparams.config['gui_on']:
-					gps_global.run()
-					# gps_global.test_policy(itr=i, N=compare_costs)
-					plt.close()
-				else:
-					gps_global.run()
-					# gps_global.test_policy(itr=i, N=compare_costs)
+			# for i in xrange(pol_iter):
+			# if hyperparams.config['gui_on']:
+			# 	gps_global.run()
+			# 	# gps_global.test_policy(itr=i, N=compare_costs)
+			# 	plt.close()
+			# else:
+			# 	gps_global.run()
+				# gps_global.test_policy(itr=i, N=compare_costs)
 			mean_dists_global_dict[itr], success_rates_global_dict[itr] = gps_global.measure_distance_and_success()
 			# Plot the distribution of demos.
 			if itr == 0:
@@ -551,7 +551,7 @@ def main():
 			# 		gps.test_policy(itr=i, N=compare_costs)
 			mean_dists_no_global_dict[itr], success_rates_no_global_dict[itr] = gps.measure_distance_and_success()
 
-		plt.close()
+		plt.close('all')
 		avg_dists_global = [float(sum(mean_dists_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
 		avg_succ_rate_global = [float(sum(success_rates_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
 		avg_dists_no_global = [float(sum(mean_dists_no_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
@@ -568,7 +568,7 @@ def main():
 		# plt.legend(['avg global', 'avg multiple', 'global cost', 'multiple cost'], loc='upper right', ncol=2)
 		plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)		
 		# plt.title("mean distances to the target during iterations with and without global cost")
-		plt.title("mean distances to the target during iterations with and without demo initialization")
+		plt.title("mean distances to the target during iterations with and without demo init")
 		plt.xlabel("iterations")
 		plt.ylabel("mean distances")
 		plt.savefig(exp_dir + 'mean_dists_during_iteration_comparison.png')
@@ -593,11 +593,11 @@ def main():
 
 	elif learning_from_prior:
 		ioc_conditions = [np.array([random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), \
-						random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)])]) for i in xrange(10)]
+						random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)])]) for i in xrange(1)]
 		top_bottom = [np.array([np.random.uniform(-0.08, 0.08), \
-						random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)])]) for i in xrange(10)]
+						random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)])]) for i in xrange(1)]
 		left_right = [np.array([random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), \
-						np.random.uniform(-0.08, 0.08)]) for i in xrange(10)]
+						np.random.uniform(-0.08, 0.08)]) for i in xrange(1)]
 		ioc_conditions.extend(top_bottom)
 		ioc_conditions.extend(left_right)
 		exp_iter = hyperparams.config['algorithm']['iterations']
@@ -687,11 +687,11 @@ def main():
 			demos['demoO'] = np.vstack((demos['demoO'], new_sample_list.get_obs()))
 			gps.data_logger.pickle(demo_file)
 			harder_ioc_conditions = [np.array([random.choice([np.random.uniform(-0.2, -0.09), np.random.uniform(0.09, 0.2)]), \
-						random.choice([np.random.uniform(-0.2, -0.09), np.random.uniform(0.09, 0.2)])]) for i in xrange(10)]
+						random.choice([np.random.uniform(-0.2, -0.09), np.random.uniform(0.09, 0.2)])]) for i in xrange(1)]
 			top_bottom = [np.array([np.random.uniform(-0.08, 0.08), \
-							random.choice([np.random.uniform(-0.2, -0.09), np.random.uniform(0.09, 0.2)])]) for i in xrange(10)]
+							random.choice([np.random.uniform(-0.2, -0.09), np.random.uniform(0.09, 0.2)])]) for i in xrange(1)]
 			left_right = [np.array([random.choice([np.random.uniform(-0.2, -0.09), np.random.uniform(0.09, 0.2)]), \
-							np.random.uniform(-0.08, 0.08)]) for i in xrange(10)]
+							np.random.uniform(-0.08, 0.08)]) for i in xrange(1)]
 			harder_ioc_conditions.extend(top_bottom + left_right)
 			mean_dists = []
 			# success_ioc_samples = []
