@@ -480,26 +480,32 @@ def main():
 		plt.title("success rates during iterations")
 		plt.savefig(exp_dir + 'data_files/' + 'success_rate_during_iteration.png')
 	elif compare_costs:
+		from gps.algorithm.policy.lin_gauss_init import init_lqr
+
 		mean_dists_global_dict, mean_dists_no_global_dict, success_rates_global_dict, \
 				success_rates_no_global_dict = {}, {}, {}, {}
 		for itr in xrange(3):
 			# random.seed(itr)
 			# np.random.seed(itr)
 			hyperparams = imp.load_source('hyperparams', hyperparams_file)
-			hyperparams.config['algorithm']['global_cost'] = True
-			hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_global_%d' % itr + '/'
-			if not os.path.exists(exp_dir + 'data_files_global_%d' % itr + '/'):
-				os.makedirs(exp_dir + 'data_files_global_%d' % itr + '/')
+			hyperparams.config['algorithm']['init_traj_distr']['type'] = init_lqr
+			hyperparams.config['algorithm']['global_cost'] = False
+			# hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_global_%d' % itr + '/'
+			# if not os.path.exists(exp_dir + 'data_files_global_%d' % itr + '/'):
+			# 	os.makedirs(exp_dir + 'data_files_global_%d' % itr + '/')
+			hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'
+			if not os.path.exists(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'):
+				os.makedirs(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/')
 			gps_global = GPSMain(hyperparams.config)
 			pol_iter = gps_global.algorithm._hyperparams['iterations']
 			for i in xrange(pol_iter):
 				if hyperparams.config['gui_on']:
-					# gps_global.run()
-					gps_global.test_policy(itr=i, N=compare_costs)
+					gps_global.run()
+					# gps_global.test_policy(itr=i, N=compare_costs)
 					plt.close()
 				else:
-					# gps_global.run()
-					gps_global.test_policy(itr=i, N=compare_costs)
+					gps_global.run()
+					# gps_global.test_policy(itr=i, N=compare_costs)
 			mean_dists_global_dict[itr], success_rates_global_dict[itr] = gps_global.measure_distance_and_success()
 			# Plot the distribution of demos.
 			if itr == 0:
@@ -533,14 +539,14 @@ def main():
 				os.makedirs(exp_dir + 'data_files_no_global_%d' % itr + '/')
 			gps = GPSMain(hyperparams.config)
 			pol_iter = gps.algorithm._hyperparams['iterations']
-			for i in xrange(pol_iter):
-				if hyperparams.config['gui_on']:
-					# gps.run()
-					gps.test_policy(itr=i, N=compare_costs)
-					plt.close()
-				else:
-					# gps.run()
-					gps.test_policy(itr=i, N=compare_costs)
+			# for i in xrange(pol_iter):
+			# 	if hyperparams.config['gui_on']:
+			# 		# gps.run()
+			# 		gps.test_policy(itr=i, N=compare_costs)
+			# 		plt.close()
+			# 	else:
+			# 		# gps.run()
+			# 		gps.test_policy(itr=i, N=compare_costs)
 			mean_dists_no_global_dict[itr], success_rates_no_global_dict[itr] = gps.measure_distance_and_success()
 
 		plt.close()
@@ -557,8 +563,10 @@ def main():
 		# 	plt.annotate(np.around(txt, decimals=2), (i, txt))
 		# for i, txt in enumerate(avg_dists_no_global):
 		# 	plt.annotate(np.around(txt, decimals=2), (i, txt))
-		plt.legend(['avg global', 'avg multiple', 'global cost', 'multiple cost'], loc='upper right', ncol=2)
-		plt.title("mean distances to the target during iterations with and withou global cost")
+		# plt.legend(['avg global', 'avg multiple', 'global cost', 'multiple cost'], loc='upper right', ncol=2)
+		plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)		
+		# plt.title("mean distances to the target during iterations with and without global cost")
+		plt.title("mean distances to the target during iterations with and without demo initialization")
 		plt.xlabel("iterations")
 		plt.ylabel("mean distances")
 		plt.savefig(exp_dir + 'mean_dists_during_iteration_comparison.png')
@@ -572,10 +580,12 @@ def main():
 		# 	plt.annotate(repr(txt*100) + "%", (i, txt))
 		# for i, txt in enumerate(avg_succ_rate_no_global):
 		# 	plt.annotate(repr(txt*100) + "%", (i, txt))
-		plt.legend(['avg global', 'avg multiple', 'global cost', 'multiple cost'], loc='lower right', ncol=2)
+		# plt.legend(['avg global', 'avg multiple', 'global cost', 'multiple cost'], loc='lower right', ncol=2)
+		plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)
 		plt.xlabel("iterations")
 		plt.ylabel("success rate")
-		plt.title("success rates during iterations with and without global cost")
+		# plt.title("success rates during iterations with and without global cost")
+		plt.title("success rates during iterations with and without demo initialization")
 		plt.savefig(exp_dir + 'success_rate_during_iteration_comparison.png')
 		plt.close()
 
@@ -636,7 +646,7 @@ def main():
 		mean_dists = np.around(mean_dists, decimals=2)
 		failed_ioc_x = [ioc_conditions_x[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] > 0.1]
 		failed_ioc_y = [ioc_conditions_y[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] > 0.1]
-		success_ioc_x = [ioc_conditions_x[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] <= 0.1
+		success_ioc_x = [ioc_conditions_x[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] <= 0.1]
 		success_ioc_y = [ioc_conditions_y[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] <= 0.1]
 		demo_conditions_x = [demo_conditions[i][0] for i in xrange(len(demo_conditions))]
 		demo_conditions_y = [demo_conditions[i][1] for i in xrange(len(demo_conditions))]
@@ -673,6 +683,7 @@ def main():
 			demos['demoX'] = np.vstack((demos['demoX'], new_sample_list.get_X()))
 			demos['demoO'] = np.vstack((demos['demoO'], new_sample_list.get_obs()))
 			gps.data_logger.pickle(demo_file)
+			# harder_
 	else:
 		gps = GPSMain(hyperparams.config)
 		if hyperparams.config['gui_on']:
