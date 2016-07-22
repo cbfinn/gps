@@ -57,6 +57,7 @@ class GPSMain(object):
 			demos = self.data_logger.unpickle(demo_file)
 			if demos is None:
 			  self.demo_gen = GenDemo(config)
+			  self.demo_gen.ioc_algo = config['algorithm']['type'](config['algorithm'])
 			  self.demo_gen.generate()
 			  demo_file = self._data_files_dir + 'demos.pkl'
 			  demos = self.data_logger.unpickle(demo_file)
@@ -70,8 +71,9 @@ class GPSMain(object):
 			self.algorithm.demoX = demos['demoX']
 			self.algorithm.demoU = demos['demoU']
 			self.algorithm.demoO = demos['demoO']
-			self.algorithm.demo_conditions = demos['demo_conditions']
-			self.algorithm.failed_conditions = demos['failed_conditions']
+			if 'demo_conditions' in demos.keys() and 'failed_conditions' in demos.keys():
+				self.algorithm.demo_conditions = demos['demo_conditions']
+				self.algorithm.failed_conditions = demos['failed_conditions']
 		else:
 			self.algorithm = config['algorithm']['type'](config['algorithm'])
 			self.algorithm.init_samples = self._hyperparams['num_samples']
@@ -670,6 +672,7 @@ def main():
 		# plt.xlabel('width')
 		# plt.ylabel('length')
 		plt.savefig(data_files_dir + 'distribution_of_conditions.png')
+		plt.close()
 		if bootstrap:
 			# TODO: use successful samples as demonstrations.
 			success_ioc_conditions = [ioc_conditions[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] <= 0.1]
@@ -683,7 +686,89 @@ def main():
 			demos['demoX'] = np.vstack((demos['demoX'], new_sample_list.get_X()))
 			demos['demoO'] = np.vstack((demos['demoO'], new_sample_list.get_obs()))
 			gps.data_logger.pickle(demo_file)
-			# harder_
+			harder_ioc_conditions = [np.array([random.choice([np.random.uniform(-0.2, -0.09), np.random.uniform(0.09, 0.2)]), \
+						random.choice([np.random.uniform(-0.2, -0.09), np.random.uniform(0.09, 0.2)])]) for i in xrange(10)]
+			top_bottom = [np.array([np.random.uniform(-0.08, 0.08), \
+							random.choice([np.random.uniform(-0.2, -0.09), np.random.uniform(0.09, 0.2)])]) for i in xrange(10)]
+			left_right = [np.array([random.choice([np.random.uniform(-0.2, -0.09), np.random.uniform(0.09, 0.2)]), \
+							np.random.uniform(-0.08, 0.08)]) for i in xrange(10)]
+			harder_ioc_conditions.extend(top_bottom + left_right)
+			mean_dists = []
+			# success_ioc_samples = []
+			pos_body_offset_dists = [np.linalg.norm(ioc_conditions[i]) for i in xrange(len(ioc_conditions))]
+			for i in xrange(len(ioc_conditions)):
+				hyperparams = imp.load_source('hyperparams', hyperparams_file)
+				# hyperparams.config['gui_on'] = False
+				hyperparams.config['algorithm']['ioc_cond'] = ioc_conditions[i]
+				gps = GPSMain(hyperparams.config)
+				gps.agent._hyperparams['pos_body_offset'] = [ioc_conditions[i]]
+				# import pdb; pdb.set_trace()
+				if hyperparams.config['gui_on']:
+					# run_gps = threading.Thread(
+					#     target=lambda: gps.run(itr_load=resume_training_itr)
+					# )
+					# run_gps.daemon = True
+					# run_gps.start()
+					gps.run(itr_load=resume_training_itr)
+					plt.close()
+					# plt.ioff()
+					# plt.show()
+				else:
+					gps.run(itr_load=resume_training_itr)
+					# continue
+				# if i == 0:
+				# 	demo_conditions = gps.algorithm.demo_conditions
+				# 	failed_conditions = gps.algorithm.failed_conditions
+				mean_dists.append(gps.algorithm.dists_to_target[exp_iter - 1][0])
+				# if mean_dists[i] <= 0.1:
+				# 	success_ioc_samples.extend(gps._take_policy_samples(1))
+				print "iteration " + repr(i) + ": mean dist is " + repr(mean_dists[i])
+			with open(exp_dir + 'log.txt', 'a') as f:
+				f.write('\nThe 50 IOC conditions are: \n' + str(ioc_conditions) + '\n')
+			plt.plot(pos_body_offset_dists, mean_dists, 'ro')
+			plt.title("Learning from prior experience using peg insertion and bootstrap")
+			plt.xlabel('pos body offset distances to the origin')
+			plt.ylabel('mean distances to the target')
+			plt.savefig(data_files_dir + 'learning_from_prior_bootstrap.png')
+			plt.close()
+
+			from matplotlib.patches import Rectangle
+
+			harder_ioc_conditions_x = [harder_ioc_conditions[i][0] for i in xrange(len(harder_ioc_conditions))]
+			harder_ioc_conditions_y = [harder_ioc_conditions[i][1] for i in xrange(len(harder_ioc_conditions))]
+			mean_dists = np.around(mean_dists, decimals=2)
+			failed_ioc_x = [harder_ioc_conditions_x[i] for i in xrange(len(harder_ioc_conditions)) if mean_dists[i] > 0.1]
+			failed_ioc_y = [harder_ioc_conditions_y[i] for i in xrange(len(harder_ioc_conditions)) if mean_dists[i] > 0.1]
+			success_ioc_x = [harder_ioc_conditions_x[i] for i in xrange(len(harder_ioc_conditions)) if mean_dists[i] <= 0.1]
+			success_ioc_y = [harder_ioc_conditions_y[i] for i in xrange(len(harder_ioc_conditions)) if mean_dists[i] <= 0.1]
+			demo_conditions_x = [demo_conditions[i][0] for i in xrange(len(demo_conditions))]
+			demo_conditions_y = [demo_conditions[i][1] for i in xrange(len(demo_conditions))]
+			failed_conditions_x = [failed_conditions[i][0] for i in xrange(len(failed_conditions))]
+			failed_conditions_y = [failed_conditions[i][1] for i in xrange(len(failed_conditions))]
+			success_sample_x = [success_ioc_conditions[i][0] for i in xrange(len(success_ioc_conditions))]
+			success_sample_y = [success_ioc_conditions[i][1] for i in xrange(len(success_ioc_conditions))]
+			failed_sample_x = [failed_ioc_conditions[i][0] for i in xrange(len(failed_ioc_conditions))]
+			failed_sample_y = [failed_ioc_conditions[i][1] for i in xrange(len(failed_ioc_conditions))]
+			subplt = plt.subplot()
+			subplt.plot(demo_conditions_x, demo_conditions_y, 'go')
+			subplt.plot(failed_conditions_x, failed_conditions_y, 'rx')
+			subplt.plot(success_sample_x, success_sample_y, 'g^')
+			subplt.plot(failed_sample_x, failed_sample_y, 'rv')
+			subplt.plot(success_ioc_x, success_ioc_y, 'bp')
+			subplt.plot(failed_ioc_x, failed_ioc_y, 'k*')
+			# plt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc= (1, 1))
+			for i, txt in enumerate(mean_dists):
+				subplt.annotate(txt, (ioc_conditions_x[i], ioc_conditions_y[i]))
+			ax = plt.gca()
+			ax.add_patch(Rectangle((-0.08, -0.08), 0.16, 0.16, fill = False, edgecolor = 'blue'))
+			box = subplt.get_position()
+			subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
+			subplt.legend(['demo_cond', 'failed_badmm', 'success_sample', 'failed_sample', 'success_ioc', 'failed_ioc'], \
+							loc='upper center', bbox_to_anchor=(0.5, -0.05), shadow=True, ncol=3)
+			plt.title("Distribution of neural network and IOC's initial conditions using bootstrap")
+			# plt.xlabel('width')
+			# plt.ylabel('length')
+			plt.savefig(data_files_dir + 'distribution_of_conditions_bootstrap.png')
 	else:
 		gps = GPSMain(hyperparams.config)
 		if hyperparams.config['gui_on']:
