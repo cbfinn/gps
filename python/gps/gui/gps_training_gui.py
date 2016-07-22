@@ -332,7 +332,12 @@ class GPSTrainingGUI(object):
         """
         avg_cost = np.mean(costs)
         if pol_sample_lists is not None:
-            pol_costs = [np.mean([np.sum(algorithm.cost[m].eval(s)[0]) \
+            if algorithm._hyperparams['global_cost']:
+                pol_costs = [np.mean([np.sum(algorithm.cost.eval(s)[0]) \
+                        for s in pol_sample_lists[m]]) \
+                        for m in range(algorithm.M)]
+            else:
+                pol_costs = [np.mean([np.sum(algorithm.cost[m].eval(s)[0]) \
                     for s in pol_sample_lists[m]]) \
                     for m in range(algorithm.M)]
             itr_data = '%3d | %8.2f %12.2f' % (itr, avg_cost, np.mean(pol_costs))
@@ -351,7 +356,18 @@ class GPSTrainingGUI(object):
             if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
                 itr_data += ' %8.2f' % (algorithm.kl_div[itr][m])
             if algorithm._hyperparams['learning_from_prior']:
-                itr_data += ' %8.2f' % (algorithm.dists_to_target[itr][m])
+                if pol_sample_lists is None:
+                    itr_data += ' %8.2f' % (algorithm.dists_to_target[itr][m])
+                else:
+                    from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
+
+                    target_position = algorithm._hyperparams['target_end_effector'][:3]
+                    cur_samples = pol_sample_lists[m].get_samples()
+                    sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
+                    dists = [np.amin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - \
+                                target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
+                                for i in xrange(len(cur_samples))]
+                    itr_data += ' %8.2f' % (sum(dists) / len(cur_samples))
             if pol_sample_lists is not None:
                 kl_div_i = algorithm.cur[m].pol_info.init_kl.mean()
                 kl_div_f = algorithm.cur[m].pol_info.prev_kl.mean()

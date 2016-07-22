@@ -44,6 +44,8 @@ ALG = {
     'synthetic_cost_samples': 0,
     # Whether or not to sample with neural net policy (only for badmm/mdgps).
     'sample_on_policy': False,
+    # Flag if the algorithm is using global cost.
+    'global_cost': False,
 }
 
 # Good indices.

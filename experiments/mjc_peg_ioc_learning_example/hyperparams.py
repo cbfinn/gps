@@ -93,7 +93,7 @@ demo_agent = {
                     END_EFFECTOR_POINT_VELOCITIES],
     'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
-    'success_upper_bound': 0.08,
+    'success_upper_bound': 0.10,
     'failure_lower_bound': 0.15,
 }
 

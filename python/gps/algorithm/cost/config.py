@@ -74,7 +74,8 @@ COST_IOC_QUADRATIC = {
     'network_model': construct_quad_cost_net,
     'dO':0, # Number of features (here for pointmass_ioc only)
     'T': 0, # the time horizon (here for pointmass_ioc only)
-    'wu': np.array([]) # Torque penalties, must be 1 x dU numpy array.
+    'wu': np.array([]), # Torque penalties, must be 1 x dU numpy array.
+    'weights_file_prefix': '',
 }
 
 COST_IOC_QUADRATIC.update(IOC_CONFIG)
@@ -85,7 +86,8 @@ COST_IOC_NN = {
     'network_model': construct_nn_cost_net,
     'dO':0, # Number of features (here for pointmass_ioc only)
     'T': 0, # the time horizon (here for pointmass_ioc only)
-    'wu': np.array([]) # Torque penalties, must be 1 x dU numpy array.
+    'wu': np.array([]), # Torque penalties, must be 1 x dU numpy array.
+    'weights_file_prefix': '',
 }
 
 COST_IOC_NN.update(IOC_CONFIG)

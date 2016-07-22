@@ -9,6 +9,11 @@ from gps.algorithm.algorithm import Algorithm
 from gps.algorithm.algorithm_utils import PolicyInfo, gauss_fit_joint_prior
 from gps.algorithm.config import ALG_MDGPS
 from gps.sample.sample_list import SampleList
+from gps.algorithm.traj_opt.traj_opt_utils import traj_distr_kl
+from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
+        END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
+        END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
+        CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE
 
 
 LOGGER = logging.getLogger(__name__)
@@ -42,8 +47,13 @@ class AlgorithmMDGPS(Algorithm):
             sample_lists: List of SampleList objects for each condition.
         """
         # Store the samples.
+        self.N = sum(len(self.sample_list[i]) for i in self.sample_list.keys())
         for m in range(self.M):
             self.cur[m].sample_list = sample_lists[m]
+            prev_samples = self.sample_list[m].get_samples()
+            prev_samples.extend(sample_lists[m].get_samples())
+            self.sample_list[m] = SampleList(prev_samples)
+            self.N += len(sample_lists[m])
 
         self._update_dynamics()  # Update dynamics model using all sample.
         self._update_policy_samples()  # Choose samples to use with the policy.
@@ -56,6 +66,9 @@ class AlgorithmMDGPS(Algorithm):
                 self.cur[cond].traj_distr for cond in range(self.M)
             ]
             self._update_policy()
+
+        if self._hyperparams['ioc']:
+            self._update_cost()
 
         # Step adjustment
         self._update_step_size()  # KL Divergence step size (also fits policy).
@@ -78,6 +91,22 @@ class AlgorithmMDGPS(Algorithm):
             kl_m = self._policy_kl(m)[0]
             self.cur[m].pol_info.prev_kl = kl_m
 
+        # Computing KL-divergence between sample distribution and demo distribution
+        itr = self.iteration_count
+        if self._hyperparams['ioc']:
+            for i in xrange(self.M):
+                mu, sigma = self.traj_opt.forward(self.traj_distr[itr][i], self.traj_info[itr][i])
+                # KL divergence between current traj. distribution and gt distribution
+                self.kl_div[itr].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][i], self.demo_traj[0])) # Assuming Md == 1
+        # Compute mean distance to target. For peg experiment only.
+        if self._hyperparams['learning_from_prior']:
+            for i in xrange(self.M):
+                target_position = self._hyperparams['target_end_effector'][:3]
+                cur_samples = sample_lists[i].get_samples()
+                sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
+                dists = [np.amin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
+                         for i in xrange(len(cur_samples))]
+                self.dists_to_target[itr].append(sum(dists) / len(cur_samples))
         self._advance_iteration_variables()
 
     def _update_policy_samples(self):
@@ -302,6 +331,33 @@ class AlgorithmMDGPS(Algorithm):
                     k_ln_det_ct + 0.5 * np.mean(ln_det_cp) + \
                     0.5 * np.mean(d_pp_d)
         return kl_m, kl
+
+    def _update_cost(self):
+        """ Update the cost objective in each iteration. """
+        # Estimate the importance weights for fusion distributions.
+        demos_logiw, samples_logiw = self.importance_weights()
+
+        # Update the learned cost
+        # Transform all the dictionaries to arrays for global cost
+        M = len(self.prev)
+        Md = self._hyperparams['demo_M']
+        sampleU_arr = np.vstack((self.sample_list[i].get_U() for i in xrange(M)))
+        sampleX_arr = np.vstack((self.sample_list[i].get_X() for i in xrange(M)))
+        sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
+        demos_logiw_arr = np.hstack((demos_logiw[i] for i in xrange(Md))).reshape((-1, 1))
+        samples_logiw_arr = np.hstack([samples_logiw[i] for i in xrange(M)]).reshape((-1, 1))
+        demos_logiw = {i: demos_logiw[i].reshape((-1, 1)) for i in xrange(Md)}
+        samples_logiw = {i: samples_logiw[i].reshape((-1, 1)) for i in xrange(M)}
+        # TODO - not sure if we want one cost function per condition...
+        if not self._hyperparams['global_cost']:
+            for i in xrange(M):
+                cost_ioc = self.cost[i]
+                cost_ioc.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, self.sample_list[i].get_U(), \
+                                    self.sample_list[i].get_X(), self.sample_list[i].get_obs(), samples_logiw[i])
+        else:
+            cost_ioc = self.cost
+            cost_ioc.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, sampleU_arr, sampleX_arr, \
+                                                        sampleO_arr, samples_logiw_arr)
 
     def compute_costs(self, m, eta):
         """ Compute cost estimates used in the LQR backward pass. """
