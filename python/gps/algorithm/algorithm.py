@@ -317,9 +317,11 @@ class Algorithm(object):
             sigt = vec.dot(val).dot(vec.T)
             sigma[t, :dX, :dX] = np.diag(np.sqrt(pemp)).dot(sigt).dot(np.diag(np.sqrt(pemp)))
             # Fix small eigenvalues only.
+            # TODO - maybe symmetrize sigma?
             val, vec = np.linalg.eig(sigma[t, :dX, :dX])
-            val = np.maximum(np.real(val), 1e-6)
-            sigma[t, :dX, :dX] = vec.dot(np.diag(val)).dot(vec.T)
+            if np.any(val < 1e-6):
+              val = np.maximum(np.real(val), 1e-6)
+              sigma[t, :dX, :dX] = vec.dot(np.diag(val)).dot(vec.T)
 
             # Store sample probabilities.
             pProb[:, t] = -0.5 * np.sum(samps**2, 0) - 0.5 * np.sum(np.log(val))

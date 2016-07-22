@@ -26,6 +26,34 @@ class IOCDataLayer(caffe.Layer):
     def backward(self, top, propagate_down, bottom):
         pass
 
+class L2MonotonicLoss(caffe.Layer):
+    """ A monotonic loss layer, similar to a hinge loss. """
+    def setup(self, bottom, top):
+        pass
+
+    def reshape(self, bottom, top):
+        self._temp = np.zeros(bottom[0].shape)
+        assert(bottom[0].shape[1] == 1)
+        top[0].reshape(1)
+
+    def forward(self, bottom, top):
+        # TODO - make this a constant somewhere?
+        offset = 1.0 # TODO - acc. to the paper, this should be -1?
+        bottom_data = bottom[0].data
+        batch_size = bottom[0].shape[0]
+
+        for i in range(batch_size):
+            self._temp[i] = np.maximum(0.0, bottom_data[i] + offset)
+
+        top[0].data[...] = (self._temp*self._temp).sum() / batch_size
+
+    def backward(self, top, propagate_down, bottom):
+        loss_weight = top[0].diff[0]
+        batch_size = bottom[0].shape[0]
+        bottom[0].diff[...] = 2.0 * loss_weight * self._temp / batch_size
+        # This is gradient of l1 loss
+        # bottom[0].diff = loss_weight * np.sign(self._temp) / batch_size
+
 
 class IOCLoss(caffe.Layer):
     """ IOC loss layer, based on MaxEnt IOC with sampling. """
