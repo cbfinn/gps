@@ -60,10 +60,7 @@ class GenDemo(object):
 			os._exit(1) # called instead of sys.exit(), since t
 
 		# Keep the initial states of the agent the sames as the demonstrations.
-                if 'learning_from_prior' in self._hyperparams['algorithm']:
-		    self._learning = self._hyperparams['algorithm']['learning_from_prior'] # if the experiment is learning from prior experience
-                else:
-                    self._learning = False
+		self._learning = self.ioc_algo._hyperparams['learning_from_prior'] # if the experiment is learning from prior experience
 		agent_config = self._hyperparams['demo_agent']
 		if agent_config['filename'] == './mjc_models/pr2_arm3d.xml' and not self._learning:
 			agent_config['x0'] = self.algorithm._hyperparams['agent_x0']
@@ -80,7 +77,7 @@ class GenDemo(object):
 		N = self._hyperparams['algorithm']['num_demos']
 		if not self._learning:
 			controllers = {}
-			good_conds = self._hyperparams['algorithm']['demo_cond']
+			good_conds = self.ioc_algo._hyperparams['demo_cond']
 
 			# Store each controller under M conditions into controllers.
 			for i in xrange(M):
@@ -110,42 +107,47 @@ class GenDemo(object):
 				demos.append(demo)
 
 		# Filter out worst (M - good_conds) demos.
-		target_position = agent_config['target_end_effector'][:3]
-		dists_to_target = np.zeros(M)
-		for i in xrange(M):
-			demo_end_effector = demos[i].get(END_EFFECTOR_POINTS)
-			dists_to_target[i] = np.amin(np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
-		if not self._learning:
-			good_indices = dists_to_target.argsort()[:good_conds - M].tolist()
-		else:
-			good_indicators = (dists_to_target <= agent_config['success_upper_bound']).tolist()
-			good_indices = [i for i in xrange(len(good_indicators)) if good_indicators[i]]
-			bad_indices = np.argmax(dists_to_target)
-			self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
-		filtered_demos = []
-		demo_conditions = []
-		failed_conditions = []
-		exp_dir = self._data_files_dir.replace("data_files", "")
-		with open(exp_dir + 'log.txt', 'a') as f:
-			f.write('\nThe demo conditions are: \n')
-		for i in good_indices:
-			filtered_demos.append(demos[i])
-			demo_conditions.append(agent_config['pos_body_offset'][i])
+		if agent_config['filename'] == './mjc_models/pr2_arm3d.xml':
+			target_position = agent_config['target_end_effector'][:3]
+			dists_to_target = np.zeros(M)
+			for i in xrange(M):
+				demo_end_effector = demos[i].get(END_EFFECTOR_POINTS)
+				dists_to_target[i] = np.amin(np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
+			if not self._learning:
+				good_indices = dists_to_target.argsort()[:good_conds - M].tolist()
+			else:
+				good_indicators = (dists_to_target <= agent_config['success_upper_bound']).tolist()
+				good_indices = [i for i in xrange(len(good_indicators)) if good_indicators[i]]
+				bad_indices = np.argmax(dists_to_target)
+				self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
+			filtered_demos = []
+			demo_conditions = []
+			failed_conditions = []
+			exp_dir = self._data_files_dir.replace("data_files", "")
 			with open(exp_dir + 'log.txt', 'a') as f:
-				f.write('\n' + str(agent_config['pos_body_offset'][i]) + '\n')
-		with open(exp_dir + 'log.txt', 'a') as f:
-			f.write('\nThe failed badmm conditions are: \n')
-		for i in xrange(M):
-			if i not in good_indices:
-				failed_conditions.append(agent_config['pos_body_offset'][i])
+				f.write('\nThe demo conditions are: \n')
+			for i in good_indices:
+				filtered_demos.append(demos[i])
+				demo_conditions.append(agent_config['pos_body_offset'][i])
 				with open(exp_dir + 'log.txt', 'a') as f:
 					f.write('\n' + str(agent_config['pos_body_offset'][i]) + '\n')
-		shuffle(filtered_demos)
-		demo_list =  SampleList(filtered_demos)
-		demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs(), \
-						'demo_conditions': demo_conditions, 'failed_conditions': failed_conditions}
-		if self._learning:
-			demo_store['pos_body_offset'] = [agent_config['pos_body_offset'][bad_indices]]
+			with open(exp_dir + 'log.txt', 'a') as f:
+				f.write('\nThe failed badmm conditions are: \n')
+			for i in xrange(M):
+				if i not in good_indices:
+					failed_conditions.append(agent_config['pos_body_offset'][i])
+					with open(exp_dir + 'log.txt', 'a') as f:
+						f.write('\n' + str(agent_config['pos_body_offset'][i]) + '\n')
+			shuffle(filtered_demos)
+			demo_list =  SampleList(filtered_demos)
+			demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs(), \
+							'demo_conditions': demo_conditions, 'failed_conditions': failed_conditions}
+			if self._learning:
+				demo_store['pos_body_offset'] = [agent_config['pos_body_offset'][bad_indices]]
+		else:
+			shuffle(demos)
+			demo_list = SampleList(demos)
+			demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs()}
 		# Save the demos.
 		self.data_logger.pickle(
 			self._data_files_dir + 'demos.pkl',
