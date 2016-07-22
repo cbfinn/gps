@@ -51,7 +51,7 @@ class GPSMain(object):
 
 		config['algorithm']['agent'] = self.agent
 
-		if config['algorithm']['ioc']:
+		if 'ioc' in config['algorithm'] and config['algorithm']['ioc']:
 			# demo_file = self._data_files_dir + 'demos.pkl'
 			demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos.pkl' # for mdgps experiment
 			demos = self.data_logger.unpickle(demo_file)
@@ -356,9 +356,9 @@ def main():
 						help='silent debug print outs')
 	parser.add_argument('-q', '--quit', action='store_true',
 						help='quit GUI automatically when finished')
-	parser.add_argument('-m', '--measure', metavar='N', type=int, 
+	parser.add_argument('-m', '--measure', metavar='N', type=int,
 						help='measure success rate among all iterations') # For peg only
-	parser.add_argument('-c', '--compare', metavar='N', type=int, 
+	parser.add_argument('-c', '--compare', metavar='N', type=int,
 						help='compare global cost to multiple costs')
 	parser.add_argument('-l', '--learn', metavar='N', type=int,
 						help='learning from prior experience')
@@ -459,7 +459,7 @@ def main():
 		else:
 			gps.test_policy(itr=current_itr, N=test_policy_N)
 	elif measure_samples:
-		
+
 		gps = GPSMain(hyperparams.config)
 		pol_iter = gps.algorithm._hyperparams['iterations']
 		mean_dists, success_rates = gps.measure_distance_and_success()
@@ -629,7 +629,7 @@ def main():
 			mean_dists.append(gps.algorithm.dists_to_target[exp_iter - 1][0])
 			if mean_dists[i] <= 0.1:
 				success_ioc_samples.extend(gps._take_policy_samples(1))
-			print "iteration " + repr(i) + ": mean dist is " + repr(mean_dists[i]) 
+			print "iteration " + repr(i) + ": mean dist is " + repr(mean_dists[i])
 		with open(exp_dir + 'log.txt', 'a') as f:
 			f.write('\nThe 50 IOC conditions are: \n' + str(ioc_conditions) + '\n')
 		plt.plot(pos_body_offset_dists, mean_dists, 'ro')

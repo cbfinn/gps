@@ -28,11 +28,11 @@ class Algorithm(object):
         config.update(hyperparams)
         self._hyperparams = config
 
-        if 'train_conditions' in hyperparams:
-            self._cond_idx = hyperparams['train_conditions']
+        if 'train_conditions' in self._hyperparams:
+            self._cond_idx = self._hyperparams['train_conditions']
             self.M = len(self._cond_idx)
         else:
-            self.M = hyperparams['conditions']
+            self.M = self._hyperparams['conditions']
             self._cond_idx = range(self.M)
         self.iteration_count = 0
 
@@ -71,19 +71,19 @@ class Algorithm(object):
             self.traj_distr[self.iteration_count].append(self.cur[m].traj_distr)
             self.traj_info[self.iteration_count].append(self.cur[m].traj_info)
 
-        self.traj_opt = hyperparams['traj_opt']['type'](
-            hyperparams['traj_opt']
+        self.traj_opt = self._hyperparams['traj_opt']['type'](
+            self._hyperparams['traj_opt']
         )
-        if hyperparams['global_cost']:
-            self.cost = hyperparams['cost']['type'](hyperparams['cost'])
+        if self._hyperparams['global_cost']:
+            self.cost = self._hyperparams['cost']['type'](self._hyperparams['cost'])
         else:
             self.cost = [
-                hyperparams['cost']['type'](hyperparams['cost'])
+                self._hyperparams['cost']['type'](self._hyperparams['cost'])
                 for _ in range(self.M)
             ]
         if self._hyperparams['ioc']:
             self.gt_cost = [
-                hyperparams['gt_cost']['type'](hyperparams['gt_cost'])
+                self._hyperparams['gt_cost']['type'](self._hyperparams['gt_cost'])
                 for _ in range(self.M)
             ]
         self.base_kl_step = self._hyperparams['kl_step']
@@ -336,7 +336,7 @@ class Algorithm(object):
         return pX, pU, pProb
 
     def importance_weights(self):
-        """ 
+        """
             Estimate the importance weights for fusion distributions.
         """
         itr = self.iteration_count
