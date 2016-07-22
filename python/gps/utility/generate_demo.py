@@ -60,7 +60,10 @@ class GenDemo(object):
 			os._exit(1) # called instead of sys.exit(), since t
 
 		# Keep the initial states of the agent the sames as the demonstrations.
-		self._learning = self._hyperparams['algorithm']['learning_from_prior'] # if the experiment is learning from prior experience
+                if 'learning_from_prior' in self._hyperparams['algorithm']:
+		    self._learning = self._hyperparams['algorithm']['learning_from_prior'] # if the experiment is learning from prior experience
+                else:
+                    self._learning = False
 		agent_config = self._hyperparams['demo_agent']
 		if agent_config['filename'] == './mjc_models/pr2_arm3d.xml' and not self._learning:
 			agent_config['x0'] = self.algorithm._hyperparams['agent_x0']
