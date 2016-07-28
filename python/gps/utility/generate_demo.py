@@ -14,6 +14,7 @@ import threading
 import numpy as np
 import scipy.io
 import numpy.matlib
+import random
 from random import shuffle
 
 # Add gps/python to path so that imports work.
@@ -60,7 +61,10 @@ class GenDemo(object):
 			os._exit(1) # called instead of sys.exit(), since t
 
 		# Keep the initial states of the agent the sames as the demonstrations.
-		self._learning = self.ioc_algo._hyperparams['learning_from_prior'] # if the experiment is learning from prior experience
+		if 'learning_from_prior' in self._hyperparams['algorithm']:
+			self._learning = self._hyperparams['algorithm']['learning_from_prior'] # if the experiment is learning from prior experience
+		else:
+			self._learning = False
 		agent_config = self._hyperparams['demo_agent']
 		if agent_config['filename'] == './mjc_models/pr2_arm3d.xml' and not self._learning:
 			agent_config['x0'] = self.algorithm._hyperparams['agent_x0']
@@ -75,9 +79,10 @@ class GenDemo(object):
 
 		M = agent_config['conditions']
 		N = self._hyperparams['algorithm']['num_demos']
+		sampled_demo_conds = [random.randint(0, M-1) for i in xrange(M)]
+		sampled_demos = []
 		if not self._learning:
 			controllers = {}
-			good_conds = self.ioc_algo._hyperparams['demo_cond']
 
 			# Store each controller under M conditions into controllers.
 			for i in xrange(M):
@@ -100,26 +105,32 @@ class GenDemo(object):
 			pol = self.algorithm.policy_opt.policy
 			for i in xrange(M):
 				# Gather demos.
-				demo = self.agent.sample(
-					pol, i,
-					verbose=(i < self._hyperparams['verbose_trials'])
-					)
-				demos.append(demo)
+				for j in xrange(N):
+					demo = self.agent.sample(
+						pol, i,
+						verbose=(i < self._hyperparams['verbose_trials'])
+						)
+					# if i in sampled_demo_conds:
+					# 	sampled_demos.append(demo)
+					demos.append(demo)
 
 		# Filter out worst (M - good_conds) demos.
 		if agent_config['filename'] == './mjc_models/pr2_arm3d.xml':
 			target_position = agent_config['target_end_effector'][:3]
-			dists_to_target = np.zeros(M)
+			dists_to_target = np.zeros(M*N)
+			good_indices = []
+			failed_indices = []
 			for i in xrange(M):
-				demo_end_effector = demos[i].get(END_EFFECTOR_POINTS)
-				dists_to_target[i] = np.amin(np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
-			if not self._learning:
-				good_indices = dists_to_target.argsort()[:good_conds - M].tolist()
-			else:
-				good_indicators = (dists_to_target <= agent_config['success_upper_bound']).tolist()
-				good_indices = [i for i in xrange(len(good_indicators)) if good_indicators[i]]
-				bad_indices = np.argmax(dists_to_target)
-				self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
+				for j in xrange(N):
+					demo_end_effector = demos[i*N + j].get(END_EFFECTOR_POINTS)
+					# dists_to_target[i] = np.amin(np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
+					# Just choose the last time step since it may become unstable after achieving the minimum point.
+					dists_to_target[i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
+					if dists_to_target[i*N + j] > agent_config['success_upper_bound']:
+						failed_indices.append(i)
+			good_indices = [i for i in xrange(M) if i not in failed_indices]
+			bad_indices = np.argmax(dists_to_target)
+			self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
 			filtered_demos = []
 			demo_conditions = []
 			failed_conditions = []
@@ -127,7 +138,8 @@ class GenDemo(object):
 			with open(exp_dir + 'log.txt', 'a') as f:
 				f.write('\nThe demo conditions are: \n')
 			for i in good_indices:
-				filtered_demos.append(demos[i])
+				for j in xrange(N):
+					filtered_demos.append(demos[i*N + j])
 				demo_conditions.append(agent_config['pos_body_offset'][i])
 				with open(exp_dir + 'log.txt', 'a') as f:
 					f.write('\n' + str(agent_config['pos_body_offset'][i]) + '\n')
@@ -144,6 +156,28 @@ class GenDemo(object):
 							'demo_conditions': demo_conditions, 'failed_conditions': failed_conditions}
 			if self._learning:
 				demo_store['pos_body_offset'] = [agent_config['pos_body_offset'][bad_indices]]
+			import matplotlib.pyplot as plt
+			from matplotlib.patches import Rectangle
+
+			plt.close()
+			demo_conditions_x = [demo_conditions[i][0] for i in xrange(len(demo_conditions))]
+			demo_conditions_y = [demo_conditions[i][1] for i in xrange(len(demo_conditions))]
+			failed_conditions_x = [failed_conditions[i][0] for i in xrange(len(failed_conditions))]
+			failed_conditions_y = [failed_conditions[i][1] for i in xrange(len(failed_conditions))]
+			subplt = plt.subplot()
+			subplt.plot(demo_conditions_x, demo_conditions_y, 'go')
+			subplt.plot(failed_conditions_x, failed_conditions_y, 'rx')
+			ax = plt.gca()
+			ax.add_patch(Rectangle((-0.08, -0.08), 0.16, 0.16, fill = False, edgecolor = 'blue'))
+			box = subplt.get_position()
+			subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
+			subplt.legend(['demo_cond', 'failed_badmm'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
+							shadow=True, ncol=2)
+			plt.title("Distribution of demo conditions")
+			# plt.xlabel('width')
+			# plt.ylabel('length')
+			plt.savefig(self._data_files_dir + 'distribution_of_demo_conditions_50.png')
+			plt.close()
 		else:
 			shuffle(demos)
 			demo_list = SampleList(demos)

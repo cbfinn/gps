@@ -44,8 +44,9 @@ DEMO_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
 common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_06.pkl',
     'conditions': 4,
+    # 'dense': True # For dense/sparse demos experiment only
 }
 
 agent = {
@@ -72,14 +73,14 @@ demo_agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/pr2_arm3d.xml',
     'x0': generate_x0(np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
-                      np.zeros(7)]), 25),
+                      np.zeros(7)]), 40),
     'dt': 0.05,
     'substeps': 5,
-    'conditions': 25,
-    'pos_body_idx': generate_pos_idx(25),
+    'conditions': 40,
+    'pos_body_idx': generate_pos_idx(40),
     # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
     #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    'pos_body_offset': generate_pos_body_offset(25),
+    'pos_body_offset': generate_pos_body_offset(40),
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -95,18 +96,19 @@ demo_agent = {
 algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
-    'learning_from_prior': True,
+    # 'learning_from_prior': True,
     'ioc' : True,
-    'iterations': 1,
+    'iterations': 20,
     'kl_step': 1.0,
     'min_step_mult': 0.05,
     'max_step_mult': 3.0,
     'policy_sample_mode': 'replace',
     'max_ent_traj': 1.0,
     'demo_distr_empest': True,
-    'demo_cond': 15,
+    # 'demo_cond': 15,
     'num_demos': 3,
-    'synthetic_cost_samples': 100,
+    # 'synthetic_cost_samples': 100,
+    'synthetic_cost_samples': 0, # Remember to change back to 100 when done with the 50 samples exp
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
     'global_cost': True,
     'sample_on_policy': True,
@@ -114,12 +116,13 @@ algorithm = {
 
 algorithm['init_traj_distr'] = {
     'type': init_demo,
-    'init_gains':  1.0 / PR2_GAINS,
+    'init_gains':  0.2 / PR2_GAINS,
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-    'init_var': 1.0,
-    'stiffness': 1.0,
+    # 'init_var': 1.0,
+    'init_var': 1.5,
+    'stiffness': 0.5,
     'stiffness_vel': 0.5,
-    'final_weight': 50.0,
+    'final_weight': 10.0,
     'dt': agent['dt'],
     'T': agent['T'],
 }
@@ -194,8 +197,8 @@ algorithm['policy_prior'] = {
 
 config = {
     'iterations': algorithm['iterations'],
-    'num_samples': 5,
-    'verbose_trials': 1,
+    'num_samples': 50,
+    'verbose_trials': 5,
     'verbose_policy_trials': 5,
     'agent': agent,
     'demo_agent': demo_agent,

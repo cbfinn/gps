@@ -64,6 +64,7 @@ class AlgorithmTrajOpt(Algorithm):
                 sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
                 dists = [np.amin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
                          for i in xrange(len(cur_samples))]
+                self.min_sample = cur_samples[dists.index(min(dists))]
                 self.dists_to_target[itr].append(sum(dists) / len(cur_samples))   
         self._advance_iteration_variables()
 
