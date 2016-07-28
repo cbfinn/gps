@@ -252,13 +252,18 @@ class AlgorithmMDGPS(Algorithm):
 
         # This is the actual cost we have under the current trajectory
         # based on the latest samples.
+        if self._hyperparams['ioc']:
+            self._eval_cost(m, prev_cost=True)
+            traj_info = self.cur[m].prevcost_traj_info
+        else:
+            traj_info = self.cur[m].traj_info
         if (self._hyperparams['step_rule'] == 'classic'):
             new_actual_laplace_cost = self.traj_opt.estimate_cost(
-                cur_traj_distr, self.cur[m].traj_info
+                cur_traj_distr, traj_info
             )
         elif (self._hyperparams['step_rule'] == 'global'):
             new_actual_laplace_cost = self.traj_opt.estimate_cost(
-                cur_nn, self.cur[m].traj_info
+                cur_nn, traj_info
             )
         else:
             raise NotImplementedError
