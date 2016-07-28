@@ -53,7 +53,7 @@ agent = {
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
-    'pos_body_offset': [np.array([-0.08, -0.08, 0]), np.array([-0.08, -0.08, 0]),
+    'pos_body_offset': [np.array([-0.08, -0.08, 0]), np.array([-0.08, 0.08, 0]),
                         np.array([0.08, 0.08, 0]), np.array([0.08, -0.08, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,

@@ -53,10 +53,10 @@ class GPSMain(object):
 
 		if 'ioc' in config['algorithm'] and config['algorithm']['ioc']:
 			# demo_file = self._data_files_dir + 'demos.pkl'
-			# if config['common']['dense']:
-			demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos.pkl' # for mdgps experiment
-			# else:
-				# demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_sparse.pkl'
+			if not config['common']['nn_demo']:
+				demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
+			else:
+				demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'
 			demos = self.data_logger.unpickle(demo_file)
 			if demos is None:
 			  self.demo_gen = GenDemo(config)
@@ -319,7 +319,7 @@ class GPSMain(object):
 			)
 		if 'no_sample_logging' in self._hyperparams['common']:
 			return
-		if itr == self.algorithm._hyperparams['iterations']: # Just save the last iteration of the algorithm file
+		if itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
 			self.data_logger.pickle(
 				self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
 				copy.copy(self.algorithm)
@@ -379,15 +379,16 @@ class GPSMain(object):
 						)
 					samples.append(sample)
 		target_position = agent_config['target_end_effector'][:3]
-		dists_to_target = np.zeros(M)
+		dists_to_target = np.zeros(len(pol_conditions)*M*N)
 		ioc_conditions = []
 		for i in xrange(len(samples)):
 			sample_end_effector = samples[i].get(END_EFFECTOR_POINTS)
 			# dists_to_target[i] = np.amin(np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
 			# Just choose the last time step since it may become unstable after achieving the minimum point.
+			# import pdb; pdb.set_trace()
 			dists_to_target[i] = np.sqrt(np.sum((sample_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
-			ioc_conditions.append(agent_config['pos_body_offset'][i][:2])
-		good_indicators = (dists_to_target <= agent_config['success_upper_bound']).tolist()
+			ioc_conditions.append(pol_conditions[i/(M*N)][(i % (M*N))/N][:2])
+		good_indicators = (dists_to_target <= 0.1).tolist()
 		good_indices = [i for i in xrange(len(good_indicators)) if good_indicators[i]]
 		good_dists = []
 		bad_dists = []
@@ -395,12 +396,12 @@ class GPSMain(object):
 		failed_conditions = []
 		exp_dir = self._data_files_dir.replace("data_files", "")
 		for i in good_indices:
-			good_dists.append(dists_to_target[i])
-			sample_conditions.append(agent_config['pos_body_offset'][i][:2])
+			good_dists.append(dists_to_target[i]) # Assume N = 1
+			sample_conditions.append(ioc_conditions[i])
 		for i in xrange(len(samples)):
 			if i not in good_indices:
 				bad_dists.append(dists_to_target[i])
-				failed_conditions.append(agent_config['pos_body_offset'][i][:2])
+				failed_conditions.append(ioc_conditions[i])
 		
 		from matplotlib.patches import Rectangle
 
@@ -605,17 +606,20 @@ def main():
 		from gps.algorithm.policy.lin_gauss_init import init_lqr
 
 		mean_dists_global_dict, mean_dists_no_global_dict, success_rates_global_dict, \
-				success_rates_no_global_dict = {}, {}, {}, {}
+				success_rates_no_global_dict, mean_dists_global_dict, mean_dists_no_global_dict \
+				 = {}, {}, {}, {}, {}, {}
 		for itr in xrange(3):
 			random.seed(itr)
 			np.random.seed(itr)
-			hyperparams = imp.load_source('hyperparams', hyperparams_file)
+			exp_dir_classic = exp_dir.replace('on_global', 'on_classic')
+			hyperparams_file_classic = exp_dir_classic + 'hyperparams.py'
+			hyperparams = imp.load_source('hyperparams', hyperparams_file_classic)
 			# hyperparams.config['algorithm']['init_traj_distr']['type'] = init_lqr
 			# hyperparams.config['algorithm']['global_cost'] = True
-			# hyperparams.config['common']['dense'] = True
-			hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_50samples_%d' % itr + '/'
-			if not os.path.exists(exp_dir + 'data_files_50samples_%d' % itr + '/'):
-				os.makedirs(exp_dir + 'data_files_50samples_%d' % itr + '/')
+			hyperparams.config['common']['nn_demo'] = True
+			hyperparams.config['common']['data_files_dir'] = exp_dir_classic + 'data_files_nn_%d' % itr + '/'
+			if not os.path.exists(exp_dir_classic + 'data_files_nn_%d' % itr + '/'):
+				os.makedirs(exp_dir_classic + 'data_files_nn_%d' % itr + '/')
 			# hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'
 			# if not os.path.exists(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'):
 			# 	os.makedirs(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/')
@@ -654,61 +658,92 @@ def main():
 			# # plt.ylabel('length')
 			# plt.savefig(exp_dir + 'distribution_of_demo_conditions_seed.png')
 			# plt.close()
+			hyperparams = imp.load_source('hyperparams', hyperparams_file_classic)
+			# hyperparams.config['algorithm']['init_traj_distr']['type'] = init_lqr
+			# hyperparams.config['algorithm']['global_cost'] = True
+			hyperparams.config['common']['nn_demo'] = False
+			hyperparams.config['common']['data_files_dir'] = exp_dir_classic + 'data_files_LG_%d' % itr + '/'
+			if not os.path.exists(exp_dir_classic + 'data_files_LG_%d' % itr + '/'):
+				os.makedirs(exp_dir_classic + 'data_files_LG_%d' % itr + '/')
+			# hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'
+			# if not os.path.exists(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'):
+			# 	os.makedirs(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/')
+			gps_classic = GPSMain(hyperparams.config)
+			pol_iter = gps_global.algorithm._hyperparams['iterations']
+			# for i in xrange(pol_iter):
+			if hyperparams.config['gui_on']:
+				gps_classic.run()
+				# gps_global.test_policy(itr=i, N=compare_costs)
+				plt.close()
+			else:
+				gps_classic.run()
+				# gps_global.test_policy(itr=i, N=compare_costs)
+				plt.close()
+			mean_dists_classic_dict[itr], success_rates_classic_dict[itr] = gps_classic.measure_distance_and_success()
+
 
 			hyperparams = imp.load_source('hyperparams', hyperparams_file)
 			# hyperparams.config['algorithm']['global_cost'] = False
-			# hyperparams.config['common']['dense'] = False
+			hyperparams.config['common']['nn_demo'] = False
 			hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_global_%d' % itr + '/' #use global as sparse demos
 			if not os.path.exists(exp_dir + 'data_files_global_%d' % itr + '/'):
 				os.makedirs(exp_dir + 'data_files_global_%d' % itr + '/')
 			gps = GPSMain(hyperparams.config)
 			pol_iter = gps.algorithm._hyperparams['iterations']
 			# for i in xrange(pol_iter):
-			# if hyperparams.config['gui_on']:
-			# 	gps.run()
-			# 	# gps.test_policy(itr=i, N=compare_costs)
-			# 	plt.close()
-			# else:
-			# 	gps.run()
-			# 	# gps.test_policy(itr=i, N=compare_costs)
+			if hyperparams.config['gui_on']:
+				gps.run()
+				# gps.test_policy(itr=i, N=compare_costs)
+				plt.close()
+			else:
+				gps.run()
+				# gps.test_policy(itr=i, N=compare_costs)
 			mean_dists_no_global_dict[itr], success_rates_no_global_dict[itr] = gps.measure_distance_and_success()
 
 		plt.close('all')
 		avg_dists_global = [float(sum(mean_dists_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
 		avg_succ_rate_global = [float(sum(success_rates_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
+		avg_dists_classic = [float(sum(mean_dists_classic_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
+		avg_succ_rate_classic = [float(sum(success_rates_classic_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
 		avg_dists_no_global = [float(sum(mean_dists_no_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
 		avg_succ_rate_no_global = [float(sum(success_rates_no_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
 		plt.plot(range(pol_iter), avg_dists_global, '-x', color='red')
+		plt.plot(range(pol_iter), avg_dists_classic, '-x', color='blue')
 		plt.plot(range(pol_iter), avg_dists_no_global, '-x', color='green')
 		for i in xrange(3):
 			plt.plot(range(pol_iter), mean_dists_global_dict[i], 'ko')
+			plt.plot(range(pol_iter), mean_dists_classic_dict[i], 'yo')
 			plt.plot(range(pol_iter), mean_dists_no_global_dict[i], 'co')
 		# for i, txt in enumerate(avg_dists_global):
 		# 	plt.annotate(np.around(txt, decimals=2), (i, txt))
 		# for i, txt in enumerate(avg_dists_no_global):
 		# 	plt.annotate(np.around(txt, decimals=2), (i, txt))
-		plt.legend(['avg 50 samples', 'avg 5 samples', '50 samples', '5 sa50samples'], loc='upper right', ncol=2)
+		plt.legend(['avg nn demo', 'avg LG demo', 'avg on global', 'nn demo', 'LG demo', 'on global'], \
+						loc='upper right', ncol=3)
 		# plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)		
-		plt.title("mean distances to the target during iterations with 50 and 5 samples")
+		plt.title("mean distances to the target over time with nn and LG demo")
 		# plt.title("mean distances to the target during iterations with and without demo init")
 		plt.xlabel("iterations")
 		plt.ylabel("mean distances")
 		plt.savefig(exp_dir + 'mean_dists_during_iteration_comparison.png')
 		plt.close()
 		plt.plot(range(pol_iter), avg_succ_rate_global, '-x', color='red')
+		plt.plot(range(pol_iter), avg_succ_rate_classic, '-x', color='blue')
 		plt.plot(range(pol_iter), avg_succ_rate_no_global, '-x', color='green')
 		for i in xrange(3):
 			plt.plot(range(pol_iter), success_rates_global_dict[i], 'ko')
+			plt.plot(range(pol_iter), success_rates_classic_dict[i], 'yo')
 			plt.plot(range(pol_iter), success_rates_no_global_dict[i], 'co')
 		# for i, txt in enumerate(avg_succ_rate_global):
 		# 	plt.annotate(repr(txt*100) + "%", (i, txt))
 		# for i, txt in enumerate(avg_succ_rate_no_global):
 		# 	plt.annotate(repr(txt*100) + "%", (i, txt))
-		plt.legend(['avg 50 samples', 'avg 5 samples', '50 samples', '5 sa50samples'], loc='lower right', ncol=2)
+		plt.legend(['avg nn demo', 'avg LG demo', 'avg on global', 'nn demo', 'LG demo', 'on global'], \
+						loc='upper right', ncol=3)
 		# plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)
 		plt.xlabel("iterations")
 		plt.ylabel("success rate")
-		plt.title("success rates during iterations with 50 and 5 samples")
+		plt.title("success rates during iterations with with nn and LG demo")
 		# plt.title("success rates during iterations with and without demo initialization")
 		plt.savefig(exp_dir + 'success_rate_during_iteration_comparison.png')
 		plt.close()

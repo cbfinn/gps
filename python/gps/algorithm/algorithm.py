@@ -235,7 +235,7 @@ class Algorithm(object):
         self.kl_div[self.iteration_count] = []
         self.dists_to_target[self.iteration_count] = []
         if self._hyperparams['global_cost']:
-            self.prev_cost = self.cost.copy()
+            self.previous_cost = self.cost.copy()
         else:
             self.previous_cost = []
         for m in range(self.M):
