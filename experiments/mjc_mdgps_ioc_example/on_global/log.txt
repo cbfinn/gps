@@ -5535,3 +5535,65 @@ iterations: 20
 conditions: 4
 samples:    50
 
+
+
+exp_name:   my_experiment_07-28-16_19-10
+alg_type:   AlgorithmMDGPS
+alg_dyn:    DynamicsLRPrior
+alg_cost:   CostIOCNN
+iterations: 20
+conditions: 4
+samples:    5
+
+my_experiment_07-28-16_19-10
+    |                       |          condition 0                                                             |          condition 1                                                             |          condition 2                                                             |          condition 3                                                            
+itr | avg_cost avg_pol_cost |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f
+  0 |   780.05         2.32 |   683.79     1.00   239.44     0.37     3.99     0.19     2.01    13.67     5.08 |   486.01     1.00   239.44     1.73     1.82     0.12     2.12    23.72     7.78 |   798.25     1.00   239.44     1.98     1.91     0.18     2.12    38.21    10.91 |  1152.17     1.00   239.44     2.64     2.78     0.33     3.02    77.84    24.92
+  1 |   171.56      4335.34 |   177.28     3.00   483.55     3.49    66.82     0.21 11593.21   223.49    53.64 |   -87.78     3.00   484.28    13.59    52.71     0.19  2603.93   210.05    49.81 |     3.10     3.00   520.07     3.71    95.09     0.21   145.61   233.67    61.73 |   593.62     3.00   483.68     5.64    20.87     0.28  2998.59   115.40    33.83
+
+
+exp_name:   my_experiment_07-28-16_19-25
+alg_type:   AlgorithmMDGPS
+alg_dyn:    DynamicsLRPrior
+alg_cost:   CostIOCNN
+iterations: 20
+conditions: 4
+samples:    5
+
+my_experiment_07-28-16_19-25
+    |                       |          condition 0                                                             |          condition 1                                                             |          condition 2                                                             |          condition 3                                                            
+itr | avg_cost avg_pol_cost |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f
+  0 |   780.05         2.32 |   683.79     1.00   239.44     0.37     3.99     0.19     2.01    13.67     5.08 |   486.01     1.00   239.44     1.73     1.82     0.12     2.12    23.72     7.78 |   798.25     1.00   239.44     1.98     1.91     0.18     2.12    38.21    10.91 |  1152.17     1.00   239.44     2.64     2.78     0.33     3.02    77.84    24.92
+  1 |   171.56      4335.34 |   177.28     3.00   483.55     3.49    66.82     0.21 11593.21   223.49    53.64 |   -87.78     3.00   484.28    13.59    52.71     0.19  2603.93   210.05    49.81 |     3.10     3.00   520.07     3.71    95.09     0.21   145.61   233.67    61.73 |   593.62     3.00   483.68     5.64    20.87     0.28  2998.59   115.40    33.83
+
+
+exp_name:   my_experiment_07-28-16_19-39
+alg_type:   AlgorithmMDGPS
+alg_dyn:    DynamicsLRPrior
+alg_cost:   CostIOCNN
+iterations: 20
+conditions: 4
+samples:    5
+
+my_experiment_07-28-16_19-39
+    |                       |          condition 0                                                             |          condition 1                                                             |          condition 2                                                             |          condition 3                                                            
+itr | avg_cost avg_pol_cost |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f
+  0 |   780.05         2.32 |   683.79     1.00   239.44     0.37     3.99     0.19     2.01    13.67     5.08 |   486.01     1.00   239.44     1.73     1.82     0.12     2.12    23.72     7.78 |   798.25     1.00   239.44     1.98     1.91     0.18     2.12    38.21    10.91 |  1152.17     1.00   239.44     2.64     2.78     0.33     3.02    77.84    24.92
+  1 |   171.56         7.06 |   177.28     0.45   483.55     0.55     2.51     0.13     7.32     2.54     1.99 |   -87.78     0.80   484.28     2.61     2.53     0.22     5.76    45.53    11.75 |     3.10     0.87   520.07     0.50     5.09     0.20     6.24     9.26     4.72 |   593.62     0.62   483.68     0.33     1.82     0.29     8.93     3.35     1.95
+  2 |    14.52         4.74 |   -88.95     0.33   567.97     0.29     0.48     0.23     6.17     3.90     0.79 |   -74.95     0.09   592.11     0.12     0.81     0.15     2.94     0.47     0.51 |   -64.18     0.42   611.59     1.27     1.09     0.11     3.45     5.39     0.93 |   286.16     0.45   658.48     0.37     0.83     0.34     6.38     5.16     1.05
+  3 |  -216.60         8.95 |  -245.82     0.29   696.50     0.38     0.53     0.30    10.17     2.10     0.55 |  -284.16     0.34   747.55     0.22     0.67     0.29     5.23     1.30     0.49 |  -274.44     0.47   702.98     0.52     0.66     0.41     9.81     3.14     0.63 |   -61.98     0.38   716.17     1.68     0.92     0.40    10.57     2.11     0.63
+
+
+exp_name:   my_experiment_07-28-16_19-51
+alg_type:   AlgorithmMDGPS
+alg_dyn:    DynamicsLRPrior
+alg_cost:   CostIOCNN
+iterations: 20
+conditions: 4
+samples:    5
+
+my_experiment_07-28-16_19-51
+    |                       |          condition 0                                                             |          condition 1                                                             |          condition 2                                                             |          condition 3                                                            
+itr | avg_cost avg_pol_cost |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f |   cost     step   entropy  kl_div_i kl_div_f mean_dist pol_cost kl_div_i kl_div_f
+  0 |   780.05         2.32 |   683.79     1.00   239.44     0.37     3.99     0.19     2.01    13.67     5.08 |   486.01     1.00   239.44     1.73     1.82     0.12     2.12    23.72     7.78 |   798.25     1.00   239.44     1.98     1.91     0.18     2.12    38.21    10.91 |  1152.17     1.00   239.44     2.64     2.78     0.33     3.02    77.84    24.92
+  1 |   171.56      4335.34 |   177.28     3.00   483.55     3.49    66.82     0.21 11593.21   223.49    53.64 |   -87.78     3.00   484.28    13.59    52.71     0.19  2603.93   210.05    49.81 |     3.10     3.00   520.07     3.71    95.09     0.21   145.61   233.67    61.73 |   593.62     3.00   483.68     5.64    20.87     0.28  2998.59   115.40    33.83
