@@ -175,17 +175,17 @@ class MPFLoss(caffe.Layer):
     def backward(self, top, propagate_down, bottom):
         # compute backward pass (derivative of objective w.r.t. bottom)
         pairs = self._pairs
-        loss_weight = 0.25 * top[0].diff[0] #0.5*0.5?
+        loss_weight = 0.5 * top[0].diff[0]
 
         # Compute gradient w.r.t demos and samples
         demo_bottom_diff = bottom[0].diff
         sample_bottom_diff = bottom[1].diff
         for i in xrange(self.num_demos):
             for t in xrange(self.T):
-                demo_bottom_diff[i, t] = np.sum(pairs[i, :])
+                demo_bottom_diff[i, t] = 0.5 * np.sum(pairs[i, :])
         for i in xrange(self.num_samples):
             for t in xrange(self.T):
-                sample_bottom_diff[i, t] = -np.sum(pairs[:, i])
+                sample_bottom_diff[i, t] = -0.5 * np.sum(pairs[:, i])
 
         bottom[0].diff[...] = demo_bottom_diff * loss_weight
         bottom[1].diff[...] = sample_bottom_diff * loss_weight
