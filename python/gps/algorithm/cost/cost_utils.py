@@ -249,7 +249,7 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
 
         n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, loss_weight=1.0,
                          python_param=dict(module='ioc_layers',
-                                           layer='IOCLoss'))
+                                           layer='MPFLoss'))
 
     return n.to_proto()
 
@@ -358,7 +358,7 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
 
         n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, loss_weight=1.0,
                          python_param=dict(module='ioc_layers',
-                                           layer='IOCLoss'))
+                                           layer='MPFLoss'))
 
     net = n.to_proto()
     if phase == 'forward_feat':

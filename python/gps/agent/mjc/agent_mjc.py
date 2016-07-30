@@ -113,6 +113,7 @@ class AgentMuJoCo(Agent):
             noise = generate_noise(self.T, self.dU, self._hyperparams)
         else:
             noise = np.zeros((self.T, self.dU))
+        # import pdb; pdb.set_trace()
         if np.any(self._hyperparams['x0var'][condition] > 0):
             x0n = self._hyperparams['x0var'] * \
                     np.random.randn(self._hyperparams['x0var'].shape)
