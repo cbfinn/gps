@@ -44,7 +44,7 @@ common = {
     'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 4,
+    'conditions': 1,
     # 'demo_conditions': 20,
     # 'demo_conditions': 25,
 }
@@ -61,9 +61,9 @@ agent = {
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
-    'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
-                        np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    # 'pos_body_offset': [np.array([0, 0.0, 0])],
+    # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
+    #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
+    'pos_body_offset': [np.array([0, 0.0, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -98,7 +98,7 @@ demo_agent = {
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
-    'learning_from_prior': False,
+    'learning_from_prior': True,
     'ioc' : True,
     'kl_step': 0.5,
     'max_step_mult': 2.0,
@@ -110,6 +110,7 @@ algorithm = {
     'num_demos': 3,
     'iterations': 20,
     'synthetic_cost_samples': 100,
+    'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
 }
 
 algorithm['init_traj_distr'] = {

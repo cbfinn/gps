@@ -193,53 +193,17 @@ class LineSearch(object):
                             e1 = leta
                             e2 = self.data['e2']
 
-            # First, try to perform a log-space fit. Note that this may
-            # no longer be convex.
-            lc1 = c1 * e1
-            lc2 = c2 * e2
-            le1 = np.log(e1)
-            le2 = np.log(e2)
-
-            # Fit quadratic.
-            a = (lc2 - lc1) / (2 * (le2 - le1))
-            b = 0.5 * (lc1 + lc2 - 2 * a * (le1 + le2))
-
-            # Decide whether we want to solve in the original space
-            # instead. Use ratio of gradients. Solve in the original if
-            # the ratio of gradients is very high in log space (with 50
-            # percent probability).
-            if (abs(np.log(abs(lc1 / lc2))) > 2 * abs(np.log(abs(c1 / c2))) and
-                    c1 * c2 < 0 and np.random.rand() < 0.5):
-                solve_orig = 1
+            a = (c2 - c1) / (2 * (e2 - e1))
+            b = 0.5 * (c1 + c2 - 2 * a * (e1 + e2))
+            if a < 0:  # Concave, good to go.
+                nlogeta = np.log(max(-b / (2 * a), 1e-50))
             else:
-                solve_orig = 0
-
-            # Compute minimium.
-            if a < 0 and not solve_orig:  # Concave, good to go.
-                nlogeta = -b / (2 * a)
-            else:  # Solve in original space.
-                if solve_orig:
-                    LOGGER.debug(
-                        'Solving non-log problem due to ratio choice: %f %f',
-                        abs(np.log(abs(lc1 / lc2))), abs(np.log(abs(c1 / c2)))
-                    )
-                if not solve_orig:
-                    LOGGER.debug(
-                        'Solving non-log problem due to a > 0: %f %f',
-                        abs(np.log(abs(lc1 / lc2))), abs(np.log(abs(c1 / c2)))
-                    )
-
-                # Fit quadratic.
-                a = (c2 - c1) / (2 * (e2 - e1))
-                b = 0.5 * (c1 + c2 - 2 * a * (e1 + e2))
-                if a < 0:  # Concave, good to go.
-                    nlogeta = np.log(max(-b / (2 * a), 1e-50))
-                else:
-                    # Something is very wrong.
-                    LOGGER.warning('Dual is not concave!')
-                    rate = abs(1.0 / (con * eta))
-                    cng = min(max(rate * con * eta, -5), 5)
-                    nlogeta = np.log(eta) + cng
+                # Something is very wrong.
+                raise ValueError('Dual is not concave!')
+                LOGGER.warning('Dual is not concave!')
+                rate = abs(1.0 / (con * eta))
+                cng = min(max(rate * con * eta, -5), 5)
+                nlogeta = np.log(eta) + cng
 
             LOGGER.debug('Bracket points: %f %f (%f %f) a=%f b=%f',
                          e1, e2, c1, c2, a, b)

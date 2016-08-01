@@ -97,14 +97,22 @@ class IOCLoss(caffe.Layer):
         loss /= self.num_demos
 
         max_val = -dc[0]
+        self.max_idx = 0
+        self.is_max_demo = True
         for i in xrange(self.num_samples):
             sc[i] = 0.5 * np.sum(bottom[1].data[i,:])
             # Add importance weight to sample feature count. Will be negated.
             sc[i] += s_log_iw[i]
             if -sc[i] > max_val:
                 max_val = -sc[i]
+                self.max_idx = i
+                self.is_max_demo = False
         # Do a safe log-sum-exp operation.
+        demo_idx = np.argmax(-dc)
         max_val = np.max((max_val, np.max(-dc)))
+        if max_val == np.max(-dc):
+            self.max_idx = demo_idx
+            self.is_max_demo = True
         dc = np.exp(-dc - max_val)
         sc = np.exp(-sc - max_val)
         self._partition = np.sum(dc, axis = 0) + np.sum(sc, axis = 0)
@@ -126,10 +134,14 @@ class IOCLoss(caffe.Layer):
         for i in xrange(self.num_demos):
             for t in xrange(self.T):
                 demo_bottom_diff[i, t] = (1.0 / self.num_demos - (dc[i] / self._partition))
+                if self.is_max_demo and i == self.max_idx:
+                    demo_bottom_diff[i, t] = (1.0 / self.num_demos) - 1.0 
 
         for i in xrange(self.num_samples):
             for t in xrange(self.T):
                 sample_bottom_diff[i, t] = (-sc[i] / self._partition)
+                if not self.is_max_demo and i == self.max_idx:
+                    sample_bottom_diff[i, t] = -1.0
 
         bottom[0].diff[...] = demo_bottom_diff * loss_weight
         bottom[1].diff[...] = sample_bottom_diff * loss_weight
@@ -190,12 +202,12 @@ class MPFLoss(caffe.Layer):
             for t in xrange(self.T):
                 demo_bottom_diff[i, t] = 0.5 * np.sum(pairs[i, :]) / self._partition
                 if i == self.max_idx[0]:
-                    demo_bottom_diff[i, t] += 0.5
+                    demo_bottom_diff[i, t] = 0.5
         for i in xrange(self.num_samples):
             for t in xrange(self.T):
                 sample_bottom_diff[i, t] = -0.5 * np.sum(pairs[:, i]) / self._partition
                 if i == self.max_idx[1]:
-                    sample_bottom_diff[i, t] -= 0.5
+                    sample_bottom_diff[i, t] = -0.5
         bottom[0].diff[...] = demo_bottom_diff * loss_weight
         bottom[1].diff[...] = sample_bottom_diff * loss_weight
 

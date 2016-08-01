@@ -751,11 +751,11 @@ def main():
 
 	elif learning_from_prior:
 		ioc_conditions = [np.array([random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), \
-						random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)])]) for i in xrange(10)]
+						random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), 0.02]) for i in xrange(10)]
 		top_bottom = [np.array([np.random.uniform(-0.08, 0.08), \
-						random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)])]) for i in xrange(10)]
+						random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), 0.02]) for i in xrange(10)]
 		left_right = [np.array([random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), \
-						np.random.uniform(-0.08, 0.08)]) for i in xrange(10)]
+						np.random.uniform(-0.08, 0.08), 0.02]) for i in xrange(10)]
 		ioc_conditions.extend(top_bottom)
 		ioc_conditions.extend(left_right)
 		exp_iter = hyperparams.config['algorithm']['iterations']
@@ -793,10 +793,10 @@ def main():
 		with open(exp_dir + 'log.txt', 'a') as f:
 			f.write('\nThe 50 IOC conditions are: \n' + str(ioc_conditions) + '\n')
 		plt.plot(pos_body_offset_dists, mean_dists, 'ro')
-		plt.title("Learning from prior experience using peg insertion")
+		plt.title("Learning from prior experience using peg insertion with nonzero z position")
 		plt.xlabel('pos body offset distances to the origin')
 		plt.ylabel('mean distances to the target')
-		plt.savefig(data_files_dir + 'learning_from_prior.png')
+		plt.savefig(data_files_dir + 'learning_from_prior_nonzero_z.png')
 		plt.close()
 
 		from matplotlib.patches import Rectangle
@@ -826,10 +826,10 @@ def main():
 		subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
 		subplt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
 						shadow=True, ncol=2)
-		plt.title("Distribution of neural network and IOC's initial conditions")
+		plt.title("Distribution of neural network and IOC's initial conditions with z=0.02")
 		# plt.xlabel('width')
 		# plt.ylabel('length')
-		plt.savefig(data_files_dir + 'distribution_of_conditions.png')
+		plt.savefig(data_files_dir + 'distribution_of_conditions_nonzero_z.png')
 		plt.close()
 		new_demos = SampleList(success_ioc_samples)
 		new_demo_store = {'demoU': new_demos.get_U(), 'demoX': new_demos.get_X(), 'demoO': new_demos.get_obs()}
