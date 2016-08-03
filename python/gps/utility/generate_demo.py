@@ -12,6 +12,7 @@ import argparse
 import time
 import threading
 import numpy as np
+import scipy as sp
 import scipy.io
 import numpy.matlib
 import random
@@ -21,11 +22,12 @@ from random import shuffle
 sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
 from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
+from gps.algorithm.algorithm_utils import gauss_fit_joint_prior
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
-        END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
-        END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
-        CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE
-# from gps.algorithm.policy.lin_gauss_policy import LinearGaussianPolicy  # Maybe useful if we unpickle the file as controllers
+		END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
+		END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
+		CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE
+from gps.algorithm.policy.lin_gauss_policy import LinearGaussianPolicy  # Maybe useful if we unpickle the file as controllers
 
 class GenDemo(object):
 	""" Generator of demos. """
@@ -102,24 +104,26 @@ class GenDemo(object):
 					demos.append(demo)
 		else:
 			# Extract the neural network policy.
-			import pdb; pdb.set_trace()
 			pol = self.algorithm.policy_opt.policy
-			lg_algorithm = pickle.load(open(self._hyperparams['common']['LG_controller_file']))
-			controllers = {}
-
-			# Store each controller under M conditions into controllers.
-			for i in xrange(M):
-				controllers[i] = self.algorithm.cur[i].traj_distr
 			pol.chol_pol_covar *= var_mult
+
 			for i in xrange(M):
 				# Gather demos.
-				for j in xrange(N):
-					demo = self.agent.sample(
+				samples = []
+				for j in xrange(5):
+					sample = self.agent.sample(
 						pol, i,
 						verbose=(i < self._hyperparams['verbose_trials'])
 						)
 					# if i in sampled_demo_conds:
 					# 	sampled_demos.append(demo)
+					samples.append(sample)
+				controller = self.linearize_policy(SampleList(samples))
+				for k in xrange(N):
+					demo = self.agent.sample(
+							controller, i,
+							verbose=(i < self._hyperparams['verbose_trials'])
+							)
 					demos.append(demo)
 
 		# Filter out worst (M - good_conds) demos.
@@ -196,4 +200,50 @@ class GenDemo(object):
 			self._data_files_dir + 'demos.pkl',
 			copy.copy(demo_store)
 		)
+
+	def linearize_policy(self, samples):
+		policy_prior = self.algorithm._hyperparams['policy_prior']
+		init_policy_prior = policy_prior['type'](policy_prior)
+		init_policy_prior._hyperparams['keep_samples'] = False
+		dX, dU, T = self.algorithm.dX, self.algorithm.dU, self.algorithm.T
+		N = len(samples)
+		X = samples.get_X()
+		pol_mu, pol_sig = self.algorithm.policy_opt.prob(samples.get_obs().copy())[:2]
+		# Update the policy prior with collected samples
+		init_policy_prior.update(SampleList([]), self.algorithm.policy_opt, samples)
+		# Collapse policy covariances. This is not really correct, but
+		# it works fine so long as the policy covariance doesn't depend
+		# on state.
+		pol_sig = np.mean(pol_sig, axis=0)
+		pol_info_pol_K = np.zeros((T, dU, dX))
+		pol_info_pol_k = np.zeros((T, dU))
+		pol_info_pol_S = np.zeros((T, dU, dU))
+		pol_info_chol_pol_S = np.zeros((T, dU, dU))
+		pol_info_inv_pol_S = np.empty_like(pol_info_chol_pol_S)
+		# Estimate the policy linearization at each time step.
+		for t in range(T):
+			# Assemble diagonal weights matrix and data.
+			dwts = (1.0 / N) * np.ones(N)
+			Ts = X[:, t, :]
+			Ps = pol_mu[:, t, :]
+			Ys = np.concatenate((Ts, Ps), axis=1)
+			# Obtain Normal-inverse-Wishart prior.
+			mu0, Phi, mm, n0 = init_policy_prior.eval(Ts, Ps)
+			sig_reg = np.zeros((dX+dU, dX+dU))
+			# On the first time step, always slightly regularize covariance.
+			if t == 0:
+				sig_reg[:dX, :dX] = 1e-8 * np.eye(dX)
+			# Perform computation.
+			pol_K, pol_k, pol_S = gauss_fit_joint_prior(Ys, mu0, Phi, mm, n0,
+														dwts, dX, dU, sig_reg)
+			pol_S += pol_sig[t, :, :]
+			pol_info_pol_K[t, :, :], pol_info_pol_k[t, :] = pol_K, pol_k
+			pol_info_pol_S[t, :, :], pol_info_chol_pol_S[t, :, :] = \
+					pol_S, sp.linalg.cholesky(pol_S)
+			pol_info_inv_pol_S[t, :, :] = sp.linalg.solve(
+											pol_info_chol_pol_S[t, :, :],
+											np.linalg.solve(pol_info_chol_pol_S[t, :, :].T, np.eye(dU))
+											)
+		return LinearGaussianPolicy(pol_info_pol_K, pol_info_pol_k, pol_info_pol_S, pol_info_chol_pol_S, \
+										pol_info_inv_pol_S)
 

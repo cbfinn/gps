@@ -284,8 +284,8 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         dim_hidden = 42
 
     n = caffe.NetSpec()
-    smooth_reg_weight = COST_IOC_QUADRATIC['smooth_reg_weight']
-    mono_reg_weight = COST_IOC_QUADRATIC['mono_reg_weight']
+    smooth_reg_weight = COST_IOC_NN['smooth_reg_weight']
+    mono_reg_weight = COST_IOC_NN['mono_reg_weight']
 
     # Needed for Caffe to find defined python layers.
     sys.path.append('/'.join(str.split(current_path, '/')[:-1]))
