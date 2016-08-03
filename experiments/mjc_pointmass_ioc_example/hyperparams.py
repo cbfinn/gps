@@ -77,7 +77,7 @@ demo_agent = {
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['demo_conditions'],
-    'T': 100,
+    'T': agent['T'],
     'point_linear': True,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
@@ -95,8 +95,8 @@ algorithm = {
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
-    'demo_cond': 4,
-    'num_demos': 10,
+    'demo_cond': 1,
+    'num_demos': 50,
 }
 
 algorithm['init_traj_distr'] = {
@@ -114,8 +114,10 @@ algorithm['cost'] = {
     'type': CostIOCNN,
     'wu': np.array([1e-2, 1e-2]),
     'dO': 10,
-    'T': 100,
+    'T': agent['T'],
     'iterations': 5000,
+    'demo_batch_size': 5,
+    'sample_batch_size': 5,
 }
 
 algorithm['gt_cost'] = {
@@ -156,7 +158,7 @@ algorithm['policy_prior'] = {
 
 config = {
     'iterations': algorithm['iterations'],
-    'num_samples': 5,
+    'num_samples': 200,
     'verbose_trials': 1,
     'verbose_policy_trials': 1,
     'common': common,

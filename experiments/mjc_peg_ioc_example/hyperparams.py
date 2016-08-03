@@ -63,7 +63,7 @@ agent = {
     'pos_body_idx': np.array([1]),
     #'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
     #                    np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    'pos_body_offset': [np.array([0, -0.1, 0])],
+    'pos_body_offset': [np.array([0.1, -0.1, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -163,6 +163,8 @@ algorithm['cost'] = {
     'T': 100,
     'dO': 26,
     'iterations': 5000,
+    'demo_batch_size': 5,
+    'sample_batch_size': 5,
 }
 
 # algorithm['gt_cost'] = {

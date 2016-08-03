@@ -111,7 +111,7 @@ action_cost = {
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [state_cost, action_cost],
-    'weights': [1.0, 1.0],
+    'weights': [1.0, 1.0], # used 10,1 for T=3
 }
 
 algorithm['dynamics'] = {
