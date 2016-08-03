@@ -73,7 +73,7 @@ class GenDemo(object):
 		self.agent = agent_config['type'](agent_config)
 
 		# Roll out the demonstrations from controllers
-		var_mult = self.algorithm._hyperparams['var_mult']
+		var_mult = self._hyperparams['algorithm']['var_mult']
 		T = self.algorithm.T
 		demos = []
 
@@ -102,7 +102,15 @@ class GenDemo(object):
 					demos.append(demo)
 		else:
 			# Extract the neural network policy.
+			import pdb; pdb.set_trace()
 			pol = self.algorithm.policy_opt.policy
+			lg_algorithm = pickle.load(open(self._hyperparams['common']['LG_controller_file']))
+			controllers = {}
+
+			# Store each controller under M conditions into controllers.
+			for i in xrange(M):
+				controllers[i] = self.algorithm.cur[i].traj_distr
+			pol.chol_pol_covar *= var_mult
 			for i in xrange(M):
 				# Gather demos.
 				for j in xrange(N):
@@ -130,6 +138,7 @@ class GenDemo(object):
 						failed_indices.append(i)
 			good_indices = [i for i in xrange(M) if i not in failed_indices]
 			bad_indices = np.argmax(dists_to_target)
+			import pdb; pdb.set_trace()
 			self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
 			filtered_demos = []
 			demo_conditions = []
@@ -176,7 +185,7 @@ class GenDemo(object):
 			plt.title("Distribution of demo conditions")
 			# plt.xlabel('width')
 			# plt.ylabel('length')
-			plt.savefig(self._data_files_dir + 'distribution_of_demo_conditions_50.png')
+			plt.savefig(self._data_files_dir + 'distribution_of_demo_conditions_add_var.png')
 			plt.close()
 		else:
 			shuffle(demos)

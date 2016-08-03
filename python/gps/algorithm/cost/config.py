@@ -76,6 +76,7 @@ COST_IOC_QUADRATIC = {
     'T': 0, # the time horizon (here for pointmass_ioc only)
     'wu': np.array([]), # Torque penalties, must be 1 x dU numpy array.
     'weights_file_prefix': '',
+    'mono_reg_weight': 100,
 }
 
 COST_IOC_QUADRATIC.update(IOC_CONFIG)
@@ -88,6 +89,8 @@ COST_IOC_NN = {
     'T': 0, # the time horizon (here for pointmass_ioc only)
     'wu': np.array([]), # Torque penalties, must be 1 x dU numpy array.
     'weights_file_prefix': '',
+    'smooth_reg_weight': 0.1,
+    'mono_reg_weight': 100,
 }
 
 COST_IOC_NN.update(IOC_CONFIG)

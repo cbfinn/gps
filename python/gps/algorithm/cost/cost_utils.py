@@ -183,10 +183,13 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
     Returns:
         A NetParameter specification of the network.
     """
+    from gps.algorithm.cost.config import COST_IOC_QUADRATIC
+
     if dim_hidden is None:
         dim_hidden = 42
 
     n = caffe.NetSpec()
+    mono_reg_weight = COST_IOC_QUADRATIC['mono_reg_weight']
 
     # Needed for Caffe to find defined python layers.
     sys.path.append('/'.join(str.split(current_path, '/')[:-1]))
@@ -244,7 +247,7 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
         n.demo_slope, _ = L.Slice(n.slope_next, axis=0, slice_point=demo_batch_size, ntop=2)
         n.demo_slope_reshape = L.Reshape(n.demo_slope, shape=dict(dim=[-1,1]))
         # TODO - add hyperparam for loss weight, maybe try l2 monotonic loss
-        n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=100.0,
+        n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=mono_reg_weight,
                               python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
 
         n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, loss_weight=1.0,
@@ -275,10 +278,14 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
     Returns:
         A NetParameter specification of the network.
     """
+    from gps.algorithm.cost.config import COST_IOC_NN
+
     if dim_hidden is None:
         dim_hidden = 42
 
     n = caffe.NetSpec()
+    smooth_reg_weight = COST_IOC_QUADRATIC['smooth_reg_weight']
+    mono_reg_weight = COST_IOC_QUADRATIC['mono_reg_weight']
 
     # Needed for Caffe to find defined python layers.
     sys.path.append('/'.join(str.split(current_path, '/')[:-1]))
@@ -348,12 +355,12 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         # next-cur
         n.slope_next = L.Eltwise(n.costs_next, n.costs_cur, operation=EltwiseParameter.SUM, coeff=[1,-1])
         # TODO - add hyperparam for loss weight.
-        n.smooth_reg = L.EuclideanLoss(n.slope_next, n.slope_prev, loss_weight=0.1)
+        n.smooth_reg = L.EuclideanLoss(n.slope_next, n.slope_prev, loss_weight=smooth_reg_weight)
 
         n.demo_slope, _ = L.Slice(n.slope_next, axis=0, slice_point=demo_batch_size, ntop=2)
         n.demo_slope_reshape = L.Reshape(n.demo_slope, shape=dict(dim=[-1,1]))
         # TODO - add hyperparam for loss weight, maybe try l2 monotonic loss
-        n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=100.0,
+        n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=mono_reg_weight,
                               python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
 
         n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, loss_weight=1.0,
