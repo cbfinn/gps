@@ -3,13 +3,16 @@
 import matplotlib as mpl
 mpl.use('Qt4Agg')
 
+import argparse
+import copy
 import logging
 import imp
+import matplotlib.pyplot as plt
+import numpy as np
 import os
 import os.path
+import random
 import sys
-import copy
-import argparse
 import threading
 import time
 
@@ -38,7 +41,7 @@ class GPSMain(object):
         else:
             self._train_idx = range(self._conditions)
             config['common']['train_conditions'] = config['common']['conditions']
-            self._hyperparams=config
+            self._hyperparams = config
             self._test_idx = self._train_idx
 
         self._data_files_dir = config['common']['data_files_dir']
@@ -268,41 +271,25 @@ class GPSMain(object):
                 # Quit automatically (for running sequential expts)
                 os._exit(1)
 
-def main():
+def main(args, config=None):
     """ Main function to be run. """
-    parser = argparse.ArgumentParser(description='Run the Guided Policy Search algorithm.')
-    parser.add_argument('experiment', type=str,
-                        help='experiment name')
-    parser.add_argument('-n', '--new', action='store_true',
-                        help='create new experiment')
-    parser.add_argument('-t', '--targetsetup', action='store_true',
-                        help='run target setup')
-    parser.add_argument('-r', '--resume', metavar='N', type=int,
-                        help='resume training from iter N')
-    parser.add_argument('-p', '--policy', metavar='N', type=int,
-                        help='take N policy samples (for BADMM/MDGPS only)')
-    parser.add_argument('-s', '--silent', action='store_true',
-                        help='silent debug print outs')
-    parser.add_argument('-q', '--quit', action='store_true',
-                        help='quit GUI automatically when finished')
-    args = parser.parse_args()
-
-    exp_name = args.experiment
     resume_training_itr = args.resume
     test_policy_N = args.policy
 
-    from gps import __file__ as gps_filepath
-    gps_filepath = os.path.abspath(gps_filepath)
-    gps_dir = '/'.join(str.split(gps_filepath, '/')[:-3]) + '/'
-    exp_dir = gps_dir + 'experiments/' + exp_name + '/'
-    hyperparams_file = exp_dir + 'hyperparams.py'
+    if config is None:
+        exp_name = args.experiment
+        from gps import __file__ as gps_filepath
+        gps_filepath = os.path.abspath(gps_filepath)
+        gps_dir = '/'.join(str.split(gps_filepath, '/')[:-3]) + '/'
+        exp_dir = gps_dir + 'experiments/' + exp_name + '/'
+        hyperparams_file = exp_dir + 'hyperparams.py'
 
     if args.silent:
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
     else:
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
-    if args.new:
+    if config is None and args.new:
         from shutil import copy
 
         if os.path.exists(exp_dir):
@@ -331,30 +318,26 @@ def main():
             exit_msg += "\ncopied from     : '%shyperparams.py'" % prev_exp_dir
         sys.exit(exit_msg)
 
-    if not os.path.exists(hyperparams_file):
-        sys.exit("Experiment '%s' does not exist.\nDid you create '%s'?" %
-                 (exp_name, hyperparams_file))
+    if config is None:
+        if not os.path.exists(hyperparams_file):
+            sys.exit("Experiment '%s' does not exist.\nDid you create '%s'?" %
+                     (exp_name, hyperparams_file))
+        config = imp.load_source('hyperparams', hyperparams_file).config
 
-    hyperparams = imp.load_source('hyperparams', hyperparams_file)
     if args.targetsetup:
         try:
-            import matplotlib.pyplot as plt
             from gps.agent.ros.agent_ros import AgentROS
             from gps.gui.target_setup_gui import TargetSetupGUI
 
-            agent = AgentROS(hyperparams.config['agent'])
-            TargetSetupGUI(hyperparams.config['common'], agent)
+            agent = AgentROS(config['agent'])
+            TargetSetupGUI(config['common'], agent)
 
             plt.ioff()
             plt.show()
         except ImportError:
             sys.exit('ROS required for target setup.')
     elif test_policy_N:
-        import random
-        import numpy as np
-        import matplotlib.pyplot as plt
-
-        seed = hyperparams.config.get('random_seed', 0)
+        seed = config.get('random_seed', 0)
         random.seed(seed)
         np.random.seed(seed)
 
@@ -365,8 +348,8 @@ def main():
         current_algorithm = sorted(algorithm_filenames, reverse=True)[0]
         current_itr = int(current_algorithm[len(algorithm_prefix):len(algorithm_prefix)+2])
 
-        gps = GPSMain(hyperparams.config)
-        if hyperparams.config['gui_on']:
+        gps = GPSMain(config)
+        if config['gui_on']:
             test_policy = threading.Thread(
                 target=lambda: gps.test_policy(itr=current_itr, N=test_policy_N)
             )
@@ -378,16 +361,12 @@ def main():
         else:
             gps.test_policy(itr=current_itr, N=test_policy_N)
     else:
-        import random
-        import numpy as np
-        import matplotlib.pyplot as plt
-
-        seed = hyperparams.config.get('random_seed', 0)
+        seed = config.get('random_seed', 0)
         random.seed(seed)
         np.random.seed(seed)
 
-        gps = GPSMain(hyperparams.config, args.quit)
-        if hyperparams.config['gui_on']:
+        gps = GPSMain(config, args.quit)
+        if config['gui_on']:
             run_gps = threading.Thread(
                 target=lambda: gps.run(itr_load=resume_training_itr)
             )
@@ -398,7 +377,25 @@ def main():
             plt.show()
         else:
             gps.run(itr_load=resume_training_itr)
+        # return info here for main_sweeper.
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='Run the Guided Policy Search algorithm.')
+    parser.add_argument('experiment', type=str,
+                        help='experiment name')
+    parser.add_argument('-n', '--new', action='store_true',
+                        help='create new experiment')
+    parser.add_argument('-t', '--targetsetup', action='store_true',
+                        help='run target setup')
+    parser.add_argument('-r', '--resume', metavar='N', type=int,
+                        help='resume training from iter N')
+    parser.add_argument('-p', '--policy', metavar='N', type=int,
+                        help='take N policy samples (for BADMM/MDGPS only)')
+    parser.add_argument('-s', '--silent', action='store_true',
+                        help='silent debug print outs')
+    parser.add_argument('-q', '--quit', action='store_true',
+                        help='quit GUI automatically when finished')
+    args = parser.parse_args()
+
+    main(args)

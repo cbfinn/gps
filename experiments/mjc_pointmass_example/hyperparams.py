@@ -121,6 +121,10 @@ algorithm['policy_prior'] = {
     'type': PolicyPrior,
 }
 
+sweep_values = {
+    'algorithm.policy_opt.iterations': [5000, 10000],
+}
+
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': 5,
@@ -130,6 +134,7 @@ config = {
     'agent': agent,
     'gui_on': True,
     'algorithm': algorithm,
+    'sweep_values': sweep_values
 }
 
 common['info'] = generate_experiment_info(config)
