@@ -7,7 +7,8 @@ def generate_pos_body_offset(conditions):
 	""" Generate position body offset for all conditions. """
 	pos_body_offset = []
 	for i in xrange(conditions):
-		pos_body_offset.append(np.hstack((0.2 * (np.random.rand(1, 2) - 0.5), np.zeros((1, 1)))).reshape((3, )))
+		# Make the uniform distribution to be [-0.12, 0.12] for learning from prior. For peg ioc, this should be [-0.1, -0.1].
+		pos_body_offset.append(np.hstack((0.24 * (np.random.rand(1, 2) - 0.5), np.zeros((1, 1)))).reshape((3, )))
 	return pos_body_offset
 
 def generate_x0(x0, conditions):

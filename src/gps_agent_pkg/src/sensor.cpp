@@ -1,5 +1,6 @@
 #include "gps_agent_pkg/sensor.h"
 #include "gps_agent_pkg/encodersensor.h"
+#include "gps_agent_pkg/rostopicsensor.h"
 
 using namespace gps_control;
 
@@ -14,6 +15,9 @@ Sensor* Sensor::create_sensor(SensorType type, ros::NodeHandle& n, RobotPlugin *
     case CameraSensorType:
         return CameraSensor(n,plugin);
     */
+    case ROSTopicSensorType:
+	return (Sensor *) (new ROSTopicSensor(n,plugin));
+
     default:
         ROS_ERROR("Unknown sensor type %i requested from sensor constructor!",type);
         return NULL;

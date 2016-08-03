@@ -10,8 +10,10 @@ class IterationData(BundleType):
     def __init__(self):
         variables = {
             'sample_list': None,  # List of samples for the current iteration.
+            'syn_sample_list': None,  # List of synthetic samples
             'traj_info': None,  # Current TrajectoryInfo object.
             'prevcost_traj_info': None, # Current TrajectoryInfo object using previous IOC cost.
+            'init_pol_info': None, # Initial PolicyInfo object
             'pol_info': None,  # Current PolicyInfo object.
             'traj_distr': None,  # Initial trajectory distribution.
             'cs': None,  # Sample costs of the current iteration.
@@ -52,10 +54,24 @@ class PolicyInfo(BundleType):
             'pol_S': np.zeros((T, dU, dU)),  # Policy linearization covariance.
             'chol_pol_S': np.zeros((T, dU, dU)),  # Cholesky decomp of covar.
             'prev_kl': None,  # Previous KL divergence.
+            'init_kl': None,  # The initial KL divergence, before the iteration.
             'policy_samples': [],  # List of current policy samples.
             'policy_prior': None,  # Current prior for policy linearization.
         }
         BundleType.__init__(self, variables)
+
+    def traj_distr(self):
+        """ Create a trajectory distribution object from policy info. """
+        T, dU, dX = self.pol_K.shape
+        # Compute inverse policy covariance
+        inv_pol_S = np.empty_like(self.chol_pol_S)
+        for t in range(T):
+            inv_pol_S[t, :, :] = np.linalg.solve(
+                self.chol_pol_S[t, :, :],
+                np.linalg.solve(self.chol_pol_S[t, :, :].T, np.eye(dU))
+            )
+        return LinearGaussianPolicy(self.pol_K, self.pol_k, self.pol_S,
+                self.chol_pol_S, inv_pol_S)
 
 
 def estimate_moments(X, mu, covar):

@@ -27,7 +27,7 @@ from gps.utility.general_utils import get_ee_points
 from gps.gui.config import generate_experiment_info
 
 
-EE_POINTS = np.array([[0.02, -0.025, 0.05], [0.02, -0.025, 0.05],
+EE_POINTS = np.array([[0.02, -0.025, 0.05], [0.02, -0.025, -0.05],
                       [0.02, 0.05, 0.0]])
 
 SENSOR_DIMS = {

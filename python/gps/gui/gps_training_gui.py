@@ -16,6 +16,7 @@ For more detailed documentation, visit: rll.berkeley.edu/gps/gui
 """
 import time
 import threading
+import sys
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -273,15 +274,16 @@ class GPSTrainingGUI(object):
         and the 3D trajectory visualizations (if end effector points exist).
         """
         if self._first_update:
-            self._output_column_titles(algorithm)
+            policy_titles = pol_sample_lists != None
+            self._output_column_titles(algorithm, policy_titles)
             self._first_update = False
         costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
         if algorithm._hyperparams['ioc']:
             gt_costs = [np.mean(np.sum(algorithm.prev[m].cgt, axis=1)) for m in range(algorithm.M)]
-            self._update_iteration_data(itr, algorithm, gt_costs)
+            self._update_iteration_data(itr, algorithm, gt_costs, pol_sample_lists)
             self._gt_cost_plotter.update(gt_costs, t=itr)
         else:
-            self._update_iteration_data(itr, algorithm, costs)
+            self._update_iteration_data(itr, algorithm, costs, pol_sample_lists)
         self._cost_plotter.update(costs, t=itr)
         if END_EFFECTOR_POINTS in agent.x_data_types:
             self._update_trajectory_visualizations(algorithm, agent,
@@ -291,35 +293,56 @@ class GPSTrainingGUI(object):
         self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
         # import pdb; pdb.set_trace()
 
-    def _output_column_titles(self, algorithm):
+    def _output_column_titles(self, algorithm, policy_titles=False):
         """
         Setup iteration data column titles: iteration, average cost, and for
         each condition the mean cost over samples, step size, linear Guassian
         controller entropies, and initial/final KL divergences for BADMM.
         """
         self.set_output_text(self._hyperparams['experiment_name'])
-        condition_titles = '%3s | %8s' % ('', '')
-        itr_data_fields  = '%3s | %8s' % ('itr', 'avg_cost')
+        if policy_titles:
+            condition_titles = '%3s | %8s %12s' % ('', '', '')
+            itr_data_fields  = '%3s | %8s %12s' % ('itr', 'avg_cost', 'avg_pol_cost')
+        else:
+            condition_titles = '%3s | %8s' % ('', '')
+            itr_data_fields  = '%3s | %8s' % ('itr', 'avg_cost')
         for m in range(algorithm.M):
             condition_titles += ' | %8s %9s %-7d' % ('', 'condition', m)
             itr_data_fields  += ' | %8s %8s %8s' % ('  cost  ', '  step  ', 'entropy ')
             if algorithm.prev[0].pol_info is not None:
                 condition_titles += ' %8s %8s' % ('', '')
                 itr_data_fields  += ' %8s %8s' % ('kl_div_i', 'kl_div_f')
-            if algorithm._hyperparams['ioc']:
+            if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
                 condition_titles += ' %8s' % ('')
                 itr_data_fields  += ' %8s' % ('kl_div')
+            if algorithm._hyperparams['learning_from_prior']:
+                condition_titles += ' %8s' % ('')
+                itr_data_fields  += ' %8s' % ('mean_dist')
+            if policy_titles:
+                condition_titles += ' %8s %8s %8s' % ('', '', '')
+                itr_data_fields  += ' %8s %8s %8s' % ('pol_cost', 'kl_div_i', 'kl_div_f')
         self.append_output_text(condition_titles)
         self.append_output_text(itr_data_fields)
 
-    def _update_iteration_data(self, itr, algorithm, costs):
+    def _update_iteration_data(self, itr, algorithm, costs, pol_sample_lists):
         """
         Update iteration data information: iteration, average cost, and for
         each condition the mean cost over samples, step size, linear Guassian
         controller entropies, and initial/final KL divergences for BADMM.
         """
         avg_cost = np.mean(costs)
-        itr_data = '%3d | %8.2f' % (itr, avg_cost)
+        if pol_sample_lists is not None:
+            if algorithm._hyperparams['global_cost']:
+                pol_costs = [np.mean([np.sum(algorithm.cost.eval(s)[0]) \
+                        for s in pol_sample_lists[m]]) \
+                        for m in range(algorithm.M)]
+            else:
+                pol_costs = [np.mean([np.sum(algorithm.cost[m].eval(s)[0]) \
+                    for s in pol_sample_lists[m]]) \
+                    for m in range(algorithm.M)]
+            itr_data = '%3d | %8.2f %12.2f' % (itr, avg_cost, np.mean(pol_costs))
+        else:
+            itr_data = '%3d | %8.2f' % (itr, avg_cost)
         for m in range(algorithm.M):
             cost = costs[m]
             step = algorithm.prev[m].step_mult * algorithm.base_kl_step
@@ -330,8 +353,25 @@ class GPSTrainingGUI(object):
                 kl_div_i = algorithm.prev[m].pol_info.prev_kl[0]
                 kl_div_f = algorithm.prev[m].pol_info.prev_kl[-1]
                 itr_data += ' %8.2f %8.2f' % (kl_div_i, kl_div_f)
-            if algorithm._hyperparams['ioc']:
+            if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
                 itr_data += ' %8.2f' % (algorithm.kl_div[itr][m])
+            if algorithm._hyperparams['learning_from_prior']:
+                if pol_sample_lists is None:
+                    itr_data += ' %8.2f' % (algorithm.dists_to_target[itr][m])
+                else:
+                    from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
+
+                    target_position = algorithm._hyperparams['target_end_effector'][:3]
+                    cur_samples = pol_sample_lists[m].get_samples()
+                    sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
+                    dists = [np.amin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - \
+                                target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
+                                for i in xrange(len(cur_samples))]
+                    itr_data += ' %8.2f' % (sum(dists) / len(cur_samples))
+            if pol_sample_lists is not None:
+                kl_div_i = algorithm.cur[m].pol_info.init_kl.mean()
+                kl_div_f = algorithm.cur[m].pol_info.prev_kl.mean()
+                itr_data += ' %8.2f %8.2f %8.2f' % (pol_costs[m], kl_div_i, kl_div_f)
         self.append_output_text(itr_data)
 
     def _update_trajectory_visualizations(self, algorithm, agent,

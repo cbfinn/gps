@@ -20,7 +20,8 @@ enum SampleType {
   RGB_IMAGE_SIZE = 13;
   CONTEXT_IMAGE = 14; //initial image of the agent's environment.
   CONTEXT_IMAGE_SIZE = 15;
-  TOTAL_DATA_TYPES = 16;
+  IMAGE_FEAT = 16;
+  TOTAL_DATA_TYPES = 17;
 }
 
 // Message containing the data for a single sample.

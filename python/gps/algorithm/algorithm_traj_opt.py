@@ -5,10 +5,12 @@ import numpy as np
 
 
 from gps.algorithm.algorithm import Algorithm
-from gps.utility.general_utils import logsum
-from gps.algorithm.algorithm_utils import fit_emp_controller
 from gps.sample.sample_list import SampleList
 from gps.algorithm.traj_opt.traj_opt_utils import traj_distr_kl
+from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
+        END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
+        END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
+        CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,6 +36,10 @@ class AlgorithmTrajOpt(Algorithm):
             prev_samples.extend(sample_lists[m].get_samples())
             self.sample_list[m] = SampleList(prev_samples)
             self.N += len(sample_lists[m])
+
+            # NOTE - FOR MPF
+            self.sample_list[m] = sample_lists[m]
+            # DONE MPF
         # Update dynamics model using all samples.
         self._update_dynamics()
 
@@ -51,10 +57,18 @@ class AlgorithmTrajOpt(Algorithm):
         itr = self.iteration_count
         if self._hyperparams['ioc']:
             for i in xrange(self.M):
-                mu, sigma = self.traj_opt.forward(self.traj_distr[itr][m], self.traj_info[itr][m])
+                mu, sigma = self.traj_opt.forward(self.traj_distr[itr][i], self.traj_info[itr][i])
                 # KL divergence between current traj. distribution and gt distribution
-                self.kl_div[self.iteration_count].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][m], self.demo_traj[i]))
+                self.kl_div[itr].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][i], self.demo_traj[0])) # Assuming Md == 1
 
+        if self._hyperparams['learning_from_prior']:
+            for i in xrange(self.M):
+                target_position = self._hyperparams['target_end_effector'][:3]
+                cur_samples = sample_lists[i].get_samples()
+                sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
+                dists = [np.amin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
+                         for i in xrange(len(cur_samples))]
+                self.dists_to_target[itr].append(sum(dists) / len(cur_samples))
         self._advance_iteration_variables()
 
     def _update_step_size(self):
@@ -131,110 +145,34 @@ class AlgorithmTrajOpt(Algorithm):
     def _update_cost(self):
         """ Update the cost objective in each iteration. """
         # Estimate the importance weights for fusion distributions.
-        itr = self.iteration_count
-        M = len(self.prev)
-        ix = range(self.dX)
-        iu = range(self.dX, self.dX + self.dU)
-        init_samples = self.init_samples
-        # itration_count + 1 distributions to evaluate
-        # T: summed over time
-        samples_logprob, demos_logprob = {}, {}
-        # number of demo distributions
-        Md = self._hyperparams['demo_M']
-        # TODO - multiple demo conditions isn't implemented correctly.
-        # (but usually we just use 1, so it's okay)
-        demos_logiw, samples_logiw = {}, {}
-        demoU = {i: self.demoU for i in xrange(M)}
-        demoX = {i: self.demoX for i in xrange(M)}
-        demoO = {i: self.demoO for i in xrange(M)}
-        # For testing purpose.
-        # demoX = self.demoX
-        # demoU = self.demoU
-        # demoO = self.demoO
-        self.demo_traj = {}
-        # estimate demo distributions empirically
-        for i in xrange(Md):
-            if self._hyperparams['demo_distr_empest']:
-                self.demo_traj[i] = fit_emp_controller(demoX[i], demoU[i])
-        for i in xrange(M):
-            # This code assumes a fixed number of samples per iteration/controller
-            #samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
-            #demos_logprob[i] = np.zeros((itr + Md + 1, self.T, demoX[i].shape[0]))
-            samples_logprob[i] = np.zeros((itr + 1, self.T, (self.N / M) * itr + init_samples))
-            demos_logprob[i] = np.zeros((itr + 1, self.T, demoX[i].shape[0]))
-            sample_i_X = self.sample_list[i].get_X()
-            sample_i_U = self.sample_list[i].get_U()
-            # Evaluate sample prob under sample distributions
-            for itr_i in xrange(itr + 1):
-                traj = self.traj_distr[itr_i][i]
-                for j in xrange(sample_i_X.shape[0]):
-                    for t in xrange(self.T - 1):
-                        diff = traj.k[t, :] + \
-                                traj.K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
-                        samples_logprob[i][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
-                                                        np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
-
-            # Evaluate sample prob under demo distribution.
-            #for itr_i in xrange(Md):
-            #    for j in range(sample_i_X.shape[0]):
-            #        for t in xrange(self.T - 1):
-            #            diff = demo_traj[itr_i].k[t, :] + \
-            #                    demo_traj[itr_i].K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
-            #            samples_logprob[i][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff))) - \
-            #                                            np.sum(np.log(np.diag(demo_traj[itr_i].chol_pol_covar[t, :, :])))
-            # Sum over the distributions and time.
-
-            samples_logiw[i] = logsum(np.sum(samples_logprob[i], 1), 0)
-
-        # Assume only one condition for the samples.
-        assert Md == 1
-        for idx in xrange(Md):
-            if M == 1:
-                i = 0
-            else:
-                i = idx
-            # Evaluate demo prob. under sample distributions.
-            for itr_i in xrange(itr + 1):
-                traj = self.traj_distr[itr_i][i]
-                for j in xrange(demoX[idx].shape[0]):
-                    for t in xrange(self.T - 1):
-                        diff = traj.k[t, :] + \
-                                traj.K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
-                        demos_logprob[idx][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
-                                                        np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
-            # Evaluate demo prob. under demo distributions.
-            #for itr_i in xrange(Md):
-            #    for j in range(demoX[idx].shape[0]):
-            #        for t in xrange(self.T - 1):
-            #            diff = demo_traj[itr_i].k[t, :] + \
-            #                    demo_traj[itr_i].K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
-            #            demos_logprob[idx][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
-            #                                            np.sum(np.log(np.diag(demo_traj[itr_i].chol_pol_covar[t, :, :])))
-            # Sum over the distributions and time.
-            demos_logiw[idx] = logsum(np.sum(demos_logprob[idx], 1), 0)
-
+        demos_logiw, samples_logiw = self.importance_weights()
 
         # Update the learned cost
         # Transform all the dictionaries to arrays
-        # demoU_arr =  np.vstack((self.demo_list.get_U() for i in xrange(Md)))
-        # demoX_arr =  np.vstack((self.demo_list.get_X() for i in xrange(Md)))
-        # demoO_arr =  np.vstack((self.demo_list.get_obs() for i in xrange(Md)))
-        # For testing purpose.
+        M = len(self.prev)
+        Md = self._hyperparams['demo_M']
         sampleU_arr = np.vstack((self.sample_list[i].get_U() for i in xrange(M)))
         sampleX_arr = np.vstack((self.sample_list[i].get_X() for i in xrange(M)))
         sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
-        demos_logiw = np.hstack((demos_logiw[i] for i in xrange(Md))).reshape((-1, 1))
-        samples_logiw = np.hstack([samples_logiw[i] for i in xrange(M)]).reshape((-1, 1))
+        demos_logiw = {i: demos_logiw[i].reshape((-1, 1)) for i in xrange(Md)}
+        samples_logiw = {i: samples_logiw[i].reshape((-1, 1)) for i in xrange(M)}
+        demos_logiw_arr = np.hstack((demos_logiw[i] for i in xrange(Md)))
+        samples_logiw_arr = np.hstack([samples_logiw[i] for i in xrange(M)])
         # TODO - not sure if we want one cost function per condition...
-        for i in xrange(M):
-            cost_ioc = self.cost[i]
-            cost_ioc.update(self.demoU, self.demoX, self.demoO, demos_logiw, sampleU_arr, sampleX_arr, \
-                                                    sampleO_arr, samples_logiw)
-
+        if not self._hyperparams['global_cost']:
+            for i in xrange(M):
+                cost_ioc = self.cost[i]
+                cost_ioc.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, self.sample_list[i].get_U(), \
+                                    self.sample_list[i].get_X(), self.sample_list[i].get_obs(), samples_logiw[i])
+        else:
+            cost_ioc = self.cost
+            cost_ioc.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, sampleU_arr, sampleX_arr, \
+                                                        sampleO_arr, samples_logiw_arr)
 
 
     def compute_costs(self, m, eta):
         """ Compute cost estimates used in the LQR backward pass. """
+        # TODO generate synethic samples here if desired? (or somewhere else)?
         traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
         multiplier = self._hyperparams["max_ent_traj"]
         fCm, fcv = traj_info.Cm / (eta + multiplier), traj_info.cv / (eta + multiplier)

@@ -91,6 +91,12 @@ class Sample(object):
                 self.agent.pack_data_meta(meta, data, data_types=[data_type])
         return meta
 
+    def set_XU(self, X, U):
+        """ Helper method for setting sample data using state vector. """
+        for data_type in self.agent.x_data_types:
+            self.set(data_type, self.agent.unpack_data_x(X, [data_type]))
+        self.set(ACTION, U)
+
     # For pickling.
     def __getstate__(self):
         state = self.__dict__.copy()

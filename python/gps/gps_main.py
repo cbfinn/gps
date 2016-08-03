@@ -21,12 +21,17 @@ from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
 from gps.utility.generate_demo import GenDemo
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
-
 
 class GPSMain(object):
 	""" Main class to run algorithms and experiments. """
-	def __init__(self, config):
+	def __init__(self, config, quit_on_end=False):
+		"""
+		Initialize GPSMain
+		Args:
+			config: Hyperparameters for experiment
+			quit_on_end: When true, quit automatically on completion
+		"""
+		self._quit_on_end = quit_on_end
 		self._hyperparams = config
 		self._conditions = config['common']['conditions']
 		if 'train_conditions' in config['common']:
@@ -45,10 +50,34 @@ class GPSMain(object):
 		self.gui = GPSTrainingGUI(config['common']) if config['gui_on'] else None
 
 		config['algorithm']['agent'] = self.agent
-		self.algorithm = config['algorithm']['type'](config['algorithm'])
-		self.algorithm.init_samples = self._hyperparams['num_samples']
-		if self.algorithm._hyperparams['ioc']:
-			self.demo_gen = GenDemo(config)
+
+		if 'ioc' in config['algorithm'] and config['algorithm']['ioc']:
+			# demo_file = self._data_files_dir + 'demos.pkl'
+			demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos.pkl' # for mdgps experiment
+			demos = self.data_logger.unpickle(demo_file)
+			if demos is None:
+			  self.demo_gen = GenDemo(config)
+			  self.demo_gen.ioc_algo = config['algorithm']['type'](config['algorithm'])
+			  self.demo_gen.generate()
+			  demo_file = self._data_files_dir + 'demos.pkl'
+			  demos = self.data_logger.unpickle(demo_file)
+			config['algorithm']['init_traj_distr']['init_demo_x'] = np.mean(demos['demoX'], 0)
+			config['algorithm']['init_traj_distr']['init_demo_u'] = np.mean(demos['demoU'], 0)
+			self.algorithm = config['algorithm']['type'](config['algorithm'])
+			self.algorithm.init_samples = self._hyperparams['num_samples']
+			# if self.algorithm._hyperparams['learning_from_prior']:
+			# 	config['agent']['pos_body_offset'] = demos['pos_body_offset']
+			self.agent = config['agent']['type'](config['agent'])
+			self.algorithm.demoX = demos['demoX']
+			self.algorithm.demoU = demos['demoU']
+			self.algorithm.demoO = demos['demoO']
+			if 'demo_conditions' in demos.keys() and 'failed_conditions' in demos.keys():
+				self.algorithm.demo_conditions = demos['demo_conditions']
+				self.algorithm.failed_conditions = demos['failed_conditions']
+		else:
+			self.algorithm = config['algorithm']['type'](config['algorithm'])
+			self.algorithm.init_samples = self._hyperparams['num_samples']
+
 
 	def run(self, itr_load=None):
 		"""
@@ -62,27 +91,6 @@ class GPSMain(object):
 		import numpy.matlib
 
 		itr_start = self._initialize(itr_load)
-		# Read the demonstrations (for test only)
-		# matfile = self._data_files_dir + 'samples_sim_12-30_stationary_maxent_pointmass_python.mat'
-		# demo_file = self._data_files_dir + 'demoX_and_demoU_and_demoO.mat'
-		# mat = scipy.io.loadmat(matfile)
-		# demo_params = scipy.io.loadmat(demo_file)
-		# number of demos we want.
-		# Md = len(demo_params['demo_x'])
-		# self.algorithm.demoX = {i: demo_params['demo_x'][0, :][i].T for i in xrange(Md)}
-		# self.algorithm.demoU = {i: demo_params['demo_u'][0, :][i].T for i in xrange(Md)}
-		# self.algorithm.demoO = {i: demo_params['demo_o'][0, :][i].T for i in xrange(Md)}
-		if self.algorithm._hyperparams['ioc']:
-			demo_file = self._data_files_dir + 'demos.pkl'
-			demos = self.data_logger.unpickle(demo_file)
-			if demos is None:
-				self.demo_gen.generate()
-				demo_file = self._data_files_dir + 'demos.pkl'
-				demos = self.data_logger.unpickle(demo_file)
-			# demo_algo = self.demo_gen.algorithm
-			self.algorithm.demoX = demos['demoX']
-			self.algorithm.demoU = demos['demoU']
-			self.algorithm.demoO = demos['demoO']
 		for itr in range(itr_start, self._hyperparams['iterations']):
 			for cond in self._train_idx:
 				for i in range(self._hyperparams['num_samples']):
@@ -98,13 +106,14 @@ class GPSMain(object):
 			#    traj_sample_lists, None)
 
 			self._take_iteration(itr, traj_sample_lists)
-			# if not self.algorithm._hyperparams['ioc']:
-			# 	pol_sample_lists = self._take_policy_samples()
-			# 	self._log_data(itr, traj_sample_lists, pol_sample_lists)
-			# else:
-			self._log_data(itr, traj_sample_lists)
-
+			if self.algorithm._hyperparams['sample_on_policy']:
+			# TODO - need to add these to lines back in when we move to mdgps
+			    pol_sample_lists = self._take_policy_samples()
+			    self._log_data(itr, traj_sample_lists, pol_sample_lists)
+			else:
+				self._log_data(itr, traj_sample_lists)
 		self._end()
+		return None
 
 	def test_policy(self, itr, N):
 		"""
@@ -137,6 +146,40 @@ class GPSMain(object):
 				'algorithm state at iteration %d.\n' +
 				'Saved to: data_files/pol_sample_itr_%02d.pkl.\n') % (N, itr, itr))
 
+	def measure_distance_and_success(self):
+		"""
+		Take the algorithm states for all iterations and extract the
+		mean distance to the target position and measure the success
+		rate of inserting the peg. (For the peg experiment only)
+		Args:
+			None
+		Returns: the mean distance and the success rate
+		"""
+		from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
+
+		pol_iter = self.algorithm._hyperparams['iterations']
+		peg_height = self._hyperparams['demo_agent']['success_upper_bound']
+		mean_dists = []
+		success_rates = []
+		for i in xrange(pol_iter):
+			pol_samples_file = self._data_files_dir + 'pol_sample_itr_%02d.pkl' % i
+			pol_sample_lists = self.data_logger.unpickle(pol_samples_file)
+			if pol_sample_lists is None:
+				print("Error: cannot find '%s.'" % pol_samples_file)
+				os._exit(1) # called instead of sys.exit(), since t
+			samples = []
+			for m in xrange(len(pol_sample_lists)):
+				curSamples = pol_sample_lists[m].get_samples()
+				for sample in curSamples:
+					samples.append(sample)
+			target = self.algorithm._hyperparams["target_end_effector"][:3]
+			dists_to_target = [np.amin(np.sqrt(np.sum((sample.get(END_EFFECTOR_POINTS)[:, :3] - \
+								target.reshape(1, -1))**2, axis = 1)), axis = 0) for sample in samples]
+			mean_dists.append(sum(dists_to_target)/len(dists_to_target))
+			success_rates.append(float(sum(1 for dist in dists_to_target if dist <= peg_height))/ \
+									len(dists_to_target))
+		return mean_dists, success_rates
+
 	def _initialize(self, itr_load):
 		"""
 		Initialize from the specified iteration.
@@ -160,10 +203,13 @@ class GPSMain(object):
 			if self.gui:
 				traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
 					('traj_sample_itr_%02d.pkl' % itr_load))
-				pol_sample_lists = self.data_logger.unpickle(self._data_files_dir +
-					('pol_sample_itr_%02d.pkl' % itr_load))
-				self.gui.update(itr_load, self.algorithm, self.agent,
-					traj_sample_lists, pol_sample_lists)
+				if self.algorithm.cur[0].pol_info:
+					pol_sample_lists = self.data_logger.unpickle(self._data_files_dir +
+						('pol_sample_itr_%02d.pkl' % itr_load))
+				else:
+					pol_sample_lists = None
+				#self.gui.update(itr_load, self.algorithm, self.agent,
+				#    traj_sample_lists, pol_sample_lists)
 				self.gui.set_status_text(
 					('Resuming training from algorithm state at iteration %d.\n' +
 					'Press \'go\' to begin.') % itr_load)
@@ -178,7 +224,11 @@ class GPSMain(object):
 			i: Sample number.
 		Returns: None
 		"""
-		pol = self.algorithm.cur[cond].traj_distr
+		if self.algorithm._hyperparams['sample_on_policy'] \
+				and self.algorithm.iteration_count > 0:
+			pol = self.algorithm.policy_opt.policy
+		else:
+			pol = self.algorithm.cur[cond].traj_distr
 		if self.gui:
 			self.gui.set_image_overlays(cond)   # Must call for each new cond.
 			redo = True
@@ -250,7 +300,7 @@ class GPSMain(object):
 			for i in range(N):
 				pol_samples[cond][i] = self.agent.sample(
 					self.algorithm.policy_opt.policy, self._test_idx[cond],
-					verbose=True, save=False)
+					verbose=True, save=False, noisy=False)
 		return [SampleList(samples) for samples in pol_samples]
 
 	def _log_data(self, itr, traj_sample_lists, pol_sample_lists=None):
@@ -290,6 +340,9 @@ class GPSMain(object):
 		if self.gui:
 			self.gui.set_status_text('Training complete.')
 			self.gui.end_mode()
+			if self._quit_on_end:
+				# Quit automatically (for running sequential expts)
+				os._exit(1)
 
 
 def main():
@@ -305,17 +358,38 @@ def main():
 						help='resume training from iter N')
 	parser.add_argument('-p', '--policy', metavar='N', type=int,
 						help='take N policy samples (for BADMM only)')
+	parser.add_argument('-s', '--silent', action='store_true',
+						help='silent debug print outs')
+	parser.add_argument('-q', '--quit', action='store_true',
+						help='quit GUI automatically when finished')
+	parser.add_argument('-m', '--measure', metavar='N', type=int,
+						help='measure success rate among all iterations') # For peg only
+	parser.add_argument('-c', '--compare', metavar='N', type=int,
+						help='compare global cost to multiple costs')
+	parser.add_argument('-l', '--learn', metavar='N', type=int,
+						help='learning from prior experience')
+	parser.add_argument('-b', '--bootstrap', metavar='N', type=int,
+						help='using bootstrap to collect samples as demos')
 	args = parser.parse_args()
 
 	exp_name = args.experiment
 	resume_training_itr = args.resume
 	test_policy_N = args.policy
+	measure_samples = args.measure
+	compare_costs = args.compare
+	learning_from_prior = args.learn
+	bootstrap = args.bootstrap
 
 	from gps import __file__ as gps_filepath
 	gps_filepath = os.path.abspath(gps_filepath)
 	gps_dir = '/'.join(str.split(gps_filepath, '/')[:-3]) + '/'
 	exp_dir = gps_dir + 'experiments/' + exp_name + '/'
 	hyperparams_file = exp_dir + 'hyperparams.py'
+
+	if args.silent:
+		logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+	else:
+		logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 	if args.new:
 		from shutil import copy
@@ -390,6 +464,315 @@ def main():
 			plt.show()
 		else:
 			gps.test_policy(itr=current_itr, N=test_policy_N)
+	elif measure_samples:
+
+		gps = GPSMain(hyperparams.config)
+		pol_iter = gps.algorithm._hyperparams['iterations']
+		mean_dists, success_rates = gps.measure_distance_and_success()
+		plt.close()
+		plt.plot(range(pol_iter), mean_dists, 'ro', range(pol_iter), mean_dists, '')
+		for i, txt in enumerate(mean_dists):
+			plt.annotate(np.around(txt,decimals=2), (i, txt))
+		plt.title("mean distances to the target during iterations")
+		plt.xlabel("iterations")
+		plt.ylabel("mean distances")
+		plt.savefig(exp_dir + 'data_files/' + 'mean_dists_during_iteration.png')
+		plt.close()
+		plt.plot(range(pol_iter), success_rates, 'ro', range(pol_iter), success_rates, '')
+		for i, txt in enumerate(success_rates):
+			plt.annotate(repr(txt*100) + "%", (i, txt))
+		plt.xlabel("iterations")
+		plt.ylabel("success rate")
+		plt.title("success rates during iterations")
+		plt.savefig(exp_dir + 'data_files/' + 'success_rate_during_iteration.png')
+	elif compare_costs:
+		from gps.algorithm.policy.lin_gauss_init import init_lqr
+
+		mean_dists_global_dict, mean_dists_no_global_dict, success_rates_global_dict, \
+				success_rates_no_global_dict = {}, {}, {}, {}
+		for itr in xrange(3):
+			# random.seed(itr)
+			# np.random.seed(itr)
+			hyperparams = imp.load_source('hyperparams', hyperparams_file)
+			hyperparams.config['algorithm']['init_traj_distr']['type'] = init_lqr
+			hyperparams.config['algorithm']['global_cost'] = False
+			# hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_global_%d' % itr + '/'
+			# if not os.path.exists(exp_dir + 'data_files_global_%d' % itr + '/'):
+			# 	os.makedirs(exp_dir + 'data_files_global_%d' % itr + '/')
+			hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'
+			if not os.path.exists(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'):
+				os.makedirs(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/')
+			gps_global = GPSMain(hyperparams.config)
+			pol_iter = gps_global.algorithm._hyperparams['iterations']
+			for i in xrange(pol_iter):
+				if hyperparams.config['gui_on']:
+					gps_global.run()
+					# gps_global.test_policy(itr=i, N=compare_costs)
+					plt.close()
+				else:
+					gps_global.run()
+					# gps_global.test_policy(itr=i, N=compare_costs)
+			mean_dists_global_dict[itr], success_rates_global_dict[itr] = gps_global.measure_distance_and_success()
+			# Plot the distribution of demos.
+			if itr == 0:
+				from matplotlib.patches import Rectangle
+
+				demo_conditions = gps_global.algorithm.demo_conditions
+				failed_conditions = gps_global.algorithm.failed_conditions
+				demo_conditions_x = [demo_conditions[i][0] for i in xrange(len(demo_conditions))]
+				demo_conditions_y = [demo_conditions[i][1] for i in xrange(len(demo_conditions))]
+				failed_conditions_x = [failed_conditions[i][0] for i in xrange(len(failed_conditions))]
+				failed_conditions_y = [failed_conditions[i][1] for i in xrange(len(failed_conditions))]
+				subplt = plt.subplot()
+				subplt.plot(demo_conditions_x, demo_conditions_y, 'go')
+				subplt.plot(failed_conditions_x, failed_conditions_y, 'rx')
+				ax = plt.gca()
+				ax.add_patch(Rectangle((-0.08, -0.08), 0.16, 0.16, fill = False, edgecolor = 'blue'))
+				box = subplt.get_position()
+				subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
+				subplt.legend(['demo_cond', 'failed_badmm'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
+								shadow=True, ncol=2)
+				plt.title("Distribution of demo conditions")
+				# plt.xlabel('width')
+				# plt.ylabel('length')
+				plt.savefig(exp_dir + 'distribution_of_demo_conditions_seed.png')
+				plt.close()
+
+			hyperparams = imp.load_source('hyperparams', hyperparams_file)
+			hyperparams.config['algorithm']['global_cost'] = False
+			hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_no_global_%d' % itr + '/'
+			if not os.path.exists(exp_dir + 'data_files_no_global_%d' % itr + '/'):
+				os.makedirs(exp_dir + 'data_files_no_global_%d' % itr + '/')
+			gps = GPSMain(hyperparams.config)
+			pol_iter = gps.algorithm._hyperparams['iterations']
+			# for i in xrange(pol_iter):
+			# 	if hyperparams.config['gui_on']:
+			# 		# gps.run()
+			# 		gps.test_policy(itr=i, N=compare_costs)
+			# 		plt.close()
+			# 	else:
+			# 		# gps.run()
+			# 		gps.test_policy(itr=i, N=compare_costs)
+			mean_dists_no_global_dict[itr], success_rates_no_global_dict[itr] = gps.measure_distance_and_success()
+
+		plt.close()
+		avg_dists_global = [float(sum(mean_dists_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
+		avg_succ_rate_global = [float(sum(success_rates_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
+		avg_dists_no_global = [float(sum(mean_dists_no_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
+		avg_succ_rate_no_global = [float(sum(success_rates_no_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
+		plt.plot(range(pol_iter), avg_dists_global, '-x', color='red')
+		plt.plot(range(pol_iter), avg_dists_no_global, '-x', color='green')
+		for i in xrange(3):
+			plt.plot(range(pol_iter), mean_dists_global_dict[i], 'ko')
+			plt.plot(range(pol_iter), mean_dists_no_global_dict[i], 'co')
+		# for i, txt in enumerate(avg_dists_global):
+		# 	plt.annotate(np.around(txt, decimals=2), (i, txt))
+		# for i, txt in enumerate(avg_dists_no_global):
+		# 	plt.annotate(np.around(txt, decimals=2), (i, txt))
+		# plt.legend(['avg global', 'avg multiple', 'global cost', 'multiple cost'], loc='upper right', ncol=2)
+		plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)		
+		# plt.title("mean distances to the target during iterations with and without global cost")
+		plt.title("mean distances to the target during iterations with and without demo initialization")
+		plt.xlabel("iterations")
+		plt.ylabel("mean distances")
+		plt.savefig(exp_dir + 'mean_dists_during_iteration_comparison.png')
+		plt.close()
+		plt.plot(range(pol_iter), avg_succ_rate_global, '-x', color='red')
+		plt.plot(range(pol_iter), avg_succ_rate_no_global, '-x', color='green')
+		for i in xrange(3):
+			plt.plot(range(pol_iter), success_rates_global_dict[i], 'ko')
+			plt.plot(range(pol_iter), success_rates_no_global_dict[i], 'co')
+		# for i, txt in enumerate(avg_succ_rate_global):
+		# 	plt.annotate(repr(txt*100) + "%", (i, txt))
+		# for i, txt in enumerate(avg_succ_rate_no_global):
+		# 	plt.annotate(repr(txt*100) + "%", (i, txt))
+		# plt.legend(['avg global', 'avg multiple', 'global cost', 'multiple cost'], loc='lower right', ncol=2)
+		plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)
+		plt.xlabel("iterations")
+		plt.ylabel("success rate")
+		# plt.title("success rates during iterations with and without global cost")
+		plt.title("success rates during iterations with and without demo initialization")
+		plt.savefig(exp_dir + 'success_rate_during_iteration_comparison.png')
+		plt.close()
+
+	elif learning_from_prior:
+		ioc_conditions = [np.array([random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), \
+						random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)])]) for i in xrange(10)]
+		top_bottom = [np.array([np.random.uniform(-0.08, 0.08), \
+						random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)])]) for i in xrange(10)]
+		left_right = [np.array([random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), \
+						np.random.uniform(-0.08, 0.08)]) for i in xrange(10)]
+		ioc_conditions.extend(top_bottom)
+		ioc_conditions.extend(left_right)
+		exp_iter = hyperparams.config['algorithm']['iterations']
+		data_files_dir = exp_dir + 'data_files/'
+		mean_dists = []
+		success_ioc_samples = []
+		pos_body_offset_dists = [np.linalg.norm(ioc_conditions[i]) for i in xrange(len(ioc_conditions))]
+		for i in xrange(len(ioc_conditions)):
+			hyperparams = imp.load_source('hyperparams', hyperparams_file)
+			# hyperparams.config['gui_on'] = False
+			hyperparams.config['algorithm']['ioc_cond'] = ioc_conditions[i]
+			gps = GPSMain(hyperparams.config)
+			gps.agent._hyperparams['pos_body_offset'] = [ioc_conditions[i]]
+			# import pdb; pdb.set_trace()
+			if hyperparams.config['gui_on']:
+				# run_gps = threading.Thread(
+				#     target=lambda: gps.run(itr_load=resume_training_itr)
+				# )
+				# run_gps.daemon = True
+				# run_gps.start()
+				gps.run(itr_load=resume_training_itr)
+				plt.close()
+				# plt.ioff()
+				# plt.show()
+			else:
+				gps.run(itr_load=resume_training_itr)
+				# continue
+			if i == 0:
+				demo_conditions = gps.algorithm.demo_conditions
+				failed_conditions = gps.algorithm.failed_conditions
+			mean_dists.append(gps.algorithm.dists_to_target[exp_iter - 1][0])
+			if mean_dists[i] <= 0.1:
+				success_ioc_samples.extend(gps._take_policy_samples(1))
+			print "iteration " + repr(i) + ": mean dist is " + repr(mean_dists[i])
+		with open(exp_dir + 'log.txt', 'a') as f:
+			f.write('\nThe 50 IOC conditions are: \n' + str(ioc_conditions) + '\n')
+		plt.plot(pos_body_offset_dists, mean_dists, 'ro')
+		plt.title("Learning from prior experience using peg insertion")
+		plt.xlabel('pos body offset distances to the origin')
+		plt.ylabel('mean distances to the target')
+		plt.savefig(data_files_dir + 'learning_from_prior.png')
+		plt.close()
+
+		from matplotlib.patches import Rectangle
+
+		ioc_conditions_x = [ioc_conditions[i][0] for i in xrange(len(ioc_conditions))]
+		ioc_conditions_y = [ioc_conditions[i][1] for i in xrange(len(ioc_conditions))]
+		mean_dists = np.around(mean_dists, decimals=2)
+		failed_ioc_x = [ioc_conditions_x[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] > 0.1]
+		failed_ioc_y = [ioc_conditions_y[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] > 0.1]
+		success_ioc_x = [ioc_conditions_x[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] <= 0.1]
+		success_ioc_y = [ioc_conditions_y[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] <= 0.1]
+		demo_conditions_x = [demo_conditions[i][0] for i in xrange(len(demo_conditions))]
+		demo_conditions_y = [demo_conditions[i][1] for i in xrange(len(demo_conditions))]
+		failed_conditions_x = [failed_conditions[i][0] for i in xrange(len(failed_conditions))]
+		failed_conditions_y = [failed_conditions[i][1] for i in xrange(len(failed_conditions))]
+		subplt = plt.subplot()
+		subplt.plot(demo_conditions_x, demo_conditions_y, 'go')
+		subplt.plot(failed_conditions_x, failed_conditions_y, 'rx')
+		subplt.plot(success_ioc_x, success_ioc_y, 'g^')
+		subplt.plot(failed_ioc_x, failed_ioc_y, 'rv')
+		# plt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc= (1, 1))
+		for i, txt in enumerate(mean_dists):
+			subplt.annotate(txt, (ioc_conditions_x[i], ioc_conditions_y[i]))
+		ax = plt.gca()
+		ax.add_patch(Rectangle((-0.08, -0.08), 0.16, 0.16, fill = False, edgecolor = 'blue'))
+		box = subplt.get_position()
+		subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
+		subplt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
+						shadow=True, ncol=2)
+		plt.title("Distribution of neural network and IOC's initial conditions")
+		# plt.xlabel('width')
+		# plt.ylabel('length')
+		plt.savefig(data_files_dir + 'distribution_of_conditions.png')
+		plt.close()
+		if bootstrap:
+			# TODO: use successful samples as demonstrations.
+			success_ioc_conditions = [ioc_conditions[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] <= 0.1]
+			failed_ioc_conditions = [ioc_conditions[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] > 0.1]
+			demo_file = exp_dir + 'data_files/' + 'demos.pkl' # for mdgps experiment
+			demos = gps.data_logger.unpickle(demo_file)
+			demos['demo_conditions'].extend(success_ioc_conditions)
+			demos['failed_conditions'].extend(failed_ioc_conditions)
+			new_sample_list = SampleList(success_ioc_samples)
+			demos['demoU'] = np.vstack((demos['demoU'], new_sample_list.get_U()))
+			demos['demoX'] = np.vstack((demos['demoX'], new_sample_list.get_X()))
+			demos['demoO'] = np.vstack((demos['demoO'], new_sample_list.get_obs()))
+			gps.data_logger.pickle(demo_file)
+			harder_ioc_conditions = [np.array([random.choice([np.random.uniform(-0.2, -0.09), np.random.uniform(0.09, 0.2)]), \
+						random.choice([np.random.uniform(-0.2, -0.09), np.random.uniform(0.09, 0.2)])]) for i in xrange(10)]
+			top_bottom = [np.array([np.random.uniform(-0.08, 0.08), \
+							random.choice([np.random.uniform(-0.2, -0.09), np.random.uniform(0.09, 0.2)])]) for i in xrange(10)]
+			left_right = [np.array([random.choice([np.random.uniform(-0.2, -0.09), np.random.uniform(0.09, 0.2)]), \
+							np.random.uniform(-0.08, 0.08)]) for i in xrange(10)]
+			harder_ioc_conditions.extend(top_bottom + left_right)
+			mean_dists = []
+			# success_ioc_samples = []
+			pos_body_offset_dists = [np.linalg.norm(ioc_conditions[i]) for i in xrange(len(ioc_conditions))]
+			for i in xrange(len(ioc_conditions)):
+				hyperparams = imp.load_source('hyperparams', hyperparams_file)
+				# hyperparams.config['gui_on'] = False
+				hyperparams.config['algorithm']['ioc_cond'] = ioc_conditions[i]
+				gps = GPSMain(hyperparams.config)
+				gps.agent._hyperparams['pos_body_offset'] = [ioc_conditions[i]]
+				# import pdb; pdb.set_trace()
+				if hyperparams.config['gui_on']:
+					# run_gps = threading.Thread(
+					#     target=lambda: gps.run(itr_load=resume_training_itr)
+					# )
+					# run_gps.daemon = True
+					# run_gps.start()
+					gps.run(itr_load=resume_training_itr)
+					plt.close()
+					# plt.ioff()
+					# plt.show()
+				else:
+					gps.run(itr_load=resume_training_itr)
+					# continue
+				# if i == 0:
+				# 	demo_conditions = gps.algorithm.demo_conditions
+				# 	failed_conditions = gps.algorithm.failed_conditions
+				mean_dists.append(gps.algorithm.dists_to_target[exp_iter - 1][0])
+				# if mean_dists[i] <= 0.1:
+				# 	success_ioc_samples.extend(gps._take_policy_samples(1))
+				print "iteration " + repr(i) + ": mean dist is " + repr(mean_dists[i])
+			with open(exp_dir + 'log.txt', 'a') as f:
+				f.write('\nThe 50 IOC conditions are: \n' + str(ioc_conditions) + '\n')
+			plt.plot(pos_body_offset_dists, mean_dists, 'ro')
+			plt.title("Learning from prior experience using peg insertion and bootstrap")
+			plt.xlabel('pos body offset distances to the origin')
+			plt.ylabel('mean distances to the target')
+			plt.savefig(data_files_dir + 'learning_from_prior_bootstrap.png')
+			plt.close()
+
+			from matplotlib.patches import Rectangle
+
+			harder_ioc_conditions_x = [harder_ioc_conditions[i][0] for i in xrange(len(harder_ioc_conditions))]
+			harder_ioc_conditions_y = [harder_ioc_conditions[i][1] for i in xrange(len(harder_ioc_conditions))]
+			mean_dists = np.around(mean_dists, decimals=2)
+			failed_ioc_x = [harder_ioc_conditions_x[i] for i in xrange(len(harder_ioc_conditions)) if mean_dists[i] > 0.1]
+			failed_ioc_y = [harder_ioc_conditions_y[i] for i in xrange(len(harder_ioc_conditions)) if mean_dists[i] > 0.1]
+			success_ioc_x = [harder_ioc_conditions_x[i] for i in xrange(len(harder_ioc_conditions)) if mean_dists[i] <= 0.1]
+			success_ioc_y = [harder_ioc_conditions_y[i] for i in xrange(len(harder_ioc_conditions)) if mean_dists[i] <= 0.1]
+			demo_conditions_x = [demo_conditions[i][0] for i in xrange(len(demo_conditions))]
+			demo_conditions_y = [demo_conditions[i][1] for i in xrange(len(demo_conditions))]
+			failed_conditions_x = [failed_conditions[i][0] for i in xrange(len(failed_conditions))]
+			failed_conditions_y = [failed_conditions[i][1] for i in xrange(len(failed_conditions))]
+			success_sample_x = [success_ioc_conditions[i][0] for i in xrange(len(success_ioc_conditions))]
+			success_sample_y = [success_ioc_conditions[i][1] for i in xrange(len(success_ioc_conditions))]
+			failed_sample_x = [failed_ioc_conditions[i][0] for i in xrange(len(failed_ioc_conditions))]
+			failed_sample_y = [failed_ioc_conditions[i][1] for i in xrange(len(failed_ioc_conditions))]
+			subplt = plt.subplot()
+			subplt.plot(demo_conditions_x, demo_conditions_y, 'go')
+			subplt.plot(failed_conditions_x, failed_conditions_y, 'rx')
+			subplt.plot(success_sample_x, success_sample_y, 'g^')
+			subplt.plot(failed_sample_x, failed_sample_y, 'rv')
+			subplt.plot(success_ioc_x, success_ioc_y, 'bp')
+			subplt.plot(failed_ioc_x, failed_ioc_y, 'k*')
+			# plt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc= (1, 1))
+			for i, txt in enumerate(mean_dists):
+				subplt.annotate(txt, (ioc_conditions_x[i], ioc_conditions_y[i]))
+			ax = plt.gca()
+			ax.add_patch(Rectangle((-0.08, -0.08), 0.16, 0.16, fill = False, edgecolor = 'blue'))
+			box = subplt.get_position()
+			subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
+			subplt.legend(['demo_cond', 'failed_badmm', 'success_sample', 'failed_sample', 'success_ioc', 'failed_ioc'], \
+							loc='upper center', bbox_to_anchor=(0.5, -0.05), shadow=True, ncol=3)
+			plt.title("Distribution of neural network and IOC's initial conditions using bootstrap")
+			# plt.xlabel('width')
+			# plt.ylabel('length')
+			plt.savefig(data_files_dir + 'distribution_of_conditions_bootstrap.png')
 	else:
 		gps = GPSMain(hyperparams.config)
 		if hyperparams.config['gui_on']:
@@ -403,7 +786,6 @@ def main():
 			plt.show()
 		else:
 			gps.run(itr_load=resume_training_itr)
-
 
 if __name__ == "__main__":
 	main()

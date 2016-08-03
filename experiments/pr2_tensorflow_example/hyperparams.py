@@ -28,7 +28,7 @@ from gps.gui.config import generate_experiment_info
 from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 
 
-EE_POINTS = np.array([[0.02, -0.025, 0.05], [0.02, -0.025, 0.05],
+EE_POINTS = np.array([[0.02, -0.025, 0.05], [0.02, -0.025, -0.05],
                       [0.02, 0.05, 0.0]])
 
 SENSOR_DIMS = {

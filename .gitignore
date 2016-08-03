@@ -89,8 +89,10 @@ MUJOCO_LOG.TXT
 
 # Data files
 *.pkl
+*.csv
 
 # Experiment files
-experiments/*/data_files/
-experiments/*/log.txt
+experiments/**/data_files/
+experiments/**/log.txt
+experiments/**/*.png
 .previous_experiment

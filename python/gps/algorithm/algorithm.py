@@ -9,8 +9,11 @@ from numpy.linalg import LinAlgError
 
 from gps.algorithm.config import ALG
 from gps.algorithm.algorithm_utils import IterationData, TrajectoryInfo
-from gps.utility.general_utils import extract_condition
+from gps.utility.general_utils import extract_condition, disable_caffe_logs
+from gps.sample.sample import Sample
 from gps.sample.sample_list import SampleList
+from gps.utility.general_utils import logsum
+from gps.algorithm.algorithm_utils import fit_emp_controller
 
 
 LOGGER = logging.getLogger(__name__)
@@ -25,11 +28,11 @@ class Algorithm(object):
         config.update(hyperparams)
         self._hyperparams = config
 
-        if 'train_conditions' in hyperparams:
-            self._cond_idx = hyperparams['train_conditions']
+        if 'train_conditions' in self._hyperparams:
+            self._cond_idx = self._hyperparams['train_conditions']
             self.M = len(self._cond_idx)
         else:
-            self.M = hyperparams['conditions']
+            self.M = self._hyperparams['conditions']
             self._cond_idx = range(self.M)
         self.iteration_count = 0
 
@@ -44,6 +47,8 @@ class Algorithm(object):
         init_traj_distr['x0'] = agent.x0
         init_traj_distr['dX'] = agent.dX
         init_traj_distr['dU'] = agent.dU
+        if self._hyperparams['ioc']:
+            init_traj_distr['x0'] = np.zeros(self.dX)
         del self._hyperparams['agent']  # Don't want to pickle this.
 
         # IterationData objects for each condition.
@@ -52,6 +57,7 @@ class Algorithm(object):
         self.traj_distr = {self.iteration_count: []}
         self.traj_info = {self.iteration_count: []}
         self.kl_div = {self.iteration_count:[]}
+        self.dists_to_target = {self.iteration_count:[]}
         self.sample_list = {i: SampleList([]) for i in range(self.M)}
 
         for m in range(self.M):
@@ -65,16 +71,19 @@ class Algorithm(object):
             self.traj_distr[self.iteration_count].append(self.cur[m].traj_distr)
             self.traj_info[self.iteration_count].append(self.cur[m].traj_info)
 
-        self.traj_opt = hyperparams['traj_opt']['type'](
-            hyperparams['traj_opt']
+        self.traj_opt = self._hyperparams['traj_opt']['type'](
+            self._hyperparams['traj_opt']
         )
-        self.cost = [
-            hyperparams['cost']['type'](hyperparams['cost'])
-            for _ in range(self.M)
-        ]
+        if self._hyperparams['global_cost']:
+            self.cost = self._hyperparams['cost']['type'](self._hyperparams['cost'])
+        else:
+            self.cost = [
+                self._hyperparams['cost']['type'](self._hyperparams['cost'])
+                for _ in range(self.M)
+            ]
         if self._hyperparams['ioc']:
             self.gt_cost = [
-                hyperparams['gt_cost']['type'](hyperparams['gt_cost'])
+                self._hyperparams['gt_cost']['type'](self._hyperparams['gt_cost'])
                 for _ in range(self.M)
             ]
         self.base_kl_step = self._hyperparams['kl_step']
@@ -133,10 +142,23 @@ class Algorithm(object):
             cond: Condition to evaluate cost on.
             prev: Whether or not to use previous_cost (for ioc stepadjust)
         """
-        # TODO - add option for using synthetic samples (for nn cost)
         # Constants.
         T, dX, dU = self.T, self.dX, self.dU
-        N = len(self.cur[cond].sample_list)
+
+        synN = self._hyperparams['synthetic_cost_samples']
+        if synN > 0:
+            agent = self.cur[cond].sample_list.get_samples()[0].agent
+            X, U, _ = self._traj_samples(cond, synN)
+            syn_samples = []
+            for i in range(synN):
+                sample = Sample(agent)
+                sample.set_XU(X[i, :, :], U[i, :, :])
+                syn_samples.append(sample)
+            all_samples = SampleList(syn_samples +
+                self.cur[cond].sample_list.get_samples())
+        else:
+          all_samples = self.cur[cond].sample_list
+        N = len(all_samples)
 
         # Compute cost.
         cs = np.zeros((N, T))
@@ -146,14 +168,20 @@ class Algorithm(object):
         if self._hyperparams['ioc']:
             cgt = np.zeros((N, T))
         for n in range(N):
-            sample = self.cur[cond].sample_list[n]
+            sample = all_samples[n]
             # Get costs.
             if prev_cost:
-              l, lx, lu, lxx, luu, lux = self.previous_cost[cond].eval(sample)
+                if self._hyperparams['global_cost']:
+                    l, lx, lu, lxx, luu, lux = self.previous_cost.eval(sample)
+                else:
+                    l, lx, lu, lxx, luu, lux = self.previous_cost[cond].eval(sample)
             else:
-              l, lx, lu, lxx, luu, lux = self.cost[cond].eval(sample)
+                if self._hyperparams['global_cost']:
+                    l, lx, lu, lxx, luu, lux = self.cost.eval(sample)
+                else:
+                    l, lx, lu, lxx, luu, lux = self.cost[cond].eval(sample)
             # Compute the ground truth cost
-            if self._hyperparams['ioc']:
+            if self._hyperparams['ioc'] and n >= synN:
                 l_gt, _, _, _, _, _ = self.gt_cost[cond].eval(sample)
                 cgt[n, :] = l_gt
             cc[n, :] = l
@@ -185,14 +213,13 @@ class Algorithm(object):
           traj_info.x0mu = self.cur[cond].traj_info.x0mu
         else:
           traj_info = self.cur[cond].traj_info
-          self.cur[cond].cs = cs  # True value of cost.
+          self.cur[cond].cs = cs[synN:]  # True value of cost.
         traj_info.cc = np.mean(cc, 0)  # Constant term (scalar).
         traj_info.cv = np.mean(cv, 0)  # Linear term (vector).
         traj_info.Cm = np.mean(Cm, 0)  # Quadratic term (matrix).
 
         if self._hyperparams['ioc']:
-            self.cur[cond].cgt = cgt
-
+            self.cur[cond].cgt = cgt[synN:]
 
 
     def _advance_iteration_variables(self):
@@ -206,7 +233,11 @@ class Algorithm(object):
         self.traj_distr[self.iteration_count] = []
         self.traj_info[self.iteration_count] = []
         self.kl_div[self.iteration_count] = []
-        self.previous_cost = []
+        self.dists_to_target[self.iteration_count] = []
+        if self._hyperparams['global_cost']:
+            self.prev_cost = self.cost.copy()
+        else:
+            self.previous_cost = []
         for m in range(self.M):
             self.cur[m].traj_info = TrajectoryInfo()
             self.cur[m].traj_info.dynamics = copy.deepcopy(self.prev[m].traj_info.dynamics)
@@ -217,7 +248,8 @@ class Algorithm(object):
             self.traj_info[self.iteration_count].append(self.cur[m].traj_info)
             if self._hyperparams['ioc']:
               self.cur[m].prevcost_traj_info = TrajectoryInfo()
-              self.previous_cost.append(self.cost[m].copy())
+              if not self._hyperparams['global_cost']:
+                self.previous_cost.append(self.cost[m].copy())
         delattr(self, 'new_traj_distr')
 
     def _set_new_mult(self, predicted_impr, actual_impr, m):
@@ -254,49 +286,135 @@ class Algorithm(object):
             )
         return ent
 
-    def _traj_samples(self, X, U, traj_distr, traj_info, N):
+    def _traj_samples(self, condition, N):
         """
         Sample from a particular trajectory distribution,
         under the estimated dynamics.
         """
         # Constants.
-        dX = X.shape[2]
-        dU = U.shape[2]
-        T = X.shape[1]
-        ix = range(dX)
-        iu = range(dX, dX + dU)
+        T, dX, dU = self.T, self.dX, self.dU
+
+        X = self.cur[condition].sample_list.get_X()
+        U = self.cur[condition].sample_list.get_U()
+        traj_info = self.cur[condition].traj_info
+        traj_distr = self.cur[condition].traj_distr
 
         # Allocate space.
-        pX = np.zeros(N, T, dX)
-        pU = np.zeros(N, T, dU)
-        pProb = np.zeros(N, T, 1)
+        pX = np.zeros((N, T, dX))
+        pU = np.zeros((N, T, dU))
+        pProb = np.zeros((N, T))
         mu, sigma = self.traj_opt.forward(traj_distr, traj_info)
         for t in xrange(T):
             samps = np.random.randn(dX, N)
-            sigma[t, ix, ix] = 0.5 * (sigma[t, ix, ix] + sigma[t, ix, ix].T)
+            sigma[t, :dX, :dX] = 0.5 * (sigma[t, :dX, :dX] + sigma[t, :dX, :dX].T)
             # Full version. Assuming policy synthetic samples distro fix bound is 2.
-            var_limit = self._hyperparams['policy_synthetic_samples_distro_fix_bound'] # Assuming to be 2
-            pemp = np.maximum(np.mean(X[:, t, :] - mu[t, ix], 0), 1e-3)
-            sigt = np.diag(1 / np.sqrt(pemp)).dot(sigma[t, ix, ix]).dot(np.diag(1 / np.sqrt(pemp)))
-            vec, val = np.linalg.eig(sigt)
+            var_limit = 2 #self._hyperparams['policy_synthetic_samples_distro_fix_bound'] # Assuming to be 2
+            pemp = np.maximum(np.mean(X[:, t, :] - mu[t, :dX], 0), 1e-3)
+            sigt = np.diag(1 / np.sqrt(pemp)).dot(sigma[t, :dX, :dX]).dot(np.diag(1 / np.sqrt(pemp)))
+            val, vec = np.linalg.eig(sigt)
+            val = np.diag(val)
             val = np.minimum(val, var_limit)
             sigt = vec.dot(val).dot(vec.T)
-            sigma[t, ix, ix] = np.diag(np.sqrt(pemp)).dot(sigt).dot(np.diag(np.sqrt(pemp)))
+            sigma[t, :dX, :dX] = np.diag(np.sqrt(pemp)).dot(sigt).dot(np.diag(np.sqrt(pemp)))
             # Fix small eigenvalues only.
-            vec, val = np.linalg.eig(sigma[t, ix, ix])
-            val = np.maximum(np.real(np.diag(val)), 1e-6)
-            sigma[t, ix, ix] = vec.dot(np.diag(val)).dot(vec.T)
+            # TODO - maybe symmetrize sigma?
+            val, vec = np.linalg.eig(sigma[t, :dX, :dX])
+            if np.any(val < 1e-6):
+              val = np.maximum(np.real(val), 1e-6)
+              sigma[t, :dX, :dX] = vec.dot(np.diag(val)).dot(vec.T)
 
             # Store sample probabilities.
-            pProb[:, t, :] = -0.5 * np.sum(samps**2, 1) - 0.5 * np.sum(np.log(val))
+            pProb[:, t] = -0.5 * np.sum(samps**2, 0) - 0.5 * np.sum(np.log(val))
             # Draw samples.
             try:
-                samps = mu[t, ix] + np.linalg.cholesky(sigma[t, ix, ix].T.dot(samps))
+                samps = mu[t, :dX].reshape(dX, 1) + np.linalg.cholesky(sigma[t, :dX, :dX]).T.dot(samps)
             except LinAlgError as e:
                 LOGGER.debug('Policy sample matrix is not positive definite.')
                 _, L = np.linalg.qr(np.sqrt(np.diag(val)).dot(vec.T))
-                samps = mu[t, ix] + L.T.dot(samps)
+                samps = mu[t, :dX].reshape(dX, 1) + L.T.dot(samps)
             pX[:, t, :] = samps.T
-            pU[:, t, :] = (traj_distr.K[t, :, :].dot(samps) + traj.k[t, :] + \
-                            traj.chol_pol_covar[t, :, :].T.dot(np.random.randn(Du, N))).T
+            pU[:, t, :] = (traj_distr.K[t, :, :].dot(samps) + traj_distr.k[t, :].reshape(dU, 1) + \
+                            traj_distr.chol_pol_covar[t, :, :].T.dot(np.random.randn(dU, N))).T
         return pX, pU, pProb
+
+    def importance_weights(self):
+        """
+            Estimate the importance weights for fusion distributions.
+        """
+        itr = self.iteration_count
+        M = len(self.prev)
+        ix = range(self.dX)
+        iu = range(self.dX, self.dX + self.dU)
+        init_samples = self.init_samples
+        # itration_count + 1 distributions to evaluate
+        # T: summed over time
+        samples_logprob, demos_logprob = {}, {}
+        # number of demo distributions
+        Md = self._hyperparams['demo_M']
+        # TODO - multiple demo conditions isn't implemented correctly.
+        # (but usually we just use 1, so it's okay)
+        demos_logiw, samples_logiw = {}, {}
+        demoU = {i: self.demoU for i in xrange(M)}
+        demoX = {i: self.demoX for i in xrange(M)}
+        demoO = {i: self.demoO for i in xrange(M)}
+        self.demo_traj = {}
+        # estimate demo distributions empirically
+        for i in xrange(Md):
+            if self._hyperparams['demo_distr_empest']:
+                self.demo_traj[i] = fit_emp_controller(demoX[i], demoU[i])
+        for i in xrange(M):
+            # This code assumes a fixed number of samples per iteration/controller
+            samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
+            demos_logprob[i] = np.zeros((itr + Md + 1, self.T, demoX[i].shape[0]))
+            sample_i_X = self.sample_list[i].get_X()
+            sample_i_U = self.sample_list[i].get_U()
+            # Evaluate sample prob under sample distributions
+            for itr_i in xrange(itr + 1):
+                traj = self.traj_distr[itr_i][i]
+                for j in xrange(sample_i_X.shape[0]):
+                    for t in xrange(self.T - 1):
+                        diff = traj.k[t, :] + \
+                                traj.K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
+                        samples_logprob[i][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
+                                                        np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
+
+            # Evaluate sample prob under demo distribution.
+            for itr_i in xrange(Md):
+                for j in range(sample_i_X.shape[0]):
+                    for t in xrange(self.T - 1):
+                        diff = self.demo_traj[itr_i].k[t, :] + \
+                                self.demo_traj[itr_i].K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
+                        samples_logprob[i][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (self.demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff))) - \
+                                                        np.sum(np.log(np.diag(self.demo_traj[itr_i].chol_pol_covar[t, :, :])))
+            # Sum over the distributions and time.
+
+            samples_logiw[i] = logsum(np.sum(samples_logprob[i], 1), 0)
+
+        # Assume only one condition for the samples.
+        assert Md == 1
+        for idx in xrange(Md):
+            if M == 1:
+                i = 0
+            else:
+                i = idx
+            # Evaluate demo prob. under sample distributions.
+            for itr_i in xrange(itr + 1):
+                traj = self.traj_distr[itr_i][i]
+                for j in xrange(demoX[idx].shape[0]):
+                    for t in xrange(self.T - 1):
+                        diff = traj.k[t, :] + \
+                                traj.K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
+                        demos_logprob[idx][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
+                                                        np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
+            # Evaluate demo prob. under demo distributions.
+            for itr_i in xrange(Md):
+                for j in range(demoX[idx].shape[0]):
+                    for t in xrange(self.T - 1):
+                        diff = self.demo_traj[itr_i].k[t, :] + \
+                                self.demo_traj[itr_i].K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
+                        demos_logprob[idx][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (self.demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
+                                                        np.sum(np.log(np.diag(self.demo_traj[itr_i].chol_pol_covar[t, :, :])))
+            # Sum over the distributions and time.
+            demos_logiw[idx] = logsum(np.sum(demos_logprob[idx], 1), 0)
+
+        return demos_logiw, samples_logiw

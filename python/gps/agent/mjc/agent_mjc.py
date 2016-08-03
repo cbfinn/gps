@@ -77,11 +77,13 @@ class AgentMuJoCo(Agent):
 
         # Initialize x0.
         self.x0 = []
+        self.eepts0 = []
         for i in range(self._hyperparams['conditions']):
             if END_EFFECTOR_POINTS in self.x_data_types:
-                eepts = self._world[i].get_data()['site_xpos'].flatten()
+                # initial eepts
+                self.eepts0.append(self._world[i].get_data()['site_xpos'].flatten())
                 self.x0.append(
-                    np.concatenate([self._hyperparams['x0'][i], eepts, np.zeros_like(eepts)])
+                    np.concatenate([self._hyperparams['x0'][i], self.eepts0[i], np.zeros_like(self.eepts0[i])])
                 )
             else:
                 self.x0.append(self._hyperparams['x0'][i])
@@ -93,7 +95,7 @@ class AgentMuJoCo(Agent):
                                        cam_pos[0], cam_pos[1], cam_pos[2],
                                        cam_pos[3], cam_pos[4], cam_pos[5])
 
-    def sample(self, policy, condition, verbose=True, save=True):
+    def sample(self, policy, condition, verbose=True, save=True, noisy=True):
         """
         Runs a trial and constructs a new sample containing information
         about the trial.
@@ -102,12 +104,15 @@ class AgentMuJoCo(Agent):
             condition: Which condition setup to run.
             verbose: Whether or not to plot the trial.
             save: Whether or not to store the trial into the samples.
+            noisy: Whether or not to use noise during sampling.
         """
         # Create new sample, populate first time step.
-        new_sample = self._init_sample(condition)
         mj_X = self._hyperparams['x0'][condition]
         U = np.zeros([self.T, self.dU])
-        noise = generate_noise(self.T, self.dU, self._hyperparams)
+        if noisy:
+            noise = generate_noise(self.T, self.dU, self._hyperparams)
+        else:
+            noise = np.zeros((self.T, self.dU))
         if np.any(self._hyperparams['x0var'][condition] > 0):
             x0n = self._hyperparams['x0var'] * \
                     np.random.randn(self._hyperparams['x0var'].shape)
@@ -124,6 +129,7 @@ class AgentMuJoCo(Agent):
           dt = self._hyperparams['dt']
           F = np.array([[ 1, 0, dt, 0, dt**2., 0], [0, 1, 0, dt, 0, dt**2.],
                         [0, 0, 1, 0, dt, 0], [0, 0, 0, 1, 0, dt]])
+        new_sample = self._init_sample(condition)
         for t in range(self.T):
             X_t = new_sample.get_X(t=t)
             obs_t = new_sample.get_obs(t=t)
@@ -157,7 +163,7 @@ class AgentMuJoCo(Agent):
         sample.set(JOINT_VELOCITIES,
                    self._hyperparams['x0'][condition][self._vel_idx], t=0)
         self._data = self._world[condition].get_data()
-        eepts = self._data['site_xpos'].flatten()
+        eepts = self.eepts0[condition]
         sample.set(END_EFFECTOR_POINTS, eepts, t=0)
         sample.set(END_EFFECTOR_POINT_VELOCITIES, np.zeros_like(eepts), t=0)
         jac = np.zeros([eepts.shape[0], self._model[condition]['nq']])

@@ -34,7 +34,6 @@ BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
 
 
-
 common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
@@ -64,7 +63,8 @@ agent = {
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
-    'obs_include': [],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
+                    END_EFFECTOR_POINT_VELOCITIES],
     'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
 }
 
@@ -72,6 +72,10 @@ algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
     'iterations': 10,
+    'max_ent_traj': 0.0,  # NOTE - this was not set to 1 when initial demos were generated
+    'agent_x0': agent['x0'],
+    'agent_pos_body_idx': agent['pos_body_idx'],
+    'agent_pos_body_offset': agent['pos_body_offset'],
 }
 
 algorithm['init_traj_distr'] = {
@@ -125,7 +129,7 @@ algorithm['policy_opt'] = {}
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': 5,
-    'verbose_trials': 1,
+    'verbose_trials': 0,
     'common': common,
     'agent': agent,
     'gui_on': True,

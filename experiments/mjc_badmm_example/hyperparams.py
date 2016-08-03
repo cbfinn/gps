@@ -61,8 +61,10 @@ agent = {
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
-    'pos_body_offset': [np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0]),
-                        np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0])],
+    # 'pos_body_offset': [np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0]),
+    #                     np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0])],
+    'pos_body_offset': [np.array([0.08, 0.08, 0]), np.array([0.08, -0.08, 0]),
+                         np.array([-0.08, -0.08, 0]), np.array([-0.08, 0.08, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -78,12 +80,12 @@ algorithm = {
     'iterations': 12,
     'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-2]),
     'policy_dual_rate': 0.1,
-    'init_pol_wt': 0.01,
+    'init_pol_wt': 0.002,
     'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
     'fixed_lg_step': 3,
-    'kl_step': 2.0,
+    'kl_step': 1.0,
     'min_step_mult': 0.01,
-    'max_step_mult': 1.0,
+    'max_step_mult': 3.0,
     'sample_decrease_var': 0.05,
     'sample_increase_var': 0.1,
     'policy_sample_mode': 'replace'
@@ -140,7 +142,7 @@ algorithm['dynamics'] = {
         'type': DynamicsPriorGMM,
         'max_clusters': 20,
         'min_samples_per_cluster': 40,
-        'max_samples': 40,
+        'max_samples': 20,
     },
 }
 
@@ -151,14 +153,14 @@ algorithm['traj_opt'] = {
 algorithm['policy_opt'] = {
     'type': PolicyOptCaffe,
     'weights_file_prefix': EXP_DIR + 'policy',
-    'iterations': 4000,
+    'iterations': 5000,
 }
 
 algorithm['policy_prior'] = {
     'type': PolicyPriorGMM,
     'max_clusters': 20,
     'min_samples_per_cluster': 40,
-    'max_samples': 40,
+    'max_samples': 20,
 }
 
 config = {
