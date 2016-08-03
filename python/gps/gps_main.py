@@ -429,8 +429,8 @@ def main():
 	import matplotlib.pyplot as plt
 	import random
 	import numpy as np
-	random.seed(0)
-	np.random.seed(0)
+	random.seed(3)
+	np.random.seed(3)
 
 	if args.targetsetup:
 		try:
@@ -570,7 +570,7 @@ def main():
 		# for i, txt in enumerate(avg_dists_no_global):
 		# 	plt.annotate(np.around(txt, decimals=2), (i, txt))
 		# plt.legend(['avg global', 'avg multiple', 'global cost', 'multiple cost'], loc='upper right', ncol=2)
-		plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)		
+		plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)
 		# plt.title("mean distances to the target during iterations with and without global cost")
 		plt.title("mean distances to the target during iterations with and without demo initialization")
 		plt.xlabel("iterations")

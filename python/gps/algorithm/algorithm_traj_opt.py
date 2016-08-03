@@ -37,9 +37,6 @@ class AlgorithmTrajOpt(Algorithm):
             self.sample_list[m] = SampleList(prev_samples)
             self.N += len(sample_lists[m])
 
-            # NOTE - FOR MPF
-            self.sample_list[m] = sample_lists[m]
-            # DONE MPF
         # Update dynamics model using all samples.
         self._update_dynamics()
 

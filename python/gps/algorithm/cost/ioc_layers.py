@@ -91,8 +91,10 @@ class IOCLoss(caffe.Layer):
         # Sum over time and compute max value for safe logsum.
         for i in xrange(self.num_demos):
             dc[i] = 0.5 * np.sum(bottom[0].data[i,:])
+            #dc[i] = 10* 0.5 * np.sum(bottom[0].data[i,:])
             loss += dc[i]
             # Add importance weight to demo feature count. Will be negated.
+            #dc[i] += d_log_iw[i] / np.log(3)
             dc[i] += d_log_iw[i]
         # Divide by number of demos.
         loss /= self.num_demos
@@ -101,6 +103,7 @@ class IOCLoss(caffe.Layer):
         for i in xrange(self.num_samples):
             sc[i] = 0.5 * np.sum(bottom[1].data[i,:])
             # Add importance weight to sample feature count. Will be negated.
+            #sc[i] += s_log_iw[i] * np.log(5)
             sc[i] += s_log_iw[i]
             if -sc[i] > max_val:
                 max_val = -sc[i]
@@ -109,6 +112,7 @@ class IOCLoss(caffe.Layer):
         dc = np.exp(-dc - max_val)
         sc = np.exp(-sc - max_val)
         self._partition = np.sum(dc, axis = 0) + np.sum(sc, axis = 0)
+        #self._partition = 0.9*np.sum(dc, axis = 0) + 0.1*np.sum(sc, axis = 0)
         loss += np.log(self._partition) + max_val
         top[0].data[...] = loss
         self._demo_counts = dc
@@ -207,29 +211,35 @@ class IOCLossMod(caffe.Layer):
 
     def backward(self, top, propagate_down, bottom):
         # compute backward pass (derivative of objective w.r.t. bottom)
-        loss_weight = 0.5 * top[0].diff[0]
+        loss_weight = top[0].diff[0]
         dc = self._demo_counts
         sc = self._sample_counts
         # Compute gradient w.r.t demos
         demo_bottom_diff = bottom[0].diff
         sample_bottom_diff = bottom[1].diff
+        d_log_q = bottom[2].data
+        s_log_q = bottom[3].data
 
         Z_tilde = bottom[4].data[0]
         Z_diff = 0
 
         for i in xrange(self.num_demos):
-            #for t in xrange(self.T):
-            #    demo_bottom_diff[i, t] = (1.0 / self.num_demos - (dc[i] / self._partition))
             demo_bottom_diff[i, :] = (1.0 / self.num_demos) - (dc[i] / self._partition)
-            max_val = max(-np.sum(bottom[0].data[i,:]), 2*self._d_log_iw[i])
-            Z_diff += np.exp(-2.0*0.5*np.sum(bottom[0].data[i,:])-max_val) / (self._partition * Z_tilde*np.exp(2*self._d_log_iw[i])-max_val)
+            #max_val = max(-np.sum(bottom[0].data[i,:]), 2*self._d_log_iw[i])
+            #Z_diff += np.exp(-2.0*0.5*np.sum(bottom[0].data[i,:])-max_val) / (self._partition * Z_tilde*np.exp(2*self._d_log_iw[i])-max_val)
+            cost_i = 0.5*np.sum(bottom[0].data[i,:])
+            logq_i = d_log_q[i][0]
+            max_val = max(-cost_i, logq_i)
+            Z_diff += np.exp(-2*cost_i-2*max_val) / ( self._partition * (Z_tilde*np.exp(logq_i-max_val)+np.exp(-cost_i-max_val))**2 )
 
         for i in xrange(self.num_samples):
-            #for t in xrange(self.T):
-            #    sample_bottom_diff[i, t] = (-sc[i] / self._partition)
             sample_bottom_diff[i,:] = (-sc[i] / self._partition)
-            max_val = max(-np.sum(bottom[1].data[i,:]), 2*self._s_log_iw[i])
-            Z_diff += np.exp(-2.0*0.5*np.sum(bottom[1].data[i,:])-max_val) / (self._partition * Z_tilde*np.exp(2*self._s_log_iw[i]-max_val))
+            #max_val = max(-np.sum(bottom[1].data[i,:]), 2*self._s_log_iw[i])
+            #Z_diff += np.exp(-2.0*0.5*np.sum(bottom[1].data[i,:])-max_val) / (self._partition * Z_tilde*np.exp(2*self._s_log_iw[i]-max_val))
+            cost_i = 0.5*np.sum(bottom[1].data[i,:])
+            logq_i = s_log_q[i][0]
+            max_val = max(-cost_i, logq_i)
+            Z_diff += np.exp(-2*cost_i-2*max_val) / ( self._partition * (Z_tilde*np.exp(logq_i-max_val)+np.exp(-cost_i-max_val))**2 )
 
         if np.isnan(Z_diff) or np.isinf(Z_diff):
           import pdb; pdb.set_trace()
@@ -237,4 +247,70 @@ class IOCLossMod(caffe.Layer):
         bottom[0].diff[...] = demo_bottom_diff * loss_weight
         bottom[1].diff[...] = sample_bottom_diff * loss_weight
         bottom[4].diff[...] = Z_diff * loss_weight
+
+
+class MPFLoss(caffe.Layer):
+    """ IOC loss layer, based on MPF objective. """
+    def setup(self, bottom, top):
+        pass
+
+    def reshape(self, bottom, top):
+        top[0].reshape(1)
+        self.num_demos = bottom[0].data.shape[0]
+        self.num_samples = bottom[1].data.shape[0]
+        self.T = bottom[0].data.shape[1]
+
+        # helper numpy arrays to store demo_counts and sample_counts
+        self._pairs = np.zeros((self.num_demos, self.num_samples))
+
+    def forward(self, bottom, top):
+        # safely compute forward pass (objective from the input)
+
+        # assume that bottom[0] is a NdxT matrix containing the costs of the demo
+        # trajectories in at each time step, and bottom[1] stores the costs of samples.
+        # also assume that bottom[2] is demo log importance weights and
+        # bottom[3] is sample log importance weights
+        loss = 0.0
+        pairs = self._pairs
+
+        # log importance weights of demos and samples.
+        d_log_iw = bottom[2].data
+        s_log_iw = bottom[3].data
+
+        max_val = -np.inf
+        self.max_idx = None
+        for i in xrange(self.num_demos):
+            for j in xrange(self.num_samples):
+                pairs[i, j] = 0.5 * (d_log_iw[i] - s_log_iw[j] + \
+                                0.5 * (np.sum(bottom[0].data[i, :]) - np.sum(bottom[1].data[j, :])))
+                if max_val < pairs[i, j]:
+                    max_val = pairs[i, j]
+                    self.max_idx = (i, j)
+        pairs = np.exp(pairs - max_val)
+        self._partition = np.sum(np.sum(pairs, axis=1), axis=0)
+        loss += np.log(self._partition) + max_val
+        self._pairs = pairs
+        top[0].data[...] = loss
+
+    def backward(self, top, propagate_down, bottom):
+        # compute backward pass (derivative of objective w.r.t. bottom)
+        pairs = self._pairs
+        loss_weight = 0.5 * top[0].diff[0]
+
+        # Compute gradient w.r.t demos and samples
+        demo_bottom_diff = bottom[0].diff
+        sample_bottom_diff = bottom[1].diff
+        for i in xrange(self.num_demos):
+            for t in xrange(self.T):
+                demo_bottom_diff[i, t] = 0.5 * np.sum(pairs[i, :]) / self._partition
+                if i == self.max_idx[0]:
+                    demo_bottom_diff[i, t] += 0.5
+        for i in xrange(self.num_samples):
+            for t in xrange(self.T):
+                sample_bottom_diff[i, t] = -0.5 * np.sum(pairs[:, i]) / self._partition
+                if i == self.max_idx[1]:
+                    sample_bottom_diff[i, t] -= 0.5
+        bottom[0].diff[...] = demo_bottom_diff * loss_weight
+        bottom[1].diff[...] = sample_bottom_diff * loss_weight
+
 
