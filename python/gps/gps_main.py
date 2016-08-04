@@ -77,8 +77,11 @@ class GPSMain(object):
 				if demo_algorithm is None:
 					print("Error: cannot find '%s.'" % algorithm_file)
 					os._exit(1) # called instead of sys.exit(), since t
+				demo_algorithm.policy_opt.solver.net.share_with(demo_algorithm.policy_opt.policy.net)
+				var_mult = self.algorithm._hyperparams['pol_var_mult']
+				self.algorithm.policy_opt.var = demo_algorithm.policy_opt.var * var_mult
 				self.algorithm.policy_opt.policy = demo_algorithm.policy_opt.policy
-				self.algorithm.policy_opt.policy.chol_pol_covar *= self.algorithm._hyperparams['var_mult']
+				self.algorithm.policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(self.algorithm.policy_opt.var))
 			self.agent = config['agent']['type'](config['agent'])
 			self.algorithm.demoX = demos['demoX']
 			self.algorithm.demoU = demos['demoU']
@@ -233,8 +236,7 @@ class GPSMain(object):
 		Returns: None
 		"""
 		if self.algorithm._hyperparams['sample_on_policy']:
-			if self.algorithm.iteration_count > 0 or self.algorithm._hyperparams['init_demo_policy']:
-				pol = self.algorithm.policy_opt.policy
+			pol = self.algorithm.policy_opt.policy
 		else:
 			pol = self.algorithm.cur[cond].traj_distr
 		if self.gui:

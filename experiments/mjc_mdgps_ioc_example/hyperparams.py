@@ -112,6 +112,7 @@ algorithm = {
     'max_ent_traj': 1.0,
     'demo_distr_empest': True,
     'var_mult': 5.0,
+    'pol_var_mult': 25.0,
     # 'demo_cond': 15,
     # 'num_demos': 3,
     'num_demos': 1,
