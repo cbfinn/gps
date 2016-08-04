@@ -390,8 +390,8 @@ class Algorithm(object):
                         else:
                             noise = np.zeros(self.dU) # Assume no noise now
                             diff = self.demo_policy.act(sample_i_X[j, t, :], sample_i_X[j, t, :], t, noise) - sample_i_U[j, t, :]
-                            samples_logprob[i][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (self.demo_pol.inv_pol_covar[t, :, :].dot(diff))) - \
-                                                        np.sum(np.log(np.diag(self.demo_policy.chol_pol_covar[t, :, :])))
+                            samples_logprob[i][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (self.demo_policy.inv_pol_covar.dot(diff))) - \
+                                                        np.sum(np.log(np.diag(self.demo_policy.chol_pol_covar)))
             # Sum over the distributions and time.
 
             samples_logiw[i] = logsum(np.sum(samples_logprob[i], 1), 0)
@@ -424,8 +424,8 @@ class Algorithm(object):
                         else:
                             noise = np.zeros(self.dU) # Assume no noise now
                             diff = self.demo_policy.act(demoX[idx][j, t, :], demoX[idx][j, t, :], t, noise) - demoU[idx][j, t, :]
-                            demos_logprob[idx][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (self.demo_policy.inv_pol_covar[t, :, :].dot(diff)), 0) - \
-                                                            np.sum(np.log(np.diag(self.demo_policy.chol_pol_covar[t, :, :])))
+                            demos_logprob[idx][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (self.demo_policy.inv_pol_covar.dot(diff)), 0) - \
+                                                            np.sum(np.log(np.diag(self.demo_policy.chol_pol_covar)))
             # Sum over the distributions and time.
             demos_logiw[idx] = logsum(np.sum(demos_logprob[idx], 1), 0)
 
