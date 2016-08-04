@@ -18,7 +18,7 @@ from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
-from gps.algorithm.policy.lin_gauss_init import init_demo
+from gps.algorithm.policy.lin_gauss_init import init_demo, init_lqr
 from gps.utility.demo_utils import generate_pos_body_offset, generate_x0, generate_pos_idx
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.policy.policy_prior import PolicyPrior
@@ -79,14 +79,14 @@ demo_agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/pr2_arm3d.xml',
     'x0': generate_x0(np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
-                      np.zeros(7)]), 30),
+                      np.zeros(7)]), 40),
     'dt': 0.05,
     'substeps': 5,
-    'conditions': 30,
-    'pos_body_idx': generate_pos_idx(30),
+    'conditions': 40,
+    'pos_body_idx': generate_pos_idx(40),
     # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
     #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    'pos_body_offset': generate_pos_body_offset(30),
+    'pos_body_offset': generate_pos_body_offset(40),
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -95,7 +95,7 @@ demo_agent = {
                     END_EFFECTOR_POINT_VELOCITIES],
     'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
-    'success_upper_bound': 0.10,
+    'success_upper_bound': 0.01,
     'failure_lower_bound': 0.15,
 }
 
@@ -111,7 +111,7 @@ algorithm = {
     'policy_sample_mode': 'replace',
     'max_ent_traj': 1.0,
     'demo_distr_empest': True,
-    'var_mult': 2.0,
+    'var_mult': 5.0,
     # 'demo_cond': 15,
     # 'num_demos': 3,
     'num_demos': 1,
@@ -120,20 +120,33 @@ algorithm = {
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
     'global_cost': True,
     'sample_on_policy': True,
+    'init_demo_policy': True,
 }
 
 algorithm['init_traj_distr'] = {
-    'type': init_demo,
-    'init_gains':  0.2 / PR2_GAINS,
+    'type': init_lqr,
+    'init_gains':  1.0 / PR2_GAINS,
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-    # 'init_var': 1.0,
-    'init_var': 1.5,
-    'stiffness': 0.5,
+    'init_var': 5.0,
+    'stiffness': 1.0,
     'stiffness_vel': 0.5,
-    'final_weight': 10.0,
+    'final_weight': 50.0,
     'dt': agent['dt'],
     'T': agent['T'],
 }
+
+# algorithm['init_traj_distr'] = {
+#     'type': init_demo,
+#     'init_gains':  0.2 / PR2_GAINS,
+#     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
+#     # 'init_var': 1.0,
+#     'init_var': 1.5,
+#     'stiffness': 0.5,
+#     'stiffness_vel': 0.5,
+#     'final_weight': 10.0,
+#     'dt': agent['dt'],
+#     'T': agent['T'],
+# }
 
 torque_cost = {
     'type': CostAction,

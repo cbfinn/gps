@@ -109,19 +109,19 @@ class GenDemo(object):
 
 			for i in xrange(M):
 				# Gather demos.
-				samples = []
-				for j in xrange(5):
-					sample = self.agent.sample(
-						pol, i,
-						verbose=(i < self._hyperparams['verbose_trials'])
-						)
-					# if i in sampled_demo_conds:
-					# 	sampled_demos.append(demo)
-					samples.append(sample)
-				controller = self.linearize_policy(SampleList(samples))
+				# samples = []
+				# for j in xrange(10):
+				# 	sample = self.agent.sample(
+				# 		pol, i,
+				# 		verbose=(i < self._hyperparams['verbose_trials'])
+				# 		)
+				# 	# if i in sampled_demo_conds:
+				# 	# 	sampled_demos.append(demo)
+				# 	samples.append(sample)
+				# controller = self.linearize_policy(SampleList(samples))
 				for k in xrange(N):
 					demo = self.agent.sample(
-							controller, i,
+							pol, i, # Should be changed back to controller if using linearization
 							verbose=(i < self._hyperparams['verbose_trials'])
 							)
 					demos.append(demo)

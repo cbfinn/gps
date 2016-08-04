@@ -46,6 +46,8 @@ ALG = {
     'sample_on_policy': False,
     # Flag if the algorithm is using global cost.
     'global_cost': False,
+    # Use demo neural net policy to initialize policy.
+    'init_demo_policy': False,
 }
 
 # Good indices.

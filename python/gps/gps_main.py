@@ -69,6 +69,16 @@ class GPSMain(object):
 			self.algorithm.init_samples = self._hyperparams['num_samples']
 			# if self.algorithm._hyperparams['learning_from_prior']:
 			# 	config['agent']['pos_body_offset'] = demos['pos_body_offset']
+			# Initialize policy using the demo neural net policy
+			if 'init_demo_policy' in self.algorithm._hyperparams and \
+						self.algorithm._hyperparams['init_demo_policy']:
+				demo_algorithm_file = config['common']['demo_controller_file']
+				demo_algorithm = self.data_logger.unpickle(demo_algorithm_file)
+				if demo_algorithm is None:
+					print("Error: cannot find '%s.'" % algorithm_file)
+					os._exit(1) # called instead of sys.exit(), since t
+				self.algorithm.policy_opt.policy = demo_algorithm.policy_opt.policy
+				self.algorithm.policy_opt.policy.chol_pol_covar *= self.algorithm._hyperparams['var_mult']
 			self.agent = config['agent']['type'](config['agent'])
 			self.algorithm.demoX = demos['demoX']
 			self.algorithm.demoU = demos['demoU']
@@ -222,9 +232,9 @@ class GPSMain(object):
 			i: Sample number.
 		Returns: None
 		"""
-		if self.algorithm._hyperparams['sample_on_policy'] \
-				and self.algorithm.iteration_count > 0:
-			pol = self.algorithm.policy_opt.policy
+		if self.algorithm._hyperparams['sample_on_policy']:
+			if self.algorithm.iteration_count > 0 or self.algorithm._hyperparams['init_demo_policy']:
+				pol = self.algorithm.policy_opt.policy
 		else:
 			pol = self.algorithm.cur[cond].traj_distr
 		if self.gui:

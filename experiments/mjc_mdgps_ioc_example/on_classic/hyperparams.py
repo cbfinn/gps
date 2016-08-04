@@ -27,6 +27,10 @@ algorithm.update({
     'step_rule': 'classic',
 })
 
+algorithm['cost'].update({
+	'experiment_dir': common['experiment_dir']
+})
+
 config = default.config.copy()
 config.update({
     'common': common,

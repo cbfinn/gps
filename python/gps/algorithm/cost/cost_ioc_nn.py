@@ -167,6 +167,9 @@ class CostIOCNN(Cost):
 		  if i % 500 == 0 and i != 0:
 		    LOGGER.debug('Caffe iteration %d, average loss %f',
 		                 i, average_loss / 500)
+		    if 'experiment_dir' in self._hyperparams:
+			    with open(self._hyperparams['experiment_dir'] + 'log.txt', 'a') as f:
+						f.write('Caffe iteration ' + repr(i) + ' average loss ' + repr(float(average_loss) / 500) + '\n')
 		    average_loss = 0
 
 
