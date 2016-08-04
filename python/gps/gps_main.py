@@ -82,6 +82,16 @@ class GPSMain(object):
 				self.algorithm.policy_opt.var = demo_algorithm.policy_opt.var * var_mult
 				self.algorithm.policy_opt.policy = demo_algorithm.policy_opt.policy
 				self.algorithm.policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(self.algorithm.policy_opt.var))
+				self.algorithm.demo_policy = demo_algorithm.policy_opt.policy
+				self.algorithm.demo_policy.chol_pol_covar = np.diag(np.sqrt(demo_algorithm.policy_opt.var * var_mult))
+				inv_pol_covar = np.empty_like(self.algorithm.demo_policy.chol_pol_covar)
+				T = self.agent._hyperparams['T']
+        		for t in range(T):
+		            inv_pol_covar[t, :, :] = np.linalg.solve(
+		                self.algorithm.demo_policy.chol_pol_covar[t, :, :],
+		                np.linalg.solve(self.algorithm.demo_policy.chol_pol_covar[t, :, :].T, np.eye(dU))
+	            )
+		        self.algorithm.demo_policy.inv_pol_covar = inv_pol_covar
 			self.agent = config['agent']['type'](config['agent'])
 			self.algorithm.demoX = demos['demoX']
 			self.algorithm.demoU = demos['demoU']
@@ -235,7 +245,8 @@ class GPSMain(object):
 			i: Sample number.
 		Returns: None
 		"""
-		if self.algorithm._hyperparams['sample_on_policy']:
+		if self.algorithm._hyperparams['sample_on_policy'] and (self.algorithm.iteration_count > 0 or \
+			self.algorithm._hyperparams['init_demo_policy']):
 			pol = self.algorithm.policy_opt.policy
 		else:
 			pol = self.algorithm.cur[cond].traj_distr
