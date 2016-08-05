@@ -82,8 +82,8 @@ class GPSMain(object):
 				self.algorithm.policy_opt.var = demo_algorithm.policy_opt.var * var_mult
 				self.algorithm.policy_opt.policy = demo_algorithm.policy_opt.policy
 				self.algorithm.policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(self.algorithm.policy_opt.var))
-				self.algorithm.demo_policy = demo_algorithm.policy_opt.policy
-				self.algorithm.demo_policy.chol_pol_covar = np.diag(np.sqrt(demo_algorithm.policy_opt.var * var_mult))
+				new_policy_opt = self.algorithm.policy_opt.copy()
+				self.algorithm.demo_policy = new_policy_opt.policy
 				self.algorithm.demo_policy.inv_pol_covar = np.linalg.solve(
 			                self.algorithm.demo_policy.chol_pol_covar,
 			                np.linalg.solve(self.algorithm.demo_policy.chol_pol_covar.T, np.eye(self.algorithm.dU))
@@ -339,6 +339,7 @@ class GPSMain(object):
 		if 'no_sample_logging' in self._hyperparams['common']:
 			return
 		if itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
+			self.algorithm.demo_policy = None
 			self.data_logger.pickle(
 				self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
 				copy.copy(self.algorithm)

@@ -54,7 +54,10 @@ class Algorithm(object):
         # IterationData objects for each condition.
         self.cur = [IterationData() for _ in range(self.M)]
         self.prev = [IterationData() for _ in range(self.M)]
-        self.traj_distr = {self.iteration_count: []}
+        if not self._hyperparams['init_demo_policy']:
+            self.traj_distr = {self.iteration_count: []}
+        else:
+            self.policies = {self.iteration_count: None}
         self.traj_info = {self.iteration_count: []}
         self.kl_div = {self.iteration_count:[]}
         self.dists_to_target = {self.iteration_count:[]}
@@ -230,7 +233,11 @@ class Algorithm(object):
         self.iteration_count += 1
         self.prev = copy.deepcopy(self.cur)
         self.cur = [IterationData() for _ in range(self.M)]
-        self.traj_distr[self.iteration_count] = []
+        if not self._hyperparams['init_demo_policy']:
+            self.traj_distr[self.iteration_count] = []
+        else:
+            new_policy_opt = self.policy_opt.copy()
+            self.policies[self.iteration_count] = new_policy_opt.policy
         self.traj_info[self.iteration_count] = []
         self.kl_div[self.iteration_count] = []
         self.dists_to_target[self.iteration_count] = []
@@ -244,7 +251,8 @@ class Algorithm(object):
             self.cur[m].step_mult = self.prev[m].step_mult
             self.cur[m].eta = self.prev[m].eta
             self.cur[m].traj_distr = self.new_traj_distr[m]
-            self.traj_distr[self.iteration_count].append(self.new_traj_distr[m])
+            if not self._hyperparams['init_demo_policy']::
+                self.traj_distr[self.iteration_count].append(self.new_traj_distr[m])
             self.traj_info[self.iteration_count].append(self.cur[m].traj_info)
             if self._hyperparams['ioc']:
               self.cur[m].prevcost_traj_info = TrajectoryInfo()
@@ -358,10 +366,11 @@ class Algorithm(object):
         demoX = {i: self.demoX for i in xrange(M)}
         demoO = {i: self.demoO for i in xrange(M)}
         self.demo_traj = {}
-        # estimate demo distributions empirically
-        for i in xrange(Md):
-            if self._hyperparams['demo_distr_empest']:
-                self.demo_traj[i] = fit_emp_controller(demoX[i], demoU[i])
+        # estimate demo distributions empirically when not initializing from demo policy
+        if not self._hyperparams['init_demo_policy']:
+            for i in xrange(Md):
+                if self._hyperparams['demo_distr_empest']:
+                    self.demo_traj[i] = fit_emp_controller(demoX[i], demoU[i])
         for i in xrange(M):
             # This code assumes a fixed number of samples per iteration/controller
             samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
@@ -370,13 +379,26 @@ class Algorithm(object):
             sample_i_U = self.sample_list[i].get_U()
             # Evaluate sample prob under sample distributions
             for itr_i in xrange(itr + 1):
-                traj = self.traj_distr[itr_i][i]
-                for j in xrange(sample_i_X.shape[0]):
-                    for t in xrange(self.T - 1):
-                        diff = traj.k[t, :] + \
-                                traj.K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
-                        samples_logprob[i][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
-                                                        np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
+                if not self._hyperparams['init_demo_policy']:
+                    traj = self.traj_distr[itr_i][i]
+                    for j in xrange(sample_i_X.shape[0]):
+                        for t in xrange(self.T - 1):
+                            diff = traj.k[t, :] + \
+                                    traj.K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
+                            samples_logprob[i][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
+                                                            np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
+                else:
+                    traj = self.policies[itr_i]
+                    traj.inv_pol_covar = np.linalg.solve(
+                            traj.chol_pol_covar,
+                            np.linalg.solve(traj.chol_pol_covar.T, np.eye(self.dU))
+                            )
+                    for j in xrange(sample_i_X.shape[0]):
+                        for t in xrange(self.T - 1):
+                            noise = np.zeros(self.dU)
+                            diff = traj.act(sample_i_X[j, t, :], sample_i_X[j, t, :], t, noise) - sample_i_U[j, t, :]
+                            samples_logprob[i][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar.dot(diff))) - \
+                                                            np.sum(np.log(np.diag(traj.chol_pol_covar)))
 
             # Evaluate sample prob under demo distribution.
             for itr_i in xrange(Md):
@@ -405,13 +427,26 @@ class Algorithm(object):
                 i = idx
             # Evaluate demo prob. under sample distributions.
             for itr_i in xrange(itr + 1):
-                traj = self.traj_distr[itr_i][i]
-                for j in xrange(demoX[idx].shape[0]):
-                    for t in xrange(self.T - 1):
-                        diff = traj.k[t, :] + \
-                                traj.K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
-                        demos_logprob[idx][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
-                                                        np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
+                if not self._hyperparams['init_demo_policy']:
+                    traj = self.traj_distr[itr_i][i]
+                    for j in xrange(demoX[idx].shape[0]):
+                        for t in xrange(self.T - 1):
+                            diff = traj.k[t, :] + \
+                                    traj.K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
+                            demos_logprob[idx][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
+                                                            np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
+                else:
+                    traj = self.policies[itr_i]
+                    traj.inv_pol_covar = np.linalg.solve(
+                            traj.chol_pol_covar,
+                            np.linalg.solve(traj.chol_pol_covar.T, np.eye(self.dU))
+                            )
+                    for j in xrange(demoX[idx].shape[0]):
+                        for t in xrange(self.T - 1):
+                            noise = np.zeros(self.dU)
+                            diff = traj.act(demoX[idx][j, t, :], demoX[idx][j, t, :], t, noise)
+                            demos_logprob[idx][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar.dot(diff))) - \
+                                                            np.sum(np.log(np.diag(traj.chol_pol_covar)))
             # Evaluate demo prob. under demo distributions.
             for itr_i in xrange(Md):
                 for j in range(demoX[idx].shape[0]):

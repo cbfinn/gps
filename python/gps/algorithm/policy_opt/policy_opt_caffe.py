@@ -41,6 +41,18 @@ class PolicyOptCaffe(PolicyOpt):
                                   self.solver.test_nets[1],
                                   self.var)
 
+    def copy(self):
+        new_policy_opt = PolicyOptCaffe(self._hyperparams, self._dO, self._dU)
+        self.solver.test_nets[0].share_with(new_policy_opt.solver.net)
+        self.solver.test_nets[0].share_with(new_policy_opt.solver.test_nets[0])
+        self.solver.test_nets[0].share_with(new_policy_opt.solver.test_nets[1])
+        new_policy_opt.var = self.var
+        new_policy_opt.policy = CaffePolicy(new_policy_opt.solver.test_nets[0],
+                                  new_policy_opt.solver.test_nets[1],
+                                  new_policy_opt.var)
+        return new_policy_opt
+
+
     def init_solver(self):
         """ Helper method to initialize the solver. """
         solver_param = SolverParameter()

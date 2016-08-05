@@ -38,6 +38,7 @@ class AlgorithmMDGPS(Algorithm):
         self.policy_opt = self._hyperparams['policy_opt']['type'](
             self._hyperparams['policy_opt'], self.dO, self.dU
         )
+        self.policies[self.iteration_count] = self.policy_opt.copy().policy
 
     def iteration(self, sample_lists):
         """
@@ -93,7 +94,7 @@ class AlgorithmMDGPS(Algorithm):
 
         # Computing KL-divergence between sample distribution and demo distribution
         itr = self.iteration_count
-        if self._hyperparams['ioc']:
+        if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
             for i in xrange(self.M):
                 mu, sigma = self.traj_opt.forward(self.traj_distr[itr][i], self.traj_info[itr][i])
                 # KL divergence between current traj. distribution and gt distribution
