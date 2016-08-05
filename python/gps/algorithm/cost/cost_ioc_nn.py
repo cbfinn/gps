@@ -122,7 +122,7 @@ class CostIOCNN(Cost):
 
     # TODO - we might want to make the demos and samples input as SampleList objects, rather than arrays.
     # TODO - also we might want to exclude demoU/sampleU since we generally don't use them
-    def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw):
+    def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, s_q_idx=None):
         """
         Learn cost function with generic function representation.
         Args:
@@ -134,11 +134,8 @@ class CostIOCNN(Cost):
             sampleX: the states of samples.
             sampleO: the observations of samples.
             s_log_iw: log importance weights for samples.
+            s_q_idx: the index of the controller which the sample came from
         """
-        #old_net = self.solver.net
-        #self._init_solver()
-        #self.solver.net.share_with(old_net)
-
         Nd = demoO.shape[0]
         Ns = sampleO.shape[0]
         blob_names = self.solver.net.blobs.keys()
@@ -162,7 +159,10 @@ class CostIOCNN(Cost):
           d_idx_i = demo_idx[d_start_idx:d_start_idx+self.demo_batch_size]
           s_idx_i = sample_idx[s_start_idx:s_start_idx+self.sample_batch_size]
           self.solver.net.blobs[blob_names[0]].data[:] = demoO[d_idx_i]
-          self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[d_idx_i]
+          if s_q_idx is not None:  # for MPF
+              self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[s_q_idx[0][s_idx_i].reshape((-1,)), d_idx_i].reshape((-1,1))
+          else:
+              self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[d_idx_i]
           self.solver.net.blobs[blob_names[2]].data[:] = sampleO[s_idx_i]
           self.solver.net.blobs[blob_names[3]].data[:] = s_log_iw[s_idx_i]
           self.solver.step(1)
@@ -198,6 +198,7 @@ class CostIOCNN(Cost):
         network_arch_params['sample_batch_size'] = self._hyperparams['sample_batch_size']
         network_arch_params['T'] = self._T
         network_arch_params['phase'] = TRAIN
+        network_arch_params['ioc_loss'] = self._hyperparams['ioc_loss']
         solver_param.train_net_param.CopyFrom(
             self._hyperparams['network_model'](**network_arch_params)
         )

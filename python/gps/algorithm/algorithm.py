@@ -341,9 +341,6 @@ class Algorithm(object):
         """
             Estimate the importance weights for fusion distributions.
         """
-        GAN_LOSS = 1  # use loss from Paul's writeup  (FYI, IOCLossMod is hard-coded too), 3=MPF
-
-
         itr = self.iteration_count
         M = len(self.prev)
         ix = range(self.dX)
@@ -354,7 +351,7 @@ class Algorithm(object):
         samples_logprob, demos_logprob = {}, {}
         # number of demo distributions
         Md = self._hyperparams['demo_M']
-        demos_logiw, samples_logiw = {}, {}
+        demos_logiw, samples_logiw, samples_q_idx = {}, {}, {}
         demoU = {i: self.demoU for i in xrange(M)}
         demoX = {i: self.demoX for i in xrange(M)}
         demoO = {i: self.demoO for i in xrange(M)}
@@ -366,12 +363,9 @@ class Algorithm(object):
         for i in xrange(M):
 
             # This code assumes a fixed number of samples per iteration/controller
-            if GAN_LOSS < 3 and GAN_LOSS > 0:
+            if self._hyperparams['ioc'] != 'ICML':
               samples_logprob[i] = np.zeros((itr + 1, self.T, (self.N / M) * itr + init_samples))
               demos_logprob[i] = np.zeros((itr + 1, self.T, demoX[i].shape[0]))
-            elif GAN_LOSS == 3:
-              samples_logprob[i] = np.zeros((1, self.T, (self.N / M) * itr + init_samples))
-              demos_logprob[i] = np.zeros((1, self.T, demoX[i].shape[0]))
             else:
               samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
               demos_logprob[i] = np.zeros((itr + Md + 1, self.T, demoX[i].shape[0]))
@@ -380,19 +374,6 @@ class Algorithm(object):
             sample_i_X = self.sample_list[i].get_X()
             sample_i_U = self.sample_list[i].get_U()
             # Evaluate sample prob under sample distributions
-            #if GAN_LOSS == 3:
-            #  j = 0
-            #  for itr_i in xrange(itr + 1):
-            #    traj = self.traj_distr[itr_i][i]
-            #    import pdb; pdb.set_trace()
-            #    for _ in range(self.N / M):
-            #        for t in xrange(self.T - 1):
-            #            diff = traj.k[t, :] + \
-            #                    traj.K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
-            #            samples_logprob[i][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
-            #                                            np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
-            #        j += 1
-            #else:
             for itr_i in xrange(itr + 1):
                 traj = self.traj_distr[itr_i][i]
                 for j in xrange(sample_i_X.shape[0]):
@@ -403,7 +384,7 @@ class Algorithm(object):
                                                         np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
 
             # Evaluate sample prob under demo distribution.
-            if not GAN_LOSS:
+            if self._hyperparams['ioc'] == 'ICML':
               for itr_i in xrange(Md):
                 for j in range(sample_i_X.shape[0]):
                     for t in xrange(self.T - 1):
@@ -411,9 +392,20 @@ class Algorithm(object):
                                 self.demo_traj[itr_i].K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
                         samples_logprob[i][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (self.demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff))) - \
                                                         np.sum(np.log(np.diag(self.demo_traj[itr_i].chol_pol_covar[t, :, :])))
-            # Sum over the distributions and time.
 
-            samples_logiw[i] = logsum(np.sum(samples_logprob[i], 1), 0)
+            # Sum over the distributions and time.
+            if self._hyperparams['ioc'] == 'MPF':
+                samples_logiw[i] = np.sum(samples_logprob[i], 1)
+                num_samples = 5
+                # Need to construct index of samples
+                idx = np.tile(np.array(range(itr+1)).reshape(itr+1,1),
+                              num_samples).flatten()
+                samples_q_idx[i] = idx
+                samples_logiw[i] = np.array([samples_logiw[i][c, j] for
+                    (c, j) in zip(idx, range(len(idx)))])
+
+            else:
+                samples_logiw[i] = logsum(np.sum(samples_logprob[i], 1), 0)
 
         # Assume only one condition for the samples.
         assert Md == 1
@@ -432,7 +424,7 @@ class Algorithm(object):
                         demos_logprob[idx][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
                                                         np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
             # Evaluate demo prob. under demo distributions.
-            if not GAN_LOSS:
+            if self._hyperparams['ioc'] == 'ICML':
               for itr_i in xrange(Md):
                 for j in range(demoX[idx].shape[0]):
                     for t in xrange(self.T - 1):
@@ -441,6 +433,12 @@ class Algorithm(object):
                         demos_logprob[idx][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (self.demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
                                                         np.sum(np.log(np.diag(self.demo_traj[itr_i].chol_pol_covar[t, :, :])))
             # Sum over the distributions and time.
-            demos_logiw[idx] = logsum(np.sum(demos_logprob[idx], 1), 0)
+            if self._hyperparams['ioc'] == 'MPF':
+                demos_logiw[idx] = np.sum(demos_logprob[idx], 1)
+            else:
+                demos_logiw[idx] = logsum(np.sum(demos_logprob[idx], 1), 0)
 
-        return demos_logiw, samples_logiw
+        if self._hyperparams['ioc'] == 'MPF':
+            return demos_logiw, samples_logiw, samples_q_idx
+        else:
+            return demos_logiw, samples_logiw

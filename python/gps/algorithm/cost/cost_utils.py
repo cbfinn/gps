@@ -164,7 +164,7 @@ def evallogl2term(wp, d, Jd, Jdd, l1, l2, alpha):
 
 
 def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
-                            demo_batch_size=5, sample_batch_size=5, phase=TRAIN):
+                            demo_batch_size=5, sample_batch_size=5, phase=TRAIN, ioc_loss='ICML'):
     """
     Construct an anonymous network (no layer names) for a quadratic cost
     function with the specified dimensionality, and return NetParameter proto.
@@ -180,6 +180,7 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
         demo_batch_size: demo batch size.
         sample_batch_size: sample batch size.
         phase: TRAIN, TEST, or 'deploy'
+        ioc_loss: type of loss to use -- ICML, MPF, IOCGAN, XENTGAN
     Returns:
         A NetParameter specification of the network.
     """
@@ -256,10 +257,9 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
                              param=[dict(lr_mult=1), dict(lr_mult=1)])
         n.Z = L.Exp(n.logZ, base=2.6)
 
-        GAN_LOSS = 1
-        if GAN_LOSS == 2:
+        if ioc_loss == 'XENTGAN':
             pass
-        elif GAN_LOSS == 1:
+        elif ioc_loss== 'IOCGAN':
             layer_name = 'IOCLossMod'
         else:
             layer_name = 'IOCLoss'
@@ -272,7 +272,7 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
 
 
 def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
-                          demo_batch_size=5, sample_batch_size=5, phase=TRAIN):
+                          demo_batch_size=5, sample_batch_size=5, phase=TRAIN, ioc_loss='ICML'):
     """
     Construct an anonymous network (no layer names) for a quadratic cost
     function with the specified dimensionality, and return NetParameter proto.
@@ -289,6 +289,7 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         demo_batch_size: demo batch size.
         sample_batch_size: sample batch size.
         phase: TRAIN, TEST, or 'forward_feat'
+        ioc_loss: type of loss to use -- ICML, MPF, IOCGAN, XENTGAN
     Returns:
         A NetParameter specification of the network.
     """
@@ -365,12 +366,12 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         # next-cur
         n.slope_next = L.Eltwise(n.costs_next, n.costs_cur, operation=EltwiseParameter.SUM, coeff=[1,-1])
         # TODO - add hyperparam for loss weight.
-        n.smooth_reg = L.EuclideanLoss(n.slope_next, n.slope_prev, loss_weight=0.0)
+        n.smooth_reg = L.EuclideanLoss(n.slope_next, n.slope_prev, loss_weight=0.1)
 
         n.demo_slope, _ = L.Slice(n.slope_next, axis=0, slice_point=demo_batch_size, ntop=2)
         n.demo_slope_reshape = L.Reshape(n.demo_slope, shape=dict(dim=[-1,1]))
         # TODO - add hyperparam for loss weight, maybe try l2 monotonic loss
-        n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=0.0,
+        n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=100.0,
                               python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
 
         n.dummy = L.DummyData(ntop=1, shape=dict(dim=[1]), data_filler=dict(type='constant',value=0))
@@ -382,10 +383,9 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                              param=[dict(lr_mult=1), dict(lr_mult=1)])
         n.Z = L.Exp(n.logZ, base=2.6)
 
-        GAN_LOSS = 3  # 0 = normal, 1 = IOC/GAN, 2 = GAN/XENT, 3 = MPF
-        # TODO - removed loss weights, GAN LOSS, changed T, batching, num samples
+        # TODO - removed loss weights, changed T, batching, num samples
         # demo cond, num demos, etc.
-        if GAN_LOSS == 2:
+        if ioc_loss == 'XENTGAN':
             # make multiple logZs
             n.logZs = L.InnerProduct(n.logZ, num_output=demo_batch_size+sample_batch_size, axis=0,
                                      weight_filler=dict(type='constant', value=1),
@@ -410,11 +410,11 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
             n.all_scores = L.Eltwise(n.all_costs_sumT, n.all_log_iw, n.logZs, operation=EltwiseParameter.SUM, coeff=[-0.5,-1, -1])
             # TODO - we don't need to add demos to samples, right?
             n.out = L.SigmoidCrossEntropyLoss(n.all_scores, n.all_targets)
-        elif GAN_LOSS == 1:
+        elif ioc_loss == 'IOCGAN':
             n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, n.Z, loss_weight=1.0,
                              python_param=dict(module='ioc_layers',
                                                layer='IOCLossMod'))
-        elif GAN_LOSS == 3:  # MPF
+        elif ioc_loss== 'MPF':  # MPF
             n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, n.Z, loss_weight=1.0,
                              python_param=dict(module='ioc_layers',
                                                layer='MPFLoss'))

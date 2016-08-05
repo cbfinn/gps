@@ -54,6 +54,7 @@ COST_ACTION = {
 
 # config options for any cost function learned through IOC
 IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
+    'ioc_loss': 'ICML',  # Type of loss to use (ICML, XENTGAN, IOCGAN, MPF)
     'iterations': 5000,  # Number of training iterations.
     'demo_batch_size': 5,  # Number of demos per mini-batch.
     'sample_batch_size': 5,  # Number of samples per mini-batch.

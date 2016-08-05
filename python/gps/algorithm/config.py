@@ -21,7 +21,7 @@ ALG = {
     # Flag if we estimate the demo distribution empirically.
     'demo_distr_empest': False,
     # Flag if the algorithm is using IOC
-    'ioc': False,
+    'ioc': None,  # ICML, MPF, IOCGAN, XENTGAN
     # Flag if the algorithm is learning from prior experience
     'learning_from_prior': False,
     # Dynamics hyperaparams.
