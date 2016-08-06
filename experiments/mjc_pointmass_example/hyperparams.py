@@ -58,7 +58,7 @@ agent = {
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
-    'T': 100,
+    'T': 3,
     'point_linear': True,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
@@ -111,7 +111,7 @@ action_cost = {
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [state_cost, action_cost],
-    'weights': [1.0, 1.0], # used 10,1 for T=3
+    'weights': [10.0, 1.0], # used 10,1 for T=3
 }
 
 algorithm['dynamics'] = {

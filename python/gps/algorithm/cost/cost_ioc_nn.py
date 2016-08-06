@@ -136,6 +136,7 @@ class CostIOCNN(Cost):
             s_log_iw: log importance weights for samples.
             s_q_idx: the index of the controller which the sample came from
         """
+
         Nd = demoO.shape[0]
         Ns = sampleO.shape[0]
         blob_names = self.solver.net.blobs.keys()
@@ -178,6 +179,18 @@ class CostIOCNN(Cost):
         self.caffe_iter += self._hyperparams['iterations']
 
         self.solver.test_nets[0].share_with(self.solver.net)
+        # DEBUGGING
+        #import pdb; pdb.set_trace()
+        #debug=False
+        #if debug:
+        #    old_net = self.solver.net  # test_nets[0]
+        #    self._hyperparams['ioc_loss'] = 'MPF'
+        #    self._init_solver()
+        #    self.solver.net.share_with(old_net)
+        #    # TODO = also need to change algorithm._hyperparams['ioc'] to MPF
+        # END DEBUGGING
+
+
 
     def _init_solver(self):
         """ Helper method to initialize the solver. """

@@ -97,9 +97,9 @@ demo_agent = {
 
 algorithm = {
     'type': AlgorithmTrajOpt,
+    'ioc' : 'ICML',
     'conditions': common['conditions'],
     'learning_from_prior': False,
-    'ioc' : True,
     'kl_step': 0.5,
     'max_step_mult': 2.0,
     'min_step_mult': 0.01,
@@ -160,11 +160,12 @@ algorithm['gt_cost'] = {
 algorithm['cost'] = {
     'type': CostIOCNN,
     'wu': 5e-5 / PR2_GAINS,
-    'T': 100,
+    'T': 3,
     'dO': 26,
     'iterations': 5000,
     'demo_batch_size': 5,
     'sample_batch_size': 5,
+    'ioc_loss': algorithm['ioc'],
 }
 
 # algorithm['gt_cost'] = {

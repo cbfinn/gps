@@ -60,7 +60,7 @@ agent = {
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
-    'T': 100,
+    'T': 3,
     'point_linear': True,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
@@ -87,7 +87,7 @@ demo_agent = {
 
 algorithm = {
     'type': AlgorithmTrajOpt,
-    'ioc' : True,
+    'ioc' : 'MPF',
     'demo_distr_empest': True,
     'max_ent_traj': 1.0,
     'conditions': common['conditions'],
@@ -118,6 +118,7 @@ algorithm['cost'] = {
     'iterations': 5000,
     'demo_batch_size': 5,
     'sample_batch_size': 5,
+    'ioc_loss': algorithm['ioc'],
 }
 
 algorithm['gt_cost'] = {
@@ -158,7 +159,7 @@ algorithm['policy_prior'] = {
 
 config = {
     'iterations': algorithm['iterations'],
-    'num_samples': 200,
+    'num_samples': 5,
     'verbose_trials': 1,
     'verbose_policy_trials': 1,
     'common': common,

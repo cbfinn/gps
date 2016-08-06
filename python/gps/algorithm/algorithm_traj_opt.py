@@ -172,6 +172,7 @@ class AlgorithmTrajOpt(Algorithm):
             cost_ioc = self.cost
             cost_ioc.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, sampleU_arr, sampleX_arr,
                                                         sampleO_arr, samples_logiw_arr, samples_q_idx)
+        #import pdb; pdb.set_trace()
 
 
     def compute_costs(self, m, eta):

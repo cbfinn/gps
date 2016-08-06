@@ -278,38 +278,31 @@ class MPFLoss(caffe.Layer):
         s_log_iw = bottom[3].data
 
         max_val = -np.inf
-        self.max_idx = None
         for i in xrange(self.num_demos):
             for j in xrange(self.num_samples):
                 pairs[i, j] = 0.5 * (d_log_iw[i] - s_log_iw[j] + \
                                 0.5 * (np.sum(bottom[0].data[i, :]) - np.sum(bottom[1].data[j, :])))
                 if max_val < pairs[i, j]:
                     max_val = pairs[i, j]
-                    self.max_idx = (i, j)
         pairs = np.exp(pairs - max_val)
-        self._partition = np.sum(np.sum(pairs, axis=1), axis=0)
-        loss += np.log(self._partition) + max_val
         self._pairs = pairs
-        top[0].data[...] = loss
+        self._pairs_sum = self._pairs.sum()
+        top[0].data[...] = np.log(self._pairs_sum) + max_val
 
     def backward(self, top, propagate_down, bottom):
         # compute backward pass (derivative of objective w.r.t. bottom)
         pairs = self._pairs
-        loss_weight = 0.5 * top[0].diff[0]
+        loss_weight = top[0].diff[0]
 
         # Compute gradient w.r.t demos and samples
         demo_bottom_diff = bottom[0].diff
         sample_bottom_diff = bottom[1].diff
         for i in xrange(self.num_demos):
             for t in xrange(self.T):
-                demo_bottom_diff[i, t] = 0.5 * np.sum(pairs[i, :]) / self._partition
-                if i == self.max_idx[0]:
-                    demo_bottom_diff[i, t] += 0.5
+                demo_bottom_diff[i, t] = 0.5 * np.sum(pairs[i, :]) / self._pairs_sum
         for i in xrange(self.num_samples):
             for t in xrange(self.T):
-                sample_bottom_diff[i, t] = -0.5 * np.sum(pairs[:, i]) / self._partition
-                if i == self.max_idx[1]:
-                    sample_bottom_diff[i, t] -= 0.5
+                sample_bottom_diff[i, t] = -0.5 * np.sum(pairs[:, i]) / self._pairs_sum
         bottom[0].diff[...] = demo_bottom_diff * loss_weight
         bottom[1].diff[...] = sample_bottom_diff * loss_weight
 
