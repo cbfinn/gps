@@ -52,11 +52,11 @@ class GPSMain(object):
 		config['algorithm']['agent'] = self.agent
 
 		if 'ioc' in config['algorithm'] and config['algorithm']['ioc']:
-			# demo_file = self._data_files_dir + 'demos.pkl'
-			if not config['common']['nn_demo']:
-				demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
-			else:
-				demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'
+			demo_file = self._data_files_dir + 'demos.pkl'
+			# if not config['common']['nn_demo']:
+			# 	demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
+			# else:
+			# 	demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'
 			demos = self.data_logger.unpickle(demo_file)
 			if demos is None:
 			  self.demo_gen = GenDemo(config)
