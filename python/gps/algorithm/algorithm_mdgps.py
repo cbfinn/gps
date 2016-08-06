@@ -38,8 +38,6 @@ class AlgorithmMDGPS(Algorithm):
         self.policy_opt = self._hyperparams['policy_opt']['type'](
             self._hyperparams['policy_opt'], self.dO, self.dU
         )
-        #self.policy_opts[self.iteration_count] = self.policy_opt.copy()
-        # above line shouldnt be necessary.
 
     def iteration(self, sample_lists):
         """

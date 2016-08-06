@@ -81,7 +81,11 @@ class GPSMain(object):
 				self.algorithm.policy_opt.policy = demo_algorithm.policy_opt.policy
 				self.algorithm.policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(self.algorithm.policy_opt.var))
 				self.algorithm.policy_opt.solver.net.share_with(self.algorithm.policy_opt.policy.net)
-				self.algorithm.demo_policy_opt = self.algorithm.policy_opt.copy()
+
+				var_mult = self.algorithm._hyperparams['demo_var_mult']
+				self.algorithm.demo_policy_opt = demo_algorithm.policy_opt.copy()
+                                self.algorithm.demo_policy_opt.var = demo_algorithm.policy_opt.var * var_mult
+				self.algorithm.demo_policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(self.algorithm.demo_policy_opt.var))
 			self.agent = config['agent']['type'](config['agent'])
 			self.algorithm.demoX = demos['demoX']
 			self.algorithm.demoU = demos['demoU']
