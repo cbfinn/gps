@@ -52,11 +52,11 @@ class GPSMain(object):
 		config['algorithm']['agent'] = self.agent
 
 		if 'ioc' in config['algorithm'] and config['algorithm']['ioc']:
-			demo_file = self._data_files_dir + 'demos.pkl'
-			# if not config['common']['nn_demo']:
-			# 	demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
-			# else:
-			# 	demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'
+			# demo_file = self._data_files_dir + 'demos.pkl'
+			if not config['common']['nn_demo']:
+				demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
+			else:
+				demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'
 			demos = self.data_logger.unpickle(demo_file)
 			if demos is None:
 			  self.demo_gen = GenDemo(config)
@@ -188,7 +188,7 @@ class GPSMain(object):
 				for sample in curSamples:
 					samples.append(sample)
 			target = self.algorithm._hyperparams["target_end_effector"][:3]
-			dists_to_target = [np.amin(np.sqrt(np.sum((sample.get(END_EFFECTOR_POINTS)[:, :3] - \
+			dists_to_target = [np.nanmin(np.sqrt(np.sum((sample.get(END_EFFECTOR_POINTS)[:, :3] - \
 								target.reshape(1, -1))**2, axis = 1)), axis = 0) for sample in samples]
 			mean_dists.append(sum(dists_to_target)/len(dists_to_target))
 			success_rates.append(float(sum(1 for dist in dists_to_target if dist <= peg_height))/ \

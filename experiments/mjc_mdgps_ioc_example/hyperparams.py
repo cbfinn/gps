@@ -113,7 +113,7 @@ algorithm = {
     'max_ent_traj': 1.0,
     'demo_distr_empest': True,
     'demo_var_mult': 5.0,
-    'init_var_mult': 8.0,
+    'init_var_mult': 9.0,
     # 'demo_cond': 15,
     # 'num_demos': 3,
     'num_demos': 1,
