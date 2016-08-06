@@ -39,9 +39,9 @@ class CostIOCNN(Cost):
 
 	def copy(self):
 	  new_cost = CostIOCNN(self._hyperparams)
-	  self.solver.test_nets[0].share_with(new_cost.solver.net)
-	  self.solver.test_nets[0].share_with(new_cost.solver.test_nets[0])
-	  self.solver.test_nets[0].share_with(new_cost.solver.test_nets[1])
+	  new_cost.solver.net.share_with(self.solver.test_nets[0])
+	  new_cost.solver.test_nets[0].share_with(self.solver.test_nets[0])
+	  new_cost.solver.test_nets[1].share_with(self.solver.test_nets[0])
 	  return new_cost
 
 

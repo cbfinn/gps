@@ -51,7 +51,7 @@ common = {
     'LG_controller_file': LG_DIR + 'data_files/algorithm_itr_09.pkl',
     'conditions': 4,
     # 'dense': True # For dense/sparse demos experiment only
-    'nn_demo': False, # Use neural network demonstrations. For experiment only
+    'nn_demo': True, # Use neural network demonstrations. For experiment only
 }
 
 agent = {
