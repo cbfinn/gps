@@ -76,13 +76,12 @@ class GPSMain(object):
 				if demo_algorithm is None:
 					print("Error: cannot find '%s.'" % algorithm_file)
 					os._exit(1) # called instead of sys.exit(), since t
-				demo_algorithm.policy_opt.solver.net.share_with(demo_algorithm.policy_opt.policy.net)
 				var_mult = self.algorithm._hyperparams['init_var_mult']
 				self.algorithm.policy_opt.var = demo_algorithm.policy_opt.var * var_mult
 				self.algorithm.policy_opt.policy = demo_algorithm.policy_opt.policy
 				self.algorithm.policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(self.algorithm.policy_opt.var))
-				new_policy_opt = self.algorithm.policy_opt.copy()
-				self.algorithm.demo_policy_opt = new_policy_opt
+				self.algorithm.policy_opt.solver.net.share_with(self.algorithm.policy_opt.policy.net)
+				self.algorithm.demo_policy_opt = self.algorithm.policy_opt.copy()
 			self.agent = config['agent']['type'](config['agent'])
 			self.algorithm.demoX = demos['demoX']
 			self.algorithm.demoU = demos['demoU']
@@ -370,17 +369,17 @@ class GPSMain(object):
 		pol_conditions = [[np.array([-0.05, -0.05, 0]), np.array([-0.05, -0.05, 0]),
                         np.array([0.05, 0.05, 0]), np.array([0.05, -0.05, 0])],
                         [np.array([-0.06, -0.06, 0]), np.array([-0.06, -0.06, 0]),
-                        np.array([0.06, 0.06, 0]), np.array([0.06, -0.06, 0])], 
+                        np.array([0.06, 0.06, 0]), np.array([0.06, -0.06, 0])],
                         [np.array([-0.07, -0.07, 0]), np.array([-0.07, -0.07, 0]),
-                        np.array([0.07, 0.07, 0]), np.array([0.07, -0.07, 0])], 
+                        np.array([0.07, 0.07, 0]), np.array([0.07, -0.07, 0])],
                         [np.array([-0.08, -0.08, 0]), np.array([-0.08, -0.08, 0]),
-                        np.array([0.08, 0.08, 0]), np.array([0.08, -0.08, 0])], 
+                        np.array([0.08, 0.08, 0]), np.array([0.08, -0.08, 0])],
                         [np.array([-0.09, -0.09, 0]), np.array([-0.09, -0.09, 0]),
-                        np.array([0.09, 0.09, 0]), np.array([0.09, -0.09, 0])], 
+                        np.array([0.09, 0.09, 0]), np.array([0.09, -0.09, 0])],
                         [np.array([-0.10, -0.10, 0]), np.array([-0.10, -0.10, 0]),
-                        np.array([0.10, 0.10, 0]), np.array([0.10, -0.10, 0])], 
+                        np.array([0.10, 0.10, 0]), np.array([0.10, -0.10, 0])],
                         [np.array([-0.11, -0.11, 0]), np.array([-0.11, -0.11, 0]),
-                        np.array([0.11, 0.11, 0]), np.array([0.11, -0.11, 0])], 
+                        np.array([0.11, 0.11, 0]), np.array([0.11, -0.11, 0])],
                         [np.array([-0.12, -0.12, 0]), np.array([-0.12, -0.12, 0]),
                         np.array([0.12, 0.12, 0]), np.array([0.12, -0.12, 0])]]
 		samples = []
@@ -420,7 +419,7 @@ class GPSMain(object):
 			if i not in good_indices:
 				bad_dists.append(dists_to_target[i])
 				failed_conditions.append(ioc_conditions[i])
-		
+
 		from matplotlib.patches import Rectangle
 
 		plt.close('all')
@@ -607,7 +606,7 @@ def main():
 			if not os.path.exists(exp_dir + 'data_files_50samples_%d' % itr + '/'):
 				os.makedirs(exp_dir + 'data_files_50samples_%d' % itr + '/')
 			gps_samples = GPSMain(hyperparams.config)
-			agent_config = gps_samples._hyperparams['agent'] 
+			agent_config = gps_samples._hyperparams['agent']
 			plt.close()
 			gps_samples.good_samples(measure_samples, agent_config)
 
@@ -619,7 +618,7 @@ def main():
 			plt.close()
 			gps_synthetic.good_samples(measure_samples, agent_config)
 
-			
+
 	elif compare_costs:
 		from gps.algorithm.policy.lin_gauss_init import init_lqr
 
@@ -749,7 +748,7 @@ def main():
 		# 	plt.annotate(np.around(txt, decimals=2), (i, txt))
 		plt.legend(['avg nn demo', 'avg LG demo', 'nn demo', 'LG demo'], loc='upper right', ncol=2)
 		# plt.legend(['var 8', 'var 10', 'var 16'], loc='upper right', ncol=3)
-		# plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)		
+		# plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)
 		plt.title("mean distances to the target over time with nn and LG demo")
 		# plt.title("mean distances to the target over time with different initial policy variance")
 		# plt.title("mean distances to the target during iterations with and without demo init")

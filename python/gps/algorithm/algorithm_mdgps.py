@@ -38,7 +38,8 @@ class AlgorithmMDGPS(Algorithm):
         self.policy_opt = self._hyperparams['policy_opt']['type'](
             self._hyperparams['policy_opt'], self.dO, self.dU
         )
-        self.policy_opts[self.iteration_count] = self.policy_opt.copy()
+        #self.policy_opts[self.iteration_count] = self.policy_opt.copy()
+        # above line shouldnt be necessary.
 
     def iteration(self, sample_lists):
         """
@@ -56,21 +57,23 @@ class AlgorithmMDGPS(Algorithm):
             self.sample_list[m] = SampleList(prev_samples)
             self.N += len(sample_lists[m])
 
+        if self.iteration_count == 0:
+            self.policy_opts[self.iteration_count] = self.policy_opt.copy()
+
         self._update_dynamics()  # Update dynamics model using all sample.
         self._update_policy_samples()  # Choose samples to use with the policy.
+
+        if self._hyperparams['ioc']:
+            self._update_cost()
 
         # On the first iteration we need to make sure that the policy somewhat
         # matches the init controller. Otherwise the LQR backpass starts with
         # a bad linearization, and things don't work out well.
-        if self.iteration_count == 0:
+        if self.iteration_count == 0 and not self._hyperparams['init_demo_policy']:
             self.new_traj_distr = [
                 self.cur[cond].traj_distr for cond in range(self.M)
             ]
             self._update_policy()
-            self.policy_opts[self.iteration_count] = self.policy_opt.copy()
-
-        if self._hyperparams['ioc']:
-            self._update_cost()
 
         # Step adjustment
         self._update_step_size()  # KL Divergence step size (also fits policy).
