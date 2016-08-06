@@ -117,6 +117,7 @@ algorithm = {
     # 'demo_cond': 15,
     # 'num_demos': 3,
     'num_demos': 1,
+    'init_samples': 10,
     'synthetic_cost_samples': 100,
     # 'synthetic_cost_samples': 0, # Remember to change back to 100 when done with the 50 samples exp
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
@@ -221,7 +222,7 @@ algorithm['policy_prior'] = {
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': 5,
-    'verbose_trials': 5,
+    'verbose_trials': 10,
     'verbose_policy_trials': 5,
     'agent': agent,
     'demo_agent': demo_agent,

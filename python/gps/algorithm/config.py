@@ -50,6 +50,8 @@ ALG = {
     'global_cost': False,
     # Use demo neural net policy to initialize policy.
     'init_demo_policy': False,
+    # Number of samples taken in the first iteration.
+    'init_samples': 5,
 }
 
 # Good indices.

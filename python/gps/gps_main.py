@@ -66,7 +66,6 @@ class GPSMain(object):
 			config['algorithm']['init_traj_distr']['init_demo_x'] = np.mean(demos['demoX'], 0)
 			config['algorithm']['init_traj_distr']['init_demo_u'] = np.mean(demos['demoU'], 0)
 			self.algorithm = config['algorithm']['type'](config['algorithm'])
-			self.algorithm.init_samples = self._hyperparams['num_samples']
 			# if self.algorithm._hyperparams['learning_from_prior']:
 			# 	config['agent']['pos_body_offset'] = demos['pos_body_offset']
 			# Initialize policy using the demo neural net policy
@@ -93,7 +92,6 @@ class GPSMain(object):
 				self.algorithm.failed_conditions = demos['failed_conditions']
 		else:
 			self.algorithm = config['algorithm']['type'](config['algorithm'])
-			self.algorithm.init_samples = self._hyperparams['num_samples']
 
 
 	def run(self, itr_load=None):
@@ -110,8 +108,12 @@ class GPSMain(object):
 		itr_start = self._initialize(itr_load)
 		for itr in range(itr_start, self._hyperparams['iterations']):
 			for cond in self._train_idx:
-				for i in range(self._hyperparams['num_samples']):
-					self._take_sample(itr, cond, i)
+				if itr == 0:
+					for i in range(self.algorithm._hyperparams['init_samples']):
+						self._take_sample(itr, cond, i)
+				else:
+					for i in range(self._hyperparams['num_samples']):
+						self._take_sample(itr, cond, i)
 
 			traj_sample_lists = [
 				self.agent.get_samples(cond, -self._hyperparams['num_samples'])

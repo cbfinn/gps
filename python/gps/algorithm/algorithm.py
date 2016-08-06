@@ -354,7 +354,7 @@ class Algorithm(object):
         M = len(self.prev)
         ix = range(self.dX)
         iu = range(self.dX, self.dX + self.dU)
-        init_samples = self.init_samples
+        init_samples = self._hyperparams['init_samples']
         # itration_count + 1 distributions to evaluate
         # T: summed over time
         samples_logprob, demos_logprob = {}, {}
