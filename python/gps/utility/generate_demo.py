@@ -75,7 +75,7 @@ class GenDemo(object):
 		self.agent = agent_config['type'](agent_config)
 
 		# Roll out the demonstrations from controllers
-		var_mult = self._hyperparams['algorithm']['var_mult']
+		var_mult = self._hyperparams['algorithm']['demo_var_mult']
 		T = self.algorithm.T
 		demos = []
 

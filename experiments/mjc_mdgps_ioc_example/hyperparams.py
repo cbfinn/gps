@@ -95,6 +95,7 @@ demo_agent = {
                     END_EFFECTOR_POINT_VELOCITIES],
     'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
+    'peg_height': 0.1,
     'success_upper_bound': 0.01,
     'failure_lower_bound': 0.15,
 }
@@ -111,8 +112,8 @@ algorithm = {
     'policy_sample_mode': 'replace',
     'max_ent_traj': 1.0,
     'demo_distr_empest': True,
-    'var_mult': 5.0,
-    'pol_var_mult': 25.0,
+    'demo_var_mult': 5.0,
+    'init_var_mult': 8.0,
     # 'demo_cond': 15,
     # 'num_demos': 3,
     'num_demos': 1,

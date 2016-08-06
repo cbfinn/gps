@@ -38,7 +38,7 @@ class AlgorithmMDGPS(Algorithm):
         self.policy_opt = self._hyperparams['policy_opt']['type'](
             self._hyperparams['policy_opt'], self.dO, self.dU
         )
-        self.policies[self.iteration_count] = self.policy_opt.copy().policy
+        self.policy_opts[self.iteration_count] = self.policy_opt.copy()
 
     def iteration(self, sample_lists):
         """
@@ -67,6 +67,7 @@ class AlgorithmMDGPS(Algorithm):
                 self.cur[cond].traj_distr for cond in range(self.M)
             ]
             self._update_policy()
+            self.policy_opts[self.iteration_count] = self.policy_opt.copy()
 
         if self._hyperparams['ioc']:
             self._update_cost()

@@ -78,16 +78,12 @@ class GPSMain(object):
 					print("Error: cannot find '%s.'" % algorithm_file)
 					os._exit(1) # called instead of sys.exit(), since t
 				demo_algorithm.policy_opt.solver.net.share_with(demo_algorithm.policy_opt.policy.net)
-				var_mult = self.algorithm._hyperparams['pol_var_mult']
+				var_mult = self.algorithm._hyperparams['init_var_mult']
 				self.algorithm.policy_opt.var = demo_algorithm.policy_opt.var * var_mult
 				self.algorithm.policy_opt.policy = demo_algorithm.policy_opt.policy
 				self.algorithm.policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(self.algorithm.policy_opt.var))
 				new_policy_opt = self.algorithm.policy_opt.copy()
-				self.algorithm.demo_policy = new_policy_opt.policy
-				self.algorithm.demo_policy.inv_pol_covar = np.linalg.solve(
-			                self.algorithm.demo_policy.chol_pol_covar,
-			                np.linalg.solve(self.algorithm.demo_policy.chol_pol_covar.T, np.eye(self.algorithm.dU))
-            				)
+				self.algorithm.demo_policy_opt = new_policy_opt
 			self.agent = config['agent']['type'](config['agent'])
 			self.algorithm.demoX = demos['demoX']
 			self.algorithm.demoU = demos['demoU']
@@ -175,7 +171,7 @@ class GPSMain(object):
 		from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 
 		pol_iter = self.algorithm._hyperparams['iterations']
-		peg_height = self._hyperparams['demo_agent']['success_upper_bound']
+		peg_height = self._hyperparams['demo_agent']['peg_height']
 		mean_dists = []
 		success_rates = []
 		for i in xrange(pol_iter):
@@ -629,7 +625,9 @@ def main():
 				success_rates_no_global_dict, mean_dists_classic_dict, success_rates_classic_dict \
 				 = {}, {}, {}, {}, {}, {}
 		seeds = [0, 1, 3] # Seed 1, 2 not working for on classic nn
+		# var_mults = [8.0, 10.0, 16.0] # 12 doesn't work
 		for itr in seeds:
+		# for itr in xrange(3):
 			random.seed(itr)
 			np.random.seed(itr)
 			exp_dir_classic = exp_dir.replace('on_global', 'on_classic')
@@ -641,21 +639,24 @@ def main():
 			hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_%d' % itr + '/'
 			if not os.path.exists(exp_dir + 'data_files_nn_%d' % itr + '/'):
 				os.makedirs(exp_dir + 'data_files_nn_%d' % itr + '/')
+			# hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_var_%d' % var_mults[itr] + '/'
+			# if not os.path.exists(exp_dir + 'data_files_nn_var_%d' % var_mults[itr] + '/'):
+			# 	os.makedirs(exp_dir + 'data_files_nn_var_%d' % var_mults[itr] + '/')
+			# hyperparams.config['algorithm']['init_var_mult'] = var_mults[itr]
 			# hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'
 			# if not os.path.exists(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'):
 			# 	os.makedirs(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/')
 			gps_global = GPSMain(hyperparams.config)
 			pol_iter = gps_global.algorithm._hyperparams['iterations']
 			# for i in xrange(pol_iter):
-			if itr != 0 and itr != 1:
-				if hyperparams.config['gui_on']:
-					gps_global.run()
-					# gps_global.test_policy(itr=i, N=compare_costs)
-					plt.close()
-				else:
-					gps_global.run()
-					# gps_global.test_policy(itr=i, N=compare_costs)
-					plt.close()
+			if hyperparams.config['gui_on']:
+				gps_global.run()
+				# gps_global.test_policy(itr=i, N=compare_costs)
+				plt.close()
+			else:
+				gps_global.run()
+				# gps_global.test_policy(itr=i, N=compare_costs)
+				plt.close()
 			mean_dists_global_dict[itr], success_rates_global_dict[itr] = gps_global.measure_distance_and_success()
 			# Plot the distribution of demos.
 			# from matplotlib.patches import Rectangle
@@ -679,7 +680,7 @@ def main():
 			# # plt.xlabel('width')
 			# # plt.ylabel('length')
 			# plt.savefig(exp_dir + 'distribution_of_demo_conditions_seed.png')
-			# plt.close()
+			plt.close()
 			hyperparams = imp.load_source('hyperparams', hyperparams_file)
 			# hyperparams.config['algorithm']['init_traj_distr']['type'] = init_lqr
 			# hyperparams.config['algorithm']['global_cost'] = True
@@ -703,7 +704,7 @@ def main():
 			# 		# gps_global.test_policy(itr=i, N=compare_costs)
 			# 		plt.close()
 			mean_dists_classic_dict[itr], success_rates_classic_dict[itr] = gps_classic.measure_distance_and_success()
-
+			plt.close()
 
 			# hyperparams = imp.load_source('hyperparams', hyperparams_file)
 			# # hyperparams.config['algorithm']['global_cost'] = False
@@ -736,22 +737,31 @@ def main():
 		for i in seeds:
 			plt.plot(range(pol_iter), mean_dists_global_dict[i], 'ko')
 			plt.plot(range(pol_iter), mean_dists_classic_dict[i], 'co')
-			# plt.plot(range(pol_iter), mean_dists_no_global_dict[i], 'co')
+		#   plt.plot(range(pol_iter), mean_dists_no_global_dict[i], 'co')
+		# plt.plot(range(pol_iter), mean_dists_global_dict[0], '-x', color='red')
+		# plt.plot(range(pol_iter), mean_dists_global_dict[1], '-x', color='green')
+		# plt.plot(range(pol_iter), mean_dists_global_dict[2], '-x', color='blue')
 		# for i, txt in enumerate(avg_dists_global):
 		# 	plt.annotate(np.around(txt, decimals=2), (i, txt))
 		# for i, txt in enumerate(avg_dists_no_global):
 		# 	plt.annotate(np.around(txt, decimals=2), (i, txt))
 		plt.legend(['avg nn demo', 'avg LG demo', 'nn demo', 'LG demo'], loc='upper right', ncol=2)
+		# plt.legend(['var 8', 'var 10', 'var 16'], loc='upper right', ncol=3)
 		# plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)		
 		plt.title("mean distances to the target over time with nn and LG demo")
+		# plt.title("mean distances to the target over time with different initial policy variance")
 		# plt.title("mean distances to the target during iterations with and without demo init")
 		plt.xlabel("iterations")
 		plt.ylabel("mean distances")
 		plt.savefig(exp_dir + 'mean_dists_during_iteration_comparison.png')
+		# plt.savefig(exp_dir + 'mean_dists_during_iteration_var.png')
 		plt.close()
 		plt.plot(range(pol_iter), avg_succ_rate_global, '-x', color='red')
 		plt.plot(range(pol_iter), avg_succ_rate_classic, '-x', color='green')
 		# plt.plot(range(pol_iter), avg_succ_rate_no_global, '-x', color='green')
+		# plt.plot(range(pol_iter), success_rates_global_dict[0], '-x', color='red')
+		# plt.plot(range(pol_iter), success_rates_global_dict[1], '-x', color='green')
+		# plt.plot(range(pol_iter), success_rates_global_dict[2], '-x', color='blue')
 		for i in seeds:
 			plt.plot(range(pol_iter), success_rates_global_dict[i], 'ko')
 			plt.plot(range(pol_iter), success_rates_classic_dict[i], 'co')
@@ -760,13 +770,17 @@ def main():
 		# 	plt.annotate(repr(txt*100) + "%", (i, txt))
 		# for i, txt in enumerate(avg_succ_rate_no_global):
 		# 	plt.annotate(repr(txt*100) + "%", (i, txt))
+		# plt.legend(['var 8', 'var 10', 'var 16'], loc='upper right', ncol=3)
 		plt.legend(['avg nn demo', 'avg LG demo', 'nn demo', 'LG demo'], loc='upper right', ncol=2)
 		# plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)
 		plt.xlabel("iterations")
 		plt.ylabel("success rate")
 		plt.title("success rates during iterations with with nn and LG demo")
+		# plt.title("success rates during iterations with different initial policy variance")
 		# plt.title("success rates during iterations with and without demo initialization")
 		plt.savefig(exp_dir + 'success_rate_during_iteration_comparison.png')
+		# plt.savefig(exp_dir + 'success_rate_during_iteration_var.png')
+
 		plt.close()
 
 	elif learning_from_prior:

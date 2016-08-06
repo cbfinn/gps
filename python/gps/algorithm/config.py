@@ -35,7 +35,9 @@ ALG = {
     # Demo conditions.
     'demo_cond': 4,
     # variance multiplier for demos.
-    'var_mult': 1,
+    'demo_var_mult': 1.0,
+    # initial policy variance multiplier.
+    'init_var_mult': 1.0,
     # verbose when generating demos.
     "demo_verbose": False,
     # Demo condition during training.

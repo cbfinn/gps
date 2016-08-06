@@ -50,6 +50,8 @@ class PolicyOptCaffe(PolicyOpt):
         new_policy_opt.policy = CaffePolicy(new_policy_opt.solver.test_nets[0],
                                   new_policy_opt.solver.test_nets[1],
                                   new_policy_opt.var)
+        new_policy_opt.policy.bias = self.policy.bias
+        new_policy_opt.policy.scale = self.policy.scale
         return new_policy_opt
 
 

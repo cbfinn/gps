@@ -57,7 +57,7 @@ class Algorithm(object):
         if not self._hyperparams['init_demo_policy']:
             self.traj_distr = {self.iteration_count: []}
         else:
-            self.policies = {self.iteration_count: None}
+            self.policy_opts = {self.iteration_count: None}
         self.traj_info = {self.iteration_count: []}
         self.kl_div = {self.iteration_count:[]}
         self.dists_to_target = {self.iteration_count:[]}
@@ -71,7 +71,8 @@ class Algorithm(object):
                 self._hyperparams['init_traj_distr'], self._cond_idx[m]
             )
             self.cur[m].traj_distr = init_traj_distr['type'](init_traj_distr)
-            self.traj_distr[self.iteration_count].append(self.cur[m].traj_distr)
+            if not self._hyperparams['init_demo_policy']:
+                self.traj_distr[self.iteration_count].append(self.cur[m].traj_distr)
             self.traj_info[self.iteration_count].append(self.cur[m].traj_info)
 
         self.traj_opt = self._hyperparams['traj_opt']['type'](
@@ -237,7 +238,7 @@ class Algorithm(object):
             self.traj_distr[self.iteration_count] = []
         else:
             new_policy_opt = self.policy_opt.copy()
-            self.policies[self.iteration_count] = new_policy_opt.policy
+            self.policy_opts[self.iteration_count] = new_policy_opt
         self.traj_info[self.iteration_count] = []
         self.kl_div[self.iteration_count] = []
         self.dists_to_target[self.iteration_count] = []
@@ -251,7 +252,7 @@ class Algorithm(object):
             self.cur[m].step_mult = self.prev[m].step_mult
             self.cur[m].eta = self.prev[m].eta
             self.cur[m].traj_distr = self.new_traj_distr[m]
-            if not self._hyperparams['init_demo_policy']::
+            if not self._hyperparams['init_demo_policy']:
                 self.traj_distr[self.iteration_count].append(self.new_traj_distr[m])
             self.traj_info[self.iteration_count].append(self.cur[m].traj_info)
             if self._hyperparams['ioc']:
@@ -388,7 +389,7 @@ class Algorithm(object):
                             samples_logprob[i][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
                                                             np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
                 else:
-                    traj = self.policies[itr_i]
+                    traj = self.policy_opts[itr_i].policy
                     traj.inv_pol_covar = np.linalg.solve(
                             traj.chol_pol_covar,
                             np.linalg.solve(traj.chol_pol_covar.T, np.eye(self.dU))
@@ -411,9 +412,14 @@ class Algorithm(object):
                                                         np.sum(np.log(np.diag(self.demo_traj[itr_i].chol_pol_covar[t, :, :])))
                         else:
                             noise = np.zeros(self.dU) # Assume no noise now
-                            diff = self.demo_policy.act(sample_i_X[j, t, :], sample_i_X[j, t, :], t, noise) - sample_i_U[j, t, :]
-                            samples_logprob[i][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (self.demo_policy.inv_pol_covar.dot(diff))) - \
-                                                        np.sum(np.log(np.diag(self.demo_policy.chol_pol_covar)))
+                            demo_policy = self.demo_policy_opt.policy
+                            demo_policy.inv_pol_covar = np.linalg.solve(
+                                                        demo_policy.chol_pol_covar,
+                                                        np.linalg.solve(demo_policy.chol_pol_covar.T, np.eye(self.dU))
+                                                        )
+                            diff = demo_policy.act(sample_i_X[j, t, :], sample_i_X[j, t, :], t, noise) - sample_i_U[j, t, :]
+                            samples_logprob[i][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (demo_policy.inv_pol_covar.dot(diff))) - \
+                                                        np.sum(np.log(np.diag(demo_policy.chol_pol_covar)))
             # Sum over the distributions and time.
 
             samples_logiw[i] = logsum(np.sum(samples_logprob[i], 1), 0)
@@ -436,7 +442,7 @@ class Algorithm(object):
                             demos_logprob[idx][itr_i, t, j] = -0.5 * np.sum(diff * (traj.inv_pol_covar[t, :, :].dot(diff))) - \
                                                             np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
                 else:
-                    traj = self.policies[itr_i]
+                    traj = self.policy_opts[itr_i].policy
                     traj.inv_pol_covar = np.linalg.solve(
                             traj.chol_pol_covar,
                             np.linalg.solve(traj.chol_pol_covar.T, np.eye(self.dU))
@@ -458,9 +464,14 @@ class Algorithm(object):
                                                             np.sum(np.log(np.diag(self.demo_traj[itr_i].chol_pol_covar[t, :, :])))
                         else:
                             noise = np.zeros(self.dU) # Assume no noise now
-                            diff = self.demo_policy.act(demoX[idx][j, t, :], demoX[idx][j, t, :], t, noise) - demoU[idx][j, t, :]
-                            demos_logprob[idx][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (self.demo_policy.inv_pol_covar.dot(diff)), 0) - \
-                                                            np.sum(np.log(np.diag(self.demo_policy.chol_pol_covar)))
+                            demo_policy = self.demo_policy_opt.policy
+                            demo_policy.inv_pol_covar = np.linalg.solve(
+                                                        demo_policy.chol_pol_covar,
+                                                        np.linalg.solve(demo_policy.chol_pol_covar.T, np.eye(self.dU))
+                                                        )
+                            diff = demo_policy.act(demoX[idx][j, t, :], demoX[idx][j, t, :], t, noise) - demoU[idx][j, t, :]
+                            demos_logprob[idx][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (demo_policy.inv_pol_covar.dot(diff)), 0) - \
+                                                            np.sum(np.log(np.diag(demo_policy.chol_pol_covar)))
             # Sum over the distributions and time.
             demos_logiw[idx] = logsum(np.sum(demos_logprob[idx], 1), 0)
 
