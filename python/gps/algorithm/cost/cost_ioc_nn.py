@@ -177,6 +177,7 @@ class CostIOCNN(Cost):
 		self.caffe_iter += self._hyperparams['iterations']
 
 		self.solver.test_nets[0].share_with(self.solver.net)
+		self.solver.test_nets[1].share_with(self.solver.net)
 
 	def _init_solver(self):
 		""" Helper method to initialize the solver. """

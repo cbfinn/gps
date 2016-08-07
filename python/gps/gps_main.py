@@ -242,8 +242,9 @@ class GPSMain(object):
             i: Sample number.
         Returns: None
         """
-        if self.algorithm._hyperparams['sample_on_policy'] and (self.algorithm.iteration_count > 0 or \
-            self.algorithm._hyperparams['init_demo_policy']):
+        # if self.algorithm._hyperparams['sample_on_policy'] and (self.algorithm.iteration_count > 0 or \
+        #     self.algorithm._hyperparams['init_demo_policy']):
+        if self.algorithm._hyperparams['sample_on_policy'] and self.algorithm.iteration_count > 0:
             pol = self.algorithm.policy_opt.policy
         else:
             pol = self.algorithm.cur[cond].traj_distr
@@ -641,6 +642,7 @@ def main():
             # hyperparams.config['algorithm']['init_traj_distr']['type'] = init_lqr
             # hyperparams.config['algorithm']['global_cost'] = True
             hyperparams.config['common']['nn_demo'] = True
+            hyperparams.config['algorithm']['init_demo_policy'] = True
             hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_%d' % itr + '/'
             if not os.path.exists(exp_dir + 'data_files_nn_%d' % itr + '/'):
                 os.makedirs(exp_dir + 'data_files_nn_%d' % itr + '/')
@@ -690,6 +692,7 @@ def main():
             # hyperparams.config['algorithm']['init_traj_distr']['type'] = init_lqr
             # hyperparams.config['algorithm']['global_cost'] = True
             hyperparams.config['common']['nn_demo'] = False
+            hyperparams.config['algorithm']['init_demo_policy'] = False
             hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_LG_%d' % itr + '/'
             if not os.path.exists(exp_dir + 'data_files_LG_%d' % itr + '/'):
                 os.makedirs(exp_dir + 'data_files_LG_%d' % itr + '/')
@@ -700,14 +703,14 @@ def main():
             pol_iter = gps_classic.algorithm._hyperparams['iterations']
             # for i in xrange(pol_iter):
             # if itr != 0 and itr != 1:
-            #   if hyperparams.config['gui_on']:
-            #       gps_classic.run()
-            #       # gps_global.test_policy(itr=i, N=compare_costs)
-            #       plt.close()
-            #   else:
-            #       gps_classic.run()
-            #       # gps_global.test_policy(itr=i, N=compare_costs)
-            #       plt.close()
+            if hyperparams.config['gui_on']:
+                gps_classic.run()
+                # gps_global.test_policy(itr=i, N=compare_costs)
+                plt.close()
+            else:
+                gps_classic.run()
+                # gps_global.test_policy(itr=i, N=compare_costs)
+                plt.close()
             mean_dists_classic_dict[itr], success_rates_classic_dict[itr] = gps_classic.measure_distance_and_success()
             plt.close()
 
@@ -790,11 +793,11 @@ def main():
 
     elif learning_from_prior:
         ioc_conditions = [np.array([random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), \
-                        random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), 0.02]) for i in xrange(10)]
+                        random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), 0.0]) for i in xrange(12)]
         top_bottom = [np.array([np.random.uniform(-0.08, 0.08), \
-                        random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), 0.02]) for i in xrange(10)]
+                        random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), 0.0]) for i in xrange(10)]
         left_right = [np.array([random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), \
-                        np.random.uniform(-0.08, 0.08), 0.02]) for i in xrange(10)]
+                        np.random.uniform(-0.08, 0.08), 0.0]) for i in xrange(10)]
         ioc_conditions.extend(top_bottom)
         ioc_conditions.extend(left_right)
         exp_iter = hyperparams.config['algorithm']['iterations']
@@ -802,12 +805,13 @@ def main():
         mean_dists = []
         success_ioc_samples = []
         pos_body_offset_dists = [np.linalg.norm(ioc_conditions[i]) for i in xrange(len(ioc_conditions))]
-        for i in xrange(len(ioc_conditions)):
+        M = hyperparams.config['common']['conditions']
+        for i in xrange(len(ioc_conditions) / M):
             hyperparams = imp.load_source('hyperparams', hyperparams_file)
             # hyperparams.config['gui_on'] = False
-            hyperparams.config['algorithm']['ioc_cond'] = ioc_conditions[i]
+            # hyperparams.config['algorithm']['ioc_cond'] = ioc_conditions[i]
             gps = GPSMain(hyperparams.config)
-            gps.agent._hyperparams['pos_body_offset'] = [ioc_conditions[i]]
+            gps.agent._hyperparams['pos_body_offset'] = [ioc_conditions[j] for j in range(i, i + M)]
             # import pdb; pdb.set_trace()
             if hyperparams.config['gui_on']:
                 # run_gps = threading.Thread(
@@ -825,17 +829,19 @@ def main():
             if i == 0:
                 demo_conditions = gps.algorithm.demo_conditions
                 failed_conditions = gps.algorithm.failed_conditions
-            mean_dists.append(gps.algorithm.dists_to_target[exp_iter - 1][0])
-            if mean_dists[i] <= 0.1:
-                success_ioc_samples.append(gps.algorithm.min_sample)
-            print "iteration " + repr(i) + ": mean dist is " + repr(mean_dists[i])
+            for j in xrange(M):
+                mean_dists.append(gps.algorithm.dists_to_target[exp_iter - 1][j])
+                if mean_dists[i*M + j] <= 0.1:
+                    success_ioc_samples.append(gps.algorithm.min_sample)
+            print "iteration " + repr(i) + ": mean dist is " + repr(mean_dists[i*M]) + ", " + \
+                    repr(mean_dists[i*M + 1]) + ", " + repr(mean_dists[i*M + 2]) + ", " + repr(mean_dists[i*M + 3])
         with open(exp_dir + 'log.txt', 'a') as f:
-            f.write('\nThe 50 IOC conditions are: \n' + str(ioc_conditions) + '\n')
+            f.write('\nThe 32 IOC conditions are: \n' + str(ioc_conditions) + '\n')
         plt.plot(pos_body_offset_dists, mean_dists, 'ro')
-        plt.title("Learning from prior experience using peg insertion with nonzero z position")
+        plt.title("Learning from prior experience using peg insertion")
         plt.xlabel('pos body offset distances to the origin')
         plt.ylabel('mean distances to the target')
-        plt.savefig(data_files_dir + 'learning_from_prior_nonzero_z.png')
+        plt.savefig(data_files_dir + 'learning_from_prior.png')
         plt.close()
 
         from matplotlib.patches import Rectangle

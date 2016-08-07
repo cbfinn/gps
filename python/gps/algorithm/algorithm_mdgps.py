@@ -55,23 +55,30 @@ class AlgorithmMDGPS(Algorithm):
             self.sample_list[m] = SampleList(prev_samples)
             self.N += len(sample_lists[m])
 
-        if self.iteration_count == 0:
+
+        # Comment this when use random policy initialization and add after line 78
+        if self.iteration_count == 0 and self._hyperparams['init_demo_policy']:
             self.policy_opts[self.iteration_count] = self.policy_opt.copy()
 
         self._update_dynamics()  # Update dynamics model using all sample.
         self._update_policy_samples()  # Choose samples to use with the policy.
 
-        if self._hyperparams['ioc']:
+        # Move this after line 78 if using random initializarion.
+        if self._hyperparams['ioc'] and self._hyperparams['init_demo_policy']:
             self._update_cost()
 
         # On the first iteration we need to make sure that the policy somewhat
         # matches the init controller. Otherwise the LQR backpass starts with
         # a bad linearization, and things don't work out well.
         if self.iteration_count == 0 and not self._hyperparams['init_demo_policy']:
+        # if self.iteration_count == 0:
             self.new_traj_distr = [
                 self.cur[cond].traj_distr for cond in range(self.M)
             ]
             self._update_policy()
+
+        if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
+            self._update_cost()
 
         # Step adjustment
         self._update_step_size()  # KL Divergence step size (also fits policy).
