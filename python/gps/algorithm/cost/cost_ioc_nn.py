@@ -38,11 +38,22 @@ class CostIOCNN(Cost):
 		self._init_solver()
 
 	def copy(self):
-	  new_cost = CostIOCNN(self._hyperparams)
-	  new_cost.solver.net.share_with(self.solver.test_nets[0])
-	  new_cost.solver.test_nets[0].share_with(self.solver.test_nets[0])
-	  new_cost.solver.test_nets[1].share_with(self.solver.test_nets[0])
-	  return new_cost
+		self.solver.snapshot()
+	  	new_cost = CostIOCNN(self._hyperparams)
+	  	new_cost.caffe_iter = self.caffe_iter
+		new_cost.solver.restore(
+			self._hyperparams['weights_file_prefix'] + '_iter_' +
+			str(self.caffe_iter) + '.solverstate'
+		)
+		new_cost.solver.test_nets[0].copy_from(
+			self._hyperparams['weights_file_prefix'] + '_iter_' +
+			str(self.caffe_iter) + '.caffemodel'
+		)
+		new_cost.solver.test_nets[1].copy_from(
+			self._hyperparams['weights_file_prefix'] + '_iter_' +
+			str(self.caffe_iter) + '.caffemodel'
+		)
+	  	return new_cost
 
 
   # TODO - cache dfdx / add option to not compute it when necessary

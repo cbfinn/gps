@@ -242,9 +242,9 @@ class GPSMain(object):
             i: Sample number.
         Returns: None
         """
-        # if self.algorithm._hyperparams['sample_on_policy'] and (self.algorithm.iteration_count > 0 or \
-        #     self.algorithm._hyperparams['init_demo_policy']):
-        if self.algorithm._hyperparams['sample_on_policy'] and self.algorithm.iteration_count > 0:
+        if self.algorithm._hyperparams['sample_on_policy'] and (self.algorithm.iteration_count > 0 or \
+            self.algorithm._hyperparams['init_demo_policy']):
+        # if self.algorithm._hyperparams['sample_on_policy'] and self.algorithm.iteration_count > 0:
             pol = self.algorithm.policy_opt.policy
         else:
             pol = self.algorithm.cur[cond].traj_distr
@@ -703,14 +703,14 @@ def main():
             pol_iter = gps_classic.algorithm._hyperparams['iterations']
             # for i in xrange(pol_iter):
             # if itr != 0 and itr != 1:
-            if hyperparams.config['gui_on']:
-                gps_classic.run()
-                # gps_global.test_policy(itr=i, N=compare_costs)
-                plt.close()
-            else:
-                gps_classic.run()
-                # gps_global.test_policy(itr=i, N=compare_costs)
-                plt.close()
+            # if hyperparams.config['gui_on']:
+            #     gps_classic.run()
+            #     # gps_global.test_policy(itr=i, N=compare_costs)
+            #     plt.close()
+            # else:
+            #     gps_classic.run()
+            #     # gps_global.test_policy(itr=i, N=compare_costs)
+            #     plt.close()
             mean_dists_classic_dict[itr], success_rates_classic_dict[itr] = gps_classic.measure_distance_and_success()
             plt.close()
 
