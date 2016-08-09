@@ -94,6 +94,7 @@ algorithm = {
     'iterations': 15,
     'kl_step': 1.0,
     'min_step_mult': 0.01,
+    #'min_step_mult': 1.0,
     'max_step_mult': 4.0,
     'demo_cond': 1,
     'num_demos': 50,
@@ -159,7 +160,7 @@ algorithm['policy_prior'] = {
 
 config = {
     'iterations': algorithm['iterations'],
-    'num_samples': 5,
+    'num_samples': 15,
     'verbose_trials': 1,
     'verbose_policy_trials': 1,
     'common': common,

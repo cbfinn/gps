@@ -58,7 +58,7 @@ agent = {
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
-    'T': 3,
+    'T': 100,
     'point_linear': True,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
