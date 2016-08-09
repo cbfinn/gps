@@ -272,7 +272,8 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
 
 
 def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
-                          demo_batch_size=5, sample_batch_size=5, phase=TRAIN, ioc_loss='ICML'):
+                          demo_batch_size=5, sample_batch_size=5, phase=TRAIN, ioc_loss='ICML',
+                          Nq=1):
     """
     Construct an anonymous network (no layer names) for a quadratic cost
     function with the specified dimensionality, and return NetParameter proto.
@@ -290,6 +291,7 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         sample_batch_size: sample batch size.
         phase: TRAIN, TEST, or 'forward_feat'
         ioc_loss: type of loss to use -- ICML, MPF, IOCGAN, XENTGAN
+        Nq: number of distributions q from which the samples were drawn (only used for MPF)
     Returns:
         A NetParameter specification of the network.
     """
@@ -301,19 +303,35 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
     # Needed for Caffe to find defined python layers.
     sys.path.append('/'.join(str.split(current_path, '/')[:-1]))
     if phase == TRAIN:
-        data_layer_info = json.dumps({
-            'shape': [{'dim': (demo_batch_size, T, dim_input)},
-                      {'dim': (demo_batch_size, 1)},
-                      {'dim': (sample_batch_size, T, dim_input)},
-                      {'dim': (sample_batch_size, 1)}]
-        })
-
-        [n.demos, n.d_log_iw, n.samples, n.s_log_iw] = L.Python(
-            ntop=4, python_param=dict(
-                module='ioc_layers', param_str=data_layer_info,
-                layer='IOCDataLayer'
+        if ioc_loss == 'MPF':
+            data_layer_info = json.dumps({
+                'shape': [{'dim': (demo_batch_size, T, dim_input)},  # demo observations
+                          {'dim': (demo_batch_size, Nq)},  # demo importance weights, one for each q
+                          {'dim': (sample_batch_size, T, dim_input)},  # sample observations
+                          {'dim': (sample_batch_size, 1)},  # sample importance weights
+                          {'dim': (sample_batch_size, 1)},  # index into which q the sample came from
+                          ]
+            })
+            [n.demos, n.d_log_iw, n.samples, n.s_log_iw, n.s_q_idx] = L.Python(
+                ntop=5, python_param=dict(
+                    module='ioc_layers', param_str=data_layer_info,
+                    layer='IOCDataLayer'
+                )
             )
-        )
+        else:
+            data_layer_info = json.dumps({
+                'shape': [{'dim': (demo_batch_size, T, dim_input)},
+                          {'dim': (demo_batch_size, 1)},
+                          {'dim': (sample_batch_size, T, dim_input)},
+                          {'dim': (sample_batch_size, 1)}]
+            })
+
+            [n.demos, n.d_log_iw, n.samples, n.s_log_iw] = L.Python(
+                ntop=4, python_param=dict(
+                    module='ioc_layers', param_str=data_layer_info,
+                    layer='IOCDataLayer'
+                )
+            )
         n.net_input = L.Concat(n.demos, n.samples, axis=0)
     elif phase == TEST or phase == 'forward_feat':
         data_layer_info = json.dumps({
@@ -366,12 +384,12 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         # next-cur
         n.slope_next = L.Eltwise(n.costs_next, n.costs_cur, operation=EltwiseParameter.SUM, coeff=[1,-1])
         # TODO - add hyperparam for loss weight.
-        n.smooth_reg = L.EuclideanLoss(n.slope_next, n.slope_prev, loss_weight=0.0)
+        n.smooth_reg = L.EuclideanLoss(n.slope_next, n.slope_prev, loss_weight=0.1)
 
         n.demo_slope, _ = L.Slice(n.slope_next, axis=0, slice_point=demo_batch_size, ntop=2)
         n.demo_slope_reshape = L.Reshape(n.demo_slope, shape=dict(dim=[-1,1]))
         # TODO - add hyperparam for loss weight, maybe try l2 monotonic loss
-        n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=0.0,
+        n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=100.0,
                               python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
 
         n.dummy = L.DummyData(ntop=1, shape=dict(dim=[1]), data_filler=dict(type='constant',value=0))
@@ -415,7 +433,7 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                              python_param=dict(module='ioc_layers',
                                                layer='IOCLossMod'))
         elif ioc_loss== 'MPF':  # MPF
-            n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, n.Z, loss_weight=1.0,
+            n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, n.s_q_idx, loss_weight=1.0,
                              python_param=dict(module='ioc_layers',
                                                layer='MPFLoss'))
         else:

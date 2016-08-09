@@ -35,15 +35,27 @@ class CostIOCNN(Cost):
         self.sample_batch_size = self._hyperparams['sample_batch_size']
         self.caffe_iter = 0
 
+        self._iteration_count = 1
+
         self._init_solver()
 
     def copy(self):
       new_cost = CostIOCNN(self._hyperparams)
-      self.solver.test_nets[0].share_with(new_cost.solver.net)
-      self.solver.test_nets[0].share_with(new_cost.solver.test_nets[0])
-      self.solver.test_nets[0].share_with(new_cost.solver.test_nets[1])
+      self.solver.snapshot()
+      new_cost.caffe_iter = self.caffe_iter
+      new_cost.solver.restore(
+              self._hyperparams['weights_file_prefix'] + '_iter_' +
+              str(self.caffe_iter) + '.solverstate'
+      )
+      new_cost.solver.test_nets[0].copy_from(
+              self._hyperparams['weights_file_prefix'] + '_iter_' +
+              str(self.caffe_iter) + '.caffemodel'
+      )
+      new_cost.solver.test_nets[1].copy_from(
+              self._hyperparams['weights_file_prefix'] + '_iter_' +
+              str(self.caffe_iter) + '.caffemodel'
+      )
       return new_cost
-
 
   # TODO - cache dfdx / add option to not compute it when necessary
     def compute_dfdx(self, obs):
@@ -149,8 +161,8 @@ class CostIOCNN(Cost):
 
         for i in range(self._hyperparams['iterations']):
           # Randomly sample batches
-          np.random.shuffle(demo_idx)
-          np.random.shuffle(sample_idx)
+          #np.random.shuffle(demo_idx)
+          #np.random.shuffle(sample_idx)
 
           # Load in data for this batch.
           d_start_idx = int(i * self.demo_batch_size %
@@ -161,7 +173,9 @@ class CostIOCNN(Cost):
           s_idx_i = sample_idx[s_start_idx:s_start_idx+self.sample_batch_size]
           self.solver.net.blobs[blob_names[0]].data[:] = demoO[d_idx_i]
           if s_q_idx is not None:  # for MPF
-              self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[s_q_idx[0][s_idx_i].reshape((-1,)), d_idx_i].reshape((-1,1))
+              #self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[s_q_idx[0][s_idx_i].reshape((-1,)), d_idx_i].reshape((-1,1))
+              self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[:, d_idx_i].T
+              self.solver.net.blobs[blob_names[4]].data[:] = s_q_idx[0][s_idx_i].reshape((-1,1))
           else:
               self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[d_idx_i]
           self.solver.net.blobs[blob_names[2]].data[:] = sampleO[s_idx_i]
@@ -178,7 +192,22 @@ class CostIOCNN(Cost):
         # Keep track of Caffe iterations for loading solver states.
         self.caffe_iter += self._hyperparams['iterations']
 
+        if self._hyperparams['ioc_loss'] == 'MPF':
+            #old_net = self.solver.net
+            self.solver.snapshot()
+            self._iteration_count += 1  # assumes that the cost is updated once per iteration
+            self._init_solver()
+
+            self.solver.restore(
+              self._hyperparams['weights_file_prefix'] + '_iter_' +
+              str(self.caffe_iter) + '.solverstate'
+            )
+            # note - could also do this at the top of update, whenever the size of q_idx changes
+            # note - or just could set the size of the thing to be the max number of iterations.
+            # and update the code to set it appropriately (and remove this code)
+
         self.solver.test_nets[0].share_with(self.solver.net)
+        self.solver.test_nets[1].share_with(self.solver.net)
         # DEBUGGING
         #import pdb; pdb.set_trace()
         #debug=False
@@ -212,6 +241,7 @@ class CostIOCNN(Cost):
         network_arch_params['T'] = self._T
         network_arch_params['phase'] = TRAIN
         network_arch_params['ioc_loss'] = self._hyperparams['ioc_loss']
+        network_arch_params['Nq'] = self._iteration_count
         solver_param.train_net_param.CopyFrom(
             self._hyperparams['network_model'](**network_arch_params)
         )
