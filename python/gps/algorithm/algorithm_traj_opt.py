@@ -116,7 +116,7 @@ class AlgorithmTrajOpt(Algorithm):
 
         # Compute actual objective values based on the samples.
         previous_mc_obj = np.mean(np.sum(self.prev[m].cs, axis=1), axis=0)
-        new_mc_obj = np.mean(np.sum(self.cur[m].cs, axis=1), axis=0)
+        new_mc_obj = np.mean(np.sum(self.cur[m].prevcost_cs, axis=1), axis=0)
 
         LOGGER.debug('Trajectory step: ent: %f cost: %f -> %f',
                      ent, previous_mc_obj, new_mc_obj)
@@ -165,14 +165,11 @@ class AlgorithmTrajOpt(Algorithm):
         samples_logiw_arr = np.hstack([samples_logiw[i] for i in xrange(M)])
         if not self._hyperparams['global_cost']:
             for i in xrange(M):
-                cost_ioc = self.cost[i]
-                cost_ioc.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, self.sample_list[i].get_U(),
+                self.cost[i].update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, self.sample_list[i].get_U(),
                                 self.sample_list[i].get_X(), self.sample_list[i].get_obs(), samples_logiw[i], samples_q_idx)
         else:
-            cost_ioc = self.cost
-            cost_ioc.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, sampleU_arr, sampleX_arr,
+            self.cost.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, sampleU_arr, sampleX_arr,
                                                         sampleO_arr, samples_logiw_arr, samples_q_idx)
-        #import pdb; pdb.set_trace()
 
 
     def compute_costs(self, m, eta):

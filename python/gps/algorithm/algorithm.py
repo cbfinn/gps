@@ -211,6 +211,7 @@ class Algorithm(object):
           traj_info.dynamics = self.cur[cond].traj_info.dynamics
           traj_info.x0sigma = self.cur[cond].traj_info.x0sigma
           traj_info.x0mu = self.cur[cond].traj_info.x0mu
+          self.cur[cond].prevcost_cs = cs[synN:]  # True value of cost.
         else:
           traj_info = self.cur[cond].traj_info
           self.cur[cond].cs = cs[synN:]  # True value of cost.
@@ -235,7 +236,7 @@ class Algorithm(object):
         self.kl_div[self.iteration_count] = []
         self.dists_to_target[self.iteration_count] = []
         if self._hyperparams['global_cost']:
-            self.prev_cost = self.cost.copy()
+            self.previous_cost = self.cost.copy()
         else:
             self.previous_cost = []
         for m in range(self.M):
@@ -373,6 +374,7 @@ class Algorithm(object):
 
             sample_i_X = self.sample_list[i].get_X()
             sample_i_U = self.sample_list[i].get_U()
+            samples_per_iter = sample_i_X.shape[0] / (itr+1)
             # Evaluate sample prob under sample distributions
             for itr_i in xrange(itr + 1):
                 traj = self.traj_distr[itr_i][i]
@@ -396,10 +398,11 @@ class Algorithm(object):
             # Sum over the distributions and time.
             if self._hyperparams['ioc'] == 'MPF':
                 samples_logiw[i] = np.sum(samples_logprob[i], 1)
-                num_samples = 5
                 # Need to construct index of samples
-                idx = np.tile(np.array(range(itr+1)).reshape(itr+1,1),
-                              num_samples).flatten()
+                itrs = range(itr+1)
+                itrs.reverse()
+                idx = np.tile(np.array(itrs).reshape(itr+1,1),
+                              samples_per_iter).flatten()
                 samples_q_idx[i] = idx
                 samples_logiw[i] = np.array([samples_logiw[i][c, j] for
                     (c, j) in zip(idx, range(len(idx)))])
