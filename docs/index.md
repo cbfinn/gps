@@ -312,4 +312,6 @@ please post on [gps-dev](https://groups.google.com/forum/#!forum/gps-dev). When 
 *****
 
 ## Licensing
-![license](imgs/cclicense.png) This codebase is released under the [CC BY-NC-SA](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode) license.
+This codebase is released under the [BSD 2-clause](https://github.com/cbfinn/gps/LICENSE) license.
+
+If you plan to use this code for commercial purposes, we ask that you send us a quick email to let us know that you're using it.
