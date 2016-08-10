@@ -22,7 +22,7 @@ from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION, \
         RGB_IMAGE, RGB_IMAGE_SIZE
-from gps.algorithm.policy_opt.tf_model_example import multi_modal_network
+from gps.algorithm.policy_opt.tf_model_example import multi_modal_network, multi_modal_network_fp
 
 IMAGE_WIDTH = 80
 IMAGE_HEIGHT = 64
@@ -154,7 +154,8 @@ algorithm['traj_opt'] = {
 algorithm['policy_opt'] = {
     'type': PolicyOptTf,
     'network_params': {
-        'num_filters': [5, 10],
+        #'num_filters': [5, 10],
+        'num_filters': [15, 15, 15],
         'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, RGB_IMAGE],
         'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES],
         'obs_image_data': [RGB_IMAGE],
@@ -163,7 +164,8 @@ algorithm['policy_opt'] = {
         'image_channels': IMAGE_CHANNELS,
         'sensor_dims': SENSOR_DIMS,
     },
-    'network_model': multi_modal_network,
+    #'network_model': multi_modal_network,
+    'network_model': multi_modal_network_fp,
     'iterations': 1000,
     'weights_file_prefix': EXP_DIR + 'policy',
 }
