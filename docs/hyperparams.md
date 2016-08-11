@@ -8,17 +8,16 @@ This page contains all of the config settings that are exposed                vi
 
 **Algorithm base class**
 * initial_state_var
-* sample_decrease_var
 * kl_step
 * init_traj_distr
-* sample_increase_var
-* cost
+* sample_on_policy
 * inner_iterations
 * dynamics
 * min_step_mult
 * min_eta
 * max_step_mult
 * traj_opt
+* cost
 
 **BADMM Algorithm**
 * fixed_lg_step
@@ -41,18 +40,19 @@ This page contains all of the config settings that are exposed                vi
 * min_eta
 
 **Caffe Policy Optimization**
+* random_seed
+* use_gpu
 * gpu_id
 * batch_size
-* iterations
-* weights_file_prefix
-* weight_decay
-* init_var
-* use_gpu
-* ent_reg
 * lr
+* ent_reg
+* weights_file_prefix
 * network_model
+* iterations
 * network_arch_params
 * lr_policy
+* weight_decay
+* init_var
 * momentum
 * solver_type
 
@@ -126,8 +126,14 @@ This page contains all of the config settings that are exposed                vi
 * pos_body_idx
 
 **Box2D agent**
+* render
 
 **Mujoco agent**
+* camera_pos
 * substeps
+* image_channels
+* image_width
+* image_height
+* meta_include
 
 **ROS agent**

@@ -1,6 +1,8 @@
 For deploying onto website, run "make html", then copy the contents of _static/html/ to the server.
 
-Note that you might need to run the following to install packages for making:
+Note that you might need to run the following to install libraries and packages for making:
+sudo apt-get install python-sphinx
+sudo pip install --upgrade sphinx
 sudo pip install sphinx_bootstrap_theme
 sudo pip install recommonmark
 
