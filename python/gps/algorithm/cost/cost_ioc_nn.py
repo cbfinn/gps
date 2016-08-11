@@ -172,7 +172,7 @@ class CostIOCNN(Cost):
           d_idx_i = demo_idx[d_start_idx:d_start_idx+self.demo_batch_size]
           s_idx_i = sample_idx[s_start_idx:s_start_idx+self.sample_batch_size]
           self.solver.net.blobs[blob_names[0]].data[:] = demoO[d_idx_i]
-          if s_q_idx is not None:  # for MPF
+          if False: # s_q_idx is not None:  # for MPF
               #self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[s_q_idx[0][s_idx_i].reshape((-1,)), d_idx_i].reshape((-1,1))
               self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[:, d_idx_i].T
               self.solver.net.blobs[blob_names[4]].data[:] = s_q_idx[0][s_idx_i].reshape((-1,1))
@@ -192,7 +192,7 @@ class CostIOCNN(Cost):
         # Keep track of Caffe iterations for loading solver states.
         self.caffe_iter += self._hyperparams['iterations']
 
-        if self._hyperparams['ioc_loss'] == 'MPF':
+        if False: # self._hyperparams['ioc_loss'] == 'MPF':
             #old_net = self.solver.net
             self.solver.snapshot()
             self._iteration_count += 1  # assumes that the cost is updated once per iteration

@@ -429,8 +429,8 @@ def main():
 	import matplotlib.pyplot as plt
 	import random
 	import numpy as np
-	random.seed(3)
-	np.random.seed(3)
+	random.seed(2)
+	np.random.seed(2)
 
 	if args.targetsetup:
 		try:

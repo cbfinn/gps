@@ -396,7 +396,7 @@ class Algorithm(object):
                                                         np.sum(np.log(np.diag(self.demo_traj[itr_i].chol_pol_covar[t, :, :])))
 
             # Sum over the distributions and time.
-            if self._hyperparams['ioc'] == 'MPF':
+            if False: #self._hyperparams['ioc'] == 'MPF':
                 samples_logiw[i] = np.sum(samples_logprob[i], 1)
                 # Need to construct index of samples
                 itrs = range(itr+1)
@@ -436,12 +436,12 @@ class Algorithm(object):
                         demos_logprob[idx][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (self.demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
                                                         np.sum(np.log(np.diag(self.demo_traj[itr_i].chol_pol_covar[t, :, :])))
             # Sum over the distributions and time.
-            if self._hyperparams['ioc'] == 'MPF':
+            if False: #self._hyperparams['ioc'] == 'MPF':
                 demos_logiw[idx] = np.sum(demos_logprob[idx], 1)
             else:
                 demos_logiw[idx] = logsum(np.sum(demos_logprob[idx], 1), 0)
 
-        if self._hyperparams['ioc'] == 'MPF':
+        if False: #self._hyperparams['ioc'] == 'MPF':
             return demos_logiw, samples_logiw, samples_q_idx
         else:
             return demos_logiw, samples_logiw

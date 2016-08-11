@@ -142,7 +142,7 @@ class AlgorithmTrajOpt(Algorithm):
     def _update_cost(self):
         """ Update the cost objective in each iteration. """
         # Estimate the importance weights for fusion distributions.
-        if self._hyperparams['ioc'] == 'MPF':
+        if False: #self._hyperparams['ioc'] == 'MPF':
             demos_logiw, samples_logiw, samples_q_idx = self.importance_weights()
         else:
             sample_q_idx = None
@@ -156,7 +156,7 @@ class AlgorithmTrajOpt(Algorithm):
         sampleX_arr = np.vstack((self.sample_list[i].get_X() for i in xrange(M)))
         sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
         samples_logiw = {i: samples_logiw[i].reshape((-1, 1)) for i in xrange(M)}
-        if self._hyperparams['ioc'] == 'MPF':
+        if False: #self._hyperparams['ioc'] == 'MPF':
             samples_q_idx = {i: samples_q_idx[i].reshape((-1, 1)) for i in xrange(M)}
         else:
             demos_logiw = {i: demos_logiw[i].reshape((-1, 1)) for i in xrange(Md)}
