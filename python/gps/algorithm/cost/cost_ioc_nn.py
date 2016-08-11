@@ -161,8 +161,8 @@ class CostIOCNN(Cost):
 
         for i in range(self._hyperparams['iterations']):
           # Randomly sample batches
-          #np.random.shuffle(demo_idx)
-          #np.random.shuffle(sample_idx)
+          np.random.shuffle(demo_idx)
+          np.random.shuffle(sample_idx)
 
           # Load in data for this batch.
           d_start_idx = int(i * self.demo_batch_size %
