@@ -47,11 +47,13 @@ ALG = {
     # Whether or not to sample with neural net policy (only for badmm/mdgps).
     'sample_on_policy': False,
     # Flag if the algorithm is using global cost.
-    'global_cost': False,
+    'global_cost': True,
     # Use demo neural net policy to initialize policy.
     'init_demo_policy': False,
     # Number of samples taken in the first iteration.
     'init_samples': 5,
+    # Evaluate importance weights using nn policy.
+    'policy_eval': False,
 }
 
 # Good indices.

@@ -8,14 +8,15 @@ import scipy as sp
 
 from gps.algorithm.traj_opt.config import TRAJ_OPT_LQR
 from gps.algorithm.traj_opt.traj_opt import TrajOpt
-from gps.algorithm.traj_opt.traj_opt_utils import LineSearch, traj_distr_kl, \
-        DGD_MAX_ITER, THRESHA, THRESHB
+from gps.algorithm.traj_opt.traj_opt_utils import \
+        traj_distr_kl, DGD_MAX_ITER
 
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 
 LOGGER = logging.getLogger(__name__)
 
+MAX_ETA = 1e16
 
 class TrajOptLQRPython(TrajOpt):
     """ LQR trajectory optimization, Python implementation. """
@@ -29,8 +30,8 @@ class TrajOptLQRPython(TrajOpt):
     def update(self, m, algorithm):
         """ Run dual gradient decent to optimize trajectories. """
         T = algorithm.T
+        eta = algorithm.cur[m].eta
         step_mult = algorithm.cur[m].step_mult
-        prev_eta = algorithm.cur[m].eta
         traj_info = algorithm.cur[m].traj_info
 
         if type(algorithm) == AlgorithmMDGPS:
@@ -41,60 +42,47 @@ class TrajOptLQRPython(TrajOpt):
             prev_traj_distr = algorithm.cur[m].traj_distr
 
         # Set KL-divergence step size (epsilon).
-        kl_step = algorithm.base_kl_step * step_mult
+        kl_step = T * algorithm.base_kl_step * step_mult
 
-        line_search = LineSearch(self._hyperparams['min_eta'])
-        min_eta = -np.Inf
+        # We assume at min_eta, kl_div > kl_step, opposite for max_eta.
+        min_eta = self._hyperparams['min_eta']
+        max_eta = MAX_ETA
         #import pdb; pdb.set_trace()
 
+        LOGGER.debug("Running DGD for trajectory %d, eta: %f", m, eta)
         for itr in range(DGD_MAX_ITER):
-            traj_distr, new_eta = self.backward(prev_traj_distr, traj_info,
-                                                prev_eta, algorithm, m)
+            LOGGER.debug("Iteration %i, bracket: (%f %f)",
+                    itr, min_eta, max_eta)
+
+            # Run fwd/bwd pass, note that eta may be updated.
+            # NOTE: we can just ignore case when the new eta is larger.
+            traj_distr, eta = self.backward(prev_traj_distr, traj_info,
+                                                eta, algorithm, m)
             new_mu, new_sigma = self.forward(traj_distr, traj_info)
 
-            # Update min eta if we had a correction after running bwd.
-            if new_eta > prev_eta:
-                min_eta = new_eta
-
-            # Compute KL divergence between prev and new distribution.
+            # Compute KL divergence constraint violation.
             kl_div = traj_distr_kl(new_mu, new_sigma,
                                    traj_distr, prev_traj_distr)
+            con = kl_div - kl_step
 
-            traj_info.last_kl_step = kl_div
-
-            # Main convergence check - constraint satisfaction.
-            if (abs(kl_div - kl_step*T) < 0.1*kl_step*T or
-                    (itr >= 20 and kl_div < kl_step*T)):
-                LOGGER.debug("Iteration %i, KL: %f / %f converged",
-                             itr, kl_div, kl_step * T)
-                eta = prev_eta  # TODO - Should this be here?
+            # Convergence check - constraint satisfaction.
+            if (abs(con) < 0.1*kl_step):
+                LOGGER.debug("Iteration %i, KL: %f / %f, eta: %f",
+                        itr, kl_div, kl_step, eta)
                 break
 
-            # Adjust eta using bracketing line search.
-            eta = line_search.bracketing_line_search(kl_div - kl_step*T,
-                                                     new_eta, min_eta)
+            # Otherwise bisect with geometric mean.
+            if con > 0: # Eta was too small
+                min_eta = eta
+            else: # Eta was too big
+                max_eta = eta
+            new_eta = np.sqrt(min_eta*max_eta)
 
-            # Convergence check - dual variable change when min_eta hit.
-            if (abs(prev_eta - eta) < THRESHA and
-                    eta == max(min_eta, self._hyperparams['min_eta'])):
-                LOGGER.debug("Iteration %i, KL: %f / %f converged (eta limit)",
-                             itr, kl_div, kl_step * T)
-                break
+            LOGGER.debug("Iteration %i, KL: %f / %f, eta: %f -> %f",
+                    itr, kl_div, kl_step, eta, new_eta)
+            eta = new_eta
 
-            # Convergence check - constraint satisfaction, KL not
-            # changing much.
-            if (itr > 2 and abs(kl_div - prev_kl_div) < THRESHB and
-                    kl_div < kl_step*T):
-                LOGGER.debug("Iteration %i, KL: %f / %f converged (no change)",
-                             itr, kl_div, kl_step * T)
-                break
-
-            prev_kl_div = kl_div
-            LOGGER.debug('Iteration %i, KL: %f / %f eta: %f -> %f',
-                         itr, kl_div, kl_step * T, prev_eta, eta)
-            prev_eta = eta
-
-        if kl_div > kl_step*T and abs(kl_div - kl_step*T) > 0.1*kl_step*T:
+        if kl_div > kl_step and abs(kl_div - kl_step) > 0.1*kl_step:
             LOGGER.warning(
                 "Final KL divergence after DGD convergence is too high."
             )

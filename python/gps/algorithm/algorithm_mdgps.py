@@ -57,33 +57,33 @@ class AlgorithmMDGPS(Algorithm):
 
 
         # Comment this when use random policy initialization and add after line 78
-        # if self.iteration_count == 0 and self._hyperparams['init_demo_policy']:
-        #     self.policy_opts[self.iteration_count] = self.policy_opt.copy()
+        if self.iteration_count == 0 and self._hyperparams['policy_eval']:
+            self.policy_opts[self.iteration_count] = self.policy_opt.copy()
 
         self._update_dynamics()  # Update dynamics model using all sample.
         self._update_policy_samples()  # Choose samples to use with the policy.
 
         # Move this after line 78 if using random initializarion.
-        # if self._hyperparams['ioc'] and self._hyperparams['init_demo_policy']:
-        #     self._update_cost()
+        if self._hyperparams['ioc'] and self._hyperparams['init_demo_policy']:
+            self._update_cost()
 
         # On the first iteration we need to make sure that the policy somewhat
         # matches the init controller. Otherwise the LQR backpass starts with
         # a bad linearization, and things don't work out well.
-        if self.iteration_count == 0 and not self._hyperparams['init_demo_policy']:
+        if self.iteration_count == 0 and not self._hyperparams['init_demo_policy']: # Uncomment this after finishing demo init plus linearized demo exp
         # if self.iteration_count == 0:
             self.new_traj_distr = [
                 self.cur[cond].traj_distr for cond in range(self.M)
             ]
             self._update_policy()
-            # self.policy_opts[self.iteration_count] = self.policy_opt.copy()
+        #     # self.policy_opts[self.iteration_count] = self.policy_opt.copy()
 
         # Update policy fit and then do policy linearization.
-        for m in range(self.M):
-            self._update_policy_fit(m, init=True)
-            self.linear_policies[self.iteration_count].append(self.cur[m].pol_info.traj_distr())
-        # if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
-        if self._hyperparams['ioc'] and self._hyperparams['init_demo_policy']:
+        # for m in range(self.M):
+        #     self._update_policy_fit(m, init=True)
+        #     self.linear_policies[self.iteration_count].append(self.cur[m].pol_info.traj_distr())
+        if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
+        # if self._hyperparams['ioc'] and self._hyperparams['init_demo_policy']:
             self._update_cost()
 
         # Step adjustment
@@ -109,7 +109,7 @@ class AlgorithmMDGPS(Algorithm):
 
         # Computing KL-divergence between sample distribution and demo distribution
         itr = self.iteration_count
-        if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
+        if self._hyperparams['ioc'] and not self._hyperparams['policy_eval']:
             for i in xrange(self.M):
                 mu, sigma = self.traj_opt.forward(self.traj_distr[itr][i], self.traj_info[itr][i])
                 # KL divergence between current traj. distribution and gt distribution
@@ -143,7 +143,7 @@ class AlgorithmMDGPS(Algorithm):
         """ Evaluate costs on samples, and adjust the step size. """
         # Evaluate cost function for all conditions and samples.
         for m in range(self.M):
-            # self._update_policy_fit(m, init=True)
+            self._update_policy_fit(m, init=True) # comment this if using nn linearization
             self._eval_cost(m)
             # Adjust step size relative to the previous iteration.
             if self.iteration_count > 0:

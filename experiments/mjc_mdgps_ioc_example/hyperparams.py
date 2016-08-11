@@ -124,8 +124,10 @@ algorithm = {
     'global_cost': True,
     'sample_on_policy': True,
     'init_demo_policy': True,
+    'policy_eval': True,
 }
 
+# Use for nn demos
 algorithm['init_traj_distr'] = {
     'type': init_lqr,
     'init_gains':  1.0 / PR2_GAINS,
@@ -138,6 +140,7 @@ algorithm['init_traj_distr'] = {
     'T': agent['T'],
 }
 
+# Use for LG demos.
 # algorithm['init_traj_distr'] = {
 #     'type': init_demo,
 #     'init_gains':  0.2 / PR2_GAINS,
