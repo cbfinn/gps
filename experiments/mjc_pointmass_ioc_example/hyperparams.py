@@ -117,8 +117,8 @@ algorithm['cost'] = {
     'dO': 10,
     'T': agent['T'],
     'iterations': 5000,
-    'demo_batch_size': 5,
-    'sample_batch_size': 5,
+    'demo_batch_size': 25,
+    'sample_batch_size': 25,
     'ioc_loss': algorithm['ioc'],
 }
 
@@ -160,7 +160,7 @@ algorithm['policy_prior'] = {
 
 config = {
     'iterations': algorithm['iterations'],
-    'num_samples': 15,
+    'num_samples': 25,
     'verbose_trials': 1,
     'verbose_policy_trials': 1,
     'common': common,
