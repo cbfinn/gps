@@ -244,7 +244,7 @@ class Algorithm(object):
         self.traj_info[self.iteration_count] = []
         self.kl_div[self.iteration_count] = []
         self.dists_to_target[self.iteration_count] = []
-        if self._hyperparams['global_cost']:
+        if self._hyperparams['global_cost'] and self._hyperparams['ioc']:
             self.previous_cost = self.cost.copy()
         else:
             self.previous_cost = []
@@ -259,7 +259,7 @@ class Algorithm(object):
             self.traj_info[self.iteration_count].append(self.cur[m].traj_info)
             if self._hyperparams['ioc']:
               self.cur[m].prevcost_traj_info = TrajectoryInfo()
-              if not self._hyperparams['global_cost']:
+              if not self._hyperparams['global_cost'] and self._hyperparams['ioc']:
                 self.previous_cost.append(self.cost[m].copy())
         delattr(self, 'new_traj_distr')
 

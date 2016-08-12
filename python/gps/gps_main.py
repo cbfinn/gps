@@ -56,8 +56,8 @@ class GPSMain(object):
             # if not config['common']['nn_demo']:
             #     demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
             # else:
-            #     # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_linearize.pkl'
-            #     demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'            
+            #     demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_linearize.pkl'
+            #     # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'            
             demos = self.data_logger.unpickle(demo_file)
             if demos is None:
               self.demo_gen = GenDemo(config)
@@ -79,14 +79,14 @@ class GPSMain(object):
                     print("Error: cannot find '%s.'" % algorithm_file)
                     os._exit(1) # called instead of sys.exit(), since t
                 var_mult = self.algorithm._hyperparams['init_var_mult']
-                self.algorithm.policy_opt.var = demo_algorithm.policy_opt.var * var_mult
-                self.algorithm.policy_opt.policy = demo_algorithm.policy_opt.policy
+                self.algorithm.policy_opt.var = demo_algorithm.policy_opt.var.copy() * var_mult
+                self.algorithm.policy_opt.policy = demo_algorithm.policy_opt.copy().policy
                 self.algorithm.policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(self.algorithm.policy_opt.var))
                 self.algorithm.policy_opt.solver.net.share_with(self.algorithm.policy_opt.policy.net)
 
                 var_mult = self.algorithm._hyperparams['demo_var_mult']
                 self.algorithm.demo_policy_opt = demo_algorithm.policy_opt.copy()
-                self.algorithm.demo_policy_opt.var = demo_algorithm.policy_opt.var * var_mult
+                self.algorithm.demo_policy_opt.var = demo_algorithm.policy_opt.var.copy() * var_mult
                 self.algorithm.demo_policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(self.algorithm.demo_policy_opt.var))
             
             self.agent = config['agent']['type'](config['agent'])
@@ -127,6 +127,7 @@ class GPSMain(object):
             ]
 
             self._take_iteration(itr, traj_sample_lists)
+
             if self.algorithm._hyperparams['sample_on_policy']:
             # TODO - need to add these to lines back in when we move to mdgps
                 pol_sample_lists = self._take_policy_samples()
@@ -322,6 +323,7 @@ class GPSMain(object):
         if self.gui:
             self.gui.set_status_text('Taking policy samples.')
         pol_samples = [[None for _ in range(N)] for _ in range(self._conditions)]
+        import pdb; pdb.set_trace()
         for cond in range(len(self._test_idx)):
             for i in range(N):
                 pol_samples[cond][i] = self.agent.sample(
@@ -652,14 +654,14 @@ def main():
             # hyperparams.config['algorithm']['init_traj_distr']['type'] = init_lqr
             # hyperparams.config['algorithm']['global_cost'] = False
             hyperparams.config['common']['nn_demo'] = True
-            hyperparams.config['algorithm']['init_demo_policy'] = False
+            hyperparams.config['algorithm']['init_demo_policy'] = True
             hyperparams.config['algorithm']['policy_eval'] = False
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_%d' % itr + '/'
             # if not os.path.exists(exp_dir + 'data_files_nn_%d' % itr + '/'):
             #     os.makedirs(exp_dir + 'data_files_nn_%d' % itr + '/')
-            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_MPF_nn_%d' % itr + '/'
-            if not os.path.exists(exp_dir + 'data_files_MPF_nn_%d' % itr + '/'):
-              os.makedirs(exp_dir + 'data_files_MPF_nn_%d' % itr + '/')
+            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_%d' % itr + '/'
+            if not os.path.exists(exp_dir + 'data_files_nn_%d' % itr + '/'):
+              os.makedirs(exp_dir + 'data_files_nn_%d' % itr + '/')
             # hyperparams.config['algorithm']['init_var_mult'] = var_mults[itr]
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'
             # if not os.path.exists(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'):
@@ -1002,10 +1004,10 @@ def main():
                 # gps_global.test_policy(itr=i, N=compare_costs)
                 plt.close()
     else:
-        # hyperparams = imp.load_source('hyperparams', hyperparams_file)
-        # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_more_demos/' #use global as sparse demos
-        # if not os.path.exists(exp_dir + 'data_files_more_demos/'):
-        #   os.makedirs(exp_dir + 'data_files_more_demos/')
+        hyperparams = imp.load_source('hyperparams', hyperparams_file)
+        hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files/' #use global as sparse demos
+        if not os.path.exists(exp_dir + 'data_files/'):
+          os.makedirs(exp_dir + 'data_files/')
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:
             run_gps = threading.Thread(
