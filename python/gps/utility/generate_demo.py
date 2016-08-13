@@ -43,6 +43,7 @@ class GenDemo(object):
 		# 	config['common']['train_conditions'] = config['common']['conditions']
 		# 	self._hyperparams=config
 		# 	self._test_idx = self._train_idx
+		self._exp_dir = config['common']['demo_exp_dir']
 		self._data_files_dir = config['common']['data_files_dir']
 		self._algorithm_files_dir = config['common']['demo_controller_file']
 		self.data_logger = DataLogger()
@@ -57,10 +58,18 @@ class GenDemo(object):
 		import pickle
 
 		algorithm_file = self._algorithm_files_dir # This should give us the optimal controller. Maybe set to 'controller_itr_%02d.pkl' % itr_load will be better?
+		# algorithm_file = self._exp_dir
+		self.algorithms = [] # A list of neural nets.
+		# for i in range(1, 5):
+		# 	algorithm = pickle.load(open(algorithm_file + 'data_files_%d' % i + '/algorithm_itr_11.pkl'))
+		# 	self.algorithms.append(algorithm)
 		self.algorithm = pickle.load(open(algorithm_file))
 		if self.algorithm is None:
 			print("Error: cannot find '%s.'" % algorithm_file)
 			os._exit(1) # called instead of sys.exit(), since t
+			# if algorithm is None:
+			# 	print("Error: cannot find '%s.'" % algorithm_file)
+				# os._exit(1) # called instead of sys.exit(), since t
 
 		# Keep the initial states of the agent the sames as the demonstrations.
 		if 'learning_from_prior' in self._hyperparams['algorithm']:
@@ -77,6 +86,7 @@ class GenDemo(object):
 		# Roll out the demonstrations from controllers
 		var_mult = self._hyperparams['algorithm']['demo_var_mult']
 		T = self.algorithm.T
+		# T = self.algorithms[0].T
 		demos = []
 
 		M = agent_config['conditions']
@@ -104,27 +114,28 @@ class GenDemo(object):
 					demos.append(demo)
 		else:
 			# Extract the neural network policy.
-			pol = self.algorithm.policy_opt.policy
-			pol.chol_pol_covar *= var_mult
+			for i in xrange(4):
+				pol = self.algorithm.policy_opt.policy
+				pol.chol_pol_covar *= var_mult
 
-			for i in xrange(M):
-				# Gather demos.
-				# samples = []
-				# for j in xrange(10):
-				# 	sample = self.agent.sample(
-				# 		pol, i,
-				# 		verbose=(i < self._hyperparams['verbose_trials'])
-				# 		)
-				# 	# if i in sampled_demo_conds:
-				# 	# 	sampled_demos.append(demo)
-				# 	samples.append(sample)
-				# controller = self.linearize_policy(SampleList(samples))
-				for k in xrange(N):
-					demo = self.agent.sample(
-							pol, i, # Should be changed back to controller if using linearization
-							verbose=(i < self._hyperparams['verbose_trials'])
-							)
-					demos.append(demo)
+				for i in range(i*M/4, (i+1)*M/4):
+					# Gather demos.
+					# samples = []
+					# for j in xrange(10):
+					# 	sample = self.agent.sample(
+					# 		pol, i,
+					# 		verbose=(i < self._hyperparams['verbose_trials'])
+					# 		)
+					# 	# if i in sampled_demo_conds:
+					# 	# 	sampled_demos.append(demo)
+					# 	samples.append(sample)
+					# controller = self.linearize_policy(SampleList(samples))
+					for k in xrange(N):
+						demo = self.agent.sample(
+								pol, i, # Should be changed back to controller if using linearization
+								verbose=(i < self._hyperparams['verbose_trials'])
+								)
+						demos.append(demo)
 
 		# Filter out worst (M - good_conds) demos.
 		if agent_config['filename'] == './mjc_models/pr2_arm3d.xml':

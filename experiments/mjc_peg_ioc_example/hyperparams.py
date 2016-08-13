@@ -43,6 +43,7 @@ common = {
     'experiment_dir': EXP_DIR,
     'data_files_dir': EXP_DIR + 'data_files/',
     # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
+    'demo_exp_dir': DEMO_DIR,
     'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
