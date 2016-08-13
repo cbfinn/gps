@@ -40,14 +40,14 @@ PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = BASE_DIR + '/../experiments/mjc_mdgps_ioc_example/'
 # DEMO_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
-DEMO_DIR = BASE_DIR + '/../experiments/mjc_badmm_example/'
+DEMO_DIR = BASE_DIR + '/../experiments/mjc_badmm_example_'
 LG_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_06.pkl',
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
+    'demo_controller_file': [DEMO_DIR + '%d/' % i + 'data_files/algorithm_itr_11.pkl' for i in xrange(4)],
     'LG_controller_file': LG_DIR + 'data_files/algorithm_itr_09.pkl',
     'conditions': 4,
     # 'dense': True # For dense/sparse demos experiment only

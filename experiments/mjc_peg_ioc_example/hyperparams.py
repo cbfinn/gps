@@ -34,7 +34,7 @@ PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = BASE_DIR + '/../experiments/mjc_peg_ioc_example/'
 # DEMO_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
-DEMO_DIR = BASE_DIR + '/../experiments/mjc_badmm_example/'
+DEMO_DIR = BASE_DIR + '/../experiments/mjc_badmm_example_0/'
 
 
 common = {

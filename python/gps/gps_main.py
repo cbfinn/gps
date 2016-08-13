@@ -323,7 +323,6 @@ class GPSMain(object):
         if self.gui:
             self.gui.set_status_text('Taking policy samples.')
         pol_samples = [[None for _ in range(N)] for _ in range(self._conditions)]
-        import pdb; pdb.set_trace()
         for cond in range(len(self._test_idx)):
             for i in range(N):
                 pol_samples[cond][i] = self.agent.sample(
@@ -559,8 +558,8 @@ def main():
     import matplotlib.pyplot as plt
     import random
     import numpy as np
-    random.seed(0)
-    np.random.seed(0)
+    random.seed(2)
+    np.random.seed(2)
 
     if args.targetsetup:
         try:
@@ -987,7 +986,7 @@ def main():
             # plt.ylabel('length')
             plt.savefig(data_files_dir + 'distribution_of_conditions_bootstrap.png')
     elif multiple_run:
-        for itr in range(4, 5):
+        for itr in range(1, 4):
             random.seed(itr)
             np.random.seed(itr)
             hyperparams = imp.load_source('hyperparams', hyperparams_file)
