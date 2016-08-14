@@ -36,6 +36,7 @@ class AlgorithmTrajOpt(Algorithm):
             prev_samples.extend(sample_lists[m].get_samples())
             self.sample_list[m] = SampleList(prev_samples)
             self.N += len(sample_lists[m])
+
         # Update dynamics model using all samples.
         self._update_dynamics()
 
@@ -64,8 +65,12 @@ class AlgorithmTrajOpt(Algorithm):
                 sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
                 dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
                          for i in xrange(len(cur_samples))]
+<<<<<<< HEAD
                 self.min_sample = cur_samples[dists.index(min(dists))]
                 self.dists_to_target[itr].append(sum(dists) / len(cur_samples))   
+=======
+                self.dists_to_target[itr].append(sum(dists) / len(cur_samples))
+>>>>>>> 9dbd4dde609113bdc163c8d1954d7b11e7c68f46
         self._advance_iteration_variables()
 
     def _update_step_size(self):
@@ -116,7 +121,7 @@ class AlgorithmTrajOpt(Algorithm):
 
         # Compute actual objective values based on the samples.
         previous_mc_obj = np.mean(np.sum(self.prev[m].cs, axis=1), axis=0)
-        new_mc_obj = np.mean(np.sum(self.cur[m].cs, axis=1), axis=0)
+        new_mc_obj = np.mean(np.sum(self.cur[m].prevcost_cs, axis=1), axis=0)
 
         LOGGER.debug('Trajectory step: ent: %f cost: %f -> %f',
                      ent, previous_mc_obj, new_mc_obj)
@@ -142,7 +147,11 @@ class AlgorithmTrajOpt(Algorithm):
     def _update_cost(self):
         """ Update the cost objective in each iteration. """
         # Estimate the importance weights for fusion distributions.
-        demos_logiw, samples_logiw = self.importance_weights()
+        if False: #self._hyperparams['ioc'] == 'MPF':
+            demos_logiw, samples_logiw, samples_q_idx = self.importance_weights()
+        else:
+            sample_q_idx = None
+            demos_logiw, samples_logiw = self.importance_weights()
 
         # Update the learned cost
         # Transform all the dictionaries to arrays
@@ -151,20 +160,21 @@ class AlgorithmTrajOpt(Algorithm):
         sampleU_arr = np.vstack((self.sample_list[i].get_U() for i in xrange(M)))
         sampleX_arr = np.vstack((self.sample_list[i].get_X() for i in xrange(M)))
         sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
-        demos_logiw_arr = np.hstack((demos_logiw[i] for i in xrange(Md))).reshape((-1, 1))
-        samples_logiw_arr = np.hstack([samples_logiw[i] for i in xrange(M)]).reshape((-1, 1))
-        demos_logiw = {i: demos_logiw[i].reshape((-1, 1)) for i in xrange(Md)}
         samples_logiw = {i: samples_logiw[i].reshape((-1, 1)) for i in xrange(M)}
-        # TODO - not sure if we want one cost function per condition...
+        if False: #self._hyperparams['ioc'] == 'MPF':
+            samples_q_idx = {i: samples_q_idx[i].reshape((-1, 1)) for i in xrange(M)}
+        else:
+            demos_logiw = {i: demos_logiw[i].reshape((-1, 1)) for i in xrange(Md)}
+            samples_q_idx = None
+        demos_logiw_arr = np.hstack([demos_logiw[i] for i in xrange(Md)])
+        samples_logiw_arr = np.hstack([samples_logiw[i] for i in xrange(M)])
         if not self._hyperparams['global_cost']:
             for i in xrange(M):
-                cost_ioc = self.cost[i]
-                cost_ioc.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, self.sample_list[i].get_U(), \
-                                    self.sample_list[i].get_X(), self.sample_list[i].get_obs(), samples_logiw[i])
+                self.cost[i].update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, self.sample_list[i].get_U(),
+                                self.sample_list[i].get_X(), self.sample_list[i].get_obs(), samples_logiw[i], samples_q_idx)
         else:
-            cost_ioc = self.cost
-            cost_ioc.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, sampleU_arr, sampleX_arr, \
-                                                        sampleO_arr, samples_logiw_arr)
+            self.cost.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, sampleU_arr, sampleX_arr,
+                                                        sampleO_arr, samples_logiw_arr, samples_q_idx)
 
 
     def compute_costs(self, m, eta):

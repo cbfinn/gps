@@ -8,8 +8,6 @@ ALG = {
     'kl_step':0.2,
     'min_step_mult':0.01,
     'max_step_mult':10.0,
-    'sample_decrease_var':0.5,
-    'sample_increase_var':1.0,
     # Trajectory settings.
     'initial_state_var':1e-6,
     'init_traj_distr': None,  # A list of initial LinearGaussianPolicy
@@ -21,7 +19,7 @@ ALG = {
     # Flag if we estimate the demo distribution empirically.
     'demo_distr_empest': False,
     # Flag if the algorithm is using IOC
-    'ioc': False,
+    'ioc': None,  # ICML, MPF, IOCGAN, XENTGAN
     # Flag if the algorithm is learning from prior experience
     'learning_from_prior': False,
     # Dynamics hyperaparams.

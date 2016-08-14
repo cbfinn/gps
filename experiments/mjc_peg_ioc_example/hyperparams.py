@@ -106,6 +106,7 @@ demo_agent = {
 
 algorithm = {
     'type': AlgorithmTrajOpt,
+    'ioc' : 'MPF',
     'conditions': common['conditions'],
     'learning_from_prior': True,
     'ioc' : True,
@@ -162,6 +163,9 @@ algorithm['cost'] = {
     'T': 100,
     'dO': 26,
     'iterations': 5000,
+    'demo_batch_size': 5,
+    'sample_batch_size': 5,
+    'ioc_loss': algorithm['ioc'],
 }
 
 # algorithm['gt_cost'] = {
