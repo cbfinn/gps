@@ -151,10 +151,10 @@ class AlgorithmTrajOpt(Algorithm):
         sampleU_arr = np.vstack((self.sample_list[i].get_U() for i in xrange(M)))
         sampleX_arr = np.vstack((self.sample_list[i].get_X() for i in xrange(M)))
         sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
+        demos_logiw_arr = np.hstack((demos_logiw[i] for i in xrange(Md))).reshape((-1, 1))
+        samples_logiw_arr = np.hstack([samples_logiw[i] for i in xrange(M)]).reshape((-1, 1))
         demos_logiw = {i: demos_logiw[i].reshape((-1, 1)) for i in xrange(Md)}
         samples_logiw = {i: samples_logiw[i].reshape((-1, 1)) for i in xrange(M)}
-        demos_logiw_arr = np.hstack((demos_logiw[i] for i in xrange(Md)))
-        samples_logiw_arr = np.hstack([samples_logiw[i] for i in xrange(M)])
         # TODO - not sure if we want one cost function per condition...
         if not self._hyperparams['global_cost']:
             for i in xrange(M):

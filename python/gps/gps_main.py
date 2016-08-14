@@ -52,12 +52,12 @@ class GPSMain(object):
         config['algorithm']['agent'] = self.agent
 
         if 'ioc' in config['algorithm'] and config['algorithm']['ioc']:
-            demo_file = self._data_files_dir + 'demos.pkl'
-            # if not config['common']['nn_demo']:
-            #     demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
-            # else:
-            #     demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_linearize.pkl'
-            #     # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'            
+            # demo_file = self._data_files_dir + 'demos.pkl'
+            if not config['common']['nn_demo']:
+                demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
+            else:
+                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_linearize.pkl'
+                demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'            
             demos = self.data_logger.unpickle(demo_file)
             if demos is None:
               self.demo_gen = GenDemo(config)
@@ -558,8 +558,8 @@ def main():
     import matplotlib.pyplot as plt
     import random
     import numpy as np
-    random.seed(2)
-    np.random.seed(2)
+    random.seed(0)
+    np.random.seed(0)
 
     if args.targetsetup:
         try:
@@ -641,26 +641,24 @@ def main():
         mean_dists_global_dict, mean_dists_no_global_dict, success_rates_global_dict, \
                 success_rates_no_global_dict, mean_dists_classic_dict, success_rates_classic_dict \
                  = {}, {}, {}, {}, {}, {}
-        seeds = [0, 1, 3] # Seed 1, 2 not working for on classic nn
+        seeds = [0, 1, 2] # Seed 1, 2 not working for on classic nn
         # var_mults = [8.0, 10.0, 16.0] # 12 doesn't work
         for itr in seeds:
         # for itr in xrange(3):
             random.seed(itr)
             np.random.seed(itr)
-            exp_dir_classic = exp_dir.replace('on_global', 'on_classic')
-            hyperparams_file_classic = exp_dir_classic + 'hyperparams.py'
             hyperparams = imp.load_source('hyperparams', hyperparams_file)
             # hyperparams.config['algorithm']['init_traj_distr']['type'] = init_lqr
             # hyperparams.config['algorithm']['global_cost'] = False
             hyperparams.config['common']['nn_demo'] = True
-            hyperparams.config['algorithm']['init_demo_policy'] = True
+            hyperparams.config['algorithm']['init_demo_policy'] = False
             hyperparams.config['algorithm']['policy_eval'] = False
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_%d' % itr + '/'
             # if not os.path.exists(exp_dir + 'data_files_nn_%d' % itr + '/'):
             #     os.makedirs(exp_dir + 'data_files_nn_%d' % itr + '/')
-            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_%d' % itr + '/'
-            if not os.path.exists(exp_dir + 'data_files_nn_%d' % itr + '/'):
-              os.makedirs(exp_dir + 'data_files_nn_%d' % itr + '/')
+            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_single_%d' % itr + '/'
+            if not os.path.exists(exp_dir + 'data_files_nn_single_%d' % itr + '/'):
+              os.makedirs(exp_dir + 'data_files_nn_single_%d' % itr + '/')
             # hyperparams.config['algorithm']['init_var_mult'] = var_mults[itr]
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'
             # if not os.path.exists(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'):
@@ -706,23 +704,23 @@ def main():
             hyperparams.config['common']['nn_demo'] = False
             hyperparams.config['algorithm']['init_demo_policy'] = False
             hyperparams.config['algorithm']['policy_eval'] = False
-            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_MPF_LG_%d' % itr + '/'
-            if not os.path.exists(exp_dir + 'data_files_MPF_LG_%d' % itr + '/'):
-                os.makedirs(exp_dir + 'data_files_MPF_LG_%d' % itr + '/')
+            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_LG_%d' % itr + '/'
+            if not os.path.exists(exp_dir + 'data_files_LG_%d' % itr + '/'):
+                os.makedirs(exp_dir + 'data_files_LG_%d' % itr + '/')
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'
             # if not os.path.exists(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'):
             #   os.makedirs(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/')
             gps_classic = GPSMain(hyperparams.config)
             pol_iter = gps_classic.algorithm._hyperparams['iterations']
             # for i in xrange(pol_iter):
-            if hyperparams.config['gui_on']:
-                gps_classic.run()
-                # gps_global.test_policy(itr=i, N=compare_costs)
-                plt.close()
-            else:
-                gps_classic.run()
-                # gps_global.test_policy(itr=i, N=compare_costs)
-                plt.close()
+            # if hyperparams.config['gui_on']:
+            #     gps_classic.run()
+            #     # gps_global.test_policy(itr=i, N=compare_costs)
+            #     plt.close()
+            # else:
+            #     gps_classic.run()
+            #     # gps_global.test_policy(itr=i, N=compare_costs)
+            #     plt.close()
             mean_dists_classic_dict[itr], success_rates_classic_dict[itr] = gps_classic.measure_distance_and_success()
             plt.close()
 
@@ -791,7 +789,7 @@ def main():
         # for i, txt in enumerate(avg_succ_rate_no_global):
         #   plt.annotate(repr(txt*100) + "%", (i, txt))
         # plt.legend(['var 8', 'var 10', 'var 16'], loc='upper right', ncol=3)
-        plt.legend(['avg nn demo', 'avg LG demo', 'nn demo', 'LG demo'], loc='upper right', ncol=2)
+        plt.legend(['avg nn demo', 'avg LG demo', 'nn demo', 'LG demo'], loc='lower right', ncol=2)
         # plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)
         plt.xlabel("iterations")
         plt.ylabel("success rate")

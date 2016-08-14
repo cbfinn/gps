@@ -57,19 +57,20 @@ class GenDemo(object):
 		# Load the algorithm
 		import pickle
 
-		algorithm_file = self._algorithm_files_dir # This should give us the optimal controller. Maybe set to 'controller_itr_%02d.pkl' % itr_load will be better?
+		# algorithm_file = self._algorithm_files_dir # This should give us the optimal controller. Maybe set to 'controller_itr_%02d.pkl' % itr_load will be better?
 		# algorithm_file = self._exp_dir
+		algorithm_files = self._algorithm_files_dir
 		self.algorithms = [] # A list of neural nets.
-		# for i in range(1, 5):
-		# 	algorithm = pickle.load(open(algorithm_file + 'data_files_%d' % i + '/algorithm_itr_11.pkl'))
-		# 	self.algorithms.append(algorithm)
-		self.algorithm = pickle.load(open(algorithm_file))
-		if self.algorithm is None:
-			print("Error: cannot find '%s.'" % algorithm_file)
-			os._exit(1) # called instead of sys.exit(), since t
-			# if algorithm is None:
-			# 	print("Error: cannot find '%s.'" % algorithm_file)
-				# os._exit(1) # called instead of sys.exit(), since t
+		for i in range(4):
+			algorithm = pickle.load(open(algorithm_files[i]))
+			self.algorithms.append(algorithm)
+		# self.algorithm = pickle.load(open(algorithm_file))
+		# if self.algorithm is None:
+		# 	print("Error: cannot find '%s.'" % algorithm_file)
+		# 	os._exit(1) # called instead of sys.exit(), since t
+			if algorithm is None:
+				print("Error: cannot find '%s.'" % algorithm_file)
+				os._exit(1) # called instead of sys.exit(), since t
 
 		# Keep the initial states of the agent the sames as the demonstrations.
 		if 'learning_from_prior' in self._hyperparams['algorithm']:
@@ -85,8 +86,8 @@ class GenDemo(object):
 
 		# Roll out the demonstrations from controllers
 		var_mult = self._hyperparams['algorithm']['demo_var_mult']
-		T = self.algorithm.T
-		# T = self.algorithms[0].T
+		# T = self.algorithm.T
+		T = self.algorithms[0].T
 		demos = []
 
 		M = agent_config['conditions']
@@ -115,7 +116,7 @@ class GenDemo(object):
 		else:
 			# Extract the neural network policy.
 			for i in xrange(4):
-				pol = self.algorithm.policy_opt.policy
+				pol = self.algorithms[i].policy_opt.policy
 				pol.chol_pol_covar *= var_mult
 
 				for i in range(i*M/4, (i+1)*M/4):
@@ -134,7 +135,7 @@ class GenDemo(object):
 						demo = self.agent.sample(
 								pol, i, # Should be changed back to controller if using linearization
 								verbose=(i < self._hyperparams['verbose_trials']), noisy=False
-								)
+								) # Add noise seems not working. TODO: figure out why
 						demos.append(demo)
 
 		# Filter out worst (M - good_conds) demos.
