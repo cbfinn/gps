@@ -142,11 +142,8 @@ class AlgorithmTrajOpt(Algorithm):
     def _update_cost(self):
         """ Update the cost objective in each iteration. """
         # Estimate the importance weights for fusion distributions.
-        if False: #self._hyperparams['ioc'] == 'MPF':
-            demos_logiw, samples_logiw, samples_q_idx = self.importance_weights()
-        else:
-            sample_q_idx = None
-            demos_logiw, samples_logiw = self.importance_weights()
+        sample_q_idx = None
+        demos_logiw, samples_logiw = self.importance_weights()
 
         # Update the learned cost
         # Transform all the dictionaries to arrays
@@ -156,20 +153,16 @@ class AlgorithmTrajOpt(Algorithm):
         sampleX_arr = np.vstack((self.sample_list[i].get_X() for i in xrange(M)))
         sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
         samples_logiw = {i: samples_logiw[i].reshape((-1, 1)) for i in xrange(M)}
-        if False: #self._hyperparams['ioc'] == 'MPF':
-            samples_q_idx = {i: samples_q_idx[i].reshape((-1, 1)) for i in xrange(M)}
-        else:
-            demos_logiw = {i: demos_logiw[i].reshape((-1, 1)) for i in xrange(Md)}
-            samples_q_idx = None
+        demos_logiw = {i: demos_logiw[i].reshape((-1, 1)) for i in xrange(Md)}
         demos_logiw_arr = np.hstack([demos_logiw[i] for i in xrange(Md)])
         samples_logiw_arr = np.hstack([samples_logiw[i] for i in xrange(M)])
         if not self._hyperparams['global_cost']:
             for i in xrange(M):
                 self.cost[i].update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, self.sample_list[i].get_U(),
-                                self.sample_list[i].get_X(), self.sample_list[i].get_obs(), samples_logiw[i], samples_q_idx)
+                                self.sample_list[i].get_X(), self.sample_list[i].get_obs(), samples_logiw[i])
         else:
             self.cost.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, sampleU_arr, sampleX_arr,
-                                                        sampleO_arr, samples_logiw_arr, samples_q_idx)
+                                                        sampleO_arr, samples_logiw_arr)
 
 
     def compute_costs(self, m, eta):
