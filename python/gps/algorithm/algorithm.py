@@ -60,7 +60,7 @@ class Algorithm(object):
             self.policy_opts = {self.iteration_count: None}
             # self.linear_policies = {self.iteration_count: []}
         if self._hyperparams['bootstrap']:
-            self.demo_traj = {self.iteration_count: None}
+            self.demo_traj = {self.iteration_count: {}}
         self.traj_info = {self.iteration_count: []}
         self.kl_div = {self.iteration_count:[]}
         self.dists_to_target = {self.iteration_count:[]}
@@ -245,7 +245,7 @@ class Algorithm(object):
             self.policy_opts[self.iteration_count] = new_policy_opt
             # self.linear_policies[self.iteration_count] = []
         if self._hyperparams['bootstrap']:
-            self.demo_traj[self.iteration_count] = None
+            self.demo_traj[self.iteration_count] = {}
         self.traj_info[self.iteration_count] = []
         self.kl_div[self.iteration_count] = []
         self.dists_to_target[self.iteration_count] = []
