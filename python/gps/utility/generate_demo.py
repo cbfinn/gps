@@ -115,28 +115,33 @@ class GenDemo(object):
 					demos.append(demo)
 		else:
 			# Extract the neural network policy.
-			for i in xrange(4):
-				pol = self.algorithms[i].policy_opt.policy
+			for j in xrange(4):
+				pol = self.algorithms[j].policy_opt.policy
 				pol.chol_pol_covar *= var_mult
 
-				for i in range(i*M/4, (i+1)*M/4):
+				for i in range(j*M/4, (j+1)*M/4):
 					# Gather demos.
-					# samples = []
-					# for j in xrange(10):
-					# 	sample = self.agent.sample(
-					# 		pol, i,
-					# 		verbose=(i < self._hyperparams['verbose_trials'])
-					# 		)
-					# 	# if i in sampled_demo_conds:
-					# 	# 	sampled_demos.append(demo)
-					# 	samples.append(sample)
-					# controller = self.linearize_policy(SampleList(samples))
-					for k in xrange(N):
-						demo = self.agent.sample(
-								pol, i, # Should be changed back to controller if using linearization
-								verbose=(i < self._hyperparams['verbose_trials']), noisy=False
-								) # Add noise seems not working. TODO: figure out why
-						demos.append(demo)
+					samples = []
+					dists = []
+					for _ in xrange(5):
+						sample = self.agent.sample(
+							pol, i,
+							verbose=(i < self._hyperparams['verbose_trials'])
+							)
+						# if i in sampled_demo_conds:
+						# 	sampled_demos.append(demo)
+						samples.append(sample)
+						sample_end_effector = sample.get(END_EFFECTOR_POINTS)
+						target_position = agent_config['target_end_effector'][:3]
+						dists.append(np.sqrt(np.sum((sample_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1])
+					if sum(dists) / len(dists) <= 0.3:
+						controller = self.linearize_policy(SampleList(samples), j)
+						for k in xrange(N):
+							demo = self.agent.sample(
+									controller, i, # Should be changed back to controller if using linearization
+									verbose=(i < self._hyperparams['verbose_trials']), noisy=True
+									) # Add noise seems not working. TODO: figure out why
+							demos.append(demo)
 
 		# Filter out worst (M - good_conds) demos.
 		if agent_config['filename'] == './mjc_models/pr2_arm3d.xml':
@@ -144,6 +149,7 @@ class GenDemo(object):
 			dists_to_target = np.zeros(M*N)
 			good_indices = []
 			failed_indices = []
+			M = len(demos)/N
 			for i in xrange(M):
 				for j in xrange(N):
 					demo_end_effector = demos[i*N + j].get(END_EFFECTOR_POINTS)
@@ -213,16 +219,16 @@ class GenDemo(object):
 			copy.copy(demo_store)
 		)
 
-	def linearize_policy(self, samples):
-		policy_prior = self.algorithm._hyperparams['policy_prior']
+	def linearize_policy(self, samples, cond):
+		policy_prior = self.algorithms[cond]._hyperparams['policy_prior']
 		init_policy_prior = policy_prior['type'](policy_prior)
 		init_policy_prior._hyperparams['keep_samples'] = False
-		dX, dU, T = self.algorithm.dX, self.algorithm.dU, self.algorithm.T
+		dX, dU, T = self.algorithms[cond].dX, self.algorithms[cond].dU, self.algorithms[cond].T
 		N = len(samples)
 		X = samples.get_X()
-		pol_mu, pol_sig = self.algorithm.policy_opt.prob(samples.get_obs().copy())[:2]
+		pol_mu, pol_sig = self.algorithms[cond].policy_opt.prob(samples.get_obs().copy())[:2]
 		# Update the policy prior with collected samples
-		init_policy_prior.update(SampleList([]), self.algorithm.policy_opt, samples)
+		init_policy_prior.update(SampleList([]), self.algorithms[cond].policy_opt, samples)
 		# Collapse policy covariances. This is not really correct, but
 		# it works fine so long as the policy covariance doesn't depend
 		# on state.

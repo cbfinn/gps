@@ -52,6 +52,8 @@ ALG = {
     'init_samples': 5,
     # Evaluate importance weights using nn policy.
     'policy_eval': False,
+    # Make successful samples in each iteration become demos.
+    'bootstrap': False,
 }
 
 # Good indices.

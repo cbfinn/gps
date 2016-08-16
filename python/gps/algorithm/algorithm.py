@@ -59,6 +59,8 @@ class Algorithm(object):
         else:
             self.policy_opts = {self.iteration_count: None}
             # self.linear_policies = {self.iteration_count: []}
+        if self._hyperparams['bootstrap']:
+            self.demo_traj = {self.iteration_count: None}
         self.traj_info = {self.iteration_count: []}
         self.kl_div = {self.iteration_count:[]}
         self.dists_to_target = {self.iteration_count:[]}
@@ -242,6 +244,8 @@ class Algorithm(object):
             new_policy_opt = self.policy_opt.copy()
             self.policy_opts[self.iteration_count] = new_policy_opt
             # self.linear_policies[self.iteration_count] = []
+        if self._hyperparams['bootstrap']:
+            self.demo_traj[self.iteration_count] = None
         self.traj_info[self.iteration_count] = []
         self.kl_div[self.iteration_count] = []
         self.dists_to_target[self.iteration_count] = []
@@ -367,21 +371,36 @@ class Algorithm(object):
         demoU = {i: self.demoU for i in xrange(M)}
         demoX = {i: self.demoX for i in xrange(M)}
         demoO = {i: self.demoO for i in xrange(M)}
-        self.demo_traj = {}
+        if self._hyperparams['bootstrap']:
+            self.demo_traj[itr] = {}
+        else:
+            self.demo_traj = {}
         # estimate demo distributions empirically when not initializing from demo policy
         if not self._hyperparams['policy_eval']:
             for i in xrange(Md):
                 if self._hyperparams['demo_distr_empest']:
-                    self.demo_traj[i] = fit_emp_controller(demoX[i], demoU[i])
+                    if self._hyperparams['bootstrap']:
+                        self.demo_traj[itr][i] = fit_emp_controller(demoX[i], demoU[i])
+                    else:
+                        self.demo_traj[i] = fit_emp_controller(demoX[i], demoU[i])
         for i in xrange(M):
 
             # This code assumes a fixed number of samples per iteration/controller
-            if self._hyperparams['ioc'] != 'ICML':
-              samples_logprob[i] = np.zeros((itr + 1, self.T, (self.N / M) * itr + init_samples))
-              demos_logprob[i] = np.zeros((itr + 1, self.T, demoX[i].shape[0]))
+            if not self._hyperparams['bootstrap']:
+                if self._hyperparams['ioc'] != 'ICML':
+                  samples_logprob[i] = np.zeros((itr + 1, self.T, (self.N / M) * itr + init_samples))
+                  demos_logprob[i] = np.zeros((itr + 1, self.T, demoX[i].shape[0]))
+                else:
+                  samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
+                  demos_logprob[i] = np.zeros((itr + Md + 1, self.T, demoX[i].shape[0]))
             else:
-              samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
-              demos_logprob[i] = np.zeros((itr + Md + 1, self.T, demoX[i].shape[0]))
+                cur_idx = sum(self.num_samples[i] for i in xrange(itr))
+                if self._hyperparams['ioc'] != 'ICML':
+                  samples_logprob[i] = np.zeros((itr + 1, self.T, cur_idx + init_samples))
+                  demos_logprob[i] = np.zeros((itr + 1, self.T, demoX[i].shape[0]))
+                else:
+                  samples_logprob[i] = np.zeros((itr + 1 + Md*(itr + 1), self.T, cur_idx + init_samples))
+                  demos_logprob[i] = np.zeros((itr + 1 + Md*(itr + 1), self.T, demoX[i].shape[0]))
 
 
             sample_i_X = self.sample_list[i].get_X()
@@ -418,16 +437,23 @@ class Algorithm(object):
                     #                                         np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
             # Evaluate sample prob under demo distribution.
             if self._hyperparams['ioc'] == 'ICML':
-              for itr_i in xrange(Md):
+              for m in xrange(Md):
                 for j in range(sample_i_X.shape[0]):
                     for t in xrange(self.T - 1):
                         if not self._hyperparams['policy_eval']:
-                            diff = self.demo_traj[itr_i].k[t, :] + \
-                                    self.demo_traj[itr_i].K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
-                            samples_logprob[i][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (self.demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff))) - \
-                                                        np.sum(np.log(np.diag(self.demo_traj[itr_i].chol_pol_covar[t, :, :])))
+                            if not self._hyperparams['bootstrap']:
+                                diff = self.demo_traj[m].k[t, :] + \
+                                        self.demo_traj[m].K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
+                                samples_logprob[i][itr + 1 + m, t, j] = -0.5 * np.sum(diff * (self.demo_traj[m].inv_pol_covar[t, :, :].dot(diff))) - \
+                                                            np.sum(np.log(np.diag(self.demo_traj[m].chol_pol_covar[t, :, :])))
+                            else:
+                                for itr_i in xrange(itr + 1):
+                                    diff = self.demo_traj[itr_i][m].k[t, :] + \
+                                            self.demo_traj[itr_i][m].K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
+                                    samples_logprob[i][itr + (m + 1) * (itr_i + 1), t, j] = -0.5 * np.sum(diff * (self.demo_traj[itr_i][m].inv_pol_covar[t, :, :].dot(diff))) - \
+                                                                np.sum(np.log(np.diag(self.demo_traj[itr_i][m].chol_pol_covar[t, :, :])))
             # Sum over the distributions and time.
-            if False: #self._hyperparams['ioc'] == 'MPF':
+            if self._hyperparams['ioc'] == 'MPF':
                 samples_logiw[i] = np.sum(samples_logprob[i], 1)
                 # Need to construct index of samples
                 itrs = range(itr+1)
@@ -479,14 +505,21 @@ class Algorithm(object):
                     #                                         np.sum(np.log(np.diag(traj.chol_pol_covar[t, :, :])))
             # Evaluate demo prob. under demo distributions.
             if self._hyperparams['ioc'] == 'ICML':
-              for itr_i in xrange(Md):
+              for m in xrange(Md):
                 for j in range(demoX[idx].shape[0]):
                     for t in xrange(self.T - 1):
                         if not self._hyperparams['policy_eval']:
-                            diff = self.demo_traj[itr_i].k[t, :] + \
-                                    self.demo_traj[itr_i].K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
-                            demos_logprob[idx][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (self.demo_traj[itr_i].inv_pol_covar[t, :, :].dot(diff)), 0) - \
-                                                            np.sum(np.log(np.diag(self.demo_traj[itr_i].chol_pol_covar[t, :, :])))
+                            if not self._hyperparams['bootstrap']:
+                                diff = self.demo_traj[m].k[t, :] + \
+                                        self.demo_traj[m].K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
+                                demos_logprob[idx][itr + 1 + m, t, j] = -0.5 * np.sum(diff * (self.demo_traj[m].inv_pol_covar[t, :, :].dot(diff)), 0) - \
+                                                                np.sum(np.log(np.diag(self.demo_traj[m].chol_pol_covar[t, :, :])))
+                            else:
+                                for itr_i in xrange(itr + 1):
+                                    diff = self.demo_traj[itr_i][m].k[t, :] + \
+                                            self.demo_traj[itr_i][m].K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
+                                    demos_logprob[idx][itr + (m + 1) * (itr_i + 1), t, j] = -0.5 * np.sum(diff * (self.demo_traj[itr_i][m].inv_pol_covar[t, :, :].dot(diff)), 0) - \
+                                                                    np.sum(np.log(np.diag(self.demo_traj[itr_i][m].chol_pol_covar[t, :, :])))
                         else:
                             noise = np.zeros(self.dU) # Assume no noise now
                             demo_policy = self.demo_policy_opt.policy
@@ -495,15 +528,15 @@ class Algorithm(object):
                                                         np.linalg.solve(demo_policy.chol_pol_covar.T, np.eye(self.dU))
                                                         )
                             diff = demo_policy.act(demoX[idx][j, t, :], demoX[idx][j, t, :], t, noise) - demoU[idx][j, t, :]
-                            demos_logprob[idx][itr + 1 + itr_i, t, j] = -0.5 * np.sum(diff * (demo_policy.inv_pol_covar.dot(diff)), 0) - \
+                            demos_logprob[idx][itr + 1 + m, t, j] = -0.5 * np.sum(diff * (demo_policy.inv_pol_covar.dot(diff)), 0) - \
                                                             np.sum(np.log(np.diag(demo_policy.chol_pol_covar)))
             # Sum over the distributions and time.
-            if False: #self._hyperparams['ioc'] == 'MPF':
+            if self._hyperparams['ioc'] == 'MPF':
                 demos_logiw[idx] = np.sum(demos_logprob[idx], 1)
             else:
                 demos_logiw[idx] = logsum(np.sum(demos_logprob[idx], 1), 0)
 
-        if False: #self._hyperparams['ioc'] == 'MPF':
+        if self._hyperparams['ioc'] == 'MPF':
             return demos_logiw, samples_logiw, samples_q_idx
         else:
             return demos_logiw, samples_logiw
