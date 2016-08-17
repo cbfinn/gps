@@ -53,7 +53,7 @@ agent = {
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
-    'pos_body_offset': [np.array([-0.08, -0.08, 0]), np.array([-0.08, -0.08, 0]),
+    'pos_body_offset': [np.array([-0.08, -0.08, 0]), np.array([-0.08, 0.08, 0]),
                         np.array([0.08, 0.08, 0]), np.array([0.08, -0.08, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
@@ -69,7 +69,7 @@ algorithm = {
     'conditions': common['conditions'],
     'iterations': 12,
     'kl_step': 1.0,
-    'min_step_mult': 0.05,
+    'min_step_mult': 0.5,
     'max_step_mult': 3.0,
     'policy_sample_mode': 'replace',
 }

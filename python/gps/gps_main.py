@@ -214,17 +214,19 @@ class GPSMain(object):
         Returns: None
         """
         if 'verbose_policy_trials' not in self._hyperparams:
+            # AlgorithmTrajOpt
             return None
-        if not N:
-            N = self._hyperparams['verbose_policy_trials']
+        verbose = self._hyperparams['verbose_policy_trials']
         if self.gui:
             self.gui.set_status_text('Taking policy samples.')
-        pol_samples = [[None for _ in range(N)] for _ in range(self._conditions)]
+        pol_samples = [[None] for _ in range(len(self._test_idx))]
+        # Since this isn't noisy, just take one sample.
+        # TODO: Make this noisy? Add hyperparam?
+        # TODO: Take at all conditions for GUI?
         for cond in range(len(self._test_idx)):
-            for i in range(N):
-                pol_samples[cond][i] = self.agent.sample(
-                    self.algorithm.policy_opt.policy, self._test_idx[cond],
-                    verbose=True, save=False, noisy=False)
+            pol_samples[cond][0] = self.agent.sample(
+                self.algorithm.policy_opt.policy, self._test_idx[cond],
+                verbose=verbose, save=False, noisy=False)
         return [SampleList(samples) for samples in pol_samples]
 
     def _log_data(self, itr, traj_sample_lists, pol_sample_lists=None):

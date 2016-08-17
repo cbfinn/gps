@@ -7,4 +7,5 @@ TRAJ_OPT_LQR = {
     'del0': 1e-4,
     'eta_error_threshold': 1e16,
     'min_eta': 1e-4,
+    'max_eta': 1e16,
 }

@@ -23,7 +23,6 @@ This page contains all of the config settings that are exposed                vi
 * fixed_lg_step
 * exp_step_decrease
 * init_pol_wt
-* max_policy_samples
 * policy_dual_rate
 * inner_iterations
 * exp_step_lower
@@ -33,6 +32,10 @@ This page contains all of the config settings that are exposed                vi
 * lg_step_schedule
 * policy_dual_rate_covar
 * ent_reg_schedule
+
+**MDGPS Algorithm**
+* policy_sample_mode
+* step_rule
 
 **LQR Traj Opt**
 * del0
@@ -58,7 +61,6 @@ This page contains all of the config settings that are exposed                vi
 
 **Policy Prior & GMM**
 * strength
-* keep_samples
 * max_clusters
 * strength
 * min_samples_per_cluster
