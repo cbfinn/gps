@@ -50,9 +50,9 @@ class AgentMuJoCo(Agent):
         # Initialize Mujoco worlds. If there's only one xml file, create a single world object,
         # otherwise create a different world for each condition.
         if not isinstance(filename, list):
-            self._world = [mjcpy.MJCWorld(filename)
-                           for _ in range(self._hyperparams['conditions'])]
-            self._model = [self._world[i].get_model()
+            world = mjcpy.MJCWorld(filename)
+            self._world = [world for _ in range(self._hyperparams['conditions'])]
+            self._model = [self._world[i].get_model().copy()
                            for i in range(self._hyperparams['conditions'])]
         else:
             for i in range(self._hyperparams['conditions']):
@@ -62,26 +62,22 @@ class AgentMuJoCo(Agent):
         for i in range(self._hyperparams['conditions']):
             for j in range(len(self._hyperparams['pos_body_idx'][i])):
                 idx = self._hyperparams['pos_body_idx'][i][j]
+                # TODO: this should actually add [i][j], but that would break things
                 self._model[i]['body_pos'][idx, :] += \
                         self._hyperparams['pos_body_offset'][i]
-            self._world[i].set_model(self._model[i])
-            x0 = self._hyperparams['x0'][i]
-            idx = len(x0) // 2
-            data = {'qpos': x0[:idx], 'qvel': x0[idx:]}
-            self._world[i].set_data(data)
-            self._world[i].kinematics()
 
         self._joint_idx = list(range(self._model[0]['nq']))
         self._vel_idx = [i + self._model[0]['nq'] for i in self._joint_idx]
 
         # Initialize x0.
         self.x0 = []
-        self.eepts0 = []
         for i in range(self._hyperparams['conditions']):
             if END_EFFECTOR_POINTS in self.x_data_types:
-                self.eepts0.append(self._world[i].get_data()['site_xpos'].flatten())
+                # TODO: this assumes END_EFFECTOR_VELOCITIES is also in datapoints right?
+                self._init(i)
+                eepts = self._world[i].get_data()['site_xpos'].flatten()
                 self.x0.append(
-                    np.concatenate([self._hyperparams['x0'][i], self.eepts0[i], np.zeros_like(self.eepts0[i])])
+                    np.concatenate([self._hyperparams['x0'][i], eepts, np.zeros_like(eepts)])
                 )
             else:
                 self.x0.append(self._hyperparams['x0'][i])
@@ -123,7 +119,7 @@ class AgentMuJoCo(Agent):
                 var = self._hyperparams['noisy_body_var'][condition][i]
                 self._model[condition]['body_pos'][idx, :] += \
                         var * np.random.randn(1, 3)
-        self._world[condition].set_model(self._model[condition])
+        # Take the sample.
         for t in range(self.T):
             X_t = new_sample.get_X(t=t)
             obs_t = new_sample.get_obs(t=t)
@@ -142,6 +138,21 @@ class AgentMuJoCo(Agent):
             self._samples[condition].append(new_sample)
         return new_sample
 
+    def _init(self, condition):
+        """
+        Set the world to a given model, and run kinematics.
+        Args:
+            condition: Which condition to initialize.
+        """
+
+        # Initialize world/run kinematics
+        self._world[condition].set_model(self._model[condition])
+        x0 = self._hyperparams['x0'][condition]
+        idx = len(x0) // 2
+        data = {'qpos': x0[:idx], 'qvel': x0[idx:]}
+        self._world[condition].set_data(data)
+        self._world[condition].kinematics()
+
     def _init_sample(self, condition):
         """
         Construct a new sample and fill in the first time step.
@@ -149,12 +160,15 @@ class AgentMuJoCo(Agent):
             condition: Which condition to initialize.
         """
         sample = Sample(self)
-        sample.set(JOINT_ANGLES,
-                   self._hyperparams['x0'][condition][self._joint_idx], t=0)
-        sample.set(JOINT_VELOCITIES,
-                   self._hyperparams['x0'][condition][self._vel_idx], t=0)
-        self._data = self._world[condition].get_data()
-        eepts = self.eepts0[condition]
+
+        # Initialize world/run kinematics
+        self._init(condition)
+
+        # Initialize sample with stuff from _data
+        data = self._world[condition].get_data()
+        sample.set(JOINT_ANGLES, data['qpos'].flatten(), t=0)
+        sample.set(JOINT_VELOCITIES, data['qvel'].flatten(), t=0)
+        eepts = data['site_xpos'].flatten()
         sample.set(END_EFFECTOR_POINTS, eepts, t=0)
         sample.set(END_EFFECTOR_POINT_VELOCITIES, np.zeros_like(eepts), t=0)
         jac = np.zeros([eepts.shape[0], self._model[condition]['nq']])

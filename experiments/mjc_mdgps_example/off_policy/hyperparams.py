@@ -23,8 +23,7 @@ if not os.path.exists(common['data_files_dir']):
 # Algorithm
 algorithm = default.algorithm.copy()
 algorithm.update({
-    'sample_on_policy': True,
-    'step_rule': 'classic',
+    'sample_on_policy': False,
 })
 
 config = default.config.copy()

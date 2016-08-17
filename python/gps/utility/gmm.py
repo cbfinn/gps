@@ -182,7 +182,7 @@ class GMM(object):
                 LOGGER.debug('Log-likelihood decreased! Ending on itr=%d/%d',
                              itr, max_iterations)
                 break
-            if np.abs(ll-prevll) < 1e-2:
+            if np.abs(ll-prevll) < 1e-5*prevll:
                 LOGGER.debug('GMM converged on itr=%d/%d',
                              itr, max_iterations)
                 break

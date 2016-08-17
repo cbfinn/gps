@@ -11,9 +11,9 @@ class IterationData(BundleType):
         variables = {
             'sample_list': None,  # List of samples for the current iteration.
             'traj_info': None,  # Current TrajectoryInfo object.
-            'init_pol_info': None, # Initial PolicyInfo object
             'pol_info': None,  # Current PolicyInfo object.
             'traj_distr': None,  # Initial trajectory distribution.
+            'new_traj_distr': None, # Updated trajectory distribution.
             'cs': None,  # Sample costs of the current iteration.
             'step_mult': 1.0,  # KL step multiplier for the current iteration.
             'eta': 1.0,  # Dual variable used in LQR backward pass.
@@ -60,7 +60,7 @@ class PolicyInfo(BundleType):
     def traj_distr(self):
         """ Create a trajectory distribution object from policy info. """
         T, dU, dX = self.pol_K.shape
-        # Compute inverse policy covariance
+        # Compute inverse policy covariances.
         inv_pol_S = np.empty_like(self.chol_pol_S)
         for t in range(T):
             inv_pol_S[t, :, :] = np.linalg.solve(
