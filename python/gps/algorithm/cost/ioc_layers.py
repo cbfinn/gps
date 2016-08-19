@@ -248,6 +248,78 @@ class IOCLossMod(caffe.Layer):
         bottom[1].diff[...] = sample_bottom_diff * loss_weight
         bottom[4].diff[...] = Z_diff * loss_weight
 
+class SoftplusMPFLoss(caffe.Layer):
+    """ IOC loss layer, based on MPF objective. """
+    def setup(self, bottom, top):
+        pass
+
+    def softplus(self, input):
+        return np.log(1+np.exp(input))
+
+    def sigmoid(self, input):
+        # input is a numpy array
+        #max_val = (-input).max()
+        #result = np.exp(-max_val) / (np.exp(-max_val) + np.exp(-input-max_val))
+        result = 1.0 / (1.0 + np.exp(-input))
+        if np.isnan(result).any():
+          import pdb; pdb.set_trace()
+        return result
+
+    def reshape(self, bottom, top):
+        top[0].reshape(1)
+        self.num_demos = bottom[0].data.shape[0]
+        self.num_samples = bottom[1].data.shape[0]
+        self.T = bottom[0].data.shape[1]
+
+        # helper numpy arrays to store demo_counts and sample_counts
+        self._pairs = np.zeros((self.num_demos, self.num_samples))
+
+    def forward(self, bottom, top):
+        # safely compute forward pass (objective from the input)
+
+        # assume that bottom[0] is a NdxT matrix containing the costs of the demo
+        # trajectories in at each time step, and bottom[1] stores the costs of samples.
+        # also assume that bottom[2] is demo log importance weights and
+        # bottom[3] is sample log importance weights
+        loss = 0.0
+        pairs = self._pairs
+
+        # log importance weights of demos and samples.
+        d_log_iw = bottom[2].data
+        s_log_iw = bottom[3].data
+
+        max_val = -np.inf
+        for i in xrange(self.num_demos):
+            for j in xrange(self.num_samples):
+                pairs[i, j] = (d_log_iw[i] - s_log_iw[j] +
+                                0.5 * (np.sum(bottom[0].data[i, :]) - np.sum(bottom[1].data[j, :])))
+                #if max_val < pairs[i, j]:
+                #    max_val = pairs[i, j]
+        #pairs = np.exp(pairs - max_val)
+        self._pairs = pairs # NOTE - important that pairs comes first
+        pairs = self.softplus(pairs)
+        self._pairs_sum = self._pairs.sum()
+        top[0].data[...] = self._pairs_sum
+
+    def backward(self, top, propagate_down, bottom):
+        # compute backward pass (derivative of objective w.r.t. bottom)
+        pairs = self._pairs
+        loss_weight = top[0].diff[0]
+
+        # Compute gradient w.r.t demos and samples
+        demo_bottom_diff = bottom[0].diff
+        sample_bottom_diff = bottom[1].diff
+        for i in xrange(self.num_demos):
+            for t in xrange(self.T):
+                demo_bottom_diff[i, t] = 0.5 * np.sum(self.sigmoid(pairs[i,:]))
+
+        for i in xrange(self.num_samples):
+            for t in xrange(self.T):
+                sample_bottom_diff[i, t] = -0.5 * np.sum(self.sigmoid(pairs[:, i]))
+        bottom[0].diff[...] = demo_bottom_diff * loss_weight
+        bottom[1].diff[...] = sample_bottom_diff * loss_weight
+
+
 
 class SigmoidMPFLoss(caffe.Layer):
     """ IOC loss layer, based on MPF objective. """
@@ -285,17 +357,12 @@ class SigmoidMPFLoss(caffe.Layer):
         # log importance weights of demos and samples.
         d_log_iw = bottom[2].data
         s_log_iw = bottom[3].data
-        #s_q_idx = bottom[4].data
 
         max_val = -np.inf
         for i in xrange(self.num_demos):
             for j in xrange(self.num_samples):
-                #pairs[i, j] = (d_log_iw[i, int(s_q_idx[j])] - s_log_iw[j] +
                 pairs[i, j] = (d_log_iw[i] - s_log_iw[j] +
                                 0.5 * (np.sum(bottom[0].data[i, :]) - np.sum(bottom[1].data[j, :])))
-                #if max_val < pairs[i, j]:
-                #    max_val = pairs[i, j]
-        #pairs = np.exp(pairs - max_val)
         pairs = self.sigmoid(pairs)
         self._pairs = pairs
         self._pairs_sum = self._pairs.sum()
@@ -315,9 +382,80 @@ class SigmoidMPFLoss(caffe.Layer):
                 demo_bottom_diff[i, t] = 0.5 * np.sum(pairs[i, :]*(1-pairs[i,:]))
         for i in xrange(self.num_samples):
             for t in xrange(self.T):
-                sample_bottom_diff[i, t] = -0.5 * np.sum(pairs[:, i]*(1-pairs[i,:]))
+                sample_bottom_diff[i, t] = -0.5 * np.sum(pairs[:, i]*(1-pairs[:,i]))
         bottom[0].diff[...] = demo_bottom_diff * loss_weight
         bottom[1].diff[...] = sample_bottom_diff * loss_weight
+
+class MaxValMPFLoss(caffe.Layer):
+    """ IOC loss layer, based on MPF objective. """
+    def setup(self, bottom, top):
+        self.max_val = None  # moving average max value
+        self._alpha = 0.99
+        pass
+
+    def reshape(self, bottom, top):
+        top[0].reshape(1)
+        self.num_demos = bottom[0].data.shape[0]
+        self.num_samples = bottom[1].data.shape[0]
+        self.T = bottom[0].data.shape[1]
+
+        # helper numpy arrays to store demo_counts and sample_counts
+        self._pairs = np.zeros((self.num_demos, self.num_samples))
+
+    def forward(self, bottom, top):
+        # safely compute forward pass (objective from the input)
+
+        # assume that bottom[0] is a NdxT matrix containing the costs of the demo
+        # trajectories in at each time step, and bottom[1] stores the costs of samples.
+        # also assume that bottom[2] is demo log importance weights and
+        # bottom[3] is sample log importance weights
+        loss = 0.0
+        pairs = self._pairs
+
+        # log importance weights of demos and samples.
+        d_log_iw = bottom[2].data
+        s_log_iw = bottom[3].data
+
+        batch_max_val = -np.inf
+        for i in xrange(self.num_demos):
+            for j in xrange(self.num_samples):
+                pairs[i, j] = 0.5 * (d_log_iw[i] - s_log_iw[j] + \
+                                0.5 * (np.sum(bottom[0].data[i, :]) - np.sum(bottom[1].data[j, :])))
+                if batch_max_val < pairs[i, j]:
+                    batch_max_val = pairs[i, j]
+        if self.max_val is None:
+            self.max_val = batch_max_val
+        else:
+            self.max_val = (1-self._alpha) * self.max_val + self._alpha * batch_max_val
+        self.batch_max_val = batch_max_val  # used for safe computation
+        #import pdb; pdb.set_trace()
+        pairs = np.exp(pairs - batch_max_val)
+        #pairs = np.exp(pairs)
+        self._pairs = pairs # NOTE - this has the max subtracted
+        if (batch_max_val - self.max_val) > 10 or (batch_max_val-self.max_val) < -10:
+            self.max_val = batch_max_val
+            print 'hi'
+        self._pairs_sum = self._pairs.sum() *np.exp(batch_max_val-self.max_val)
+        top[0].data[...] = self._pairs_sum
+
+    def backward(self, top, propagate_down, bottom):
+        # compute backward pass (derivative of objective w.r.t. bottom)
+        pairs = self._pairs
+        loss_weight = top[0].diff[0]
+
+        # Compute gradient w.r.t demos and samples
+        demo_bottom_diff = bottom[0].diff
+        sample_bottom_diff = bottom[1].diff
+        for i in xrange(self.num_demos):
+            for t in xrange(self.T):
+                # extra 0.5 is for the chain rule on the cost
+                demo_bottom_diff[i, t] = 0.5 * 0.5 * np.sum(pairs[i, :]) * np.exp(self.batch_max_val - self.max_val)
+        for i in xrange(self.num_samples):
+            for t in xrange(self.T):
+                sample_bottom_diff[i, t] = -0.5 * 0.5 * np.sum(pairs[:, i]) * np.exp(self.batch_max_val - self.max_val)
+        bottom[0].diff[...] = demo_bottom_diff * loss_weight
+        bottom[1].diff[...] = sample_bottom_diff * loss_weight
+
 
 
 
@@ -348,20 +486,21 @@ class MPFLoss(caffe.Layer):
         # log importance weights of demos and samples.
         d_log_iw = bottom[2].data
         s_log_iw = bottom[3].data
-        #s_q_idx = bottom[4].data
 
         max_val = -np.inf
         for i in xrange(self.num_demos):
             for j in xrange(self.num_samples):
-                #pairs[i, j] = 0.5 * (d_log_iw[i, int(s_q_idx[j])] - s_log_iw[j] + \
                 pairs[i, j] = 0.5 * (d_log_iw[i] - s_log_iw[j] + \
                                 0.5 * (np.sum(bottom[0].data[i, :]) - np.sum(bottom[1].data[j, :])))
+                #if pairs[i, j] < -200:
+                #    pairs[i, j] = -200
                 if max_val < pairs[i, j]:
                     max_val = pairs[i, j]
+        #import pdb; pdb.set_trace()
         pairs = np.exp(pairs - max_val)
         #pairs = np.exp(pairs)
         self._pairs = pairs # NOTE - this has the max subtracted
-        self._pairs_sum = self._pairs.sum()*np.exp(max_val)
+        self._pairs_sum = self._pairs.sum() *np.exp(max_val)
         self.max_val = max_val
         top[0].data[...] = self._pairs_sum
 
@@ -376,10 +515,10 @@ class MPFLoss(caffe.Layer):
         for i in xrange(self.num_demos):
             for t in xrange(self.T):
                 # extra 0.5 is for the chain rule on the cost
-                demo_bottom_diff[i, t] = 0.5 * 0.5 * np.sum(pairs[i, :])*np.exp(self.max_val)
+                demo_bottom_diff[i, t] = 0.5 * 0.5 * np.sum(pairs[i, :]) * np.exp(self.max_val)
         for i in xrange(self.num_samples):
             for t in xrange(self.T):
-                sample_bottom_diff[i, t] = -0.5 * 0.5 * np.sum(pairs[:, i])*np.exp(self.max_val)
+                sample_bottom_diff[i, t] = -0.5 * 0.5 * np.sum(pairs[:, i]) * np.exp(self.max_val)
         bottom[0].diff[...] = demo_bottom_diff * loss_weight
         bottom[1].diff[...] = sample_bottom_diff * loss_weight
 
@@ -387,7 +526,7 @@ class MPFLoss(caffe.Layer):
 class LogMPFLoss(caffe.Layer):
     """ IOC loss layer, based on MPF objective. """
     def setup(self, bottom, top):
-        pass
+        self.C = None # C of None is normal log, C > 0 is squashing (larger C is closer to unlogged, smaller C is closer to log)
 
     def reshape(self, bottom, top):
         top[0].reshape(1)
@@ -411,12 +550,10 @@ class LogMPFLoss(caffe.Layer):
         # log importance weights of demos and samples.
         d_log_iw = bottom[2].data
         s_log_iw = bottom[3].data
-        #s_q_idx = bottom[4].data
 
         max_val = -np.inf
         for i in xrange(self.num_demos):
             for j in xrange(self.num_samples):
-                #pairs[i, j] = 0.5 * (d_log_iw[i, int(s_q_idx[j])] - s_log_iw[j] + \
                 pairs[i, j] = 0.5 * (d_log_iw[i] - s_log_iw[j] + \
                                 0.5 * (np.sum(bottom[0].data[i, :]) - np.sum(bottom[1].data[j, :])))
                 if max_val < pairs[i, j]:
@@ -424,7 +561,10 @@ class LogMPFLoss(caffe.Layer):
         pairs = np.exp(pairs - max_val)
         self._pairs = pairs
         self._pairs_sum = self._pairs.sum()
-        top[0].data[...] = np.log(self._pairs_sum) + max_val
+        if self.C is None:
+          top[0].data[...] = np.log(self._pairs_sum) + max_val
+        else:
+          top[0].data[...] = self.C*np.log(self.C+self._pairs_sum) + max_val - self.C*np.log(self.C)
 
     def backward(self, top, propagate_down, bottom):
         # compute backward pass (derivative of objective w.r.t. bottom)
@@ -437,10 +577,16 @@ class LogMPFLoss(caffe.Layer):
         for i in xrange(self.num_demos):
             for t in xrange(self.T):
                 # extra 0.5 is for the chain rule on the cost
-                demo_bottom_diff[i, t] = 0.5 * 0.5 * np.sum(pairs[i, :]) / self._pairs_sum
+                if self.C is None:
+                  demo_bottom_diff[i, t] = 0.5 * 0.5 * np.sum(pairs[i, :]) / self._pairs_sum
+                else:
+                  demo_bottom_diff[i, t] = 0.5 * 0.5 * np.sum(pairs[i, :]) * (self.C / (self.C+self._pairs_sum))
         for i in xrange(self.num_samples):
             for t in xrange(self.T):
-                sample_bottom_diff[i, t] = -0.5 * 0.5 * np.sum(pairs[:, i]) / self._pairs_sum
+                if self.C is None:
+                  sample_bottom_diff[i, t] = -0.5 * 0.5 * np.sum(pairs[:, i]) / self._pairs_sum
+                else:
+                  sample_bottom_diff[i, t] = -0.5 * 0.5 * np.sum(pairs[:, i]) * (self.C / (self.C+self._pairs_sum))
         bottom[0].diff[...] = demo_bottom_diff * loss_weight
         bottom[1].diff[...] = sample_bottom_diff * loss_weight
 
