@@ -433,7 +433,7 @@ class AlgorithmMDGPS(Algorithm):
             PKLv[t, :] = np.concatenate([
                 KB.T.dot(inv_pol_S).dot(kB), -inv_pol_S.dot(kB)
             ])
-            fCm[t, :, :] = (Cm[t, :, :] + PKLm[t, :, :] * (eta + multiplier)) / (eta + multiplier)
-            fcv[t, :] = (cv[t, :] + PKLv[t, :] * (eta + multiplier)) / (eta + multiplier)
+            fCm[t, :, :] = (Cm[t, :, :] + PKLm[t, :, :] * eta) / (eta + multiplier)
+            fcv[t, :] = (cv[t, :] + PKLv[t, :] * eta) / (eta + multiplier)
 
         return fCm, fcv
