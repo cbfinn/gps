@@ -56,8 +56,8 @@ COST_ACTION = {
 IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
     'ioc_loss': 'ICML',  # Type of loss to use (ICML, XENTGAN, IOCGAN, MPF)
     'iterations': 5000,  # Number of training iterations.
-    'demo_batch_size': 5,  # Number of demos per mini-batch.
-    'sample_batch_size': 5,  # Number of samples per mini-batch.
+    'demo_batch_size': 10,  # Number of demos per mini-batch.
+    'sample_batch_size': 10,  # Number of samples per mini-batch.
     'lr': 0.001,  # Base learning rate (by default it's fixed).
     'lr_policy': 'fixed',  # Learning rate policy.
     'solver_type': 'Adam',  # solver type (e.g. 'SGD', 'Adam')
