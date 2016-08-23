@@ -107,7 +107,7 @@ class IOCLoss(caffe.Layer):
             sc[i] += s_log_iw[i]
             if -sc[i] > max_val:
                 max_val = -sc[i]
-    
+
         # Do a safe log-sum-exp operation.
         max_val = np.max((max_val, np.max(-dc)))
         dc = np.exp(-dc - max_val)
@@ -286,12 +286,10 @@ class SigmoidMPFLoss(caffe.Layer):
         # log importance weights of demos and samples.
         d_log_iw = bottom[2].data
         s_log_iw = bottom[3].data
-        #s_q_idx = bottom[4].data
 
         max_val = -np.inf
         for i in xrange(self.num_demos):
             for j in xrange(self.num_samples):
-                #pairs[i, j] = (d_log_iw[i, int(s_q_idx[j])] - s_log_iw[j] +
                 pairs[i, j] = (d_log_iw[i] - s_log_iw[j] +
                                 0.5 * (np.sum(bottom[0].data[i, :]) - np.sum(bottom[1].data[j, :])))
                 #if max_val < pairs[i, j]:
@@ -348,12 +346,10 @@ class MPFLoss(caffe.Layer):
         # log importance weights of demos and samples.
         d_log_iw = bottom[2].data
         s_log_iw = bottom[3].data
-        #s_q_idx = bottom[4].data
 
         max_val = -np.inf
         for i in xrange(self.num_demos):
             for j in xrange(self.num_samples):
-                #pairs[i, j] = 0.5 * (d_log_iw[i, int(s_q_idx[j])] - s_log_iw[j] + \
                 pairs[i, j] = 0.5 * (d_log_iw[i] - s_log_iw[j] + \
                                 0.5 * (np.sum(bottom[0].data[i, :]) - np.sum(bottom[1].data[j, :])))
                 if max_val < pairs[i, j]:
@@ -411,12 +407,10 @@ class LogMPFLoss(caffe.Layer):
         # log importance weights of demos and samples.
         d_log_iw = bottom[2].data
         s_log_iw = bottom[3].data
-        #s_q_idx = bottom[4].data
 
         max_val = -np.inf
         for i in xrange(self.num_demos):
             for j in xrange(self.num_samples):
-                #pairs[i, j] = 0.5 * (d_log_iw[i, int(s_q_idx[j])] - s_log_iw[j] + \
                 pairs[i, j] = 0.5 * (d_log_iw[i] - s_log_iw[j] + \
                                 0.5 * (np.sum(bottom[0].data[i, :]) - np.sum(bottom[1].data[j, :])))
                 if max_val < pairs[i, j]:

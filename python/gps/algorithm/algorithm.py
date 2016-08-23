@@ -367,7 +367,7 @@ class Algorithm(object):
         samples_logprob, demos_logprob = {}, {}
         # number of demo distributions
         Md = self._hyperparams['demo_M']
-        demos_logiw, samples_logiw, samples_q_idx = {}, {}, {}
+        demos_logiw, samples_logiw = {}, {}
         demoU = {i: self.demoU for i in xrange(M)}
         demoX = {i: self.demoX for i in xrange(M)}
         demoO = {i: self.demoO for i in xrange(M)}
@@ -453,20 +453,7 @@ class Algorithm(object):
                                     samples_logprob[i][itr + (m + 1) * (itr_i + 1), t, j] = -0.5 * np.sum(diff * (self.demo_traj[itr_i][m].inv_pol_covar[t, :, :].dot(diff))) - \
                                                                 np.sum(np.log(np.diag(self.demo_traj[itr_i][m].chol_pol_covar[t, :, :])))
             # Sum over the distributions and time.
-            # if self._hyperparams['ioc'] == 'MPF':
-            if False:
-                samples_logiw[i] = np.sum(samples_logprob[i], 1)
-                # Need to construct index of samples
-                itrs = range(itr+1)
-                itrs.reverse()
-                idx = np.tile(np.array(itrs).reshape(itr+1,1),
-                              samples_per_iter).flatten()
-                samples_q_idx[i] = idx
-                samples_logiw[i] = np.array([samples_logiw[i][c, j] for
-                    (c, j) in zip(idx, range(len(idx)))])
-
-            else:
-                samples_logiw[i] = logsum(np.sum(samples_logprob[i], 1), 0)
+            samples_logiw[i] = logsum(np.sum(samples_logprob[i], 1), 0)
 
         # Assume only one condition for the samples.
         assert Md == 1
@@ -531,15 +518,6 @@ class Algorithm(object):
                             diff = demo_policy.act(demoX[idx][j, t, :], demoX[idx][j, t, :], t, noise) - demoU[idx][j, t, :]
                             demos_logprob[idx][itr + 1 + m, t, j] = -0.5 * np.sum(diff * (demo_policy.inv_pol_covar.dot(diff)), 0) - \
                                                             np.sum(np.log(np.diag(demo_policy.chol_pol_covar)))
-            # Sum over the distributions and time.
-            # if self._hyperparams['ioc'] == 'MPF':
-            if False:
-                demos_logiw[idx] = np.sum(demos_logprob[idx], 1)
-            else:
-                demos_logiw[idx] = logsum(np.sum(demos_logprob[idx], 1), 0)
+            demos_logiw[idx] = logsum(np.sum(demos_logprob[idx], 1), 0)
 
-        # if self._hyperparams['ioc'] == 'MPF':
-        if False:
-            return demos_logiw, samples_logiw, samples_q_idx
-        else:
-            return demos_logiw, samples_logiw
+        return demos_logiw, samples_logiw

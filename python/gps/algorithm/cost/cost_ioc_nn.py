@@ -33,7 +33,6 @@ class CostIOCNN(Cost):
 
         self.demo_batch_size = self._hyperparams['demo_batch_size']
         self.sample_batch_size = self._hyperparams['sample_batch_size']
-        self.caffe_iter = 0
 
         self._iteration_count = 1
 
@@ -134,7 +133,7 @@ class CostIOCNN(Cost):
 
     # TODO - we might want to make the demos and samples input as SampleList objects, rather than arrays.
     # TODO - also we might want to exclude demoU/sampleU since we generally don't use them
-    def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, s_q_idx=None):
+    def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw):
         """
         Learn cost function with generic function representation.
         Args:
@@ -146,14 +145,22 @@ class CostIOCNN(Cost):
             sampleX: the states of samples.
             sampleO: the observations of samples.
             s_log_iw: log importance weights for samples.
-            s_q_idx: the index of the controller which the sample came from
         """
 
         Nd = demoO.shape[0]
         Ns = sampleO.shape[0]
+
+        if Ns <= self.sample_batch_size:
+            sample_batch_size = Ns
+            old_net = self.solver.net
+            self._init_solver(sample_batch_size)
+            self.solver.net.share_with(old_net)
+        else:
+            sample_batch_size = self.sample_batch_size
+
         blob_names = self.solver.net.blobs.keys()
         dbatches_per_epoch = np.floor(Nd / self.demo_batch_size)
-        sbatches_per_epoch = np.floor(Ns / self.sample_batch_size)
+        sbatches_per_epoch = np.floor(Ns / sample_batch_size)
 
         demo_idx = range(Nd)
         sample_idx = range(Ns)
@@ -167,17 +174,12 @@ class CostIOCNN(Cost):
           # Load in data for this batch.
           d_start_idx = int(i * self.demo_batch_size %
               (dbatches_per_epoch * self.demo_batch_size))
-          s_start_idx = int(i * self.sample_batch_size %
-              (sbatches_per_epoch * self.sample_batch_size))
+          s_start_idx = int(i * sample_batch_size %
+              (sbatches_per_epoch * sample_batch_size))
           d_idx_i = demo_idx[d_start_idx:d_start_idx+self.demo_batch_size]
-          s_idx_i = sample_idx[s_start_idx:s_start_idx+self.sample_batch_size]
+          s_idx_i = sample_idx[s_start_idx:s_start_idx+sample_batch_size]
           self.solver.net.blobs[blob_names[0]].data[:] = demoO[d_idx_i]
-          if False: # s_q_idx is not None:  # for MPF
-              #self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[s_q_idx[0][s_idx_i].reshape((-1,)), d_idx_i].reshape((-1,1))
-              self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[:, d_idx_i].T
-              self.solver.net.blobs[blob_names[4]].data[:] = s_q_idx[0][s_idx_i].reshape((-1,1))
-          else:
-              self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[d_idx_i]
+          self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[d_idx_i]
           self.solver.net.blobs[blob_names[2]].data[:] = sampleO[s_idx_i]
           self.solver.net.blobs[blob_names[3]].data[:] = s_log_iw[s_idx_i]
           self.solver.step(1)
@@ -191,21 +193,6 @@ class CostIOCNN(Cost):
 
         # Keep track of Caffe iterations for loading solver states.
         self.caffe_iter += self._hyperparams['iterations']
-
-        if False: # self._hyperparams['ioc_loss'] == 'MPF':
-            #old_net = self.solver.net
-            self.solver.snapshot()
-            self._iteration_count += 1  # assumes that the cost is updated once per iteration
-            self._init_solver()
-
-            self.solver.restore(
-              self._hyperparams['weights_file_prefix'] + '_iter_' +
-              str(self.caffe_iter) + '.solverstate'
-            )
-            # note - could also do this at the top of update, whenever the size of q_idx changes
-            # note - or just could set the size of the thing to be the max number of iterations.
-            # and update the code to set it appropriately (and remove this code)
-
         self.solver.test_nets[0].share_with(self.solver.net)
         self.solver.test_nets[1].share_with(self.solver.net)
         # DEBUGGING
@@ -221,7 +208,7 @@ class CostIOCNN(Cost):
 
 
 
-    def _init_solver(self):
+    def _init_solver(self, sample_batch_size=None):
         """ Helper method to initialize the solver. """
         solver_param = SolverParameter()
         solver_param.display = 0  # Don't display anything.
@@ -237,7 +224,10 @@ class CostIOCNN(Cost):
 
         network_arch_params['dim_input'] = self._dO
         network_arch_params['demo_batch_size'] = self._hyperparams['demo_batch_size']
-        network_arch_params['sample_batch_size'] = self._hyperparams['sample_batch_size']
+        if sample_batch_size is None:
+            network_arch_params['sample_batch_size'] = self._hyperparams['sample_batch_size']
+        else:
+            network_arch_params['sample_batch_size'] = sample_batch_size
         network_arch_params['T'] = self._T
         network_arch_params['phase'] = TRAIN
         network_arch_params['ioc_loss'] = self._hyperparams['ioc_loss']
@@ -266,6 +256,7 @@ class CostIOCNN(Cost):
         f.write(MessageToString(solver_param))
         f.close()
         self.solver = caffe.get_solver(f.name)
+        self.caffe_iter = 0
 
     # For pickling.
     def __getstate__(self):
