@@ -76,9 +76,9 @@ class AlgorithmMDGPS(Algorithm):
                     failed_samples = []
                     for j in xrange(len(cur_samples)):
                         if dists[j] <= self._hyperparams['success_upper_bound']:
-                            demoU[m].append(cur_samples[j].get_U())
-                            demoX[m].append(cur_samples[j].get_X())
-                            demoO[m].append(cur_samples[j].get_obs())
+                            self.demoU = np.vstack((self.demoU, cur_samples[j].get_U().reshape(1, self.T, -1)))
+                            self.demoX = np.vstack((self.demoX, cur_samples[j].get_X().reshape(1, self.T, -1)))
+                            self.demoO = np.vstack((self.demoO, cur_samples[j].get_obs().reshape(1, self.T, -1)))
                         else:
                             failed_samples.append(cur_samples[j])
                     self.cur[m].sample_list = SampleList(failed_samples)
@@ -139,7 +139,7 @@ class AlgorithmMDGPS(Algorithm):
             self.cur[m].pol_info.prev_kl = kl_m
 
         # Computing KL-divergence between sample distribution and demo distribution
-        if self._hyperparams['ioc'] and not self._hyperparams['policy_eval']:
+        if self._hyperparams['ioc'] and not self._hyperparams['learning_from_prior']:
             for i in xrange(self.M):
                 mu, sigma = self.traj_opt.forward(self.traj_distr[itr][i], self.traj_info[itr][i])
                 # KL divergence between current traj. distribution and gt distribution
@@ -379,7 +379,8 @@ class AlgorithmMDGPS(Algorithm):
         """ Update the cost objective in each iteration. """
 
         # Estimate the importance weights for fusion distributions.
-        if self._hyperparams['ioc'] == 'MPF':
+        # if self._hyperparams['ioc'] == 'MPF':
+        if False:
             demos_logiw, samples_logiw, samples_q_idx = self.importance_weights()
         else:
             sample_q_idx = None
@@ -393,13 +394,14 @@ class AlgorithmMDGPS(Algorithm):
         sampleX_arr = np.vstack((self.sample_list[i].get_X() for i in xrange(M)))
         sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
         samples_logiw = {i: samples_logiw[i].reshape((-1, 1)) for i in xrange(M)}
-        if self._hyperparams['ioc'] == 'MPF':
+        # if self._hyperparams['ioc'] == 'MPF':
+        if False:
             samples_q_idx = {i: samples_q_idx[i].reshape((-1, 1)) for i in xrange(M)}
         else:
             demos_logiw = {i: demos_logiw[i].reshape((-1, 1)) for i in xrange(Md)}
             samples_q_idx = None
-        demos_logiw_arr = np.hstack([demos_logiw[i] for i in xrange(Md)]).reshape((-1, 1))
-        samples_logiw_arr = np.hstack([samples_logiw[i] for i in xrange(M)]).reshape((-1, 1))
+        demos_logiw_arr = np.vstack([demos_logiw[i] for i in xrange(Md)]).reshape((-1, 1))
+        samples_logiw_arr = np.vstack([samples_logiw[i] for i in xrange(M)]).reshape((-1, 1))
         if not self._hyperparams['global_cost']:
             for i in xrange(M):
                 self.cost[i].update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, self.sample_list[i].get_U(),

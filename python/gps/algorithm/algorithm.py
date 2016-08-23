@@ -394,12 +394,12 @@ class Algorithm(object):
                   samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
                   demos_logprob[i] = np.zeros((itr + Md + 1, self.T, demoX[i].shape[0]))
             else:
-                cur_idx = sum(self.num_samples[i] for i in xrange(itr))
+                cur_idx = self.num_samples[i]
                 if self._hyperparams['ioc'] != 'ICML':
-                  samples_logprob[i] = np.zeros((itr + 1, self.T, cur_idx + init_samples))
+                  samples_logprob[i] = np.zeros((itr + 1, self.T, cur_idx))
                   demos_logprob[i] = np.zeros((itr + 1, self.T, demoX[i].shape[0]))
                 else:
-                  samples_logprob[i] = np.zeros((itr + 1 + Md*(itr + 1), self.T, cur_idx + init_samples))
+                  samples_logprob[i] = np.zeros((itr + 1 + Md*(itr + 1), self.T, cur_idx))
                   demos_logprob[i] = np.zeros((itr + 1 + Md*(itr + 1), self.T, demoX[i].shape[0]))
 
 
@@ -453,7 +453,8 @@ class Algorithm(object):
                                     samples_logprob[i][itr + (m + 1) * (itr_i + 1), t, j] = -0.5 * np.sum(diff * (self.demo_traj[itr_i][m].inv_pol_covar[t, :, :].dot(diff))) - \
                                                                 np.sum(np.log(np.diag(self.demo_traj[itr_i][m].chol_pol_covar[t, :, :])))
             # Sum over the distributions and time.
-            if self._hyperparams['ioc'] == 'MPF':
+            # if self._hyperparams['ioc'] == 'MPF':
+            if False:
                 samples_logiw[i] = np.sum(samples_logprob[i], 1)
                 # Need to construct index of samples
                 itrs = range(itr+1)
@@ -531,12 +532,14 @@ class Algorithm(object):
                             demos_logprob[idx][itr + 1 + m, t, j] = -0.5 * np.sum(diff * (demo_policy.inv_pol_covar.dot(diff)), 0) - \
                                                             np.sum(np.log(np.diag(demo_policy.chol_pol_covar)))
             # Sum over the distributions and time.
-            if self._hyperparams['ioc'] == 'MPF':
+            # if self._hyperparams['ioc'] == 'MPF':
+            if False:
                 demos_logiw[idx] = np.sum(demos_logprob[idx], 1)
             else:
                 demos_logiw[idx] = logsum(np.sum(demos_logprob[idx], 1), 0)
 
-        if self._hyperparams['ioc'] == 'MPF':
+        # if self._hyperparams['ioc'] == 'MPF':
+        if False:
             return demos_logiw, samples_logiw, samples_q_idx
         else:
             return demos_logiw, samples_logiw

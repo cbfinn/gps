@@ -56,8 +56,8 @@ class GPSMain(object):
             if not config['common']['nn_demo']:
                 demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
             else:
-                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_linearize.pkl'
-                demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_no_noise.pkl'            
+                demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'
+                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_no_noise.pkl'            
             demos = self.data_logger.unpickle(demo_file)
             if demos is None:
               self.demo_gen = GenDemo(config)
@@ -654,12 +654,16 @@ def main():
             hyperparams.config['algorithm']['init_demo_policy'] = False
             hyperparams.config['algorithm']['policy_eval'] = False
             hyperparams.config['algorithm']['ioc'] = 'MPF'
+            hyperparams.config['algorithm']['bootstrap'] = True
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_%d' % itr + '/'
             # if not os.path.exists(exp_dir + 'data_files_nn_%d' % itr + '/'):
             #     os.makedirs(exp_dir + 'data_files_nn_%d' % itr + '/')
-            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/'
-            if not os.path.exists(exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/'):
-              os.makedirs(exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/')
+            # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/'
+            # if not os.path.exists(exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/'):
+            #   os.makedirs(exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/')
+            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_MPF_boot_%d' % itr + '/'
+            if not os.path.exists(exp_dir + 'data_files_nn_MPF_boot_%d' % itr + '/'):
+              os.makedirs(exp_dir + 'data_files_nn_MPF_boot_%d' % itr + '/')
             # hyperparams.config['algorithm']['init_var_mult'] = var_mults[itr]
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'
             # if not os.path.exists(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'):
@@ -702,13 +706,16 @@ def main():
             hyperparams = imp.load_source('hyperparams', hyperparams_file)
             # hyperparams.config['algorithm']['init_traj_distr']['type'] = init_lqr
             # hyperparams.config['algorithm']['global_cost'] = True
-            hyperparams.config['common']['nn_demo'] = False
+            hyperparams.config['common']['nn_demo'] = True
             hyperparams.config['algorithm']['init_demo_policy'] = False
             hyperparams.config['algorithm']['policy_eval'] = False
             hyperparams.config['algorithm']['ioc'] = 'MPF'
-            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_LG_MPF_%d' % itr + '/'
-            if not os.path.exists(exp_dir + 'data_files_LG_MPF_%d' % itr + '/'):
-                os.makedirs(exp_dir + 'data_files_LG_MPF_%d' % itr + '/')
+            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_MPF_%d' % itr + '/'
+            if not os.path.exists(exp_dir + 'data_files_nn_MPF_%d' % itr + '/'):
+                os.makedirs(exp_dir + 'data_files_nn_MPF_%d' % itr + '/')
+            # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_LG_MPF_%d' % itr + '/'
+            # if not os.path.exists(exp_dir + 'data_files_LG_MPF_%d' % itr + '/'):
+            #     os.makedirs(exp_dir + 'data_files_LG_MPF_%d' % itr + '/')
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'
             # if not os.path.exists(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'):
             #   os.makedirs(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/')
@@ -765,17 +772,20 @@ def main():
         #   plt.annotate(np.around(txt, decimals=2), (i, txt))
         # for i, txt in enumerate(avg_dists_no_global):
         #   plt.annotate(np.around(txt, decimals=2), (i, txt))
-        plt.legend(['avg nn demo', 'avg LG demo', 'nn demo', 'LG demo'], loc='upper right', ncol=2)
+        plt.legend(['avg bootstrap', 'avg non-bootstrap', 'bootstrap', 'non-bootstrap'], loc='upper right', ncol=2)
+        # plt.legend(['avg nn demo', 'avg LG demo', 'nn demo', 'LG demo'], loc='upper right', ncol=2)
         # plt.legend(['avg ICML', 'avg MPF', 'ICML', 'MPF'], loc='upper right', ncol=2)
         # plt.legend(['var 8', 'var 10', 'var 16'], loc='upper right', ncol=3)
         # plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)
-        plt.title("mean distances to the target over time with nn and LG demo")
+        # plt.title("mean distances to the target over time with nn and LG demo")
+        plt.title("mean distances to the target over time with bootstrap and non-bootstrap")
         # plt.title("mean distances to the target over time with ICML and MPF objective")
         # plt.title("mean distances to the target over time with different initial policy variance")
         # plt.title("mean distances to the target during iterations with and without demo init")
         plt.xlabel("iterations")
         plt.ylabel("mean distances")
-        plt.savefig(exp_dir + 'mean_dists_during_iteration_comparison.png')
+        plt.savefig(exp_dir + 'mean_dists_during_iteration_comparison_boot.png')
+        # plt.savefig(exp_dir + 'mean_dists_during_iteration_comparison.png')
         # plt.savefig(exp_dir + 'mean_dists_during_iteration_var.png')
         plt.close()
         plt.plot(range(pol_iter), avg_succ_rate_global, '-x', color='red')
@@ -793,16 +803,19 @@ def main():
         # for i, txt in enumerate(avg_succ_rate_no_global):
         #   plt.annotate(repr(txt*100) + "%", (i, txt))
         # plt.legend(['var 8', 'var 10', 'var 16'], loc='upper right', ncol=3)
-        plt.legend(['avg nn demo', 'avg LG demo', 'nn demo', 'LG demo'], loc='lower right', ncol=2)
+        plt.legend(['avg bootstrap', 'avg non-bootstrap', 'bootstrap', 'non-bootstrap'], loc='upper right', ncol=2)
+        # plt.legend(['avg nn demo', 'avg LG demo', 'nn demo', 'LG demo'], loc='lower right', ncol=2)
         # plt.legend(['avg ICML', 'avg MPF', 'ICML', 'MPF'], loc='lower right', ncol=2)
         # plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)
         plt.xlabel("iterations")
         plt.ylabel("success rate")
-        plt.title("success rates during iterations with with nn and LG demo")
+        plt.title("success rates during iterations with bootstrap and non-bootstrap")
+        # plt.title("success rates during iterations with with nn and LG demo")
         # plt.title("success rates during iterations with with ICML and MPF objective")
         # plt.title("success rates during iterations with different initial policy variance")
         # plt.title("success rates during iterations with and without demo initialization")
-        plt.savefig(exp_dir + 'success_rate_during_iteration_comparison.png')
+        plt.savefig(exp_dir + 'success_rate_during_iteration_comparison_boot.png')
+        # plt.savefig(exp_dir + 'success_rate_during_iteration_comparison.png')
         # plt.savefig(exp_dir + 'success_rate_during_iteration_var.png')
 
         plt.close()
