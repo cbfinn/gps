@@ -219,7 +219,7 @@ def multi_modal_network_fp(dim_input=27, dim_output=7, batch_size=25, network_co
         'bc3': init_bias([num_filters[2]]),
     }
 
-    conv_layer_0 = conv2d(img=image_input, w=weights['wc1'], b=biases['bc1'])
+    conv_layer_0 = conv2d(img=image_input, w=weights['wc1'], b=biases['bc1'], strides=[1,2,2,1])
     conv_layer_1 = conv2d(img=conv_layer_0, w=weights['wc2'], b=biases['bc2'])
     conv_layer_2 = conv2d(img=conv_layer_1, w=weights['wc3'], b=biases['bc3'])
 
@@ -231,7 +231,7 @@ def multi_modal_network_fp(dim_input=27, dim_output=7, batch_size=25, network_co
     for i in range(num_rows):
         for j in range(num_cols):
             x_map[i, j] = (i - num_rows / 2.0) / num_rows
-            y_map[i, j] = (i - num_cols / 2.0) / num_cols
+            y_map[i, j] = (j - num_cols / 2.0) / num_cols
 
     x_map = tf.convert_to_tensor(x_map)
     y_map = tf.convert_to_tensor(y_map)
