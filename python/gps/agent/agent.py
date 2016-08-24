@@ -3,7 +3,7 @@ import abc
 import copy
 
 from gps.agent.config import AGENT
-from gps.proto.gps_pb2 import ACTION
+from gps.proto.gps_pb2 import ACTION, GYM_REWARD
 from gps.sample.sample_list import SampleList
 
 
@@ -23,6 +23,8 @@ class Agent(object):
         self._samples = [[] for _ in range(self._hyperparams['conditions'])]
         self.T = self._hyperparams['T']
         self.dU = self._hyperparams['sensor_dims'][ACTION]
+        if GYM_REWARD in self._hyperparams['sensor_dims']:
+            self.dR = self._hyperparams['sensor_dims'][GYM_REWARD]
 
         self.x_data_types = self._hyperparams['state_include']
         self.obs_data_types = self._hyperparams['obs_include']
@@ -38,7 +40,6 @@ class Agent(object):
             self._state_idx.append(list(range(i, i+dim)))
             i += dim
         self.dX = i
-
         # List of indices for each data type in observation.
         self._obs_idx, i = [], 0
         for sensor in self.obs_data_types:
