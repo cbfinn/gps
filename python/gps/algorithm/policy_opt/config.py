@@ -20,7 +20,7 @@ GENERIC_CONFIG = {
     'weight_decay': 0.005,  # Weight decay.
     'solver_type': 'Adam',  # Solver type (e.g. 'SGD', 'Adam', etc.).
     # set gpu usage.
-    'use_gpu': 1,  # Whether or not to use the GPU for caffe training.
+    'use_gpu': 0,  # Whether or not to use the GPU for caffe training.
     'gpu_id': 0,
     'random_seed': 1,
 }
