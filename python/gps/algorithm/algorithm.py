@@ -82,7 +82,12 @@ class Algorithm(object):
             self._hyperparams['traj_opt']
         )
         if self._hyperparams['global_cost']:
-            self.cost = self._hyperparams['cost']['type'](self._hyperparams['cost'])
+            if type(hyperparams['cost']) == list:
+                self.cost = [
+                    hyperparams['cost'][i]['type'](hyperparams['cost'][i])
+                    for i in range(hyperparams['conditions'])]
+            else:
+                self.cost = self._hyperparams['cost']['type'](self._hyperparams['cost'])
         else:
             self.cost = [
                 self._hyperparams['cost']['type'](self._hyperparams['cost'])
@@ -183,7 +188,7 @@ class Algorithm(object):
                 else:
                     l, lx, lu, lxx, luu, lux = self.previous_cost[cond].eval(sample)
             else:
-                if self._hyperparams['global_cost']:
+                if self._hyperparams['global_cost'] and type(self.cost) != list:
                     l, lx, lu, lxx, luu, lux = self.cost.eval(sample)
                 else:
                     l, lx, lu, lxx, luu, lux = self.cost[cond].eval(sample)

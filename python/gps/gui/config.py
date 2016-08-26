@@ -87,7 +87,8 @@ config = {
     'permuted_inverted_ps3_bindings': permuted_inverted_ps3_bindings,
 
     # Images
-    'image_on': True,
+    'image_on': False,
+    'fp_on': True,
     'image_topic': '/camera/rgb/image_color',
     'image_size': (240, 240),
     'image_overlay_actuator': 'trial_arm',
@@ -105,7 +106,7 @@ config = {
     # GPS Training
     'initial_mode': 'run',
     'algthm_output_fontsize': 10,
-    'algthm_output_max_display_size': 25,
+    'algthm_output_max_display_size': 15,
 }
 
 def generate_experiment_info(config):
@@ -116,10 +117,17 @@ def generate_experiment_info(config):
     common = config['common']
     algorithm = config['algorithm']
 
-    algorithm_cost_type = algorithm['cost']['type'].__name__
-    if (algorithm_cost_type) == 'CostSum':
-        algorithm_cost_type += '(%s)' % ', '.join(
-                map(lambda cost: cost['type'].__name__, algorithm['cost']['costs']))
+    if type(algorithm['cost']) == list:
+        algorithm_cost_type = algorithm['cost'][0]['type'].__name__
+        if (algorithm_cost_type) == 'CostSum':
+            algorithm_cost_type += '(%s)' % ', '.join(
+                    map(lambda cost: cost['type'].__name__, algorithm['cost'][0]['costs']))
+    else:
+        algorithm_cost_type = algorithm['cost']['type'].__name__
+        if (algorithm_cost_type) == 'CostSum':
+            algorithm_cost_type += '(%s)' % ', '.join(
+                    map(lambda cost: cost['type'].__name__, algorithm['cost']['costs']))
+
     return (
         'exp_name:   ' + str(common['experiment_name'])              + '\n' +
         'alg_type:   ' + str(algorithm['type'].__name__)             + '\n' +

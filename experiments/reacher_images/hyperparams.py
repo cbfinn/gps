@@ -11,10 +11,10 @@ from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_fk import CostFK
-from gps.algorithm.cost.cost_fk_blocktouch import CostFKBlock
+#from gps.algorithm.cost.cost_fk_blocktouch import CostFKBlock
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
-from gps.algorithm.cost.cost_gym import CostGym
+#from gps.algorithm.cost.cost_gym import CostGym
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
@@ -53,21 +53,11 @@ PR2_GAINS = np.array([1.0, 1.0])
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
-# CONDITIONS = 4
-
-# np.random.seed(13)
-# pos_body_offset = []
-# for _ in range(CONDITIONS):
-#     pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1, 0]))
-
-TRAIN_CONDITIONS = 60
-TEST_CONDITIONS = 30
-TOTAL_CONDITIONS = TRAIN_CONDITIONS + TEST_CONDITIONS
-
-np.random.seed(47)
+CONDITIONS = 4
+np.random.seed(13)
 pos_body_offset = []
-for _ in range(TOTAL_CONDITIONS):
-    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
+for _ in range(CONDITIONS):
+    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1, 0]))
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -76,9 +66,9 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': TOTAL_CONDITIONS,
-    'train_conditions': range(TRAIN_CONDITIONS),
-    'test_conditions': range(TRAIN_CONDITIONS, TOTAL_CONDITIONS),
+    'conditions': CONDITIONS,
+    'train_conditions': range(CONDITIONS),
+    'test_conditions': range(CONDITIONS),
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -86,7 +76,8 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'filename': './mjc_models/reacher_img.xml',
+    #'filename': './mjc_models/reacher_img.xml',
+    'filename': './mjc_models/reacher.xml',
     'x0': np.zeros(4),
     'dt': 0.05,
     'substeps': 5,
@@ -112,36 +103,16 @@ agent = {
 }
 
 
-# algorithm = {
-#     'type': AlgorithmMDGPS,
-#     'conditions': common['conditions'],
-#     'iterations': 12,
-#     'kl_step': 1.0,
-#     'min_step_mult': 0.5,
-#     'max_step_mult': 3.0,
-#     'policy_sample_mode': 'replace',
-#     'num_clusters': 0,
-#     'cluster_method': 'kmeans',
-#     'sample_on_policy': True,
-#     'plot_dir': EXP_DIR,
-# }
-
 algorithm = {
     'type': AlgorithmMDGPS,
-    'sample_on_policy': True,
     'conditions': common['conditions'],
-    'train_conditions': common['train_conditions'],
-    'test_conditions': common['test_conditions'],
-    'iterations': 20,
+    'iterations': 12,
     'kl_step': 1.0,
-    'min_step_mult': 0.2,
-    'max_step_mult': 2.0,
+    'min_step_mult': 0.5,
+    'max_step_mult': 3.0,
     'policy_sample_mode': 'replace',
-    'num_clusters': 8,
-#    'cluster_method': 'random',
-#    'cluster_method': 'kmeans',
-    'cluster_method': 'traj_em',
-    'traj_em_iters': 3,
+    'sample_on_policy': True,
+    'plot_dir': EXP_DIR,
 }
 
 
@@ -203,78 +174,68 @@ algorithm['init_traj_distr'] = {
     'T': agent['T'],
 }
 
-# torque_cost_1 = [{
-#     'type': CostAction,
-#     'wu': 1 / PR2_GAINS,
-# } for i in range(common['conditions'])]
+torque_cost_1 = [{
+    'type': CostAction,
+    'wu': 1 / PR2_GAINS,
+} for i in range(common['conditions'])]
 
-# fk_cost_1 = [{
-#     'type': CostFK,
-#     'target_end_effector': np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])]),
-#     'wp': np.array([1, 1, 1, 0, 0, 0]),
-#     'l1': 1.0,
-#     'l2': 0.0,
-#     'alpha': 0,
-#     'evalnorm': evall1l2term,
-# } for i in range(common['conditions'])]
+fk_cost_1 = [{
+    'type': CostFK,
+    'target_end_effector': np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])]),
+    'wp': np.array([1, 1, 1, 0, 0, 0]),
+    'l1': 1.0,
+    'l2': 0.0,
+    'alpha': 0,
+    'evalnorm': evall1l2term,
+} for i in range(common['conditions'])]
 
-# algorithm['cost'] = [{
-#     'type': CostSum,
-#     'costs': [torque_cost_1[i], fk_cost_1[i]],
-#     'weights': [2.0, 1.0],
-# } for i in range(common['conditions'])]
-
-algorithm['cost'] = {
-    'type': CostGym,
-}
-
-# algorithm['dynamics'] = {
-#     'type': DynamicsLRPrior,
-#     'regularization': 1e-6,
-#     'prior': {
-#         'type': DynamicsPriorGMM,
-#         'max_clusters': 20,
-#         'min_samples_per_cluster': 40,
-#         'max_samples': 10,
-#     },
-# }
-
-# algorithm['traj_opt'] = {
-#     'type': TrajOptLQRPython,
-# }
-
-
-# algorithm['policy_prior'] = {
-#     'type': PolicyPriorGMM,
-#     'max_clusters': 20,
-#     'min_samples_per_cluster': 40,
-# }
+algorithm['cost'] = [{
+    'type': CostSum,
+    'costs': [torque_cost_1[i], fk_cost_1[i]],
+    'weights': [2.0, 1.0],
+}  for i in range(common['conditions'])]
 
 algorithm['dynamics'] = {
     'type': DynamicsLRPrior,
     'regularization': 1e-6,
     'prior': {
         'type': DynamicsPriorGMM,
-        'max_clusters': 30,
+        'max_clusters': 20,
         'min_samples_per_cluster': 40,
-        'max_samples': len(common['train_conditions']),
+        'max_samples': 10,
     },
 }
 
 algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
-    'min_eta': 1e-4,
-    'max_eta': 1.0,
 }
+
+
+#algorithm['dynamics'] = {
+#    'type': DynamicsLRPrior,
+#    'regularization': 1e-6,
+#    'prior': {
+#        'type': DynamicsPriorGMM,
+#        'max_clusters': 30,
+#        'min_samples_per_cluster': 40,
+#        'max_samples': len(common['train_conditions']),
+#    },
+#}
+
+#algorithm['traj_opt'] = {
+#    'type': TrajOptLQRPython,
+#    'min_eta': 1e-4,
+#    'max_eta': 1.0,
+#}
 
 
 algorithm['policy_prior'] = {
     'type': PolicyPriorGMM,
-    'max_clusters': 40,
+    'max_clusters': 20,
     'min_samples_per_cluster': 40,
 }
 
-NUM_SAMPLES = 1
+NUM_SAMPLES = 5
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': NUM_SAMPLES,

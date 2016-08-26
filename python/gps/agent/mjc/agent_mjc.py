@@ -15,7 +15,7 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINT_VELOCITIES_NO_TARGET
 
 from gps.sample.sample import Sample
-from gps.utility.general_utils import sample_params
+#from gps.utility.general_utils import sample_params
 
 class AgentMuJoCo(Agent):
     """
@@ -137,12 +137,12 @@ class AgentMuJoCo(Agent):
         """
         # Create new sample, populate first time step.
         new_sample = self._init_sample(condition)
-        
+
         mj_X = self._hyperparams['x0'][condition]
         U = np.zeros([self.T, self.dU])
         if self._hyperparams['record_reward']:
             R = np.zeros(self.T)
-        
+
         if noisy:
             noise = generate_noise(self.T, self.dU, self._hyperparams)
         else:
@@ -218,7 +218,7 @@ class AgentMuJoCo(Agent):
         sample.set(END_EFFECTOR_POINTS, eepts, t=0)
         if (END_EFFECTOR_POINTS_NO_TARGET in self._hyperparams['obs_include']):
             sample.set(END_EFFECTOR_POINTS_NO_TARGET, np.delete(eepts, self._hyperparams['target_idx']), t=0)
-        
+
         sample.set(END_EFFECTOR_POINT_VELOCITIES, np.zeros_like(eepts), t=0)
         if (END_EFFECTOR_POINT_VELOCITIES_NO_TARGET in self._hyperparams['obs_include']):
             sample.set(END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, np.delete(np.zeros_like(eepts), self._hyperparams['target_idx']), t=0)
