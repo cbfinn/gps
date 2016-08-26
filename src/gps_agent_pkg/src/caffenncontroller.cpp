@@ -20,7 +20,7 @@ CaffeNNController::~CaffeNNController()
 
 void CaffeNNController::get_action(int t, const Eigen::VectorXd &X, const Eigen::VectorXd &obs, Eigen::VectorXd &U){
     if (is_configured_) {
-        net_->forward(obs, U);
+        net_->forward(obs, U) + noise_;
     }
 }
 
@@ -41,6 +41,8 @@ void CaffeNNController::configure_controller(OptionsMap &options)
     Eigen::MatrixXd scale = boost::get<Eigen::MatrixXd>(options["scale"]);
     Eigen::VectorXd bias  = boost::get<Eigen::VectorXd>(options["bias"]);
     net_->set_scalebias(scale, bias);
+
+    noise_ = boost::get<Eigen::VectorXd>(options["noise"]);
 
     ROS_INFO_STREAM("Set Caffe network parameters");
     is_configured_ = true;

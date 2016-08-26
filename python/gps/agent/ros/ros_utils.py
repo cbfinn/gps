@@ -56,6 +56,7 @@ def policy_to_msg(policy, noise):
         scale_shape = policy.scale.shape
         msg.caffe.scale = policy.scale.reshape(scale_shape[0] * scale_shape[1]).tolist()
         msg.caffe.dim_bias = scale_shape[0]
+        msg.caffe.noise = policy.chol_pol_covar.T.dot(noise)
     elif isinstance(policy, TfPolicy):
         msg.controller_to_execute = TF_CONTROLLER
         msg.tf = TfParams()
