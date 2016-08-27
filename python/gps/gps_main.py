@@ -553,6 +553,7 @@ def main():
         sys.exit("Experiment '%s' does not exist.\nDid you create '%s'?" %
                  (exp_name, hyperparams_file))
 
+    import caffe  # Hack to avoid segfault when importing caffe later
     hyperparams = imp.load_source('hyperparams', hyperparams_file)
 
     import matplotlib.pyplot as plt
