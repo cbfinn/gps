@@ -55,7 +55,9 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': 1,
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl'
+    'demo_controller_file': [DEMO_DIR + 'data_files/algorithm_itr_09.pkl'],
+    'demo_exp_dir': DEMO_DIR,
+    'nn_demo': False
 }
 
 # TODO(chelsea/zoe) : Move this code to a utility function
@@ -132,21 +134,23 @@ demo_agent = {
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
     'end_effector_points': EE_POINTS,
-    'obs_include': [],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
+                      END_EFFECTOR_POINT_VELOCITIES],
 }
 
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
     'iterations': 10,
-    'learning_from_prior': True,
+    #'learning_from_prior': True,
     'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
     'ioc': True,  # 'MPF', 'ICML'
     'max_ent_traj': 1.0,
     'demo_distr_empest': True, # For ICML version, importance sampling emperically.
     'demo_cond': 15,
-    'num_demos': 3,
+    'num_demos': 5,
     'synthetic_cost_samples': 100,
+    'demo_var_mult': 1.0  # Increase variance on demos
 }
 
 algorithm['init_traj_distr'] = {
@@ -197,6 +201,8 @@ algorithm['cost'] = {
     'type': CostIOCNN,
     'wu': 5e-3 / PR2_GAINS,
     'T': 100,
+    'demo_batch_size': 5,
+    'sample_batch_size': 5,
     'dO': 32,
     'iterations': 5000
 }

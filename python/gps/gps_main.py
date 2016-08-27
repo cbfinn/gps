@@ -1,6 +1,7 @@
 """ This file defines the main object that runs experiments. """
 
 import matplotlib as mpl
+
 mpl.use('Qt4Agg')
 
 import logging
@@ -20,6 +21,7 @@ from gps.gui.gps_training_gui import GPSTrainingGUI
 from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
 from gps.utility.generate_demo import GenDemo
+from gps.utility.general_utils import disable_caffe_logs
 
 
 class GPSMain(object):
@@ -553,7 +555,9 @@ def main():
         sys.exit("Experiment '%s' does not exist.\nDid you create '%s'?" %
                  (exp_name, hyperparams_file))
 
+    unset = disable_caffe_logs()
     import caffe  # Hack to avoid segfault when importing caffe later
+    disable_caffe_logs(unset)
     hyperparams = imp.load_source('hyperparams', hyperparams_file)
 
     import matplotlib.pyplot as plt

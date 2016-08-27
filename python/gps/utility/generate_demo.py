@@ -1,6 +1,7 @@
 """ This file generates for a point mass for 4 starting positions and a single goal position. """
 
 import matplotlib as mpl
+
 mpl.use('Qt4Agg')
 
 import sys
@@ -20,6 +21,7 @@ from random import shuffle
 
 # Add gps/python to path so that imports work.
 sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
+from gps.agent.mjc.agent_mjc import AgentMuJoCo
 from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
 from gps.algorithm.algorithm_utils import gauss_fit_joint_prior
@@ -61,7 +63,7 @@ class GenDemo(object):
 		# algorithm_file = self._exp_dir
 		algorithm_files = self._algorithm_files_dir
 		self.algorithms = [] # A list of neural nets.
-		for i in range(4):
+		for i in range(self._conditions):
 			algorithm = pickle.load(open(algorithm_files[i]))
 			self.algorithms.append(algorithm)
 		# self.algorithm = pickle.load(open(algorithm_file))
@@ -69,7 +71,7 @@ class GenDemo(object):
 		# 	print("Error: cannot find '%s.'" % algorithm_file)
 		# 	os._exit(1) # called instead of sys.exit(), since t
 			if algorithm is None:
-				print("Error: cannot find '%s.'" % algorithm_file)
+				print("Error: cannot find '%s.'" % algorithm_files[i])
 				os._exit(1) # called instead of sys.exit(), since t
 
 		# Keep the initial states of the agent the sames as the demonstrations.
@@ -78,10 +80,10 @@ class GenDemo(object):
 		else:
 			self._learning = False
 		agent_config = self._hyperparams['demo_agent']
-		if agent_config['filename'] == './mjc_models/pr2_arm3d.xml' and not self._learning:
-			agent_config['x0'] = self.algorithm._hyperparams['agent_x0']
-			agent_config['pos_body_idx'] = self.algorithm._hyperparams['agent_pos_body_idx']
-			agent_config['pos_body_offset'] = self.algorithm._hyperparams['agent_pos_body_offset']
+		if agent_config['type']==AgentMuJoCo and agent_config['filename'] == './mjc_models/pr2_arm3d.xml' and not self._learning:
+			agent_config['x0'] = self.algorithms[0]._hyperparams['agent_x0']
+			agent_config['pos_body_idx'] = self.algorithms[0]._hyperparams['agent_pos_body_idx']
+			agent_config['pos_body_offset'] = self.algorithms[0]._hyperparams['agent_pos_body_offset']
 		self.agent = agent_config['type'](agent_config)
 
 		# Roll out the demonstrations from controllers
@@ -96,6 +98,7 @@ class GenDemo(object):
 		sampled_demos = []
 		if not self._learning:
 			controllers = {}
+			self.algorithm = self.algorithms[0]
 
 			# Store each controller under M conditions into controllers.
 			for i in xrange(M):
@@ -115,7 +118,7 @@ class GenDemo(object):
 					demos.append(demo)
 		else:
 			# Extract the neural network policy.
-			for j in xrange(4):
+			for j in xrange(self._conditions):
 				pol = self.algorithms[j].policy_opt.policy
 				pol.chol_pol_covar *= var_mult
 
@@ -144,7 +147,7 @@ class GenDemo(object):
 							demos.append(demo)
 
 		# Filter out worst (M - good_conds) demos.
-		if agent_config['filename'] == './mjc_models/pr2_arm3d.xml':
+		if agent_config['type']==AgentMuJoCo and agent_config['filename'] == './mjc_models/pr2_arm3d.xml':
 			target_position = agent_config['target_end_effector'][:3]
 			dists_to_target = np.zeros(M*N)
 			good_indices = []
