@@ -81,9 +81,9 @@ class GenDemo(object):
 			self._learning = False
 		agent_config = self._hyperparams['demo_agent']
 		if agent_config['type']==AgentMuJoCo and agent_config['filename'] == './mjc_models/pr2_arm3d.xml' and not self._learning:
-			agent_config['x0'] = self.algorithms[0]._hyperparams['agent_x0']
-			agent_config['pos_body_idx'] = self.algorithms[0]._hyperparams['agent_pos_body_idx']
-			agent_config['pos_body_offset'] = self.algorithms[0]._hyperparams['agent_pos_body_offset']
+			agent_config['x0'] = self.algorithm._hyperparams['agent_x0']
+			agent_config['pos_body_idx'] = self.algorithm._hyperparams['agent_pos_body_idx']
+			agent_config['pos_body_offset'] = self.algorithm._hyperparams['agent_pos_body_offset']
 		self.agent = agent_config['type'](agent_config)
 
 		# Roll out the demonstrations from controllers
@@ -98,7 +98,6 @@ class GenDemo(object):
 		sampled_demos = []
 		if not self._learning:
 			controllers = {}
-			self.algorithm = self.algorithms[0]
 
 			# Store each controller under M conditions into controllers.
 			for i in xrange(M):
