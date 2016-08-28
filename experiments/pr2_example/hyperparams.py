@@ -52,13 +52,12 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 1,
+    'conditions': 3,
 }
 
 # TODO(chelsea/zoe) : Move this code to a utility function
 # Set up each condition.
 for i in xrange(common['conditions']):
-
     ja_x0, ee_pos_x0, ee_rot_x0 = load_pose_from_npz(
         common['target_filename'], 'trial_arm', str(i), 'initial'
     )

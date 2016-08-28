@@ -144,7 +144,7 @@ algorithm = {
     'iterations': 10,
     #'learning_from_prior': True,
     'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
-    'ioc': True,  # 'MPF', 'ICML'
+    'ioc': 'MPF',  # 'MPF', 'ICML'
     'max_ent_traj': 1.0,
     'demo_distr_empest': True, # For ICML version, importance sampling emperically.
     'demo_cond': 15,
