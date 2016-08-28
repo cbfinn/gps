@@ -54,6 +54,8 @@ ALG = {
     'policy_eval': False,
     # Make successful samples in each iteration become demos.
     'bootstrap': False,
+    # Use 3 policies.
+    'multiple_policy': False,
 }
 
 # Good indices.

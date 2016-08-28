@@ -35,9 +35,15 @@ class AlgorithmMDGPS(Algorithm):
             self.cur[m].pol_info.policy_prior = \
                     policy_prior['type'](policy_prior)
 
-        self.policy_opt = self._hyperparams['policy_opt']['type'](
-            self._hyperparams['policy_opt'], self.dO, self.dU
-        )
+        if not self._hyperparams['multiple_policy']:
+            self.policy_opt = self._hyperparams['policy_opt']['type'](
+                self._hyperparams['policy_opt'], self.dO, self.dU
+            )
+        else:
+            self.num_policies = self._hyperparams['num_policies']
+            self.policy_opts = [self._hyperparams['policy_opt'][i]['type'](
+                self._hyperparams['policy_opt'][i], self.dO, self.dU
+            ) for i in xrange(self.num_policies)]
 
     def iteration(self, sample_lists):
         """
@@ -177,27 +183,51 @@ class AlgorithmMDGPS(Algorithm):
         # Compute target mean, cov, and weight for each sample.
         obs_data, tgt_mu = np.zeros((0, T, dO)), np.zeros((0, T, dU))
         tgt_prc, tgt_wt = np.zeros((0, T, dU, dU)), np.zeros((0, T))
-        for m in range(self.M):
-            samples = self.cur[m].sample_list
-            X = samples.get_X()
-            N = len(samples)
-            traj, pol_info = self.new_traj_distr[m], self.cur[m].pol_info
-            mu = np.zeros((N, T, dU))
-            prc = np.zeros((N, T, dU, dU))
-            wt = np.zeros((N, T))
-            # Get time-indexed actions.
-            for t in range(T):
-                # Compute actions along this trajectory.
-                prc[:, t, :, :] = np.tile(traj.inv_pol_covar[t, :, :],
-                                          [N, 1, 1])
-                for i in range(N):
-                    mu[i, t, :] = (traj.K[t, :, :].dot(X[i, t, :]) + traj.k[t, :])
-                wt[:, t].fill(pol_info.pol_wt[t])
-            tgt_mu = np.concatenate((tgt_mu, mu))
-            tgt_prc = np.concatenate((tgt_prc, prc))
-            tgt_wt = np.concatenate((tgt_wt, wt))
-            obs_data = np.concatenate((obs_data, samples.get_obs()))
-        self.policy_opt.update(obs_data, tgt_mu, tgt_prc, tgt_wt)
+        if not self._hyperparams['multiple_policy']:
+            for m in range(self.M):
+                samples = self.cur[m].sample_list
+                X = samples.get_X()
+                N = len(samples)
+                traj, pol_info = self.new_traj_distr[m], self.cur[m].pol_info
+                mu = np.zeros((N, T, dU))
+                prc = np.zeros((N, T, dU, dU))
+                wt = np.zeros((N, T))
+                # Get time-indexed actions.
+                for t in range(T):
+                    # Compute actions along this trajectory.
+                    prc[:, t, :, :] = np.tile(traj.inv_pol_covar[t, :, :],
+                                              [N, 1, 1])
+                    for i in range(N):
+                        mu[i, t, :] = (traj.K[t, :, :].dot(X[i, t, :]) + traj.k[t, :])
+                    wt[:, t].fill(pol_info.pol_wt[t])
+                tgt_mu = np.concatenate((tgt_mu, mu))
+                tgt_prc = np.concatenate((tgt_prc, prc))
+                tgt_wt = np.concatenate((tgt_wt, wt))
+                obs_data = np.concatenate((obs_data, samples.get_obs()))
+            self.policy_opt.update(obs_data, tgt_mu, tgt_prc, tgt_wt)
+        else:
+            for i in range(self.num_policies):
+                for m in range(self.M / self.num_policies * i, self.M / self.num_policies * (i + 1)):
+                    samples = self.cur[m].sample_list
+                    X = samples.get_X()
+                    N = len(samples)
+                    traj, pol_info = self.new_traj_distr[m], self.cur[m].pol_info
+                    mu = np.zeros((N, T, dU))
+                    prc = np.zeros((N, T, dU, dU))
+                    wt = np.zeros((N, T))
+                    # Get time-indexed actions.
+                    for t in range(T):
+                        # Compute actions along this trajectory.
+                        prc[:, t, :, :] = np.tile(traj.inv_pol_covar[t, :, :],
+                                                  [N, 1, 1])
+                        for j in range(N):
+                            mu[j, t, :] = (traj.K[t, :, :].dot(X[j, t, :]) + traj.k[t, :])
+                        wt[:, t].fill(pol_info.pol_wt[t])
+                    tgt_mu = np.concatenate((tgt_mu, mu))
+                    tgt_prc = np.concatenate((tgt_prc, prc))
+                    tgt_wt = np.concatenate((tgt_wt, wt))
+                    obs_data = np.concatenate((obs_data, samples.get_obs()))
+                    self.policy_opts[i].update(obs_data, tgt_mu, tgt_prc, tgt_wt)
 
     def _update_policy_fit(self, m, init=False):
         """
@@ -213,19 +243,35 @@ class AlgorithmMDGPS(Algorithm):
         N = len(samples)
         pol_info = self.cur[m].pol_info
         X = samples.get_X()
-        pol_mu, pol_sig = self.policy_opt.prob(samples.get_obs().copy())[:2]
-        pol_info.pol_mu, pol_info.pol_sig = pol_mu, pol_sig
-        # Update policy prior.
-        if init:
-            self.cur[m].pol_info.policy_prior.update(
-                samples, self.policy_opt,
-                SampleList(self.cur[m].pol_info.policy_samples)
-            )
+        if not self._hyperparams['multiple_policy']:
+            pol_mu, pol_sig = self.policy_opt.prob(samples.get_obs().copy())[:2]
+            pol_info.pol_mu, pol_info.pol_sig = pol_mu, pol_sig
+            # Update policy prior.
+            if init:
+                self.cur[m].pol_info.policy_prior.update(
+                    samples, self.policy_opt,
+                    SampleList(self.cur[m].pol_info.policy_samples)
+                )
+            else:
+                self.cur[m].pol_info.policy_prior.update(
+                    SampleList([]), self.policy_opt,
+                    SampleList(self.cur[m].pol_info.policy_samples)
+                )
         else:
-            self.cur[m].pol_info.policy_prior.update(
-                SampleList([]), self.policy_opt,
-                SampleList(self.cur[m].pol_info.policy_samples)
-            )
+            pol_idx = m / self.num_policies
+            pol_mu, pol_sig = self.policy_opts[pol_idx].prob(samples.get_obs().copy())[:2]
+            pol_info.pol_mu, pol_info.pol_sig = pol_mu, pol_sig
+            # Update policy prior.
+            if init:
+                self.cur[m].pol_info.policy_prior.update(
+                    samples, self.policy_opts[pol_idx],
+                    SampleList(self.cur[m].pol_info.policy_samples)
+                )
+            else:
+                self.cur[m].pol_info.policy_prior.update(
+                    SampleList([]), self.policy_opts[pol_idx],
+                    SampleList(self.cur[m].pol_info.policy_samples)
+                )
         # Collapse policy covariances. This is not really correct, but
         # it works fine so long as the policy covariance doesn't depend
         # on state.
@@ -350,7 +396,10 @@ class AlgorithmMDGPS(Algorithm):
         X, obs = samples.get_X(), samples.get_obs()
         kl, kl_m = np.zeros((N, T)), np.zeros(T)
         # Compute policy mean and covariance at each sample.
-        pol_mu, _, pol_prec, pol_det_sigma = self.policy_opt.prob(obs.copy())
+        if not self._hyperparams['multiple_policy']:
+            pol_mu, _, pol_prec, pol_det_sigma = self.policy_opt.prob(obs.copy())
+        else:
+            pol_mu, _, pol_prec, pol_det_sigma = self.policy_opts[m/self.num_policies].prob(obs.copy())
         # Compute KL divergence.
         for t in range(T):
             # Compute trajectory action at sample.
