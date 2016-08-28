@@ -61,7 +61,7 @@ class GenDemo(object):
 		# algorithm_file = self._exp_dir
 		algorithm_files = self._algorithm_files_dir
 		self.algorithms = [] # A list of neural nets.
-		for i in range(4):
+		for i in range(len(algorithm_files)):
 			algorithm = pickle.load(open(algorithm_files[i]))
 			self.algorithms.append(algorithm)
 		# self.algorithm = pickle.load(open(algorithm_file))
@@ -69,7 +69,7 @@ class GenDemo(object):
 		# 	print("Error: cannot find '%s.'" % algorithm_file)
 		# 	os._exit(1) # called instead of sys.exit(), since t
 			if algorithm is None:
-				print("Error: cannot find '%s.'" % algorithm_file)
+				print("Error: cannot find '%s.'" % algorithm_files[i])
 				os._exit(1) # called instead of sys.exit(), since t
 
 		# Keep the initial states of the agent the sames as the demonstrations.
@@ -115,7 +115,7 @@ class GenDemo(object):
 					demos.append(demo)
 		else:
 			# Extract the neural network policy.
-			for j in xrange(4):
+			for j in xrange(len(algorithms)):
 				pol = self.algorithms[j].policy_opt.policy
 				pol.chol_pol_covar *= var_mult
 

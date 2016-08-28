@@ -63,7 +63,7 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'filename': './mjc_models/reacher.xml',
+    'filename': './mjc_models/reacher_img.xml',
     'x0': np.zeros(4),
     'dt': 0.05,
     'substeps': 5,
@@ -93,6 +93,9 @@ algorithm = {
     'test_conditions': common['test_conditions'],
     'step_rule': 'classic',
     'plot_dir': EXP_DIR,
+    'agent_x0': agent['x0'],
+    'agent_pos_body_idx': agent['pos_body_idx'],
+    'agent_pos_body_offset': agent['pos_body_offset'],
 }
 
 
