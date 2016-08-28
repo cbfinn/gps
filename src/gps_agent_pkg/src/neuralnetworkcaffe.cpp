@@ -37,7 +37,7 @@ void NeuralNetworkCaffe::forward(const Eigen::VectorXd &input, std::vector<float
 {
     // Transform the input by scale and bias.
     // Note that this assumes that all state information that we don't want to feed to the network is stored at the end of the state vector.
-    assert(x.rows() >= input_scaled_.rows());
+    assert(input.rows() >= input_scaled_.rows());
     input_scaled_ = scale_*input.segment(0, input_scaled_.rows()) + bias_;
 
     ROS_FATAL("Forward with >1 input not implemented!");
@@ -49,7 +49,7 @@ void NeuralNetworkCaffe::forward(const Eigen::VectorXd &input, Eigen::VectorXd &
 {
     // Transform the input by scale and bias.
     // Note that this assumes that all state information that we don't want to feed to the network is stored at the end of the state vector.
-    assert(x.rows() >= input_scaled_.rows());
+    assert(input.rows() >= input_scaled_.rows());
     input_scaled_ = scale_ * input.segment(0, input_scaled_.rows()) + bias_;
 
     Blob<float>* input_blob = net_->bottom_vecs()[1][0];

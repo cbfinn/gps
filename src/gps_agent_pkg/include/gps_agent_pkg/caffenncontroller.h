@@ -20,6 +20,7 @@ class CaffeNNController : public TrialController
 private:
     // Pointer to Caffe network
     boost::scoped_ptr<NeuralNetworkCaffe> net_;
+    std::vector<Eigen::VectorXd> noise_;
 public:
     // Constructor.
     CaffeNNController();
