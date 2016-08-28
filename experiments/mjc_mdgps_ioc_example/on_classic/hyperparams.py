@@ -31,6 +31,10 @@ algorithm['cost'].update({
 	'experiment_dir': common['experiment_dir']
 })
 
+algorithm['policy_opt'].update({
+    'weights_file_prefix': common['data_files_dir'] + 'policy',
+})
+
 config = default.config.copy()
 config.update({
     'common': common,
