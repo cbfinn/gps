@@ -399,6 +399,8 @@ void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::C
         Eigen::VectorXd bias;
         bias.resize(dim_bias);
 
+        int dU = (int) params.dU;
+
         int idx = 0;
         // Unpack the scale matrix
         for (int j = 0; j < dim_bias; ++j)
