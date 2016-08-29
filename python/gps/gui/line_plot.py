@@ -1,11 +1,7 @@
 """
-Mean Plotter
+Line plotter
 
-The Mean Plotter plots data along with its mean. The data is plotted as dots
-whereas the mean is a connected line.
-
-This is used to plot the mean cost after each iteration, along with the initial
-costs for each sample and condition.
+Plots multiple sequences of 1-d data over time.
 """
 import numpy as np
 import matplotlib.pylab as plt
@@ -15,14 +11,13 @@ from gps.gui.util import buffered_axis_limits
 
 
 class LinePlotter(object):
-    def __init__(self, fig, gs, label='mean', color='black', alpha=1.0, num_plots=10):
+    def __init__(self, fig, gs, label='mean', color='black', num_plots=10):
         self._fig = fig
         self._gs = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=gs)
         self._ax = plt.subplot(self._gs[0])
 
         self._label = label
         self._color = color
-        self._alpha = alpha
         self.num_plots=num_plots
 
         self._ts = np.empty((1, 0))
