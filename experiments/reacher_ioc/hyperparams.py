@@ -62,7 +62,7 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_exp_dir': DEMO_DIR,
-    'demo_controller_file': [DEMO_DIR + 'data_files/algorithm_itr_14.pkl'],
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_14.pkl',
     'conditions': CONDITIONS,
     'nn_demo': False,
 }
