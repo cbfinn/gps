@@ -14,6 +14,7 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE
 
 from gps.sample.sample import Sample
+from gps.utility.general_utils import sample_params
 
 
 class AgentMuJoCo(Agent):
@@ -95,6 +96,39 @@ class AgentMuJoCo(Agent):
                                        cam_pos[0], cam_pos[1], cam_pos[2],
                                        cam_pos[3], cam_pos[4], cam_pos[5])
 
+    def reset_initial_x0(self, condition):
+        """
+        Reset initial x0 randomly based on sampling_range_x0
+        and prohibited_ranges_x0
+        Args:
+            condition: Which condition setup to run.
+        """
+        self._hyperparams['x0'][condition] = sample_params(
+                self._hyperparams['sampling_range_x0'],
+                self._hyperparams['prohibited_ranges_x0'])
+
+    def reset_initial_body_offset(self, condition):
+        """
+        Reset initial body offset randomly based on sampling_range_bodypos
+        and prohibited_ranges_bodypos
+        Args:
+            condition: Which condition setup to run.
+        """
+        tmp_body_pos_offset = self._hyperparams['pos_body_offset'][condition][:]
+        self._hyperparams['pos_body_offset'][condition] = sample_params(
+                self._hyperparams['sampling_range_bodypos'],
+                self._hyperparams['prohibited_ranges_bodypos'])
+        # TODO: handle the i/j stuff as above
+        for j in range(len(self._hyperparams['pos_body_idx'][condition])):
+            idx = self._hyperparams['pos_body_idx'][condition][j]
+            self._model[condition]['body_pos'][idx, :] -= tmp_body_pos_offset
+            self._model[condition]['body_pos'][idx, :] += self._hyperparams['pos_body_offset'][condition]
+
+        if END_EFFECTOR_POINTS in self.x_data_types:
+            x0 = self._hyperparams['x0'][condition]
+            eepts = self._world[condition].get_data()['site_xpos'].flatten()
+            self.x0[condition] = np.concatenate([x0, eepts, np.zeros_like(eepts)])
+
     def sample(self, policy, condition, verbose=True, save=True, noisy=True):
         """
         Runs a trial and constructs a new sample containing information
@@ -113,7 +147,6 @@ class AgentMuJoCo(Agent):
             noise = generate_noise(self.T, self.dU, self._hyperparams)
         else:
             noise = np.zeros((self.T, self.dU))
-        # import pdb; pdb.set_trace()
         if np.any(self._hyperparams['x0var'][condition] > 0):
             x0n = self._hyperparams['x0var'] * \
                     np.random.randn(self._hyperparams['x0var'].shape)

@@ -65,6 +65,10 @@ agent = {
     'dt': 0.05,
     'substeps': 5,
     'conditions': common['conditions'],
+    'randomly_sample_bodypos': True,
+    'randomly_sample_x0': False,
+    'sampling_range_bodypos': [np.array([-0.1,-0.1, 0.0]), np.array([0.1, 0.1, 0.0])], # Format is [lower_lim, upper_lim]
+    'prohibited_ranges_bodypos':[[None, None, None, None]],
     'pos_body_idx': np.array([1]),
     # 'pos_body_offset': [np.array([-0.08, -0.08, 0]), np.array([-0.08, 0.08, 0]),
     #                     np.array([0.08, 0.08, 0]), np.array([0.08, -0.08, 0])],

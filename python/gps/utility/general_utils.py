@@ -112,3 +112,37 @@ def disable_caffe_logs(unset_glog_level=None):
         return unset_glog_level
     elif unset_glog_level:
         del os.environ['GLOG_minloglevel']
+
+def sample_params(sampling_range, prohibited_ranges):
+    """
+    Samples parameters from sampling_range ensuring that sampled_point
+    doesn't lie in any range in prohibited_ranges
+    Args:
+        sampling_range: A list of form [lower_lim, upper_lim] where lower_lim
+        and upper_lim are two numpy arrays with size N x 1 where N is dimension
+        of sample
+        prohibited_ranges: A list of range which describes the region from which
+        the point can't be sampled. A range is a list of form [[l_0, u_0], ..,
+        [l_N, u_N]] where l_i and u_i is upper and lower limit of ith dimension
+    Returns:
+        sampled_point: A sampled vector within sampling range and lying outside
+        prohibited ranges.
+    """
+    lower_lim, upper_lim = sampling_range
+    N = len(lower_lim)
+    valid_point = False
+    while not valid_point:
+        sampled_point = np.random.rand(N)*(upper_lim - lower_lim) + lower_lim
+        for prohibited_range in prohibited_ranges:
+            if all(lst is None for lst in prohibited_range):
+                valid_point = True
+                continue
+            valid_point = False
+            for i in range(len(prohibited_range)):
+                if prohibited_range[i] and not (prohibited_range[i][0] <= sampled_point[i] <= prohibited_range[i][1]):
+                    valid_point = True
+                    break
+
+            if not valid_point:
+                break
+    return sampled_point
