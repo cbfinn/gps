@@ -83,6 +83,9 @@ MUJOCO_LOG.TXT
 *.swp
 *.swo
 
+# Idea
+.idea/
+
 # Caffe
 *.caffemodel
 *.solverstate

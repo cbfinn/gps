@@ -399,12 +399,12 @@ class Algorithm(object):
                   samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
                   demos_logprob[i] = np.zeros((itr + Md + 1, self.T, demoX[i].shape[0]))
             else:
-                cur_idx = sum(self.num_samples[i] for i in xrange(itr))
+                cur_idx = self.num_samples[i]
                 if self._hyperparams['ioc'] != 'ICML':
-                  samples_logprob[i] = np.zeros((itr + 1, self.T, cur_idx + init_samples))
+                  samples_logprob[i] = np.zeros((itr + 1, self.T, cur_idx))
                   demos_logprob[i] = np.zeros((itr + 1, self.T, demoX[i].shape[0]))
                 else:
-                  samples_logprob[i] = np.zeros((itr + 1 + Md*(itr + 1), self.T, cur_idx + init_samples))
+                  samples_logprob[i] = np.zeros((itr + 1 + Md*(itr + 1), self.T, cur_idx))
                   demos_logprob[i] = np.zeros((itr + 1 + Md*(itr + 1), self.T, demoX[i].shape[0]))
 
 

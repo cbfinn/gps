@@ -1,6 +1,7 @@
 """ This file defines the main object that runs experiments. """
 
 import matplotlib as mpl
+
 mpl.use('Qt4Agg')
 
 import logging
@@ -20,6 +21,7 @@ from gps.gui.gps_training_gui import GPSTrainingGUI
 from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
 from gps.utility.generate_demo import GenDemo
+from gps.utility.general_utils import disable_caffe_logs
 
 
 class GPSMain(object):
@@ -56,8 +58,10 @@ class GPSMain(object):
             if not config['common']['nn_demo']:
                 demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
             else:
-                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_linearize.pkl'
-                demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_no_noise.pkl'            
+                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'
+                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_no_noise.pkl'
+                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_3.pkl'             
+            	demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_3pols_9conds.pkl'
             demos = self.data_logger.unpickle(demo_file)
             if demos is None:
               self.demo_gen = GenDemo(config)
@@ -253,7 +257,10 @@ class GPSMain(object):
         if self.algorithm._hyperparams['sample_on_policy'] and (self.algorithm.iteration_count > 0 or \
             self.algorithm._hyperparams['init_demo_policy']): # just for experiment. DELETE NOT AFTER EXPERIMENT!
         # if self.algorithm._hyperparams['sample_on_policy'] and self.algorithm.iteration_count > 0:
-            pol = self.algorithm.policy_opt.policy
+            if not self.algorithm._hyperparams['multiple_policy']:
+                pol = self.algorithm.policy_opt.policy
+            else:
+                pol = self.algorithm.policy_opts[cond / self.algorithm.num_policies].policy
         else:
             pol = self.algorithm.cur[cond].traj_distr
         if self.gui:
@@ -325,9 +332,15 @@ class GPSMain(object):
         pol_samples = [[None for _ in range(N)] for _ in range(self._conditions)]
         for cond in range(len(self._test_idx)):
             for i in range(N):
-                pol_samples[cond][i] = self.agent.sample(
-                    self.algorithm.policy_opt.policy, self._test_idx[cond],
-                    verbose=True, save=False, noisy=False)
+                if not self.algorithm._hyperparams['multiple_policy']:
+                    pol_samples[cond][i] = self.agent.sample(
+                        self.algorithm.policy_opt.policy, self._test_idx[cond],
+                        verbose=True, save=False, noisy=False)
+                else:
+                    pol = self.algorithm.policy_opts[cond / self.algorithm.num_policies].policy
+                    pol_samples[cond][i] = self.agent.sample(
+                        pol, self._test_idx[cond],
+                        verbose=True, save=False, noisy=False)
         return [SampleList(samples) for samples in pol_samples]
 
     def _log_data(self, itr, traj_sample_lists, pol_sample_lists=None):
@@ -373,97 +386,84 @@ class GPSMain(object):
                 # Quit automatically (for running sequential expts)
                 os._exit(1)
 
-    def good_samples(self, N, agent_config):
+    def compare_samples(self, N, agent_config, itr):
         from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
         import matplotlib.pyplot as plt
 
-        algorithm_samples = self.data_logger.unpickle(self._data_files_dir + 'algorithm_itr_19.pkl')
+        algorithm_ioc = self.data_logger.unpickle(self._data_files_dir + 'algorithm_itr_19.pkl')
+        algorithm_demo = self.data_logger.unpickle(self._hyperparams['common']['demo_controller_file']) # Assuming not using 4 policies
         M = agent_config['conditions']
-        pol_conditions = [[np.array([-0.05, -0.05, 0]), np.array([-0.05, -0.05, 0]),
-                        np.array([0.05, 0.05, 0]), np.array([0.05, -0.05, 0])],
-                        [np.array([-0.06, -0.06, 0]), np.array([-0.06, -0.06, 0]),
-                        np.array([0.06, 0.06, 0]), np.array([0.06, -0.06, 0])],
-                        [np.array([-0.07, -0.07, 0]), np.array([-0.07, -0.07, 0]),
-                        np.array([0.07, 0.07, 0]), np.array([0.07, -0.07, 0])],
-                        [np.array([-0.08, -0.08, 0]), np.array([-0.08, -0.08, 0]),
-                        np.array([0.08, 0.08, 0]), np.array([0.08, -0.08, 0])],
-                        [np.array([-0.09, -0.09, 0]), np.array([-0.09, -0.09, 0]),
-                        np.array([0.09, 0.09, 0]), np.array([0.09, -0.09, 0])],
-                        [np.array([-0.10, -0.10, 0]), np.array([-0.10, -0.10, 0]),
-                        np.array([0.10, 0.10, 0]), np.array([0.10, -0.10, 0])],
-                        [np.array([-0.11, -0.11, 0]), np.array([-0.11, -0.11, 0]),
-                        np.array([0.11, 0.11, 0]), np.array([0.11, -0.11, 0])],
-                        [np.array([-0.12, -0.12, 0]), np.array([-0.12, -0.12, 0]),
-                        np.array([0.12, 0.12, 0]), np.array([0.12, -0.12, 0])]]
-        samples = []
-        pol = algorithm_samples.policy_opt.policy
-        for k in xrange(len(pol_conditions)):
-            agent_config['pos_body_offset'] = pol_conditions[k]
-            agent = agent_config['type'](agent_config)
-            for i in xrange(M):
-                # Gather demos.
-                for j in xrange(N):
+
+        pol_ioc = algorithm_ioc.policy_opt.policy
+        pol_ioc.chol_pol_covar *= 0.0
+        pol_demo = algorithm_demo.policy_opt.policy
+        policies = [pol_ioc, pol_demo]
+        samples = {i: [] for i in xrange(len(policies))}
+        agent = agent_config['type'](agent_config)
+        ioc_conditions = agent_config['pos_body_offset']
+        for i in xrange(M):
+            # Gather demos.
+            for j in xrange(N):
+                for k in xrange(len(samples)):
                     sample = agent.sample(
-                        pol, i,
-                        verbose=(i < self._hyperparams['verbose_trials'])
+                        policies[k], i,
+                        verbose=(i < self._hyperparams['verbose_trials']), noisy=False
                         )
-                    samples.append(sample)
+                    samples[k].append(sample)
         target_position = agent_config['target_end_effector'][:3]
-        dists_to_target = np.zeros(len(pol_conditions)*M*N)
-        ioc_conditions = []
-        for i in xrange(len(samples)):
-            sample_end_effector = samples[i].get(END_EFFECTOR_POINTS)
-            # dists_to_target[i] = np.amin(np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
-            # Just choose the last time step since it may become unstable after achieving the minimum point.
-            # import pdb; pdb.set_trace()
-            dists_to_target[i] = np.sqrt(np.sum((sample_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
-            ioc_conditions.append(pol_conditions[i/(M*N)][(i % (M*N))/N][:2])
-        good_indicators = (dists_to_target <= 0.1).tolist()
-        good_indices = [i for i in xrange(len(good_indicators)) if good_indicators[i]]
-        good_dists = []
-        bad_dists = []
-        sample_conditions = []
-        failed_conditions = []
+        dists_to_target = [np.zeros((M*N)) for i in xrange(len(samples))]
+        dists_diff = []
+        all_success_conditions = []
+        only_ioc_conditions = []
+        only_demo_conditions = []
+        all_failed_conditions = []
+        for i in xrange(len(samples[0])):
+            for j in xrange(len(samples)):
+                sample_end_effector = samples[j][i].get(END_EFFECTOR_POINTS)
+                dists_to_target[j][i] = np.nanmin(np.sqrt(np.sum((sample_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
+                # Just choose the last time step since it may become unstable after achieving the minimum point.
+                # import pdb; pdb.set_trace()
+                # dists_to_target[j][i] = np.sqrt(np.sum((sample_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
+            if dists_to_target[0][i] <= 0.1 and dists_to_target[1][i] <= 0.1:
+                all_success_conditions.append(ioc_conditions[i])
+            elif dists_to_target[0][i] <= 0.1:
+                only_ioc_conditions.append(ioc_conditions[i])
+            elif dists_to_target[1][i] <= 0.1:
+                only_demo_conditions.append(ioc_conditions[i])
+            else:
+                all_failed_conditions.append(ioc_conditions[i])
+            dists_diff.append(np.around(dists_to_target[0][i] - dists_to_target[1][i], decimals=2))
+        
         exp_dir = self._data_files_dir.replace("data_files", "")
-        for i in good_indices:
-            good_dists.append(dists_to_target[i]) # Assume N = 1
-            sample_conditions.append(ioc_conditions[i])
-        for i in xrange(len(samples)):
-            if i not in good_indices:
-                bad_dists.append(dists_to_target[i])
-                failed_conditions.append(ioc_conditions[i])
 
         from matplotlib.patches import Rectangle
 
         plt.close('all')
-        demo_conditions = self.algorithm.demo_conditions
-        failed_demo_conditions = self.algorithm.failed_conditions
-        dists_to_target = np.around(dists_to_target, decimals=2)
         ioc_conditions_x = [ioc_conditions[i][0] for i in xrange(len(ioc_conditions))]
         ioc_conditions_y = [ioc_conditions[i][1] for i in xrange(len(ioc_conditions))]
-        failed_ioc_x = [failed_conditions[i][0] for i in xrange(len(failed_conditions))]
-        failed_ioc_y = [failed_conditions[i][1] for i in xrange(len(failed_conditions))]
-        success_ioc_x = [sample_conditions[i][0] for i in xrange(len(sample_conditions))]
-        success_ioc_y = [sample_conditions[i][1] for i in xrange(len(sample_conditions))]
-        demo_conditions_x = [demo_conditions[i][0] for i in xrange(len(demo_conditions))]
-        demo_conditions_y = [demo_conditions[i][1] for i in xrange(len(demo_conditions))]
-        failed_conditions_x = [failed_demo_conditions[i][0] for i in xrange(len(failed_demo_conditions))]
-        failed_conditions_y = [failed_demo_conditions[i][1] for i in xrange(len(failed_demo_conditions))]
+        all_success_x = [all_success_conditions[i][0] for i in xrange(len(all_success_conditions))]
+        all_success_y = [all_success_conditions[i][1] for i in xrange(len(all_success_conditions))]
+        all_failed_x = [all_failed_conditions[i][0] for i in xrange(len(all_failed_conditions))]
+        all_failed_y = [all_failed_conditions[i][1] for i in xrange(len(all_failed_conditions))]
+        only_ioc_x = [only_ioc_conditions[i][0] for i in xrange(len(only_ioc_conditions))]
+        only_ioc_y = [only_ioc_conditions[i][1] for i in xrange(len(only_ioc_conditions))]
+        only_demo_x = [only_demo_conditions[i][0] for i in xrange(len(only_demo_conditions))]
+        only_demo_y = [only_demo_conditions[i][1] for i in xrange(len(only_demo_conditions))]
         subplt = plt.subplot()
-        subplt.plot(demo_conditions_x, demo_conditions_y, 'go')
-        subplt.plot(failed_conditions_x, failed_conditions_y, 'rx')
-        subplt.plot(success_ioc_x, success_ioc_y, 'g^')
-        subplt.plot(failed_ioc_x, failed_ioc_y, 'rv')
+        subplt.plot(all_success_x, all_success_y, 'yo')
+        subplt.plot(all_failed_x, all_failed_y, 'rx')
+        subplt.plot(only_ioc_x, only_ioc_y, 'g^')
+        subplt.plot(only_demo_x, only_demo_y, 'rv')
         # plt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc= (1, 1))
-        for i, txt in enumerate(dists_to_target):
+        for i, txt in enumerate(dists_diff):
             subplt.annotate(txt, (ioc_conditions_x[i], ioc_conditions_y[i]))
         ax = plt.gca()
         ax.add_patch(Rectangle((-0.08, -0.08), 0.16, 0.16, fill = False, edgecolor = 'blue'))
         box = subplt.get_position()
         subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
-        subplt.legend(['demo_cond', 'failed_demo', 'success_ioc', 'failed_ioc'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
+        subplt.legend(['all_success', 'all_failed', 'only_ioc', 'only_demo'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
                         shadow=True, ncol=2)
-        plt.title("Distribution of demos and IOC samples' initial conditions")
+        plt.title("Distribution of samples drawn from demo policy and IOC policy")
         # plt.xlabel('width')
         # plt.ylabel('length')
         plt.savefig(self._data_files_dir + 'distribution_of_sample_conditions.png')
@@ -553,6 +553,9 @@ def main():
         sys.exit("Experiment '%s' does not exist.\nDid you create '%s'?" %
                  (exp_name, hyperparams_file))
 
+    unset = disable_caffe_logs()
+    import caffe  # Hack to avoid segfault when importing caffe later
+    disable_caffe_logs(unset)
     hyperparams = imp.load_source('hyperparams', hyperparams_file)
 
     import matplotlib.pyplot as plt
@@ -614,25 +617,17 @@ def main():
         # plt.ylabel("success rate")
         # plt.title("success rates during iterations")
         # plt.savefig(exp_dir + 'data_files/' + 'success_rate_during_iteration.png')
-        for itr in xrange(3):
+        for itr in xrange(1):
             random.seed(itr)
             np.random.seed(itr)
             hyperparams = imp.load_source('hyperparams', hyperparams_file)
-            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_50samples_%d' % itr + '/'
-            if not os.path.exists(exp_dir + 'data_files_50samples_%d' % itr + '/'):
-                os.makedirs(exp_dir + 'data_files_50samples_%d' % itr + '/')
+            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/'
+            if not os.path.exists(exp_dir + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/'):
+                os.makedirs(exp_dir + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/')
             gps_samples = GPSMain(hyperparams.config)
-            agent_config = gps_samples._hyperparams['agent']
+            agent_config = gps_samples._hyperparams['demo_agent']
             plt.close()
-            gps_samples.good_samples(measure_samples, agent_config)
-
-            hyperparams = imp.load_source('hyperparams', hyperparams_file)
-            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_global_%d' % itr + '/'
-            if not os.path.exists(exp_dir + 'data_files_global_%d' % itr + '/'):
-                os.makedirs(exp_dir + 'data_files_global_%d' % itr + '/')
-            gps_synthetic = GPSMain(hyperparams.config)
-            plt.close()
-            gps_synthetic.good_samples(measure_samples, agent_config)
+            gps_samples.compare_samples(measure_samples, agent_config, itr)
 
 
     elif compare_costs:
@@ -654,12 +649,17 @@ def main():
             hyperparams.config['algorithm']['init_demo_policy'] = False
             hyperparams.config['algorithm']['policy_eval'] = False
             hyperparams.config['algorithm']['ioc'] = 'MPF'
+            # hyperparams.config['algorithm']['bootstrap'] = True
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_%d' % itr + '/'
             # if not os.path.exists(exp_dir + 'data_files_nn_%d' % itr + '/'):
             #     os.makedirs(exp_dir + 'data_files_nn_%d' % itr + '/')
-            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/'
-            if not os.path.exists(exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/'):
-              os.makedirs(exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/')
+            # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/'
+            # if not os.path.exists(exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/'):
+            #   os.makedirs(exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/')
+            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/'
+            if not os.path.exists(exp_dir + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/'):
+              os.makedirs(exp_dir + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/')
+            hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
             # hyperparams.config['algorithm']['init_var_mult'] = var_mults[itr]
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'
             # if not os.path.exists(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'):
@@ -702,27 +702,31 @@ def main():
             hyperparams = imp.load_source('hyperparams', hyperparams_file)
             # hyperparams.config['algorithm']['init_traj_distr']['type'] = init_lqr
             # hyperparams.config['algorithm']['global_cost'] = True
-            hyperparams.config['common']['nn_demo'] = False
+            hyperparams.config['common']['nn_demo'] = True
             hyperparams.config['algorithm']['init_demo_policy'] = False
             hyperparams.config['algorithm']['policy_eval'] = False
             hyperparams.config['algorithm']['ioc'] = 'MPF'
-            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_LG_MPF_%d' % itr + '/'
-            if not os.path.exists(exp_dir + 'data_files_LG_MPF_%d' % itr + '/'):
-                os.makedirs(exp_dir + 'data_files_LG_MPF_%d' % itr + '/')
+            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/'
+            if not os.path.exists(exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/'):
+                os.makedirs(exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/')
+            hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
+            # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_LG_MPF_%d' % itr + '/'
+            # if not os.path.exists(exp_dir + 'data_files_LG_MPF_%d' % itr + '/'):
+            #     os.makedirs(exp_dir + 'data_files_LG_MPF_%d' % itr + '/')
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'
             # if not os.path.exists(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'):
             #   os.makedirs(exp_dir + 'data_files_no_demo_ini_%d' % itr + '/')
             gps_classic = GPSMain(hyperparams.config)
             pol_iter = gps_classic.algorithm._hyperparams['iterations']
             # for i in xrange(pol_iter):
-            if hyperparams.config['gui_on']:
-                gps_classic.run()
-                # gps_global.test_policy(itr=i, N=compare_costs)
-                plt.close()
-            else:
-                gps_classic.run()
-                # gps_global.test_policy(itr=i, N=compare_costs)
-                plt.close()
+            # if hyperparams.config['gui_on']:
+            #     gps_classic.run()
+            #     # gps_global.test_policy(itr=i, N=compare_costs)
+            #     plt.close()
+            # else:
+            #     gps_classic.run()
+            #     # gps_global.test_policy(itr=i, N=compare_costs)
+            #     plt.close()
             mean_dists_classic_dict[itr], success_rates_classic_dict[itr] = gps_classic.measure_distance_and_success()
             plt.close()
 
@@ -765,17 +769,20 @@ def main():
         #   plt.annotate(np.around(txt, decimals=2), (i, txt))
         # for i, txt in enumerate(avg_dists_no_global):
         #   plt.annotate(np.around(txt, decimals=2), (i, txt))
-        plt.legend(['avg nn demo', 'avg LG demo', 'nn demo', 'LG demo'], loc='upper right', ncol=2)
+        plt.legend(['avg one run', 'avg four runs', 'one run', 'four runs'], loc='upper right', ncol=2)
+        # plt.legend(['avg nn demo', 'avg LG demo', 'nn demo', 'LG demo'], loc='upper right', ncol=2)
         # plt.legend(['avg ICML', 'avg MPF', 'ICML', 'MPF'], loc='upper right', ncol=2)
         # plt.legend(['var 8', 'var 10', 'var 16'], loc='upper right', ncol=3)
         # plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)
-        plt.title("mean distances to the target over time with nn and LG demo")
+        # plt.title("mean distances to the target over time with nn and LG demo")
+        plt.title("mean distances to target over time with 1 run of 3 policies plus 9 conditions and 4 runs")
         # plt.title("mean distances to the target over time with ICML and MPF objective")
         # plt.title("mean distances to the target over time with different initial policy variance")
         # plt.title("mean distances to the target during iterations with and without demo init")
         plt.xlabel("iterations")
         plt.ylabel("mean distances")
-        plt.savefig(exp_dir + 'mean_dists_during_iteration_comparison.png')
+        plt.savefig(exp_dir + 'mean_dists_during_iteration_comparison_9cond.png')
+        # plt.savefig(exp_dir + 'mean_dists_during_iteration_comparison.png')
         # plt.savefig(exp_dir + 'mean_dists_during_iteration_var.png')
         plt.close()
         plt.plot(range(pol_iter), avg_succ_rate_global, '-x', color='red')
@@ -793,35 +800,44 @@ def main():
         # for i, txt in enumerate(avg_succ_rate_no_global):
         #   plt.annotate(repr(txt*100) + "%", (i, txt))
         # plt.legend(['var 8', 'var 10', 'var 16'], loc='upper right', ncol=3)
-        plt.legend(['avg nn demo', 'avg LG demo', 'nn demo', 'LG demo'], loc='lower right', ncol=2)
+        plt.legend(['avg one run', 'avg four runs', 'one run', 'four runs'], loc='upper left', ncol=2)
+        # plt.legend(['avg nn demo', 'avg LG demo', 'nn demo', 'LG demo'], loc='lower right', ncol=2)
         # plt.legend(['avg ICML', 'avg MPF', 'ICML', 'MPF'], loc='lower right', ncol=2)
         # plt.legend(['avg lqr', 'avg demo', 'init lqr', 'init demo'], loc='upper right', ncol=2)
         plt.xlabel("iterations")
         plt.ylabel("success rate")
-        plt.title("success rates during iterations with with nn and LG demo")
+        plt.title("success rates during iterations with 1 run of 3 policies plus 9 conditions and 4 runs")
+        # plt.title("success rates during iterations with with nn and LG demo")
         # plt.title("success rates during iterations with with ICML and MPF objective")
         # plt.title("success rates during iterations with different initial policy variance")
         # plt.title("success rates during iterations with and without demo initialization")
-        plt.savefig(exp_dir + 'success_rate_during_iteration_comparison.png')
+        plt.savefig(exp_dir + 'success_rate_during_iteration_comparison_9cond.png')
+        # plt.savefig(exp_dir + 'success_rate_during_iteration_comparison.png')
         # plt.savefig(exp_dir + 'success_rate_during_iteration_var.png')
 
         plt.close()
 
     elif learning_from_prior:
-        ioc_conditions = [np.array([random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), \
-                        random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), 0.0]) for i in xrange(12)]
-        top_bottom = [np.array([np.random.uniform(-0.08, 0.08), \
-                        random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), 0.0]) for i in xrange(10)]
-        left_right = [np.array([random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), \
-                        np.random.uniform(-0.08, 0.08), 0.0]) for i in xrange(10)]
-        ioc_conditions.extend(top_bottom)
-        ioc_conditions.extend(left_right)
+        # ioc_conditions = [np.array([random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), \
+        #                 random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), 0.0]) for i in xrange(12)]
+        # top_bottom = [np.array([np.random.uniform(-0.08, 0.08), \
+        #                 random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), 0.0]) for i in xrange(10)]
+        # left_right = [np.array([random.choice([np.random.uniform(-0.15, -0.09), np.random.uniform(0.09, 0.15)]), \
+        #                 np.random.uniform(-0.08, 0.08), 0.0]) for i in xrange(10)]
+        # ioc_conditions.extend(top_bottom)
+        # ioc_conditions.extend(left_right)
+        import pickle
+
+        demo_failed = pickle.load(open(exp_dir + 'data_files/demos_failed.pkl'))
+        ioc_conditions = demo_failed['failed_conditions']
+        M = hyperparams.config['common']['conditions']
+        ioc_conditions = ioc_conditions[:len(ioc_conditions) / M * M]
         exp_iter = hyperparams.config['algorithm']['iterations']
         data_files_dir = exp_dir + 'data_files/'
         mean_dists = []
-        success_ioc_samples = []
+        # success_ioc_samples = []
         pos_body_offset_dists = [np.linalg.norm(ioc_conditions[i]) for i in xrange(len(ioc_conditions))]
-        M = hyperparams.config['common']['conditions']
+        
         for i in xrange(len(ioc_conditions) / M):
             hyperparams = imp.load_source('hyperparams', hyperparams_file)
             # hyperparams.config['gui_on'] = False
@@ -844,16 +860,41 @@ def main():
                 # continue
             if i == 0:
                 demo_conditions = gps.algorithm.demo_conditions
-                failed_conditions = gps.algorithm.failed_conditions
+                # failed_conditions = gps.algorithm.failed_conditions
             for j in xrange(M):
                 mean_dists.append(gps.algorithm.dists_to_target[exp_iter - 1][j])
-                if mean_dists[i*M + j] <= 0.1:
-                    success_ioc_samples.append(gps.algorithm.min_sample)
+            #     if mean_dists[i*M + j] <= 0.1:
+            #         success_ioc_samples.append(gps.algorithm.min_sample)
             print "iteration " + repr(i) + ": mean dist is " + repr(mean_dists[i*M]) + ", " + \
                     repr(mean_dists[i*M + 1]) + ", " + repr(mean_dists[i*M + 2]) + ", " + repr(mean_dists[i*M + 3])
+        # hyperparams = imp.load_source('hyperparams', hyperparams_file)
+        # # hyperparams.config['gui_on'] = False
+        # # hyperparams.config['algorithm']['ioc_cond'] = ioc_conditions[i]
+        # gps = GPSMain(hyperparams.config)
+        # rem = len(ioc_conditions) / M * M
+        # gps.agent._hyperparams['pos_body_offset'] = [ioc_conditions[j] for j in range(rem, len(ioc_conditions))]
+        # # import pdb; pdb.set_trace()
+        # if hyperparams.config['gui_on']:
+        #     # run_gps = threading.Thread(
+        #     #     target=lambda: gps.run(itr_load=resume_training_itr)
+        #     # )
+        #     # run_gps.daemon = True
+        #     # run_gps.start()
+        #     gps.run(itr_load=resume_training_itr)
+        #     plt.close()
+        #     # plt.ioff()
+        #     # plt.show()
+        # else:
+        #     gps.run(itr_load=resume_training_itr)
+        #     # continue
+        # for j in xrange(M):
+        #     mean_dists.append(gps.algorithm.dists_to_target[exp_iter - 1][j])
+        #     if mean_dists[i*M + j] <= 0.1:
+        #         success_ioc_samples.append(gps.algorithm.min_sample)
         with open(exp_dir + 'log.txt', 'a') as f:
             f.write('\nThe 32 IOC conditions are: \n' + str(ioc_conditions) + '\n')
         plt.plot(pos_body_offset_dists, mean_dists, 'ro')
+        plt.axhline(y=0.1, xmin=0, xmax=1, color='blue')
         plt.title("Learning from prior experience using peg insertion")
         plt.xlabel('pos body offset distances to the origin')
         plt.ylabel('mean distances to the target')
@@ -871,12 +912,12 @@ def main():
         success_ioc_y = [ioc_conditions_y[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] <= 0.1]
         demo_conditions_x = [demo_conditions[i][0] for i in xrange(len(demo_conditions))]
         demo_conditions_y = [demo_conditions[i][1] for i in xrange(len(demo_conditions))]
-        failed_conditions_x = [failed_conditions[i][0] for i in xrange(len(failed_conditions))]
-        failed_conditions_y = [failed_conditions[i][1] for i in xrange(len(failed_conditions))]
+        # failed_conditions_x = [failed_conditions[i][0] for i in xrange(len(failed_conditions))]
+        # failed_conditions_y = [failed_conditions[i][1] for i in xrange(len(failed_conditions))]
         subplt = plt.subplot()
         subplt.plot(demo_conditions_x, demo_conditions_y, 'go')
-        subplt.plot(failed_conditions_x, failed_conditions_y, 'rx')
-        subplt.plot(success_ioc_x, success_ioc_y, 'g^')
+        # subplt.plot(failed_conditions_x, failed_conditions_y, 'rx')
+        subplt.plot(success_ioc_x, success_ioc_y, 'b^')
         subplt.plot(failed_ioc_x, failed_ioc_y, 'rv')
         # plt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc= (1, 1))
         for i, txt in enumerate(mean_dists):
@@ -885,16 +926,18 @@ def main():
         ax.add_patch(Rectangle((-0.08, -0.08), 0.16, 0.16, fill = False, edgecolor = 'blue'))
         box = subplt.get_position()
         subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
-        subplt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
-                        shadow=True, ncol=2)
-        plt.title("Distribution of neural network and IOC's initial conditions with z=0.02")
+        # subplt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
+        #                 shadow=True, ncol=2)
+        subplt.legend(['demo_cond', 'success_ioc', 'failed_ioc'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
+                         shadow=True, ncol=3)
+        plt.title("Distribution of neural network and IOC's initial conditions")
         # plt.xlabel('width')
         # plt.ylabel('length')
-        plt.savefig(data_files_dir + 'distribution_of_conditions_nonzero_z.png')
+        plt.savefig(data_files_dir + 'distribution_of_conditions.png')
         plt.close()
-        new_demos = SampleList(success_ioc_samples)
-        new_demo_store = {'demoU': new_demos.get_U(), 'demoX': new_demos.get_X(), 'demoO': new_demos.get_obs()}
-        gps.data_logger.pickle(gps._data_files_dir + 'new_demos.pkl', new_demo_store)
+        # new_demos = SampleList(success_ioc_samples)
+        # new_demo_store = {'demoU': new_demos.get_U(), 'demoX': new_demos.get_X(), 'demoO': new_demos.get_obs()}
+        # gps.data_logger.pickle(gps._data_files_dir + 'new_demos.pkl', new_demo_store)
         if bootstrap:
             # TODO: use successful samples as demonstrations.
             success_ioc_conditions = [ioc_conditions[i] for i in xrange(len(ioc_conditions)) if mean_dists[i] <= 0.1]
