@@ -12,6 +12,7 @@ from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
+from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
@@ -39,7 +40,8 @@ SENSOR_DIMS = {
 PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/pr2_example/'
+EXP_DIR = BASE_DIR + '/../experiments/pr2_ioc_example/'
+DEMO_DIR = BASE_DIR + '/../experiments/pr2_example/'
 
 x0s = []
 ee_tgts = []
@@ -52,12 +54,16 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 3,
+    'conditions': 1,
+    'demo_controller_file': [DEMO_DIR + 'data_files/algorithm_itr_09.pkl'],
+    'demo_exp_dir': DEMO_DIR,
+    'nn_demo': False
 }
 
 # TODO(chelsea/zoe) : Move this code to a utility function
 # Set up each condition.
 for i in xrange(common['conditions']):
+
     ja_x0, ee_pos_x0, ee_rot_x0 = load_pose_from_npz(
         common['target_filename'], 'trial_arm', str(i), 'initial'
     )
@@ -112,13 +118,39 @@ agent = {
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
     'end_effector_points': EE_POINTS,
-    'obs_include': [],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
+                      END_EFFECTOR_POINT_VELOCITIES],
+}
+
+demo_agent = {
+    'type': AgentROS,
+    'dt': 0.05,
+    'conditions': common['conditions'],
+    'T': 100,
+    'x0': x0s,
+    'ee_points_tgt': ee_tgts,
+    'reset_conditions': reset_conditions,
+    'sensor_dims': SENSOR_DIMS,
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
+                      END_EFFECTOR_POINT_VELOCITIES],
+    'end_effector_points': EE_POINTS,
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
+                      END_EFFECTOR_POINT_VELOCITIES],
 }
 
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
     'iterations': 10,
+    #'learning_from_prior': True,
+    'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
+    'ioc': 'MPF',  # 'MPF', 'ICML'
+    'max_ent_traj': 1.0,
+    'demo_distr_empest': True, # For ICML version, importance sampling emperically.
+    'demo_cond': 15,
+    'num_demos': 5,
+    'synthetic_cost_samples': 100,
+    'demo_var_mult': 1.0  # Increase variance on demos
 }
 
 algorithm['init_traj_distr'] = {
@@ -159,10 +191,20 @@ fk_cost2 = {
     'ramp_option': RAMP_FINAL_ONLY,
 }
 
-algorithm['cost'] = {
+algorithm['gt_cost'] = {
     'type': CostSum,
     'costs': [torque_cost, fk_cost1, fk_cost2],
     'weights': [1.0, 1.0, 1.0],
+}
+
+algorithm['cost'] = {
+    'type': CostIOCNN,
+    'wu': 5e-3 / PR2_GAINS,
+    'T': 100,
+    'demo_batch_size': 5,
+    'sample_batch_size': 5,
+    'dO': 32,
+    'iterations': 5000
 }
 
 algorithm['dynamics'] = {
@@ -187,6 +229,7 @@ config = {
     'common': common,
     'verbose_trials': 0,
     'agent': agent,
+    'demo_agent': demo_agent,
     'gui_on': True,
     'algorithm': algorithm,
     'num_samples': 5,

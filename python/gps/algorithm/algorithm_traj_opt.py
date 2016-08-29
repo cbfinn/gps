@@ -120,10 +120,10 @@ class AlgorithmTrajOpt(Algorithm):
 
         # Compute actual objective values based on the samples.
         previous_mc_obj = np.mean(np.sum(self.prev[m].cs, axis=1), axis=0)
-        if self._hyperparams['ioc']:
-          new_mc_obj = np.mean(np.sum(self.cur[m].prevcost_cs, axis=1), axis=0)
+        if(self._hyperparams['ioc']):
+            new_mc_obj = np.mean(np.sum(self.cur[m].prevcost_cs, axis=1), axis=0)
         else:
-          new_mc_obj = np.mean(np.sum(self.cur[m].cs, axis=1), axis=0)
+            new_mc_obj = np.mean(np.sum(self.cur[m].cs, axis=1), axis=0)
 
         LOGGER.debug('Trajectory step: ent: %f cost: %f -> %f',
                      ent, previous_mc_obj, new_mc_obj)
