@@ -34,6 +34,8 @@ from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 
 from gps.gui.line_plot import LinePlotter
 
+NUM_DEMO_PLOTS = 5
+
 
 class GPSTrainingGUI(object):
 
@@ -109,7 +111,7 @@ class GPSTrainingGUI(object):
         self._gt_cost_plotter = MeanPlotter(self._fig, self._gs_gt_cost_plotter,
                 color='red', label='ground truth cost')
         self._demo_cost_plotter = LinePlotter(self._fig, self._gs_demo_cost_plotter,
-                                         color='blue', label='demo cost', num_plots=10)
+                                         color='blue', label='demo cost', num_plots=NUM_DEMO_PLOTS*2)
         self._traj_visualizer = Plotter3D(self._fig, self._gs_traj_visualizer,
                 num_plots=self._hyperparams['conditions'])
         if config['image_on']:

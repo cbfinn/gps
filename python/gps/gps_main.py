@@ -17,7 +17,7 @@ import scipy.io
 
 # Add gps/python to path so that imports work.
 sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
-from gps.gui.gps_training_gui import GPSTrainingGUI
+from gps.gui.gps_training_gui import GPSTrainingGUI, NUM_DEMO_PLOTS
 from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
 from gps.utility.generate_demo import GenDemo
@@ -362,10 +362,12 @@ class GPSMain(object):
         Returns: None
         """
 
-        ## If IOC
         if self.using_ioc():
-            demo_losses = eval_demos_xu(self.agent, self.algorithm.demoX, self.algorithm.demoU, self.algorithm.cost, n=5)
-            sample_losses = eval_demos_xu(self.agent, traj_sample_lists[0].get_X(), traj_sample_lists[0].get_U(), self.algorithm.cost, n=5)
+            demo_losses = eval_demos_xu(self.agent, self.algorithm.demoX, self.algorithm.demoU, self.algorithm.cost, n=NUM_DEMO_PLOTS)
+            sample_losses = self.algorithm.cur[0].cs
+            if sample_losses is None:
+                sample_losses = self.algorithm.prev[0].cs
+            assert sample_losses.shape[0] >= NUM_DEMO_PLOTS
         else:
             demo_losses = None
             sample_losses = None
