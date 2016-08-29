@@ -33,8 +33,8 @@ PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = BASE_DIR + '/../experiments/mjc_peg_ioc_example/'
-# DEMO_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
-DEMO_DIR = BASE_DIR + '/../experiments/mjc_badmm_example_'
+DEMO_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
+#DEMO_DIR = BASE_DIR + '/../experiments/mjc_badmm_example_'
 
 
 common = {
@@ -42,15 +42,13 @@ common = {
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
     'data_files_dir': EXP_DIR + 'data_files/',
-    # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
+    'demo_controller_file': [DEMO_DIR + 'data_files/algorithm_itr_09.pkl'],
     'demo_exp_dir': DEMO_DIR,
-    'demo_controller_file': [DEMO_DIR + '%d/' % i + 'data_files/algorithm_itr_11.pkl' for i in xrange(4)],
+    #'demo_controller_file': [DEMO_DIR + '%d/' % i + 'data_files/algorithm_itr_11.pkl' for i in xrange(4)],
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 4,
-    'nn_demo': True,
-    # 'demo_conditions': 20,
-    # 'demo_conditions': 25,
+    'conditions': 1,
+    'nn_demo': False,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -67,9 +65,9 @@ agent = {
     'pos_body_idx': np.array([1]),
     # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
     #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    # 'pos_body_offset': [np.array([0, 0.0, 0])],
-    'pos_body_offset': [np.array([-0.08, -0.08, 0]), np.array([-0.08, 0.08, 0]),
-                        np.array([0.08, 0.08, 0]), np.array([0.08, -0.08, 0])],
+    'pos_body_offset': [np.array([0.0, 0.02, 0])],
+    #'pos_body_offset': [np.array([-0.08, -0.08, 0]), np.array([-0.08, 0.08, 0]),
+    #                    np.array([0.08, 0.08, 0]), np.array([0.08, -0.08, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -109,7 +107,6 @@ algorithm = {
     'ioc' : 'MPF',
     'conditions': common['conditions'],
     'learning_from_prior': True,
-    'ioc' : True,
     'demo_var_mult': 5.0,
     'kl_step': 0.5,
     'max_step_mult': 2.0,
@@ -166,6 +163,8 @@ algorithm['cost'] = {
     'demo_batch_size': 5,
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
+    'smooth_reg_weight': 0.1,
+    'mono_reg_weight': 100.0,
 }
 
 # algorithm['gt_cost'] = {

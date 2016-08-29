@@ -17,7 +17,7 @@ ALG = {
     # Use maximum entropy term in trajectory optimization.
     'max_ent_traj': 0.0,
     # Flag if we estimate the demo distribution empirically.
-    'demo_distr_empest': False,
+    'demo_distr_empest': True,
     # Flag if the algorithm is using IOC
     'ioc': None,  # ICML, MPF, IOCGAN, XENTGAN
     # Flag if the algorithm is learning from prior experience
@@ -37,7 +37,7 @@ ALG = {
     # initial policy variance multiplier.
     'init_var_mult': 1.0,
     # verbose when generating demos.
-    "demo_verbose": False,
+    "demo_verbose": True,
     # Demo condition during training.
     'demo_M': 1,
     # Number of synthetic samples used to estimate the cost.

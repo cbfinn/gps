@@ -164,7 +164,8 @@ def evallogl2term(wp, d, Jd, Jdd, l1, l2, alpha):
 
 
 def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
-                            demo_batch_size=5, sample_batch_size=5, phase=TRAIN, ioc_loss='ICML'):
+                            demo_batch_size=5, sample_batch_size=5, phase=TRAIN, ioc_loss='ICML',
+                            smooth_reg_weight=0.0, mono_reg_weight=0.0):
     """
     Construct an anonymous network (no layer names) for a quadratic cost
     function with the specified dimensionality, and return NetParameter proto.
@@ -190,7 +191,6 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
         dim_hidden = 42
 
     n = caffe.NetSpec()
-    mono_reg_weight = COST_IOC_QUADRATIC['mono_reg_weight']
 
     # Needed for Caffe to find defined python layers.
     sys.path.append('/'.join(str.split(current_path, '/')[:-1]))
@@ -243,7 +243,7 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
         n.slope_prev = L.Eltwise(n.costs_cur, n.costs_prev, operation=EltwiseParameter.SUM, coeff=[1,-1])
         # next-cur
         n.slope_next = L.Eltwise(n.costs_next, n.costs_cur, operation=EltwiseParameter.SUM, coeff=[1,-1])
-        n.reg = L.EuclideanLoss(n.slope_next, n.slope_prev, loss_weight=0.1)  # TODO - make loss weight a hyperparam
+        n.reg = L.EuclideanLoss(n.slope_next, n.slope_prev, loss_weight=smooth_reg_weight)  # TODO - make loss weight a hyperparam
 
         n.demo_slope, _ = L.Slice(n.slope_next, axis=0, slice_point=demo_batch_size, ntop=2)
         n.demo_slope_reshape = L.Reshape(n.demo_slope, shape=dict(dim=[-1,1]))
@@ -276,7 +276,7 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
 
 def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                           demo_batch_size=5, sample_batch_size=5, phase=TRAIN, ioc_loss='ICML',
-                          Nq=1):
+                          Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0):
     """
     Construct an anonymous network (no layer names) for a quadratic cost
     function with the specified dimensionality, and return NetParameter proto.
@@ -304,8 +304,6 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         dim_hidden = 42
 
     n = caffe.NetSpec()
-    smooth_reg_weight = COST_IOC_NN['smooth_reg_weight']
-    mono_reg_weight = COST_IOC_NN['mono_reg_weight']
 
     # Needed for Caffe to find defined python layers.
     sys.path.append('/'.join(str.split(current_path, '/')[:-1]))
@@ -390,12 +388,37 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         n.slope_prev = L.Eltwise(n.costs_cur, n.costs_prev, operation=EltwiseParameter.SUM, coeff=[1,-1])
         # next-cur
         n.slope_next = L.Eltwise(n.costs_next, n.costs_cur, operation=EltwiseParameter.SUM, coeff=[1,-1])
-        # TODO - add hyperparam for loss weight.
-        n.smooth_reg = L.EuclideanLoss(n.slope_next, n.slope_prev, loss_weight=smooth_reg_weight)
+
+        ### START compute normalization factor of slowness cost (std of c) ###
+        # all costs is NxTx1
+        n.allc_reshape = L.Reshape(n.all_costs, shape=dict(dim=[-1]))
+        num_costs = T*(demo_batch_size+sample_batch_size)
+        n.cost_mean = L.InnerProduct(n.allc_reshape, num_output=1,
+                                     weight_filler=dict(type='constant', value=-1.0/num_costs),
+                                     bias_filler=dict(type='constant', value=0),
+                                     param=[dict(lr_mult=0), dict(lr_mult=0)], axis=0)
+        n.cost_mean_tiled = L.Tile(n.cost_mean, tile_param=dict(axis=0, tiles=num_costs))
+        n.cost_submean = L.Bias(n.allc_reshape, n.cost_mean_tiled, bias_param=dict(axis=0))
+        n.cost_submean2 = L.Power(n.cost_submean, power=2.0)
+        n.cost_var = L.InnerProduct(n.cost_submean2, num_output=1,
+                                    weight_filler=dict(type='constant', value=1.0/num_costs),
+                                    bias_filler=dict(type='constant', value=0),
+                                    param=[dict(lr_mult=0), dict(lr_mult=0)], axis=0)
+        n.cost_stdinv = L.Power(n.cost_var, power=-0.5) # 1/std(c)
+        # Apply normalization
+        n.next_reshaped = L.Reshape(n.slope_next, shape=dict(dim=[-1]))
+        n.prev_reshaped = L.Reshape(n.slope_prev, shape=dict(dim=[-1]))
+        num_cost_slopes = (T-2)*(demo_batch_size+sample_batch_size)
+        n.cost_stdinv_tiled = L.Tile(n.cost_stdinv, tile_param=dict(axis=0, tiles=num_cost_slopes))
+        n.slope_next_normed = L.Scale(n.next_reshaped, n.cost_stdinv_tiled, scale_param=dict(axis=0))
+        n.slope_prev_normed = L.Scale(n.prev_reshaped, n.cost_stdinv_tiled, scale_param=dict(axis=0))
+        ### END compute normalization factor of slowness cost (std of c) ###
+
+
+        n.smooth_reg = L.EuclideanLoss(n.slope_next_normed, n.slope_prev_normed, loss_weight=smooth_reg_weight)
 
         n.demo_slope, _ = L.Slice(n.slope_next, axis=0, slice_point=demo_batch_size, ntop=2)
         n.demo_slope_reshape = L.Reshape(n.demo_slope, shape=dict(dim=[-1,1]))
-        # TODO - add hyperparam for loss weight, maybe try l2 monotonic loss
         n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=mono_reg_weight,
                               python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
 

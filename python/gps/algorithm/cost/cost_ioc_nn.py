@@ -232,6 +232,8 @@ class CostIOCNN(Cost):
         network_arch_params['phase'] = TRAIN
         network_arch_params['ioc_loss'] = self._hyperparams['ioc_loss']
         network_arch_params['Nq'] = self._iteration_count
+        network_arch_params['smooth_reg_weight'] = self._hyperparams['smooth_reg_weight']
+        network_arch_params['mono_reg_weight'] = self._hyperparams['mono_reg_weight']
         solver_param.train_net_param.CopyFrom(
             self._hyperparams['network_model'](**network_arch_params)
         )
