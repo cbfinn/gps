@@ -628,9 +628,9 @@ def main():
             random.seed(itr)
             np.random.seed(itr)
             hyperparams = imp.load_source('hyperparams', hyperparams_file)
-            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/'
-            if not os.path.exists(exp_dir + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/'):
-                os.makedirs(exp_dir + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/')
+            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_MPF_random_cond_%d' % itr + '/'
+            if not os.path.exists(exp_dir + 'data_files_nn_MPF_random_cond_%d' % itr + '/'):
+                os.makedirs(exp_dir + 'data_files_nn_MPF_random_cond_%d' % itr + '/')
             gps_samples = GPSMain(hyperparams.config)
             agent_config = gps_samples._hyperparams['demo_agent']
             plt.close()
