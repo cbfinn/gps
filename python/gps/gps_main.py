@@ -22,6 +22,7 @@ from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
 from gps.utility.generate_demo import GenDemo
 from gps.utility.general_utils import disable_caffe_logs
+from gps.utility.demo_utils import eval_demos_xu
 
 
 class GPSMain(object):
@@ -53,7 +54,7 @@ class GPSMain(object):
 
         config['algorithm']['agent'] = self.agent
 
-        if 'ioc' in config['algorithm'] and config['algorithm']['ioc']:
+        if self.using_ioc():
             # demo_file = self._data_files_dir + 'demos.pkl'
             if not config['common']['nn_demo']:
                 demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
@@ -145,6 +146,7 @@ class GPSMain(object):
                 self._log_data(itr, traj_sample_lists, pol_sample_lists)
             else:
                 self._log_data(itr, traj_sample_lists)
+
         self._end()
         return None
 
@@ -359,10 +361,19 @@ class GPSMain(object):
             pol_sample_lists: policy samples as SampleList object
         Returns: None
         """
+
+        ## If IOC
+        if self.using_ioc():
+            demo_losses = eval_demos_xu(self.agent, self.algorithm.demoX, self.algorithm.demoU, self.algorithm.cost, n=5)
+            sample_losses = eval_demos_xu(self.agent, traj_sample_lists[0].get_X(), traj_sample_lists[0].get_U(), self.algorithm.cost, n=5)
+        else:
+            demo_losses = None
+            sample_losses = None
+
         if self.gui:
             self.gui.set_status_text('Logging data and updating GUI.')
             self.gui.update(itr, self.algorithm, self.agent,
-                traj_sample_lists, pol_sample_lists)
+                traj_sample_lists, pol_sample_lists, ioc_demo_losses=demo_losses, ioc_sample_losses=sample_losses)
             self.gui.save_figure(
                 self._data_files_dir + ('figure_itr_%02d.png' % itr)
             )
@@ -392,6 +403,9 @@ class GPSMain(object):
             if self._quit_on_end:
                 # Quit automatically (for running sequential expts)
                 os._exit(1)
+
+    def using_ioc(self):
+        return 'ioc' in self._hyperparams['algorithm'] and self._hyperparams['algorithm']['ioc']
 
     def compare_samples(self, N, agent_config, itr):
         from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
@@ -667,6 +681,7 @@ def main():
             hyperparams.config['common']['data_files_dir'] = exp_dir_classic + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/'
             if not os.path.exists(exp_dir_classic + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/'):
               os.makedirs(exp_dir_classic + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/')
+
             hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
             # hyperparams.config['algorithm']['init_var_mult'] = var_mults[itr]
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_no_demo_ini_%d' % itr + '/'
@@ -720,6 +735,7 @@ def main():
             hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_MPF_random_cond_%d' % itr + '/'
             if not os.path.exists(exp_dir + 'data_files_nn_MPF_random_cond_%d' % itr + '/'):
                 os.makedirs(exp_dir + 'data_files_nn_MPF_random_cond_%d' % itr + '/')
+
             hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_LG_MPF_%d' % itr + '/'
             # if not os.path.exists(exp_dir + 'data_files_LG_MPF_%d' % itr + '/'):
@@ -730,14 +746,14 @@ def main():
             gps_classic = GPSMain(hyperparams.config)
             pol_iter = gps_classic.algorithm._hyperparams['iterations']
             # for i in xrange(pol_iter):
-            if hyperparams.config['gui_on']:
-                gps_classic.run()
-                # gps_global.test_policy(itr=i, N=compare_costs)
-                plt.close()
-            else:
-                gps_classic.run()
-                # gps_global.test_policy(itr=i, N=compare_costs)
-                plt.close()
+            # if hyperparams.config['gui_on']:
+            #     gps_classic.run()
+            #     # gps_global.test_policy(itr=i, N=compare_costs)
+            #     plt.close()
+            # else:
+            #     gps_classic.run()
+            #     # gps_global.test_policy(itr=i, N=compare_costs)
+            #     plt.close()
             mean_dists_classic_dict[itr], success_rates_classic_dict[itr] = gps_classic.measure_distance_and_success()
             plt.close()
 

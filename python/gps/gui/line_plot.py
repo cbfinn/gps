@@ -1,0 +1,87 @@
+"""
+Mean Plotter
+
+The Mean Plotter plots data along with its mean. The data is plotted as dots
+whereas the mean is a connected line.
+
+This is used to plot the mean cost after each iteration, along with the initial
+costs for each sample and condition.
+"""
+import numpy as np
+import matplotlib.pylab as plt
+import matplotlib.gridspec as gridspec
+
+from gps.gui.util import buffered_axis_limits
+
+
+class LinePlotter(object):
+    def __init__(self, fig, gs, label='mean', color='black', alpha=1.0, num_plots=10):
+        self._fig = fig
+        self._gs = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=gs)
+        self._ax = plt.subplot(self._gs[0])
+
+        self._label = label
+        self._color = color
+        self._alpha = alpha
+        self.num_plots=num_plots
+
+        self._ts = np.empty((1, 0))
+
+        self._ax.set_xlim(0-0.5, 100)
+        self._ax.set_ylim(0, 1)
+
+        self._init = False
+
+        self._fig.canvas.draw()
+        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+
+    def init(self, t=100):
+        """
+        Initialize plots based off the length of the data array.
+        """
+        self._t = t
+        self._init = True
+        n = self.num_plots
+
+        self._data = [np.zeros(t)]*n
+        self._plots = [None]*n
+        for i in range(n):
+            self._plots[i] = self._ax.plot(self._data[i], linestyle='-')[0]
+
+    def set_sequence(self, idx, x, style='-'):
+        """
+        Update the plots with new data x. Assumes x is a one-dimensional array.
+        """
+        #x = np.ravel([x])
+
+        if not self._init:
+            self.init(t=x.shape[0])
+
+        assert x.shape[0] == self._t
+        x = x.reshape(self._t)
+
+        self._data[idx] = x
+        self._plots[idx].set_data(np.arange(self._t), self._data[idx])
+        self._plots[idx].set_linestyle(style)
+
+        self._ax.set_xlim(0-0.5, self._t)
+        y_min, y_max = np.amin(self._data), np.amax(self._data)
+        self._ax.set_ylim(buffered_axis_limits(y_min, y_max, buffer_factor=1.1))
+        self.draw()
+
+    def draw(self):
+        self._ax.draw_artist(self._ax.patch)
+        for plot in self._plots:
+            self._ax.draw_artist(plot)
+        self._fig.canvas.update()
+        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+
+    def draw_ticklabels(self):
+        """
+        Redraws the ticklabels. Used to redraw the ticklabels (since they are
+        outside the axis) when something else is drawn over them.
+        """
+        for item in self._ax.get_xticklabels() + self._ax.get_yticklabels():
+            self._ax.draw_artist(item)
+        self._fig.canvas.update()
+        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
