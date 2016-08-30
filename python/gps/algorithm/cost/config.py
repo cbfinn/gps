@@ -31,12 +31,15 @@ COST_STATE = {
     'l2': 1.0,
     'alpha': 1e-2,
     'wp_final_multiplier': 1.0,  # Weight multiplier on final time step.
-    'data_types': {
-        'JointAngle': {
-            'target_state': None,  # Target state - must be set.
-            'wp': None,  # State weights - must be set.
-        },
-    },
+    'data_type': None, # must be set
+    'A': None, # must be set
+    'target': 0.0,
+    #'data_types': {
+        #'JointAngle': {
+            ##'target_state': None,  # Target state - must be set.
+            #'wp': None,  # State weights - must be set.
+        #},
+    #},
 }
 
 
@@ -56,8 +59,8 @@ COST_ACTION = {
 IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
     'ioc_loss': 'ICML',  # Type of loss to use (ICML, XENTGAN, IOCGAN, MPF)
     'iterations': 5000,  # Number of training iterations.
-    'demo_batch_size': 10,  # Number of demos per mini-batch.
-    'sample_batch_size': 10,  # Number of samples per mini-batch.
+    'demo_batch_size': 5,  # Number of demos per mini-batch.
+    'sample_batch_size': 5,  # Number of samples per mini-batch.
     'lr': 0.001,  # Base learning rate (by default it's fixed).
     'lr_policy': 'fixed',  # Learning rate policy.
     'solver_type': 'Adam',  # solver type (e.g. 'SGD', 'Adam')
@@ -67,6 +70,8 @@ IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
     # Set gpu usage.
     'use_gpu': 1,  # Whether or not to use the GPU for caffe training.
     'gpu_id': 0,
+    'smooth_reg_weight': 0.1,
+    'mono_reg_weight': 100,
 }
 
 #CostIOCQuadratic
@@ -77,7 +82,6 @@ COST_IOC_QUADRATIC = {
     'T': 0, # the time horizon (here for pointmass_ioc only)
     'wu': np.array([]), # Torque penalties, must be 1 x dU numpy array.
     'weights_file_prefix': '',
-    'mono_reg_weight': 100,
 }
 
 COST_IOC_QUADRATIC.update(IOC_CONFIG)
@@ -90,8 +94,6 @@ COST_IOC_NN = {
     'T': 0, # the time horizon (here for pointmass_ioc only)
     'wu': np.array([]), # Torque penalties, must be 1 x dU numpy array.
     'weights_file_prefix': '',
-    'smooth_reg_weight': 0.1,
-    'mono_reg_weight': 100,
 }
 
 COST_IOC_NN.update(IOC_CONFIG)

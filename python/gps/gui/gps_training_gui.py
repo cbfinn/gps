@@ -332,7 +332,8 @@ class GPSTrainingGUI(object):
         """
         avg_cost = np.mean(costs)
         if pol_sample_lists is not None:
-            if 'global_cost' in algorithm._hyperparams and algorithm._hyperparams['global_cost']:
+            if 'global_cost' in algorithm._hyperparams and algorithm._hyperparams['global_cost'] and \
+                    type(algorithm.cost) != list:
                 pol_costs = [np.mean([np.sum(algorithm.cost.eval(s)[0]) \
                         for s in pol_sample_lists[m]]) \
                         for m in range(algorithm.M)]

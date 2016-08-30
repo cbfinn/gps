@@ -41,24 +41,6 @@ class PolicyOptCaffe(PolicyOpt):
                                   self.solver.test_nets[1],
                                   self.var)
 
-    def copy(self):
-        self.solver.snapshot()
-        new_policy_opt = PolicyOptCaffe(self._hyperparams, self._dO, self._dU)
-        new_policy_opt.caffe_iter = self.caffe_iter
-        new_policy_opt.solver.restore(
-            self._hyperparams['weights_file_prefix'] + '_iter_' +
-            str(self.caffe_iter) + '.solverstate'
-        )
-        new_policy_opt.var = self.var.copy()
-        new_policy_opt.policy.net.copy_from(
-            self._hyperparams['weights_file_prefix'] + '_iter_' +
-            str(self.caffe_iter) + '.caffemodel'
-        )
-        new_policy_opt.policy.bias = self.policy.bias.copy()
-        new_policy_opt.policy.scale = self.policy.scale.copy()
-        return new_policy_opt
-
-
     def init_solver(self):
         """ Helper method to initialize the solver. """
         solver_param = SolverParameter()

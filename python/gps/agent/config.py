@@ -65,14 +65,19 @@ except rospkg.common.ResourceNotFound as e:
 # AgentMuJoCo
 AGENT_MUJOCO = {
     'substeps': 1,
-    'point_linear': False,  # use hard-coded linear dynamics
     'camera_pos': np.array([2., 3., 2., 0., 0., 0.]),
     'image_width': 640,
     'image_height': 480,
     'image_channels': 3,
     'meta_include': [],
+    'save_sampled_bodypos': False,
+    'randomly_sample_x0': False,
+    'randomly_sample_bodypos': False,
+    'record_reward': False,
 }
 
 AGENT_BOX2D = {
     'render': True,
 }
+
+AGENT_OPENAI = {}
