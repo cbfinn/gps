@@ -32,6 +32,11 @@ from gps.gui.util import buffered_axis_limits, load_data_from_npz
 
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 
+from gps.gui.line_plot import LinePlotter
+
+NUM_DEMO_PLOTS = 5
+
+
 class GPSTrainingGUI(object):
 
     def __init__(self, hyperparams):
@@ -84,6 +89,7 @@ class GPSTrainingGUI(object):
         self._gs_status_output          = self._gs[2:3,  0:4]
         self._gs_cost_plotter           = self._gs[1:3,  4:8]
         self._gs_gt_cost_plotter        = self._gs[4:6,  4:8]
+        self._gs_demo_cost_plotter      = self._gs[6:8,  4:8]
         self._gs_algthm_output          = self._gs[3:9,  0:4]
         if config['image_on']:
             self._gs_traj_visualizer    = self._gs[9:16, 0:4]
@@ -104,6 +110,8 @@ class GPSTrainingGUI(object):
                 color='blue', label='mean cost')
         self._gt_cost_plotter = MeanPlotter(self._fig, self._gs_gt_cost_plotter,
                 color='red', label='ground truth cost')
+        self._demo_cost_plotter = LinePlotter(self._fig, self._gs_demo_cost_plotter,
+                                         color='blue', label='demo cost', num_plots=NUM_DEMO_PLOTS*2)
         self._traj_visualizer = Plotter3D(self._fig, self._gs_traj_visualizer,
                 num_plots=self._hyperparams['conditions'])
         if config['image_on']:
@@ -268,7 +276,8 @@ class GPSTrainingGUI(object):
                 alpha=config['image_overlay_alpha'])
 
     # Iteration update functions
-    def update(self, itr, algorithm, agent, traj_sample_lists, pol_sample_lists):
+    def update(self, itr, algorithm, agent, traj_sample_lists, pol_sample_lists,
+               ioc_demo_losses=None, ioc_sample_losses=None):
         """
         After each iteration, update the iteration data output, the cost plot,
         and the 3D trajectory visualizations (if end effector points exist).
@@ -288,6 +297,9 @@ class GPSTrainingGUI(object):
         if END_EFFECTOR_POINTS in agent.x_data_types:
             self._update_trajectory_visualizations(algorithm, agent,
                     traj_sample_lists, pol_sample_lists)
+
+        if ioc_demo_losses:
+            self._update_ioc_demo_plot(ioc_demo_losses, ioc_sample_losses)
 
         self._fig.canvas.draw()
         self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
@@ -449,6 +461,13 @@ class GPSTrainingGUI(object):
             for i in range(ee_pt.shape[1]/3):
                 ee_pt_i = ee_pt[:, 3*i+0:3*i+3]
                 self._traj_visualizer.plot_3d_points(m, ee_pt_i, color=color, label=label)
+
+    def _update_ioc_demo_plot(self, demo_losses, sample_losses):
+        for i in range(len(demo_losses)):
+            self._demo_cost_plotter.set_sequence(i, demo_losses[i])
+
+        for i in range(len(sample_losses)):
+            self._demo_cost_plotter.set_sequence(len(demo_losses)+i, sample_losses[i], style='--')
 
     def save_figure(self, filename):
         self._fig.savefig(filename)
