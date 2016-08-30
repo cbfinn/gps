@@ -55,7 +55,7 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': 1,
-    'demo_controller_file': [DEMO_DIR + 'data_files/algorithm_itr_09.pkl'],
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'demo_exp_dir': DEMO_DIR,
     'nn_demo': False
 }
@@ -144,11 +144,11 @@ algorithm = {
     'iterations': 10,
     #'learning_from_prior': True,
     'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
-    'ioc': 'MPF',  # 'MPF', 'ICML'
+    'ioc': 'ICML',  # 'MPF', 'ICML'
     'max_ent_traj': 1.0,
     'demo_distr_empest': True, # For ICML version, importance sampling emperically.
-    'demo_cond': 15,
-    'num_demos': 5,
+    #'demo_cond': 15,
+    'num_demos': 20,
     'synthetic_cost_samples': 100,
     'demo_var_mult': 1.0  # Increase variance on demos
 }
