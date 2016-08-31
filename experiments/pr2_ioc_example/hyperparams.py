@@ -141,11 +141,14 @@ demo_agent = {
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
-    'iterations': 10,
+    'iterations': 25,
     #'learning_from_prior': True,
     'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
     'ioc': 'ICML',  # 'MPF', 'ICML'
     'max_ent_traj': 1.0,
+    'kl_step': 0.5,
+    'min_step_mult': 0.05,
+    'max_step_mult': 2.0,
     'demo_distr_empest': True, # For ICML version, importance sampling emperically.
     #'demo_cond': 15,
     'num_demos': 20,
@@ -204,7 +207,9 @@ algorithm['cost'] = {
     'demo_batch_size': 5,
     'sample_batch_size': 5,
     'dO': 32,
-    'iterations': 5000
+    'iterations': 5000,
+    'smooth_reg_weight': 1.0,
+    'mono_reg_weight': 1.0,
 }
 
 algorithm['dynamics'] = {
@@ -232,7 +237,7 @@ config = {
     'demo_agent': demo_agent,
     'gui_on': True,
     'algorithm': algorithm,
-    'num_samples': 5,
+    'num_samples': 10,
 }
 
 common['info'] = generate_experiment_info(config)
