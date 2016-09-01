@@ -47,6 +47,7 @@ class Algorithm(object):
         init_traj_distr['x0'] = agent.x0
         init_traj_distr['dX'] = agent.dX
         init_traj_distr['dU'] = agent.dU
+        # TODO: figure out the use of these two lines.
         # if self._hyperparams['ioc']:
         #     init_traj_distr['x0'] = np.zeros(self.dX)
         del self._hyperparams['agent']  # Don't want to pickle this.

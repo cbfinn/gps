@@ -5,6 +5,9 @@ import numpy.matlib
 import random
 from gps.sample.sample import Sample
 
+from gps.sample.sample import Sample
+
+
 def generate_pos_body_offset(conditions):
 	""" Generate position body offset for all conditions. """
 	pos_body_offset = []
