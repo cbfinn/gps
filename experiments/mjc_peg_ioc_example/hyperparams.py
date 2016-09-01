@@ -42,7 +42,7 @@ common = {
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
     'data_files_dir': EXP_DIR + 'data_files/',
-    'demo_controller_file': [DEMO_DIR + 'data_files/algorithm_itr_09.pkl'],
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'demo_exp_dir': DEMO_DIR,
     #'demo_controller_file': [DEMO_DIR + '%d/' % i + 'data_files/algorithm_itr_11.pkl' for i in xrange(4)],
     'target_filename': EXP_DIR + 'target.npz',
@@ -104,7 +104,7 @@ demo_agent = {
 
 algorithm = {
     'type': AlgorithmTrajOpt,
-    'ioc' : 'MPF',
+    'ioc' : 'ICML',
     'conditions': common['conditions'],
     'learning_from_prior': True,
     'demo_var_mult': 5.0,
