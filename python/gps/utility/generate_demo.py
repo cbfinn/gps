@@ -50,7 +50,6 @@ class GenDemo(object):
                 self._algorithm_files_dir = config['common']['demo_controller_file']
                 self.data_logger = DataLogger()
 
-
         def generate(self):
                 """
                  Generate demos and save them in a file for experiment.

@@ -15,7 +15,7 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINT_VELOCITIES_NO_TARGET
 
 from gps.sample.sample import Sample
-#from gps.utility.general_utils import sample_params
+from gps.utility.general_utils import sample_params
 
 class AgentMuJoCo(Agent):
     """
