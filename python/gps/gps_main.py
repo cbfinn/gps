@@ -192,7 +192,7 @@ class GPSMain(object):
         """
         from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 
-        pol_iter = self.algorithm._hyperparams['iterations']
+        pol_iter = self._hyperparams['algorithm']['iterations']
         peg_height = self._hyperparams['demo_agent']['peg_height']
         mean_dists = []
         success_rates = []
@@ -381,7 +381,7 @@ class GPSMain(object):
             )
         if 'no_sample_logging' in self._hyperparams['common']:
             return
-        if itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
+        if itr == self._hyperparams['algorithm']['iterations'] - 1: # Just save the last iteration of the algorithm file
             self.algorithm.demo_policy = None
             self.data_logger.pickle(
                 self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
@@ -413,12 +413,13 @@ class GPSMain(object):
         from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
         import matplotlib.pyplot as plt
 
-        algorithm_ioc = self.data_logger.unpickle(self._data_files_dir + 'algorithm_itr_19.pkl')
+        pol_iter = self._hyperparams['algorithm']['iterations']
+        algorithm_ioc = self.data_logger.unpickle(self._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
         algorithm_demo = self.data_logger.unpickle(self._hyperparams['common']['demo_controller_file']) # Assuming not using 4 policies
         M = agent_config['conditions']
 
         pol_ioc = algorithm_ioc.policy_opt.policy
-        pol_ioc.chol_pol_covar *= 0.0
+        # pol_ioc.chol_pol_covar *= 0.0
         pol_demo = algorithm_demo.policy_opt.policy
         policies = [pol_ioc, pol_demo]
         samples = {i: [] for i in xrange(len(policies))}
@@ -620,26 +621,6 @@ def main():
         else:
             gps.test_policy(itr=current_itr, N=test_policy_N)
     elif measure_samples:
-
-        # gps = GPSMain(hyperparams.config)
-        # pol_iter = gps.algorithm._hyperparams['iterations']
-        # mean_dists, success_rates = gps.measure_distance_and_success()
-        # plt.close()
-        # plt.plot(range(pol_iter), mean_dists, 'ro', range(pol_iter), mean_dists, '')
-        # for i, txt in enumerate(mean_dists):
-        #   plt.annotate(np.around(txt,decimals=2), (i, txt))
-        # plt.title("mean distances to the target during iterations")
-        # plt.xlabel("iterations")
-        # plt.ylabel("mean distances")
-        # plt.savefig(exp_dir + 'data_files/' + 'mean_dists_during_iteration.png')
-        # plt.close()
-        # plt.plot(range(pol_iter), success_rates, 'ro', range(pol_iter), success_rates, '')
-        # for i, txt in enumerate(success_rates):
-        #   plt.annotate(repr(txt*100) + "%", (i, txt))
-        # plt.xlabel("iterations")
-        # plt.ylabel("success rate")
-        # plt.title("success rates during iterations")
-        # plt.savefig(exp_dir + 'data_files/' + 'success_rate_during_iteration.png')
         for itr in xrange(1):
             random.seed(itr)
             np.random.seed(itr)
@@ -671,7 +652,7 @@ def main():
             hyperparams.config['common']['nn_demo'] = True
             hyperparams.config['algorithm']['init_demo_policy'] = False
             hyperparams.config['algorithm']['policy_eval'] = False
-            hyperparams.config['algorithm']['ioc'] = 'MPF'
+            hyperparams.config['algorithm']['ioc'] = 'ICML'
             # hyperparams.config['algorithm']['bootstrap'] = True
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_%d' % itr + '/'
             # if not os.path.exists(exp_dir + 'data_files_nn_%d' % itr + '/'):
@@ -680,9 +661,9 @@ def main():
             # if not os.path.exists(exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/'):
             #   os.makedirs(exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/')
             exp_dir_classic = exp_dir.replace('on_global', 'on_classic')
-            hyperparams.config['common']['data_files_dir'] = exp_dir_classic + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/'
-            if not os.path.exists(exp_dir_classic + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/'):
-              os.makedirs(exp_dir_classic + 'data_files_nn_MPF_3pol_9cond_%d' % itr + '/')
+            hyperparams.config['common']['data_files_dir'] = exp_dir_classic + 'data_files_nn_ICML_3pol_9cond_%d' % itr + '/'
+            if not os.path.exists(exp_dir_classic + 'data_files_nn_ICML_3pol_9cond_%d' % itr + '/'):
+              os.makedirs(exp_dir_classic + 'data_files_nn_ICML_3pol_9cond_%d' % itr + '/')
 
             hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
             # hyperparams.config['algorithm']['init_var_mult'] = var_mults[itr]
@@ -692,14 +673,14 @@ def main():
             gps_global = GPSMain(hyperparams.config)
             pol_iter = gps_global.algorithm._hyperparams['iterations']
             # for i in xrange(pol_iter):
-            # if hyperparams.config['gui_on']:
-            #     gps_global.run()
-            #     # gps_global.test_policy(itr=i, N=compare_costs)
-            #     plt.close()
-            # else:
-            #     gps_global.run()
-            #     # gps_global.test_policy(itr=i, N=compare_costs)
-            #     plt.close()
+            if hyperparams.config['gui_on']:
+                gps_global.run()
+                # gps_global.test_policy(itr=i, N=compare_costs)
+                plt.close()
+            else:
+                gps_global.run()
+                # gps_global.test_policy(itr=i, N=compare_costs)
+                plt.close()
             mean_dists_global_dict[itr], success_rates_global_dict[itr] = gps_global.measure_distance_and_success()
             # Plot the distribution of demos.
             # from matplotlib.patches import Rectangle
@@ -730,13 +711,14 @@ def main():
             hyperparams.config['common']['nn_demo'] = True
             hyperparams.config['algorithm']['init_demo_policy'] = False
             hyperparams.config['algorithm']['policy_eval'] = False
-            hyperparams.config['algorithm']['ioc'] = 'MPF'
+            hyperparams.config['algorithm']['ioc'] = 'ICML'
+            hyperparams.config['agent']['randomly_sample_bodypos'] = True
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/'
             # if not os.path.exists(exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/'):
             #     os.makedirs(exp_dir + 'data_files_nn_multiple_MPF_%d' % itr + '/')
-            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_MPF_random_cond_%d' % itr + '/'
-            if not os.path.exists(exp_dir + 'data_files_nn_MPF_random_cond_%d' % itr + '/'):
-                os.makedirs(exp_dir + 'data_files_nn_MPF_random_cond_%d' % itr + '/')
+            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_MPF_random_cond_ICML_%d' % itr + '/'
+            if not os.path.exists(exp_dir + 'data_files_nn_MPF_random_cond_ICML_%d' % itr + '/'):
+                os.makedirs(exp_dir + 'data_files_nn_MPF_random_cond_ICML_%d' % itr + '/')
 
             hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
             # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_LG_MPF_%d' % itr + '/'
@@ -748,14 +730,15 @@ def main():
             gps_classic = GPSMain(hyperparams.config)
             pol_iter = gps_classic.algorithm._hyperparams['iterations']
             # for i in xrange(pol_iter):
-            # if hyperparams.config['gui_on']:
-            #     gps_classic.run()
-            #     # gps_global.test_policy(itr=i, N=compare_costs)
-            #     plt.close()
-            # else:
-            #     gps_classic.run()
-            #     # gps_global.test_policy(itr=i, N=compare_costs)
-            #     plt.close()
+            # if itr != 0:
+            if hyperparams.config['gui_on']:
+                gps_classic.run()
+                # gps_global.test_policy(itr=i, N=compare_costs)
+                plt.close()
+            else:
+                gps_classic.run()
+                # gps_global.test_policy(itr=i, N=compare_costs)
+                plt.close()
             mean_dists_classic_dict[itr], success_rates_classic_dict[itr] = gps_classic.measure_distance_and_success()
             plt.close()
 
@@ -1079,10 +1062,11 @@ def main():
                 # gps_global.test_policy(itr=i, N=compare_costs)
                 plt.close()
     else:
-        hyperparams = imp.load_source('hyperparams', hyperparams_file)
-        hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files/' #use global as sparse demos
-        if not os.path.exists(exp_dir + 'data_files/'):
-          os.makedirs(exp_dir + 'data_files/')
+        hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_nn_MPF_random_cond_0/'
+        if not os.path.exists(exp_dir + 'data_files_nn_MPF_random_cond_0/'):
+            os.makedirs(exp_dir + 'data_files_nn_MPF_random_cond_0/')
+
+        hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:
             run_gps = threading.Thread(
@@ -1095,6 +1079,7 @@ def main():
             plt.show()
         else:
             gps.run(itr_load=resume_training_itr)
+        # print gps.measure_distance_and_success()
 
 if __name__ == "__main__":
     main()
