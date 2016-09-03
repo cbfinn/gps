@@ -60,7 +60,7 @@ common = {
 
 agent = {
     'type': AgentMuJoCo,
-    'filename': './mjc_models/pr2_arm3d.xml',
+    'filename': './mjc_models/pr2_arm3d_large_table.xml',
     'x0': np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
                           np.zeros(7)]),
     'dt': 0.05,

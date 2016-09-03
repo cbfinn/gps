@@ -1068,11 +1068,11 @@ def main():
                 # gps_global.test_policy(itr=i, N=compare_costs)
                 plt.close()
     else:
-        hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_random_cond_0/'
-        if not os.path.exists(exp_dir + 'data_files_random_cond_0/'):
-            os.makedirs(exp_dir + 'data_files_random_cond_0/')
-        # hyperparams.config['agent']['randomly_sample_bodypos'] = True
-        hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
+        # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_random_cond_0/'
+        # if not os.path.exists(exp_dir + 'data_files_random_cond_0/'):
+        #     os.makedirs(exp_dir + 'data_files_random_cond_0/')
+        # # hyperparams.config['agent']['randomly_sample_bodypos'] = True
+        # hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:
             run_gps = threading.Thread(
