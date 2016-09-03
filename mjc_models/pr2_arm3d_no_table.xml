@@ -84,25 +84,6 @@
             </body>
         </body>
 
-        <body name="g1" pos="0.034 0.3 -0.47" axisangle="0 1 0 0.05">
-            <geom name="g1" rgba="0.2 0.2 0.2 1" type="box" size="0.003 0.01 0.05" contype="1" conaffinity="1" />
-        </body>
-
-        <body name="g2" pos="-0.034 0.3 -0.47" axisangle="0 1 0 -0.05">
-            <geom name="g2" rgba="0.2 0.2 0.2 1" type="box" size="0.003 0.01 0.05" contype="1" conaffinity="1" />
-        </body>
-
-        <body name="g3" pos="0.0 0.334 -0.47" axisangle="1 0 0 -0.05">
-            <geom name="g3" rgba="0.2 0.2 0.2 1" type="box" size="0.01 0.003 0.05" contype="1" conaffinity="1" />
-        </body>
-
-        <body name="g4" pos="0.0 0.266 -0.47" axisangle="1 0 0 0.05">
-            <geom name="g4" rgba="0.2 0.2 0.2 1" type="box" size="0.01 0.003 0.05" contype="1" conaffinity="1" />
-        </body>
-
-        <body name="fl" pos="0.0 0.3 -0.55">
-            <geom name="fl" rgba="0.2 0.2 0.2 1" type="box" size="0.2 0.2 0.05" contype="1" conaffinity="1" />
-        </body>
 
     </worldbody>
 

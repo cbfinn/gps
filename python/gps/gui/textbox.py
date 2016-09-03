@@ -16,11 +16,12 @@ class Textbox:
 
     def __init__(self, fig, gs, log_filename=None, max_display_size=10,
         border_on=False, bgcolor=mpl.rcParams['figure.facecolor'], bgalpha=1.0,
-        fontsize=12, font_family='sans-serif'):
+        fontsize=12, font_family='sans-serif', gui_on=True):
         self._fig = fig
         self._gs = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=gs)
         self._ax = plt.subplot(self._gs[0])
         self._log_filename = log_filename
+        self.gui_on = gui_on
 
         self._text_box = self._ax.text(0.01, 0.95, '', color='black',
                 va='top', ha='left', transform=self._ax.transAxes,
@@ -36,16 +37,18 @@ class Textbox:
             self._ax.spines['bottom'].set_visible(False)
             self._ax.spines['left'].set_visible(False)
 
-        self._fig.canvas.draw()
-        self._fig.canvas.flush_events()     # Fixes bug with Qt4Agg backend
-        self.set_bgcolor(bgcolor, bgalpha)  # this must come after fig.canvas.draw()
+        if self.gui_on:
+            self._fig.canvas.draw()
+            self._fig.canvas.flush_events()     # Fixes bug with Qt4Agg backend
+            self.set_bgcolor(bgcolor, bgalpha)  # this must come after fig.canvas.draw()
 
     #TODO: Add docstrings here.
     def set_text(self, text):
         self._text_arr = [text]
         self._text_box.set_text('\n'.join(self._text_arr))
         self.log_text(text)
-        self.draw()
+        if self.gui_on:
+            self.draw()
 
     def append_text(self, text):
         self._text_arr.append(text)
@@ -53,7 +56,8 @@ class Textbox:
             self._text_arr = self._text_arr[-self._max_display_size:]
         self._text_box.set_text('\n'.join(self._text_arr))
         self.log_text(text)
-        self.draw()
+        if self.gui_on:
+            self.draw()
 
     def log_text(self, text):
         if self._log_filename is not None:
@@ -62,7 +66,8 @@ class Textbox:
 
     def set_bgcolor(self, color, alpha=1.0):
         self._ax.set_axis_bgcolor(ColorConverter().to_rgba(color, alpha))
-        self.draw()
+        if self.gui_on:
+            self.draw()
 
     def draw(self):
         color, alpha = self._ax.get_axis_bgcolor(), self._ax.get_alpha()
