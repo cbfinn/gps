@@ -3,6 +3,7 @@ import numpy as np
 import copy
 import numpy.matlib
 import random
+from gps.sample.sample import Sample
 
 from gps.sample.sample import Sample
 from gps.sample.sample_list import SampleList

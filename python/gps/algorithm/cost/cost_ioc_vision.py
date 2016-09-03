@@ -96,8 +96,6 @@ class CostIOCNN(Cost):
         # TODO - right now, we're going to assume that Obs = X
         T = sample.T
         obs = sample.get_obs()
-        sample_u = sample.get_U()
-
         dO = self._dO
         dU = sample.dU
         dX = sample.dX
@@ -111,24 +109,20 @@ class CostIOCNN(Cost):
 
         blob_names = self.solver.test_nets[0].blobs.keys()
         self.solver.test_nets[0].blobs[blob_names[0]].data[:] = obs
-        self.solver.test_nets[0].blobs[blob_names[1]].data[:] = np.sum(self._hyperparams['wu'] * (sample_u ** 2), axis=1, keepdims=True)
         l = 0.5*self.solver.test_nets[0].forward().values()[0][0].reshape(T)
 
         # Get weights array from caffe (M in the old codebase)
-        params = self.solver.test_nets[0].params
-        weighted_array = np.c_[params['Ax'][0].data, np.array([params['Ax'][1].data]).T]
+        params = self.solver.test_nets[0].params.values()
+        weighted_array = np.c_[params[-2][0].data, np.array([params[-2][1].data]).T]
         A = weighted_array.T.dot(weighted_array)
 
         # get intermediate features
         feat, dfdx = self.compute_dfdx(obs)
 
-        #l += 0.5 * np.sum(self._hyperparams['wu'] * (sample_u ** 2), axis=1)  # already computed by the network
-        if self._hyperparams['learn_wu']:
-            wu_mult = params['all_u'][0].data[0][0]
-        else:
-            wu_mult = 1.0
-        lu = wu_mult * self._hyperparams['wu'] * sample_u
-        luu = wu_mult * np.tile(np.diag(self._hyperparams['wu']), [T, 1, 1])
+        sample_u = sample.get_U()
+        l += 0.5 * np.sum(self._hyperparams['wu'] * (sample_u ** 2), axis=1)
+        lu = self._hyperparams['wu'] * sample_u
+        luu = np.tile(np.diag(self._hyperparams['wu']), [T, 1, 1])
 
         dldf = A.dot(np.vstack((feat.T, np.ones((1, T))))) # Assuming A is a (df + 1) x (df + 1) matrix
         dF = feat.shape[1]
@@ -185,11 +179,9 @@ class CostIOCNN(Cost):
           d_idx_i = demo_idx[d_start_idx:d_start_idx+self.demo_batch_size]
           s_idx_i = sample_idx[s_start_idx:s_start_idx+sample_batch_size]
           self.solver.net.blobs[blob_names[0]].data[:] = demoO[d_idx_i]
-          self.solver.net.blobs[blob_names[1]].data[:] = np.sum(self._hyperparams['wu']*demoU[d_idx_i]**2, axis=2, keepdims=True)
-          self.solver.net.blobs[blob_names[2]].data[:] = d_log_iw[d_idx_i]
-          self.solver.net.blobs[blob_names[3]].data[:] = sampleO[s_idx_i]
-          self.solver.net.blobs[blob_names[4]].data[:] = np.sum(self._hyperparams['wu']*sampleU[s_idx_i]**2, axis=2, keepdims=True)
-          self.solver.net.blobs[blob_names[5]].data[:] = s_log_iw[s_idx_i]
+          self.solver.net.blobs[blob_names[1]].data[:] = d_log_iw[d_idx_i]
+          self.solver.net.blobs[blob_names[2]].data[:] = sampleO[s_idx_i]
+          self.solver.net.blobs[blob_names[3]].data[:] = s_log_iw[s_idx_i]
           self.solver.step(1)
           train_loss = self.solver.net.blobs[blob_names[-1]].data
           average_loss += train_loss
@@ -242,7 +234,6 @@ class CostIOCNN(Cost):
         network_arch_params['Nq'] = self._iteration_count
         network_arch_params['smooth_reg_weight'] = self._hyperparams['smooth_reg_weight']
         network_arch_params['mono_reg_weight'] = self._hyperparams['mono_reg_weight']
-        network_arch_params['learn_wu'] = self._hyperparams['learn_wu']
         solver_param.train_net_param.CopyFrom(
             self._hyperparams['network_model'](**network_arch_params)
         )

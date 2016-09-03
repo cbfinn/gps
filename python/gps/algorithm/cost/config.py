@@ -4,7 +4,7 @@ import numpy as np
 from gps.algorithm.cost.cost_utils import RAMP_CONSTANT, evallogl2term
 try:
   from gps.algorithm.cost.cost_utils import construct_quad_cost_net
-  from gps.algorithm.cost.cost_utils import construct_nn_cost_net
+  from gps.algorithm.cost.cost_utils import construct_nn_cost_net, construct_fp_cost_net
 except ImportError:
   construct_quad_cost_net = None
   construct_nn_cost_net = None
@@ -58,6 +58,8 @@ COST_ACTION = {
 # config options for any cost function learned through IOC
 IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
     'ioc_loss': 'ICML',  # Type of loss to use (ICML, XENTGAN, IOCGAN, MPF)
+    'dO':0, # Number of features
+    'T': 0, # the time horizon
     'iterations': 5000,  # Number of training iterations.
     'demo_batch_size': 5,  # Number of demos per mini-batch.
     'sample_batch_size': 5,  # Number of samples per mini-batch.
@@ -72,16 +74,15 @@ IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
     'gpu_id': 0,
     'smooth_reg_weight': 0.1,
     'mono_reg_weight': 100,
+    'learn_wu': False,  # Learn multiplier on torque penalty, in addition to wu.
+    'wu': np.array([]), # Torque penalties, must be 1 x dU numpy array.
+    'weights_file_prefix': '',
 }
 
 #CostIOCQuadratic
 COST_IOC_QUADRATIC = {
     'network_arch_params': {},  # includes info to construct model
     'network_model': construct_quad_cost_net,
-    'dO':0, # Number of features (here for pointmass_ioc only)
-    'T': 0, # the time horizon (here for pointmass_ioc only)
-    'wu': np.array([]), # Torque penalties, must be 1 x dU numpy array.
-    'weights_file_prefix': '',
 }
 
 COST_IOC_QUADRATIC.update(IOC_CONFIG)
@@ -90,10 +91,15 @@ COST_IOC_QUADRATIC.update(IOC_CONFIG)
 COST_IOC_NN = {
     'network_arch_params': {},  # includes info to construct model
     'network_model': construct_nn_cost_net,
-    'dO':0, # Number of features (here for pointmass_ioc only)
-    'T': 0, # the time horizon (here for pointmass_ioc only)
-    'wu': np.array([]), # Torque penalties, must be 1 x dU numpy array.
-    'weights_file_prefix': '',
 }
 
 COST_IOC_NN.update(IOC_CONFIG)
+
+#CostIOCVision
+COST_IOC_VISION = {
+    'network_arch_params': {},  # includes info to construct model
+    'network_model': construct_fp_cost_net,
+}
+
+COST_IOC_VISION.update(IOC_CONFIG)
+

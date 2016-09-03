@@ -158,14 +158,15 @@ class GenDemo(object):
                                 for j in xrange(N):
                                         demo_end_effector = demos[i*N + j].get(END_EFFECTOR_POINTS)
                                         # demo_end_effector = demos[k][i*N + j].get(END_EFFECTOR_POINTS)
-                                        dists_to_target[i] = np.amin(np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
+                                        # NOTE - there was a bug here!!!
+                                        #dists_to_target[i*N+j] = np.amin(np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
                                         # Just choose the last time step since it may become unstable after achieving the minimum point.
                                         dists_to_target[i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
                                         # dists_to_target[k][i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
                                         if dists_to_target[i*N + j] > agent_config['success_upper_bound']:
                                                 failed_indices.append(i)
                         good_indices = [i for i in xrange(M) if i not in failed_indices]
-                        bad_indices = np.argmax(dists_to_target)
+                        bad_indices = np.argmax(dists_to_target)  # TODO - what is this for?
                         import pdb; pdb.set_trace()
                         self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
                         filtered_demos = []
@@ -192,7 +193,7 @@ class GenDemo(object):
                         demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs(), \
                                                         'demo_conditions': demo_conditions, 'failed_conditions': failed_conditions}
                         if self._learning:
-                                demo_store['pos_body_offset'] = [agent_config['pos_body_offset'][bad_indices]]
+                                demo_store['pos_body_offset'] = [agent_config['pos_body_offset'][bad_indices]]  # TODO - what is this for?
                         import matplotlib.pyplot as plt
                         from matplotlib.patches import Rectangle
 
