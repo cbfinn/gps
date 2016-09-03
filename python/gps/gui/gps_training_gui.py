@@ -32,7 +32,7 @@ from gps.gui.util import buffered_axis_limits, load_data_from_npz
 
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 
-from gps.gui.line_plot import LinePlotter
+from gps.gui.line_plot import LinePlotter, ScatterPlot
 
 NUM_DEMO_PLOTS = 5
 
@@ -83,19 +83,20 @@ class GPSTrainingGUI(object):
                 wspace=0, hspace=0)
 
         # Assign GUI component locations.
-        self._gs = gridspec.GridSpec(16, 8)
+        self._gs = gridspec.GridSpec(18, 8)
         self._gs_action_panel           = self._gs[0:1,  0:8]
         self._gs_action_output          = self._gs[1:2,  0:4]
         self._gs_status_output          = self._gs[2:3,  0:4]
         self._gs_cost_plotter           = self._gs[1:3,  4:8]
         self._gs_gt_cost_plotter        = self._gs[4:6,  4:8]
-        self._gs_demo_cost_plotter      = self._gs[6:8,  4:8]
+        self._gs_demo_cost_plotter      = self._gs[7:9,  4:8]
+        self._gs_dist_cost_plotter      = self._gs[7:9,  0:4]
         self._gs_algthm_output          = self._gs[3:9,  0:4]
         if config['image_on']:
-            self._gs_traj_visualizer    = self._gs[9:16, 0:4]
-            self._gs_image_visualizer   = self._gs[9:16, 4:8]
+            self._gs_traj_visualizer    = self._gs[11:18, 0:4]
+            self._gs_image_visualizer   = self._gs[11:18, 4:8]
         else:
-            self._gs_traj_visualizer    = self._gs[9:16, 0:8]
+            self._gs_traj_visualizer    = self._gs[11:18, 0:8]
 
         # Create GUI components.
         self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 4, actions_arr)
@@ -112,6 +113,7 @@ class GPSTrainingGUI(object):
                 color='red', label='ground truth cost')
         self._demo_cost_plotter = LinePlotter(self._fig, self._gs_demo_cost_plotter,
                                          color='blue', label='demo cost', num_plots=NUM_DEMO_PLOTS*2)
+        self._scatter_cost_plotter = ScatterPlot(self._fig, self._gs_dist_cost_plotter, xlabel='Dist', ylabel='Cost')
         self._traj_visualizer = Plotter3D(self._fig, self._gs_traj_visualizer,
                 num_plots=self._hyperparams['conditions'])
         if config['image_on']:
@@ -277,7 +279,7 @@ class GPSTrainingGUI(object):
 
     # Iteration update functions
     def update(self, itr, algorithm, agent, traj_sample_lists, pol_sample_lists,
-               ioc_demo_losses=None, ioc_sample_losses=None):
+               ioc_demo_losses=None, ioc_sample_losses=None, ioc_dist_cost=None, ioc_demo_dist_cost=None):
         """
         After each iteration, update the iteration data output, the cost plot,
         and the 3D trajectory visualizations (if end effector points exist).
@@ -300,6 +302,8 @@ class GPSTrainingGUI(object):
 
         if ioc_demo_losses:
             self._update_ioc_demo_plot(ioc_demo_losses, ioc_sample_losses)
+        if ioc_dist_cost:
+            self._update_ioc_dist_plot(ioc_dist_cost, ioc_demo_dist_cost)
 
         self._fig.canvas.draw()
         self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
@@ -468,6 +472,11 @@ class GPSTrainingGUI(object):
 
         for i in range(len(sample_losses)):
             self._demo_cost_plotter.set_sequence(len(demo_losses)+i, sample_losses[i], style='--')
+
+    def _update_ioc_dist_plot(self, dist_cost, demo_dist_cost):
+        self._scatter_cost_plotter.clear()
+        self._scatter_cost_plotter.add_data(dist_cost[0], dist_cost[1])
+        self._scatter_cost_plotter.add_data(demo_dist_cost[0], demo_dist_cost[1], color='red')
 
     def save_figure(self, filename):
         self._fig.savefig(filename)

@@ -80,3 +80,69 @@ class LinePlotter(object):
             self._ax.draw_artist(item)
         self._fig.canvas.update()
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+
+
+class ScatterPlot(object):
+    def __init__(self, fig, gs, xlabel='', ylabel='', color='black'):
+        self._fig = fig
+        self._gs = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=gs)
+        self._ax = plt.subplot(self._gs[0])
+
+        self._ax.set_xlabel(xlabel)
+        self._ax.set_ylabel(ylabel)
+
+        self._color = color
+
+        self._ax.set_xlim(0-0.5, 100)
+        self._ax.set_ylim(0, 1)
+
+        self._init = False
+
+        self._fig.canvas.draw()
+        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+
+    def init(self):
+        """
+        Initialize plots based off the length of the data array.
+        """
+        self._init = True
+        self._plots = []#self._ax.scatter(np.zeros(5),np.zeros(5))
+        self._xdata = []
+        self._ydata = []
+
+    def clear(self):
+        self._plots = []
+        self._xdata = []
+        self._ydata = []
+
+    def add_data(self, x, y, color='blue'):
+        #import pdb; pdb.set_trace()
+        if not self._init:
+            self.init()
+
+        self._xdata.extend(x)
+        self._ydata.extend(y)
+        self._plots.append(self._ax.scatter(x,y, c=color))
+
+        x_min, x_max = np.amin(self._xdata), np.amax(self._xdata)
+        self._ax.set_xlim(buffered_axis_limits(x_min, x_max, buffer_factor=1.1))
+        y_min, y_max = np.amin(self._ydata), np.amax(self._ydata)
+        self._ax.set_ylim(buffered_axis_limits(y_min, y_max, buffer_factor=1.1))
+        self.draw()
+
+    def draw(self):
+        self._ax.draw_artist(self._ax.patch)
+        for plot in self._plots:
+            self._ax.draw_artist(plot)
+        self._fig.canvas.update()
+        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+
+    def draw_ticklabels(self):
+        """
+        Redraws the ticklabels. Used to redraw the ticklabels (since they are
+        outside the axis) when something else is drawn over them.
+        """
+        for item in self._ax.get_xticklabels() + self._ax.get_yticklabels():
+            self._ax.draw_artist(item)
+        self._fig.canvas.update()
+        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
