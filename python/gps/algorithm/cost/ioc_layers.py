@@ -105,7 +105,7 @@ class GaussianProcessPriors(caffe.Layer):
         # Compute derivative w.r.t. costs.
         dldy = -inv_K.dot(Y) # calculate the derivative of log likelihood w.r.t. Y
         for i in xrange(batch_size):
-            cost_diff[i, :, :] = dldy[i]
+            cost_diff[i, :] = dldy[i]
 
         bottom[0].diff[...] = loss_weight * feature_diff
         bottom[1].diff[...] = loss_weight * cost_diff
