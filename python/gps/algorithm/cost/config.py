@@ -74,7 +74,7 @@ IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
     'gpu_id': 0,
     'smooth_reg_weight': 0.1,
     'mono_reg_weight': 100,
-    'gp_reg_weight': 1.0,
+    'gp_reg_weight': 0.0,
     'learn_wu': False,  # Learn multiplier on torque penalty, in addition to wu.
     'wu': np.array([]), # Torque penalties, must be 1 x dU numpy array.
     'weights_file_prefix': '',
