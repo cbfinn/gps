@@ -93,7 +93,7 @@ class GPSTrainingGUI(object):
         self._gs_gt_cost_plotter        = self._gs[4:6,  4:8]
         self._gs_demo_cost_plotter      = self._gs[7:9,  4:8]
         self._gs_dist_cost_plotter      = self._gs[7:9,  0:4]
-        self._gs_algthm_output          = self._gs[3:9,  0:4]
+        self._gs_algthm_output          = self._gs[3:7,  0:4]
         if config['image_on']:
             self._gs_traj_visualizer    = self._gs[11:18, 0:4]
             self._gs_image_visualizer   = self._gs[11:18, 4:8]
@@ -102,6 +102,7 @@ class GPSTrainingGUI(object):
 
         # Create GUI components.
         self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 4, actions_arr)
+        self._scatter_cost_plotter = ScatterPlot(self._fig, self._gs_dist_cost_plotter, xlabel='Dist', ylabel='Cost', gui_on=gui_on)
         self._action_output = Textbox(self._fig, self._gs_action_output, border_on=True, gui_on=gui_on)
         self._status_output = Textbox(self._fig, self._gs_status_output, border_on=False, gui_on=gui_on)
         self._algthm_output = Textbox(self._fig, self._gs_algthm_output,
@@ -116,7 +117,6 @@ class GPSTrainingGUI(object):
                 color='red', label='ground truth cost', gui_on=gui_on)
         self._demo_cost_plotter = LinePlotter(self._fig, self._gs_demo_cost_plotter,
                                          color='blue', label='demo cost', num_plots=NUM_DEMO_PLOTS*2, gui_on=gui_on)
-        self._scatter_cost_plotter = ScatterPlot(self._fig, self._gs_dist_cost_plotter, xlabel='Dist', ylabel='Cost', gui_on=gui_on)
         self._traj_visualizer = Plotter3D(self._fig, self._gs_traj_visualizer,
                 num_plots=self._hyperparams['conditions'], gui_on=gui_on)
         if config['image_on']:
