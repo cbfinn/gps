@@ -316,11 +316,12 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                       {'dim': (demo_batch_size, 1)},  # demo i.w.
                       {'dim': (sample_batch_size, T, dim_input)},  # sample obs
                       {'dim': (sample_batch_size, T, 1)},  # sample torque norm
-                      {'dim': (sample_batch_size, 1)}]  # sample i.w.
+                      {'dim': (sample_batch_size, 1)}, # sample i.w.
+                      {'dim': (dim_input, 1)}] # length scale
         })
 
-        [n.demos, n.demou, n.d_log_iw, n.samples, n.sampleu, n.s_log_iw] = L.Python(
-            ntop=6, python_param=dict(module='ioc_layers', param_str=data_layer_info,
+        [n.demos, n.demou, n.d_log_iw, n.samples, n.sampleu, n.s_log_iw, n.l] = L.Python(
+            ntop=7, python_param=dict(module='ioc_layers', param_str=data_layer_info,
                                       layer='IOCDataLayer')
             )
         n.net_input = L.Concat(n.demos, n.samples, axis=0)
@@ -520,11 +521,12 @@ def construct_fp_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                       {'dim': (demo_batch_size, 1)},
                       {'dim': (sample_batch_size, T, dim_input)},
                       {'dim': (sample_batch_size, T, 3, image_size[0], image_size[1])},
-                      {'dim': (sample_batch_size, 1)}]
+                      {'dim': (sample_batch_size, 1)},
+                      {'dim': (dim_input, 1)}]
         })
 
-        [n.demos, n.d_image, n.d_log_iw, n.samples, n.s_image, n.s_log_iw] = L.Python(
-            ntop=6, python_param=dict(
+        [n.demos, n.d_image, n.d_log_iw, n.samples, n.s_image, n.s_log_iw, n.l] = L.Python(
+            ntop=7, python_param=dict(
                 module='ioc_layers', param_str=data_layer_info,
                 layer='IOCDataLayer'
             )

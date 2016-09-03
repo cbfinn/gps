@@ -61,15 +61,17 @@ class GaussianProcessPriors(caffe.Layer):
         pass
 
     def reshape(self, bottom, top):
-        # Assume bottom[0] contains the (Nd+Ns)xTxdO features and bottom[1] contains the 
-        # costs in the batch with zero means and normalized with shape (Nd+Ns)xT.
+        # Assume bottom[0] contains the (Nd+Ns)xTxdO features, bottom[1] contains the 
+        # costs in the batch with zero means and normalized with shape (Nd+Ns)xT, and
+        # bottom[3] contains the length scale of each dimension of the feature.
         self._K = np.zeros((bottom[0].shape[0], bottom[0].shape[0]))
         top[0].reshape(1)
 
     def forward(self, bottom, top):
         # TODO - make these constants somewhere?
         # l is the length scale and sigma is the noise constant
-        self._l, self._sigma = 1.0, 1.0 # hand-engineer these. Probably optimize them in the future.
+        self._sigma = 1.0 # hand-engineer this. Probably optimize them in the future.
+        self._l = bottom[3].data
         batch_size = bottom[0].shape[0]
         X = bottom[0].data # feature matrix
         self._Y = np.zeros((batch_size, 1)) # cost vector
@@ -78,7 +80,7 @@ class GaussianProcessPriors(caffe.Layer):
         for i in xrange(batch_size):
             self._Y[i] = bottom[1].data[i, :, :].sum()
             for j in range(i + 1):
-                self._K[i, j] = self._K[j, i] = np.exp(-self._l/2 * (np.linalg.norm(X[i, :, :] - X[j, :, :]))**2)
+                self._K[i, j] = self._K[j, i] = np.exp(-1/2 * np.sum(self._l * (X[i, :, :] - X[j, :, :])**2, axis=1).sum())
                 if j == i:
                     self._K[i, j] += self._sigma**2
 
@@ -89,25 +91,14 @@ class GaussianProcessPriors(caffe.Layer):
         # Compute derivative w.r.t bottom
         loss_weight = 0.5 * top[0].diff[0]
         batch_size = bottom[0].shape[0]
-        X = bottom[0].data
-        feature_diff = np.zeros_like(bottom[0].diff)
         cost_diff = np.zeros_like(bottom[1].diff)
         inv_K = np.linalg.pinv(self._K)
-
-        # Compute derivative w.r.t features.
-        for i in xrange(batch_size):
-            for j in xrange(batch_size):
-                # Compute dK/dX
-                feature_diff[i, :, :] += -self._K[i, j]*self._l*(X[i, :, :] - X[j, :, :])
-                feature_diff[j, :, :] -= -self._K[i, j]*self._l*(X[i, :, :] - X[j, :, :])
-        feature_diff = 1/2 * self._Y.T.dot(Y).dot(inv_K).dot(feature_diff).dot(inv_K) - 1/2 * inv_K.dot(feature_diff)
 
         # Compute derivative w.r.t. costs.
         dldy = -inv_K.dot(Y) # calculate the derivative of log likelihood w.r.t. Y
         for i in xrange(batch_size):
             cost_diff[i, :] = dldy[i]
 
-        bottom[0].diff[...] = loss_weight * feature_diff
         bottom[1].diff[...] = loss_weight * cost_diff
 
 
