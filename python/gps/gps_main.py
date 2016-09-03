@@ -23,7 +23,7 @@ from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
 from gps.utility.generate_demo import GenDemo
 from gps.utility.general_utils import disable_caffe_logs
-from gps.utility.demo_utils import eval_demos_xu
+from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu
 
 
 class GPSMain(object):
@@ -364,20 +364,29 @@ class GPSMain(object):
         """
 
         if self.using_ioc():
+            # Produce time vs cost plots
             demo_losses = eval_demos_xu(self.agent, self.algorithm.demoX, self.algorithm.demoU, self.algorithm.cost, n=NUM_DEMO_PLOTS)
             sample_losses = self.algorithm.cur[0].cs
             if sample_losses is None:
                 sample_losses = self.algorithm.prev[0].cs
             assert sample_losses.shape[0] >= NUM_DEMO_PLOTS
             sample_losses = sample_losses[:NUM_DEMO_PLOTS]
+
+            # Produce distance vs cost plots
+            dists_vs_costs = compute_distance_cost_plot(self.algorithm, self.agent, traj_sample_lists[0])
+            demo_dists_vs_costs = compute_distance_cost_plot_xu(self.algorithm, self.agent, self.algorithm.demoX, self.algorithm.demoU)
+
         else:
             demo_losses = None
             sample_losses = None
+            dists_vs_costs = None
+            demo_dists_vs_costs = None
 
         if self.gui:
             self.gui.set_status_text('Logging data and updating GUI.')
             self.gui.update(itr, self.algorithm, self.agent,
-                traj_sample_lists, pol_sample_lists, ioc_demo_losses=demo_losses, ioc_sample_losses=sample_losses)
+                traj_sample_lists, pol_sample_lists, ioc_demo_losses=demo_losses, ioc_sample_losses=sample_losses,
+                            ioc_dist_cost=dists_vs_costs, ioc_demo_dist_cost=demo_dists_vs_costs)
             self.gui.save_figure(
                 self._data_files_dir + ('figure_itr_%02d.png' % itr)
             )
