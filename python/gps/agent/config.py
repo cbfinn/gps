@@ -74,6 +74,7 @@ AGENT_MUJOCO = {
     'randomly_sample_x0': False,
     'randomly_sample_bodypos': False,
     'record_reward': False,
+    'render': True,
 }
 
 AGENT_BOX2D = {

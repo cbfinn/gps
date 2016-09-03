@@ -13,7 +13,7 @@ import matplotlib.gridspec as gridspec
 from mpl_toolkits.mplot3d import Axes3D
 
 class Plotter3D:
-    def __init__(self, fig, gs, num_plots, rows=None, cols=None):
+    def __init__(self, fig, gs, num_plots, rows=None, cols=None, gui_on=True):
         if cols is None:
             cols = int(np.floor(np.sqrt(num_plots)))
         if rows is None:
@@ -24,6 +24,7 @@ class Plotter3D:
         self._gs = gridspec.GridSpecFromSubplotSpec(8, 1, subplot_spec=gs)
         self._gs_legend = self._gs[0:1, 0]
         self._gs_plot   = self._gs[1:8, 0]
+        self.gui_on = gui_on
 
         self._ax_legend = plt.subplot(self._gs_legend)
         self._ax_legend.get_xaxis().set_visible(False)
@@ -41,8 +42,9 @@ class Plotter3D:
             for item in (ax.get_xticklabels() + ax.get_yticklabels() + ax.get_zticklabels()):
                 item.set_fontsize(10)
 
-        self._fig.canvas.draw()
-        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+        if self.gui_on:
+            self._fig.canvas.draw()
+            self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
 
     def set_title(self, i, title):
         self._axarr[i].set_title(title)
@@ -78,8 +80,9 @@ class Plotter3D:
                     for item in (ax.get_xticklabels() + ax.get_yticklabels()):
                         item.set_fontsize(10)
                 self.set_title(i, 'Condition %d' % (i))
-                self._fig.canvas.draw()
-                self._fig.canvas.flush_events()
+                if self.gui_on:
+                    self._fig.canvas.draw()
+                    self._fig.canvas.flush_events()
             plot = self._axarr[i].plot(xs, ys, linestyle=linestyle,
                     linewidth=linewidth, marker=marker, markersize=markersize,
                     markeredgewidth=markeredgewidth, color=color, alpha=alpha,
@@ -144,5 +147,6 @@ class Plotter3D:
         for i in range(len(self._plots)):
             for plot in self._plots[i]:
                 self._axarr[i].draw_artist(plot)
-        self._fig.canvas.update()
-        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+        if self.gui_on:
+            self._fig.canvas.update()
+            self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend

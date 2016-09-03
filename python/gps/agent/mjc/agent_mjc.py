@@ -84,12 +84,13 @@ class AgentMuJoCo(Agent):
             else:
                 self.x0.append(self._hyperparams['x0'][i])
 
-        cam_pos = self._hyperparams['camera_pos']
-        for i in range(self._hyperparams['conditions']):
-            self._world[i].init_viewer(AGENT_MUJOCO['image_width'],
-                                       AGENT_MUJOCO['image_height'],
-                                       cam_pos[0], cam_pos[1], cam_pos[2],
-                                       cam_pos[3], cam_pos[4], cam_pos[5])
+        if self._hyperparams['render']:
+            cam_pos = self._hyperparams['camera_pos']
+            for i in range(self._hyperparams['conditions']):
+                self._world[i].init_viewer(AGENT_MUJOCO['image_width'],
+                                           AGENT_MUJOCO['image_height'],
+                                           cam_pos[0], cam_pos[1], cam_pos[2],
+                                           cam_pos[3], cam_pos[4], cam_pos[5])
 
     def reset_initial_x0(self, condition):
         """
@@ -231,27 +232,29 @@ class AgentMuJoCo(Agent):
 
         # save initial image to meta data
         self._world[condition].plot(self._hyperparams['x0'][condition])
-        img = self._world[condition].get_image_scaled(self._hyperparams['image_width'],
-                                                      self._hyperparams['image_height'])
-        # mjcpy image shape is [height, width, channels],
-        # dim-shuffle it for later conv-net processing,
-        # and flatten for storage
-        # img_data = np.transpose(img["img"], (1, 0, 2)).flatten() #TODO: Maybe wrong
-        img_data = np.transpose(img["img"], (2,1,0)).flatten()
-        # if initial image is an observation, replicate it for each time step
-        if CONTEXT_IMAGE in self.obs_data_types:
-            sample.set(CONTEXT_IMAGE, np.tile(img_data, (self.T, 1)), t=None)
-        else:
-            sample.set(CONTEXT_IMAGE, img_data, t=None)
-        sample.set(CONTEXT_IMAGE_SIZE, np.array([self._hyperparams['image_channels'],
-                                                self._hyperparams['image_width'],
-                                                self._hyperparams['image_height']]), t=None)
-        # only save subsequent images if image is part of observation
-        if RGB_IMAGE in self.obs_data_types:
-            sample.set(RGB_IMAGE, img_data, t=0)
-            sample.set(RGB_IMAGE_SIZE, [self._hyperparams['image_channels'],
-                                        self._hyperparams['image_width'],
-                                        self._hyperparams['image_height']], t=None)
+
+        if self._hyperparams['render']:
+            img = self._world[condition].get_image_scaled(self._hyperparams['image_width'],
+                                                          self._hyperparams['image_height'])
+            # mjcpy image shape is [height, width, channels],
+            # dim-shuffle it for later conv-net processing,
+            # and flatten for storage
+            # img_data = np.transpose(img["img"], (1, 0, 2)).flatten() #TODO: Maybe wrong
+            img_data = np.transpose(img["img"], (2,1,0)).flatten()
+            # if initial image is an observation, replicate it for each time step
+            if CONTEXT_IMAGE in self.obs_data_types:
+                sample.set(CONTEXT_IMAGE, np.tile(img_data, (self.T, 1)), t=None)
+            else:
+                sample.set(CONTEXT_IMAGE, img_data, t=None)
+            sample.set(CONTEXT_IMAGE_SIZE, np.array([self._hyperparams['image_channels'],
+                                                    self._hyperparams['image_width'],
+                                                    self._hyperparams['image_height']]), t=None)
+            # only save subsequent images if image is part of observation
+            if RGB_IMAGE in self.obs_data_types:
+                sample.set(RGB_IMAGE, img_data, t=0)
+                sample.set(RGB_IMAGE_SIZE, [self._hyperparams['image_channels'],
+                                            self._hyperparams['image_width'],
+                                            self._hyperparams['image_height']], t=None)
         return sample
 
     def _set_sample(self, sample, mj_X, t, condition):
