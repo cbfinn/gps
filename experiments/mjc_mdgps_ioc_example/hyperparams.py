@@ -50,7 +50,8 @@ common = {
     # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_06.pkl',
     'demo_exp_dir': DEMO_DIR,
     # 'demo_controller_file': [DEMO_DIR + '%d/' % i + 'data_files/algorithm_itr_11.pkl' for i in xrange(4)],
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
+    # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
+    'demo_controller_file': DEMO_DIR,
     'LG_controller_file': LG_DIR + 'data_files/algorithm_itr_09.pkl',
     'conditions': 9,
     # 'dense': True # For dense/sparse demos experiment only
@@ -59,13 +60,13 @@ common = {
 
 agent = {
     'type': AgentMuJoCo,
-    'filename': './mjc_models/pr2_arm3d.xml',
+    'filename': './mjc_models/pr2_arm3d_large_table.xml',
     'x0': np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
                           np.zeros(7)]),
     'dt': 0.05,
     'substeps': 5,
     'conditions': common['conditions'],
-    'randomly_sample_bodypos': True,
+    'randomly_sample_bodypos': False,
     'randomly_sample_x0': False,
     'sampling_range_bodypos': [np.array([-0.1,-0.1, 0.0]), np.array([0.1, 0.1, 0.0])], # Format is [lower_lim, upper_lim]
     'prohibited_ranges_bodypos':[[None, None, None, None]],
@@ -119,6 +120,8 @@ algorithm = {
     'kl_step': 0.5,
     'min_step_mult': 0.05,
     'max_step_mult': 2.0,
+    # 'min_step_mult': 1.0,
+    # 'max_step_mult': 1.0,
     'policy_sample_mode': 'replace',
     'max_ent_traj': 1.0,
     'demo_distr_empest': True,
