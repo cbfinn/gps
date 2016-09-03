@@ -78,12 +78,16 @@ def compute_distance(algorithm, sample_list):
 
 
 def compute_distance_cost_plot(algorithm, agent, sample_list):
+    if 'target_end_effector' not in algorithm._hyperparams:
+        return None
     dists = compute_distance(algorithm, sample_list)
     costs = eval_demos_xu(agent, sample_list.get_X(), sample_list.get_U(), algorithm.cost)
     return flatten_lists(dists), flatten_lists(costs)
 
 
 def compute_distance_cost_plot_xu(algorithm, agent, X, U):
+    if 'target_end_effector' not in algorithm._hyperparams:
+        return None
     sample_list = xu_to_sample_list(agent, X, U)
     dists = compute_distance(algorithm, sample_list)
     costs = eval_demos_xu(agent, sample_list.get_X(), sample_list.get_U(), algorithm.cost)
