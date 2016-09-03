@@ -106,7 +106,7 @@ config = {
     # GPS Training
     'initial_mode': 'run',
     'algthm_output_fontsize': 10,
-    'algthm_output_max_display_size': 15,
+    'algthm_output_max_display_size': 20,
 }
 
 def generate_experiment_info(config):

@@ -50,7 +50,8 @@ common = {
     # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_06.pkl',
     'demo_exp_dir': DEMO_DIR,
     # 'demo_controller_file': [DEMO_DIR + '%d/' % i + 'data_files/algorithm_itr_11.pkl' for i in xrange(4)],
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
+    # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
+    'demo_controller_file': DEMO_DIR,
     'LG_controller_file': LG_DIR + 'data_files/algorithm_itr_09.pkl',
     'conditions': 9,
     # 'dense': True # For dense/sparse demos experiment only

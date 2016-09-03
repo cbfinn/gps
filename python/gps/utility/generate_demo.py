@@ -158,7 +158,7 @@ class GenDemo(object):
                                 for j in xrange(N):
                                         demo_end_effector = demos[i*N + j].get(END_EFFECTOR_POINTS)
                                         # demo_end_effector = demos[k][i*N + j].get(END_EFFECTOR_POINTS)
-                                        dists_to_target[i] = np.amin(np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
+                                        # dists_to_target[i] = np.amin(np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
                                         # Just choose the last time step since it may become unstable after achieving the minimum point.
                                         dists_to_target[i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
                                         # dists_to_target[k][i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
