@@ -84,19 +84,19 @@ class GaussianProcessPriors(caffe.Layer):
                 self._K[i, j] = self._K[j, i] = np.exp(-1/2 * np.sum(self._l * (X[i, :, :] - X[j, :, :])**2, axis=1).sum())
                 if j == i:
                     self._K[i, j] += self._sigma**2
+        self._inv_K = np.linalg.pinv(self._K) # Cache the inverse of K
 
-        top[0].data[...] = -1/2 * (self._Y.T.dot(np.linalg.pinv(self._K)).dot(self._Y) + np.log(np.linalg.det(self._K)*2*np.pi))
+        top[0].data[...] = -1/2 * (self._Y.T.dot(self._inv_K).dot(self._Y) + np.log(np.linalg.det(self._K)*2*np.pi))
 
 
     def backward(self, top, propagate_down, bottom):
-        # Compute derivative w.r.t bottom
+        # Compute derivative w.r.t. bottom
         loss_weight = 0.5 * top[0].diff[0]
         batch_size = bottom[0].shape[0]
         cost_diff = np.zeros_like(bottom[1].diff)
-        inv_K = np.linalg.pinv(self._K)
 
         # Compute derivative w.r.t. costs.
-        dldy = -inv_K.dot(Y) # calculate the derivative of log likelihood w.r.t. Y
+        dldy = -self._inv_K.dot(Y) # Calculate the derivative of log likelihood w.r.t. Y
         for i in xrange(batch_size):
             cost_diff[i, :] = dldy[i]
 
