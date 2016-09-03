@@ -80,9 +80,9 @@ class GaussianProcessPriors(caffe.Layer):
             for j in range(i + 1):
                 self._K[i, j] = self._K[j, i] = np.exp(-self._l/2 * (np.linalg.norm(X[i, :, :] - X[j, :, :]))**2)
                 if j == i:
-                    self.K[i, j] += self._sigma**2
+                    self._K[i, j] += self._sigma**2
 
-        top[0].data[...] = -1/2 * (self._Y.T.dot(np.linalg.pinv(self.K)).dot(self._Y) + np.log(np.linalg.det(self._K)*2*np.pi))
+        top[0].data[...] = -1/2 * (self._Y.T.dot(np.linalg.pinv(self._K)).dot(self._Y) + np.log(np.linalg.det(self._K)*2*np.pi))
 
 
     def backward(self, top, propagate_down, bottom):
