@@ -68,23 +68,25 @@ class LinePlotter(object):
             self.draw()
 
     def draw(self):
+        if not self.gui_on:
+            return
         self._ax.draw_artist(self._ax.patch)
         for plot in self._plots:
             self._ax.draw_artist(plot)
-        if self.gui_on:
-            self._fig.canvas.update()
-            self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+        self._fig.canvas.update()
+        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
 
     def draw_ticklabels(self):
         """
         Redraws the ticklabels. Used to redraw the ticklabels (since they are
         outside the axis) when something else is drawn over them.
         """
+        if not self.gui_on:
+            return
         for item in self._ax.get_xticklabels() + self._ax.get_yticklabels():
             self._ax.draw_artist(item)
-        if self.gui_on:
-            self._fig.canvas.update()
-            self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+        self._fig.canvas.update()
+        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
 
 
 class ScatterPlot(object):
@@ -138,20 +140,22 @@ class ScatterPlot(object):
         self.draw()
 
     def draw(self):
+        if not self.gui_on:
+            return
         self._ax.draw_artist(self._ax.patch)
         for plot in self._plots:
             self._ax.draw_artist(plot)
-        if self.gui_on:
-            self._fig.canvas.update()
-            self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+        self._fig.canvas.update()
+        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
 
     def draw_ticklabels(self):
         """
         Redraws the ticklabels. Used to redraw the ticklabels (since they are
         outside the axis) when something else is drawn over them.
         """
+        if not self.gui_on:
+            return
         for item in self._ax.get_xticklabels() + self._ax.get_yticklabels():
             self._ax.draw_artist(item)
-        if self.gui_on:
-            self._fig.canvas.update()
-            self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+        self._fig.canvas.update()
+        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
