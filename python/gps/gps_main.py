@@ -14,6 +14,7 @@ import argparse
 import threading
 import time
 import scipy.io
+import numpy as np
 
 # Add gps/python to path so that imports work.
 sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
@@ -382,7 +383,7 @@ class GPSMain(object):
             )
         if 'no_sample_logging' in self._hyperparams['common']:
             return
-        if itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
+        if True: #itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
             self.algorithm.demo_policy = None
             self.data_logger.pickle(
                 self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),

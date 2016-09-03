@@ -3,7 +3,7 @@ import copy
 
 import numpy as np
 
-import mjcpy
+#import mjcpy
 
 from gps.agent.agent import Agent
 from gps.agent.agent_utils import generate_noise, setup
