@@ -5,6 +5,9 @@ import numpy.matlib
 import random
 
 from gps.sample.sample import Sample
+from gps.sample.sample_list import SampleList
+from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
+from gps.utility.general_utils import flatten_lists
 
 
 def generate_pos_body_offset(conditions):
@@ -33,18 +36,54 @@ def generate_pos_idx(conditions):
 	return [np.array([1]) for i in xrange(conditions)]
 
 
+def xu_to_sample_list(agent, X, U):
+	num = X.shape[0]
+	samples = []
+	for demo_idx in range(num):
+		sample = Sample(agent)
+		sample.set_XU(X[demo_idx], U[demo_idx])
+		samples.append(sample)
+	return SampleList(samples)
+
 def eval_demos(agent, demo_file, costfn, n=10):
 	demos = DataLogger.unpickle(demo_file)
 	demoX = demos['demoX']
 	demoU = demos['demoU']
 	return eval_demos_xu(agent, demoX, demoU, costfn, n=n)
 
-def eval_demos_xu(agent, demoX, demoU, costfn, n=10):
-	num_demos = demoX.shape[0]
-	losses = []
-	for demo_idx in range(num_demos):
-		sample = Sample(agent)
-		sample.set_XU(demoX[demo_idx], demoU[demo_idx])
-		l, _, _, _, _, _ = costfn.eval(sample)
-		losses.append(l)
-	return random.sample(losses, n)
+
+def eval_demos_xu(agent, demoX, demoU, costfn, n=-1):
+    num_demos = demoX.shape[0]
+    losses = []
+    for demo_idx in range(num_demos):
+        sample = Sample(agent)
+        sample.set_XU(demoX[demo_idx], demoU[demo_idx])
+        l, _, _, _, _, _ = costfn.eval(sample)
+        losses.append(l)
+    if n>0:
+        return random.sample(losses, n)
+    else:
+        return losses
+
+
+def compute_distance(algorithm, sample_list):
+    target_position = algorithm._hyperparams['target_end_effector'][:3]
+    cur_samples = sample_list.get_samples()
+    sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
+    dists = [(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2,
+									axis = 1)))
+                					for i in xrange(len(cur_samples))]
+    return dists
+
+
+def compute_distance_cost_plot(algorithm, agent, sample_list):
+    dists = compute_distance(algorithm, sample_list)
+    costs = eval_demos_xu(agent, sample_list.get_X(), sample_list.get_U(), algorithm.cost)
+    return flatten_lists(dists), flatten_lists(costs)
+
+
+def compute_distance_cost_plot_xu(algorithm, agent, X, U):
+    sample_list = xu_to_sample_list(agent, X, U)
+    dists = compute_distance(algorithm, sample_list)
+    costs = eval_demos_xu(agent, sample_list.get_X(), sample_list.get_U(), algorithm.cost)
+    return flatten_lists(dists), flatten_lists(costs)

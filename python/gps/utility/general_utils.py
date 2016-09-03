@@ -18,6 +18,13 @@ class BundleType(object):
         object.__setattr__(self, key, value)
 
 
+def flatten_lists(lists):
+    """
+    Flattens a list of lists into a single list
+    """
+    return [obj for sublist in lists for obj in sublist]
+
+
 def check_shape(value, expected_shape, name=''):
     """
     Throws a ValueError if value.shape != expected_shape.
