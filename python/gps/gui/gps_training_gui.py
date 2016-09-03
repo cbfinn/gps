@@ -39,13 +39,15 @@ NUM_DEMO_PLOTS = 5
 
 class GPSTrainingGUI(object):
 
-    def __init__(self, hyperparams):
+    def __init__(self, hyperparams, gui_on=True):
         self._hyperparams = hyperparams
         self._log_filename = self._hyperparams['log_filename']
         if 'target_filename' in self._hyperparams:
             self._target_filename = self._hyperparams['target_filename']
         else:
             self._target_filename = None
+
+        self.gui_on = gui_on # whether or not to draw
 
         # GPS Training Status.
         self.mode = config['initial_mode']  # Modes: run, wait, end, request, process.
@@ -99,21 +101,22 @@ class GPSTrainingGUI(object):
 
         # Create GUI components.
         self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 4, actions_arr)
-        self._action_output = Textbox(self._fig, self._gs_action_output, border_on=True)
-        self._status_output = Textbox(self._fig, self._gs_status_output, border_on=False)
+        self._action_output = Textbox(self._fig, self._gs_action_output, border_on=True, gui_on=gui_on)
+        self._status_output = Textbox(self._fig, self._gs_status_output, border_on=False, gui_on=gui_on)
         self._algthm_output = Textbox(self._fig, self._gs_algthm_output,
                 max_display_size=config['algthm_output_max_display_size'],
                 log_filename=self._log_filename,
                 fontsize=config['algthm_output_fontsize'],
-                font_family='monospace')
+                font_family='monospace',
+                gui_on=gui_on)
         self._cost_plotter = MeanPlotter(self._fig, self._gs_cost_plotter,
-                color='blue', label='mean cost')
+                color='blue', label='mean cost', gui_on=gui_on)
         self._gt_cost_plotter = MeanPlotter(self._fig, self._gs_gt_cost_plotter,
-                color='red', label='ground truth cost')
+                color='red', label='ground truth cost', gui_on=gui_on)
         self._demo_cost_plotter = LinePlotter(self._fig, self._gs_demo_cost_plotter,
-                                         color='blue', label='demo cost', num_plots=NUM_DEMO_PLOTS*2)
+                                         color='blue', label='demo cost', num_plots=NUM_DEMO_PLOTS*2, gui_on=gui_on)
         self._traj_visualizer = Plotter3D(self._fig, self._gs_traj_visualizer,
-                num_plots=self._hyperparams['conditions'])
+                num_plots=self._hyperparams['conditions'], gui_on=gui_on)
         if config['image_on']:
             self._image_visualizer = ImageVisualizer(self._fig,
                     self._gs_image_visualizer, cropsize=config['image_size'],
@@ -139,7 +142,8 @@ class GPSTrainingGUI(object):
         self._traj_visualizer.add_legend(linestyle='-', marker='None',
                 color='red', label='LG Controller Distributions')
 
-        self._fig.canvas.draw()
+        if self.gui_on:
+            self._fig.canvas.draw()
 
         # Display calculating thread
         def display_calculating(delay, run_event):
@@ -301,9 +305,9 @@ class GPSTrainingGUI(object):
         if ioc_demo_losses:
             self._update_ioc_demo_plot(ioc_demo_losses, ioc_sample_losses)
 
-        self._fig.canvas.draw()
-        self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
-        # import pdb; pdb.set_trace()
+        if self.gui_on:
+            self._fig.canvas.draw()
+            self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
 
     def _output_column_titles(self, algorithm, policy_titles=False):
         """
@@ -401,7 +405,8 @@ class GPSTrainingGUI(object):
             self._update_linear_gaussian_controller_plots(algorithm, agent, m)
             if pol_sample_lists:
                 self._update_samples_plots(pol_sample_lists,  m, 'blue',  'Policy Samples')
-        self._traj_visualizer.draw()    # this must be called explicitly
+        if self.gui_on:
+            self._traj_visualizer.draw()    # this must be called explicitly
 
     def _calculate_3d_axis_limits(self, traj_sample_lists, pol_sample_lists):
         """

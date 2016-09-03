@@ -3,6 +3,7 @@
 import matplotlib as mpl
 
 mpl.use('Qt4Agg')
+#mpl.use('Pdf')  # for EC2
 
 import logging
 import imp
@@ -50,7 +51,7 @@ class GPSMain(object):
 
         self.agent = config['agent']['type'](config['agent'])
         self.data_logger = DataLogger()
-        self.gui = GPSTrainingGUI(config['common']) if config['gui_on'] else None
+        self.gui = GPSTrainingGUI(config['common'], gui_on=config['gui_on'])
 
         config['algorithm']['agent'] = self.agent
 
