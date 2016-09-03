@@ -69,28 +69,46 @@ class GaussianProcessPriors(caffe.Layer):
     def forward(self, bottom, top):
         # TODO - make these constants somewhere?
         # l is the length scale and sigma is the noise constant
-        l, sigma = 1.0, 1.0 # hand-engineer these. Probably optimize them in the future.
+        self._l, self._sigma = 1.0, 1.0 # hand-engineer these. Probably optimize them in the future.
         batch_size = bottom[0].shape[0]
         X = bottom[0].data # feature matrix
-        Y = np.zeros((batch_size, 1)) # cost vector
+        self._Y = np.zeros((batch_size, 1)) # cost vector
 
         # Compute the kernel matrix
         for i in xrange(batch_size):
-            Y[i] = bottom[1].data[i, :, :].sum()
+            self._Y[i] = bottom[1].data[i, :, :].sum()
             for j in range(i + 1):
-                self._K[i, j] = self._K[j, i] = np.exp(-l/2 * (np.linalg.norm(X[i, :, :] - X[j, :, :]))**2)
+                self._K[i, j] = self._K[j, i] = np.exp(-self._l/2 * (np.linalg.norm(X[i, :, :] - X[j, :, :]))**2)
                 if j == i:
-                    self.K[i, j] += sigma**2
+                    self.K[i, j] += self._sigma**2
 
-        top[0].data[...] = -1/2 * (Y.T.dot(np.linalg.pinv(self.K)).dot(Y) + np.log(np.linalg.det(self._K)*2*np.pi))
+        top[0].data[...] = -1/2 * (self._Y.T.dot(np.linalg.pinv(self.K)).dot(self._Y) + np.log(np.linalg.det(self._K)*2*np.pi))
 
 
     def backward(self, top, propagate_down, bottom):
-        loss_weight = top[0].diff[0]
+        # Compute derivative w.r.t bottom
+        loss_weight = 0.5 * top[0].diff[0]
         batch_size = bottom[0].shape[0]
-        bottom[0].diff[...] = 2.0 * loss_weight * self._temp / batch_size
-        # This is gradient of l1 loss
-        # bottom[0].diff = loss_weight * np.sign(self._temp) / batch_size
+        X = bottom[0].data
+        feature_diff = np.zeros_like(bottom[0].diff)
+        cost_diff = np.zeros_like(bottom[1].diff)
+        inv_K = np.linalg.pinv(self._K)
+
+        # Compute derivative w.r.t features.
+        for i in xrange(batch_size):
+            for j in xrange(batch_size):
+                # Compute dK/dX
+                feature_diff[i, :, :] += -self._K[i, j]*self._l*(X[i, :, :] - X[j, :, :])
+                feature_diff[j, :, :] -= -self._K[i, j]*self._l*(X[i, :, :] - X[j, :, :])
+        feature_diff = 1/2 * self._Y.T.dot(Y).dot(inv_K).dot(feature_diff).dot(inv_K) - 1/2 * inv_K.dot(feature_diff)
+
+        # Compute derivative w.r.t. costs.
+        dldy = -inv_K.dot(Y) # calculate the derivative of log likelihood w.r.t. Y
+        for i in xrange(batch_size):
+            cost_diff[i, :, :] = dldy[i]
+
+        bottom[0].diff[...] = loss_weight * feature_diff
+        bottom[1].diff[...] = loss_weight * cost_diff
 
 
 class IOCLoss(caffe.Layer):
