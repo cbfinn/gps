@@ -172,6 +172,14 @@ class CostIOCNN(Cost):
         sample_idx = range(Ns)
         average_loss = 0
 
+        # Compute the variance in each dimension of the observation.
+        stacked_obs = np.vstack((demoO, sampleO))
+        dO = demoO.shape[2]
+        T = demoO.shape[1]
+        var_obs = np.zeros((T, dO))
+        for i in xrange(dO):
+        	var_obs[:, i] = np.var(stacked_obs[:, :, i], axis=0)
+
         for i in range(self._hyperparams['iterations']):
           # Randomly sample batches
           np.random.shuffle(demo_idx)
@@ -190,6 +198,8 @@ class CostIOCNN(Cost):
           self.solver.net.blobs[blob_names[3]].data[:] = sampleO[s_idx_i]
           self.solver.net.blobs[blob_names[4]].data[:] = np.sum(self._hyperparams['wu']*sampleU[s_idx_i]**2, axis=2, keepdims=True)
           self.solver.net.blobs[blob_names[5]].data[:] = s_log_iw[s_idx_i]
+          self.solver.net.blobs[blob_names[6]].data[:] = var_obs
+          self.solver.net.blobs[blob_names[7]].data[:] = np.vstack((demoO[d_idx_i], sampleO[s_idx_i]))
           self.solver.step(1)
           train_loss = self.solver.net.blobs[blob_names[-1]].data
           average_loss += train_loss
@@ -242,6 +252,7 @@ class CostIOCNN(Cost):
         network_arch_params['Nq'] = self._iteration_count
         network_arch_params['smooth_reg_weight'] = self._hyperparams['smooth_reg_weight']
         network_arch_params['mono_reg_weight'] = self._hyperparams['mono_reg_weight']
+        network_arch_params['gp_reg_weight'] = self._hyperparams['gp_reg_weight']
         network_arch_params['learn_wu'] = self._hyperparams['learn_wu']
         solver_param.train_net_param.CopyFrom(
             self._hyperparams['network_model'](**network_arch_params)

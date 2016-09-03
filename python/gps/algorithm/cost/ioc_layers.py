@@ -55,6 +55,53 @@ class L2MonotonicLoss(caffe.Layer):
         # This is gradient of l1 loss
         # bottom[0].diff = loss_weight * np.sign(self._temp) / batch_size
 
+class GaussianProcessPriors(caffe.Layer):
+    """ A Gaussian Process Prior layer, penalizing cost on nearby states. """
+    def setup(self, bottom, top):
+        pass
+
+    def reshape(self, bottom, top):
+        # Assume bottom[0] contains the (Nd+Ns)xTxdO features, bottom[1] contains the 
+        # costs in the batch with zero means and normalized with shape (Nd+Ns)xT, and
+        # bottom[3] contains the length scale of each dimension of the feature with
+        # shape TxdO.
+        self._K = np.zeros((bottom[0].shape[0], bottom[0].shape[0]))
+        top[0].reshape(1)
+
+    def forward(self, bottom, top):
+        # TODO - make these constants somewhere?
+        # l is the length scale and sigma is the noise constant
+        self._sigma = 1.0 # hand-engineer this. Probably optimize them in the future.
+        self._l = bottom[3].data
+        batch_size = bottom[0].shape[0]
+        X = bottom[0].data # feature matrix
+        self._Y = np.zeros((batch_size, 1)) # cost vector
+
+        # Compute the kernel matrix
+        for i in xrange(batch_size):
+            self._Y[i] = bottom[1].data[i, :, :].sum()
+            for j in range(i + 1):
+                self._K[i, j] = self._K[j, i] = np.exp(-1/2 * np.sum(self._l * (X[i, :, :] - X[j, :, :])**2, axis=1).sum())
+                if j == i:
+                    self._K[i, j] += self._sigma**2
+        self._inv_K = np.linalg.pinv(self._K) # Cache the inverse of K
+
+        top[0].data[...] = -1/2 * (self._Y.T.dot(self._inv_K).dot(self._Y) + np.log(np.linalg.det(self._K)*2*np.pi))
+
+
+    def backward(self, top, propagate_down, bottom):
+        # Compute derivative w.r.t. bottom
+        loss_weight = 0.5 * top[0].diff[0]
+        batch_size = bottom[0].shape[0]
+        cost_diff = np.zeros_like(bottom[1].diff)
+
+        # Compute derivative w.r.t. costs.
+        dldy = -self._inv_K.dot(Y) # Calculate the derivative of log likelihood w.r.t. Y
+        for i in xrange(batch_size):
+            cost_diff[i, :] = dldy[i]
+
+        bottom[1].diff[...] = loss_weight * cost_diff
+
 
 class IOCLoss(caffe.Layer):
     """ IOC loss layer, based on MaxEnt IOC with sampling. """
