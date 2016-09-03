@@ -172,6 +172,14 @@ class CostIOCNN(Cost):
         sample_idx = range(Ns)
         average_loss = 0
 
+        # Compute the variance in each dimension of the observation.
+        batch_obs = np.vstack((demoO, sampleO))
+        dO = demoO.shape[2]
+        T = demoO.shape[1]
+        var_obs = np.zeros((T, dO))
+        for i in xrange(dO):
+        	var_obs[:, i] = np.var(batch_obs[:, :, i], axis=0)
+
         for i in range(self._hyperparams['iterations']):
           # Randomly sample batches
           np.random.shuffle(demo_idx)
@@ -190,6 +198,7 @@ class CostIOCNN(Cost):
           self.solver.net.blobs[blob_names[3]].data[:] = sampleO[s_idx_i]
           self.solver.net.blobs[blob_names[4]].data[:] = np.sum(self._hyperparams['wu']*sampleU[s_idx_i]**2, axis=2, keepdims=True)
           self.solver.net.blobs[blob_names[5]].data[:] = s_log_iw[s_idx_i]
+          self.solver.net.blobs[blob_names[6]].data[:] = var_obs
           self.solver.step(1)
           train_loss = self.solver.net.blobs[blob_names[-1]].data
           average_loss += train_loss

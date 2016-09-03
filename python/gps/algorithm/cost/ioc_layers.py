@@ -63,7 +63,8 @@ class GaussianProcessPriors(caffe.Layer):
     def reshape(self, bottom, top):
         # Assume bottom[0] contains the (Nd+Ns)xTxdO features, bottom[1] contains the 
         # costs in the batch with zero means and normalized with shape (Nd+Ns)xT, and
-        # bottom[3] contains the length scale of each dimension of the feature.
+        # bottom[3] contains the length scale of each dimension of the feature with
+        # shape TxdO.
         self._K = np.zeros((bottom[0].shape[0], bottom[0].shape[0]))
         top[0].reshape(1)
 
