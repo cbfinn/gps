@@ -157,7 +157,7 @@ algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
     'demo_batch_size': 5,
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
-    'smooth_reg_weight': 1.0,
+    'smooth_reg_weight': 0.0,
     'mono_reg_weight': 0.0,
 }
 
@@ -202,6 +202,11 @@ algorithm['traj_opt'] = {
     'max_eta': 1.0,
 }
 
+algorithm['policy_opt'] = {
+    'type': PolicyOptCaffe,
+    'iterations': 5000,
+    'weights_file_prefix': common['data_files_dir'] + 'policy',
+}
 
 algorithm['policy_prior'] = {
     'type': PolicyPriorGMM,
