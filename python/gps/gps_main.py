@@ -364,8 +364,6 @@ class GPSMain(object):
         """
 
         if self.using_ioc():
-            demo_sample_list = None  # TODO
-
             # Produce time vs cost plots
             demo_losses = eval_demos_xu(self.agent, self.algorithm.demoX, self.algorithm.demoU, self.algorithm.cost, n=NUM_DEMO_PLOTS)
             sample_losses = self.algorithm.cur[0].cs
