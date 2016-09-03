@@ -55,6 +55,43 @@ class L2MonotonicLoss(caffe.Layer):
         # This is gradient of l1 loss
         # bottom[0].diff = loss_weight * np.sign(self._temp) / batch_size
 
+class GaussianProcessPriors(caffe.Layer):
+    """ A Gaussian Process Prior layer, penalizing cost on nearby states. """
+    def setup(self, bottom, top):
+        pass
+
+    def reshape(self, bottom, top):
+        # Assume bottom[0] contains the (Nd+Ns)xTxdO features and bottom[1] contains the 
+        # costs in the batch with zero means and normalized with shape (Nd+Ns)xT.
+        self._K = np.zeros((bottom[0].shape[0], bottom[0].shape[0]))
+        top[0].reshape(1)
+
+    def forward(self, bottom, top):
+        # TODO - make these constants somewhere?
+        # l is the length scale and sigma is the noise constant
+        l, sigma = 1.0, 1.0 # hand-engineer these. Probably optimize them in the future.
+        batch_size = bottom[0].shape[0]
+        X = bottom[0].data # feature matrix
+        Y = np.zeros((batch_size, 1)) # cost vector
+
+        # Compute the kernel matrix
+        for i in xrange(batch_size):
+            Y[i] = bottom[1].data[i, :, :].sum()
+            for j in range(i + 1):
+                self._K[i, j] = self._K[j, i] = np.exp(-l/2 * (np.linalg.norm(X[i, :, :] - X[j, :, :]))**2)
+                if j == i:
+                    self.K[i, j] += sigma**2
+
+        top[0].data[...] = -1/2 * (Y.T.dot(np.linalg.pinv(self.K)).dot(Y) + np.log(np.linalg.det(self._K)*2*np.pi))
+
+
+    def backward(self, top, propagate_down, bottom):
+        loss_weight = top[0].diff[0]
+        batch_size = bottom[0].shape[0]
+        bottom[0].diff[...] = 2.0 * loss_weight * self._temp / batch_size
+        # This is gradient of l1 loss
+        # bottom[0].diff = loss_weight * np.sign(self._temp) / batch_size
+
 
 class IOCLoss(caffe.Layer):
     """ IOC loss layer, based on MaxEnt IOC with sampling. """
