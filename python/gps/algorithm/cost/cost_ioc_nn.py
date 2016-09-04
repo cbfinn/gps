@@ -175,11 +175,9 @@ class CostIOCNN(Cost):
         # Compute the variance in each dimension of the observation.
         stacked_obs = np.vstack((demoO, sampleO))
         dO = demoO.shape[2]
-        T = demoO.shape[1]
-        var_obs = np.zeros((T, dO))
-        for i in xrange(dO):
-            var_obs[:, i] = np.var(stacked_obs[:, :, i], axis=0)
-        l_k  = 10**2.0 / var_obs
+        stacked_obs = np.reshape(stacked_obs, (-1, dO))
+        var_obs = np.var(stacked_obs, axis=0) # dO
+        l_k  = (10**2) / np.maximum(var_obs, 1e-3)
 
         for i in range(self._hyperparams['iterations']):
           # Randomly sample batches
