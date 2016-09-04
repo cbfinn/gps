@@ -102,6 +102,37 @@ class GPSMain(object):
             if 'demo_conditions' in demos.keys() and 'failed_conditions' in demos.keys():
                 self.algorithm.demo_conditions = demos['demo_conditions']
                 self.algorithm.failed_conditions = demos['failed_conditions']
+
+            # get samples and reward values
+            if self._hyperparams['algorithm']['ioc'] == 'SUPERVISED':
+                import glob
+                from gps.proto.gps_pb2 import GYM_REWARD
+                sample_files = glob.glob(config['common']['gt_cost_samples'])
+                T = self._hyperparams['algorithm']['cost']['T']
+                _, _, dX = self.algorithm.demoX.shape
+                _, _, dO = self.algorithm.demoO.shape
+                _, T, dU = self.algorithm.demoU.shape
+                gt_cost_X = np.zeros((0, T, dX))
+                gt_cost_U = np.zeros((0, T, dU))
+                gt_cost_O = np.zeros((0, T, dO))
+                gt_cost = np.zeros((0, T))
+                import pdb; pdb.set_trace()
+                for sample_file in sample_files:
+                    traj_sample_lists = self.data_logger.unpickle(sample_file)
+                    for sample_list in traj_sample_lists:
+                        for sample in sample_list:
+                            sample.agent = self.agent # need obs_datatypes to be set.
+                        gt_cost_O = np.r_[gt_cost_O, sample_list.get_obs()]
+                        gt_cost_X = np.r_[gt_cost_X, sample_list.get_X()]
+                        gt_cost_U = np.r_[gt_cost_U, sample_list.get_U()]
+                        gt_cost = np.r_[gt_cost, -sample_list.get(GYM_REWARD)]
+                gt_cost = np.expand_dims(gt_cost, -1)
+                import pdb; pdb.set_trace()
+                gt_cost -= np.min(gt_cost)
+                self.algorithm.cost._hyperparams['iterations'] = 10000
+                self.algorithm.cost.update_supervised(gt_cost_U, gt_cost_X, gt_cost_O, gt_cost)
+                import pdb; pdb.set_trace()
+
         else:
             self.algorithm = config['algorithm']['type'](config['algorithm'])
 

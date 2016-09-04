@@ -166,6 +166,7 @@ algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
     'ioc_loss': algorithm['ioc'],
     'smooth_reg_weight': 0.0,
     'mono_reg_weight': 0.0,
+    'learn_wu': False,
 }
 
 #algorithm['init_traj_distr'] = {
