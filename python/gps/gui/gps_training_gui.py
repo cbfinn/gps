@@ -335,7 +335,7 @@ class GPSTrainingGUI(object):
             if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
                 condition_titles += ' %8s' % ('')
                 itr_data_fields  += ' %8s' % ('kl_div')
-            if algorithm._hyperparams['learning_from_prior']:
+            if 'target_end_effector' in algorithm._hyperparams:
                 condition_titles += ' %8s' % ('')
                 itr_data_fields  += ' %8s' % ('mean_dist')
             if policy_titles:
@@ -376,12 +376,12 @@ class GPSTrainingGUI(object):
                 itr_data += ' %8.2f %8.2f' % (kl_div_i, kl_div_f)
             if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
                 itr_data += ' %8.2f' % (algorithm.kl_div[itr][m])
-            if algorithm._hyperparams['learning_from_prior']:
-                if pol_sample_lists is None:
-                    itr_data += ' %8.2f' % (algorithm.dists_to_target[itr][m])
-                else:
-                    from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 
+            if pol_sample_lists is None:
+                itr_data += ' %8.2f' % (algorithm.dists_to_target[itr][m])
+            else:
+                if 'target_end_effector' in algorithm._hyperparams:
+                    from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
                     target_position = algorithm._hyperparams['target_end_effector'][:3]
                     cur_samples = pol_sample_lists[m].get_samples()
                     sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
