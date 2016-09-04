@@ -79,7 +79,8 @@ class GenDemo(object):
                 else:
                         self._learning = False
                 agent_config = self._hyperparams['demo_agent']
-                if agent_config['type']==AgentMuJoCo and agent_config['filename'] == './mjc_models/pr2_arm3d.xml' and not self._learning:
+                if agent_config['type']==AgentMuJoCo and (agent_config['filename'] == './mjc_models/pr2_arm3d.xml' or \
+                                agent_config['filename'] == './mjc_models/reacher_img.xml') and not self._learning:
                         agent_config['x0'] = self.algorithm._hyperparams['agent_x0']
                         agent_config['pos_body_idx'] = self.algorithm._hyperparams['agent_pos_body_idx']
                         agent_config['pos_body_offset'] = self.algorithm._hyperparams['agent_pos_body_offset']
@@ -147,7 +148,8 @@ class GenDemo(object):
                                                 demos.append(demo)
 
                 # Filter out worst (M - good_conds) demos.
-                if agent_config['type']==AgentMuJoCo and agent_config['filename'] == './mjc_models/pr2_arm3d.xml':
+                if agent_config['type']==AgentMuJoCo and (agent_config['filename'] == './mjc_models/pr2_arm3d.xml' or \
+                            agent_config['filename'] == './mjc_models/reacher_img.xml'):
                         target_position = agent_config['target_end_effector'][:3]
                         dists_to_target = np.zeros(M*N)
                         # dists_to_target = [np.zeros(M*N) for i in xrange(4)]
@@ -155,16 +157,20 @@ class GenDemo(object):
                         failed_indices = []
                         # M = len(demos)/N
                         for i in xrange(M):
-                                for j in xrange(N):
-                                        demo_end_effector = demos[i*N + j].get(END_EFFECTOR_POINTS)
-                                        # demo_end_effector = demos[k][i*N + j].get(END_EFFECTOR_POINTS)
-                                        # NOTE - there was a bug here!!!
-                                        # dists_to_target[i*N+j] = np.amin(np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
-                                        # Just choose the last time step since it may become unstable after achieving the minimum point.
-                                        dists_to_target[i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
-                                        # dists_to_target[k][i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
-                                        if dists_to_target[i*N + j] > agent_config['success_upper_bound']:
-                                                failed_indices.append(i)
+                            if type(agent_config['target_end_effector']) is list: 
+                                target_position = agent_config['target_end_effector'][i][:3]
+                            else:
+                                target_position = agent_config['target_end_effector'][:3]
+                            for j in xrange(N):
+                                    demo_end_effector = demos[i*N + j].get(END_EFFECTOR_POINTS)
+                                    # demo_end_effector = demos[k][i*N + j].get(END_EFFECTOR_POINTS)
+                                    # NOTE - there was a bug here!!!
+                                    # dists_to_target[i*N+j] = np.amin(np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
+                                    # Just choose the last time step since it may become unstable after achieving the minimum point.
+                                    dists_to_target[i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
+                                    # dists_to_target[k][i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
+                                    if dists_to_target[i*N + j] > agent_config['success_upper_bound']:
+                                            failed_indices.append(i)
                         good_indices = [i for i in xrange(M) if i not in failed_indices]
                         import pdb; pdb.set_trace()
                         self._hyperparams['algorithm']['demo_cond'] = len(good_indices)

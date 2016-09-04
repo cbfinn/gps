@@ -63,7 +63,10 @@ class AlgorithmTrajOpt(Algorithm):
 
         if self._hyperparams['learning_from_prior']:
             for i in xrange(self.M):
-                target_position = self._hyperparams['target_end_effector'][:3]
+                if type(self._hyperparams['target_end_effector']) is list: 
+                    target_position = self._hyperparams['target_end_effector'][m][:3]
+                else:
+                    target_position = self._hyperparams['target_end_effector'][:3]
                 cur_samples = sample_lists[i].get_samples()
                 sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
                 dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \

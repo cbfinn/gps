@@ -212,7 +212,10 @@ class GPSMain(object):
                 curSamples = pol_sample_lists[m].get_samples()
                 for sample in curSamples:
                     samples.append(sample)
-            target = self.algorithm._hyperparams["target_end_effector"][:3]
+            if type(self.algorithm._hyperparams['target_end_effector']) is list: 
+                    target_position = self.algorithm._hyperparams['target_end_effector'][m][:3]
+            else:
+                target_position = self.algorithm._hyperparams['target_end_effector'][:3]
             dists_to_target = [np.nanmin(np.sqrt(np.sum((sample.get(END_EFFECTOR_POINTS)[:, :3] - \
                                 target.reshape(1, -1))**2, axis = 1)), axis = 0) for sample in samples]
             mean_dists.append(sum(dists_to_target)/len(dists_to_target))

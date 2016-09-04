@@ -88,6 +88,8 @@ agent = {
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
     'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[i], np.array([0., 0., 0.])])
+                            for i in xrange(CONDITIONS)],
 }
 
 demo_agent = {
@@ -107,6 +109,9 @@ demo_agent = {
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
     'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ demo_pos_body_offset[i], np.array([0., 0., 0.])])
+                            for i in xrange(DEMO_CONDITIONS)],
+    'success_upper_bound': 0.01,
 }
 
 
@@ -122,8 +127,10 @@ algorithm = {
     'num_demos': 20,
     'demo_var_mult': 1.0,
     'synthetic_cost_samples': 100,
-    'iterations': 25,
+    'iterations': 15,
     'plot_dir': EXP_DIR,
+    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
+                            for i in xrange(CONDITIONS)],
 }
 
 PR2_GAINS = np.array([1.0, 1.0])

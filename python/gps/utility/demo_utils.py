@@ -68,7 +68,11 @@ def eval_demos_xu(agent, demoX, demoU, costfn, n=-1):
 
 
 def compute_distance(algorithm, sample_list):
-    target_position = algorithm._hyperparams['target_end_effector'][:3]
+    target_position = algorithm._hyperparams['target_end_effector']
+    if type(target_position) is list:
+    	target_position = target_position[0][:3]
+    else:
+    	target_position - target_position[:3]
     cur_samples = sample_list.get_samples()
     sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
     dists = [(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2,

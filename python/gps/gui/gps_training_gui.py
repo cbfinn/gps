@@ -382,7 +382,10 @@ class GPSTrainingGUI(object):
                 else:
                     from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 
-                    target_position = algorithm._hyperparams['target_end_effector'][:3]
+                    if type(algorithm._hyperparams['target_end_effector']) is list: 
+                        target_position = algorithm._hyperparams['target_end_effector'][m][:3]
+                    else:
+                        target_position = algorithm._hyperparams['target_end_effector'][:3]
                     cur_samples = pol_sample_lists[m].get_samples()
                     sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
                     dists = [np.amin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - \
