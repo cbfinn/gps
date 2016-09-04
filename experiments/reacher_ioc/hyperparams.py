@@ -124,7 +124,7 @@ algorithm = {
     'min_step_mult': 0.05,
     'max_step_mult': 2.0,
     'demo_cond': demo_agent['conditions'],
-    'num_demos': 20,
+    'num_demos': 2,
     'demo_var_mult': 1.0,
     'synthetic_cost_samples': 100,
     'iterations': 15,

@@ -99,7 +99,6 @@ class GPSMain(object):
             self.algorithm.demoX = demos['demoX']
             self.algorithm.demoU = demos['demoU']
             self.algorithm.demoO = demos['demoO']
-            import pdb; pdb.set_trace()
             if 'demo_conditions' in demos.keys() and 'failed_conditions' in demos.keys():
                 self.algorithm.demo_conditions = demos['demo_conditions']
                 self.algorithm.failed_conditions = demos['failed_conditions']
