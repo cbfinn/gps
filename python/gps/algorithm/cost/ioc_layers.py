@@ -61,7 +61,7 @@ class GaussianProcessPriors(caffe.Layer):
         pass
 
     def reshape(self, bottom, top):
-        # Assume bottom[0] contains the (Nd+Ns)xTxdO features, bottom[1] contains the 
+        # Assume bottom[0] contains the (Nd+Ns)xTxdO features, bottom[1] contains the
         # costs in the batch with zero means and normalized with shape (Nd+Ns)xT, and
         # bottom[3] contains the length scale of each dimension of the feature with
         # shape TxdO.
@@ -71,7 +71,7 @@ class GaussianProcessPriors(caffe.Layer):
     def forward(self, bottom, top):
         # TODO - make these constants somewhere?
         # l is the length scale and sigma is the noise constant
-        self._sigma = 1.0 # hand-engineer this. Probably optimize them in the future.
+        self._sigma = 1e-4 # hand-engineer this. Probably optimize them in the future.
         self._l = bottom[3].data
         batch_size = bottom[0].shape[0]
         X = bottom[0].data # feature matrix

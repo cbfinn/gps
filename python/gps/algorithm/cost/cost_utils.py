@@ -276,7 +276,7 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
 
 def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                           demo_batch_size=5, sample_batch_size=5, phase=TRAIN, ioc_loss='ICML',
-                          Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, learn_wu=False):
+                          Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, gp_reg_weight=0.0, learn_wu=False):
     """
     Construct an anonymous network (no layer names) for a quadratic cost
     function with the specified dimensionality, and return NetParameter proto.
@@ -309,7 +309,17 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
 
     # Needed for Caffe to find defined python layers.
     sys.path.append('/'.join(str.split(current_path, '/')[:-1]))
-    if phase == TRAIN:
+    if phase == TRAIN and ioc_loss == 'SUPERVISED':
+        data_layer_info = json.dumps({
+            'shape': [{'dim': (sample_batch_size+demo_batch_size, T, dim_input)}, # sample obs
+                      {'dim': (sample_batch_size+demo_batch_size, T, 1)},  # sample torque norm
+                      {'dim': (sample_batch_size+demo_batch_size, T, 1)}]  # gt cost labels
+        })
+        n.net_input, n.all_u, n.cost_labels = L.Python(ntop=3,
+                               python_param=dict(module='ioc_layers',
+                                                 param_str=data_layer_info,
+                                                 layer='IOCDataLayer'))
+    elif phase == TRAIN:
         data_layer_info = json.dumps({
             'shape': [{'dim': (demo_batch_size, T, dim_input)},  # demo obs
                       {'dim': (demo_batch_size, T, 1)},  # demo torque norm
@@ -383,7 +393,9 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                                      param=[dict(lr_mult=0), dict(lr_mult=0)])
         n.all_costs = L.Eltwise(n.all_costs, n.all_u, operation=EltwiseParameter.SUM, coeff=[1.0,1.0])
 
-    if phase == TRAIN:
+    if phase == TRAIN and ioc_loss == 'SUPERVISED':
+        n.out = L.EuclideanLoss(n.all_costs, n.cost_labels)
+    elif phase == TRAIN:
         n.demo_costs, n.sample_costs = L.Slice(n.all_costs, axis=0, slice_point=demo_batch_size, ntop=2)
 
         # regularization
@@ -419,7 +431,6 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         n.slope_next_normed = L.Scale(n.next_reshaped, n.cost_stdinv_tiled, scale_param=dict(axis=0))
         n.slope_prev_normed = L.Scale(n.prev_reshaped, n.cost_stdinv_tiled, scale_param=dict(axis=0))
         ### END compute normalization factor of slowness cost (std of c) ###
-
 
         n.smooth_reg = L.EuclideanLoss(n.slope_next_normed, n.slope_prev_normed, loss_weight=smooth_reg_weight)
 
@@ -487,7 +498,7 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
 
 def construct_fp_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                           demo_batch_size=5, sample_batch_size=5, phase=TRAIN, ioc_loss='ICML',
-                          Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, image_size=[200,200]):
+                          Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, gp_reg_weight=0.0, image_size=[200,200]):
     """
     Construct an anonymous network (no layer names) for a quadratic cost
     function with the specified dimensionality, and return NetParameter proto.
