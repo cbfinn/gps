@@ -327,12 +327,11 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                       {'dim': (sample_batch_size, T, dim_input)},  # sample obs
                       {'dim': (sample_batch_size, T, 1)},  # sample torque norm
                       {'dim': (sample_batch_size, 1)}, # sample i.w.
-                      {'dim': (dim_input, 1)}, # length scale
-                      {'dim': (demo_batch_size + sample_batch_size, T, dim_input)}] # demo+sample
+                      {'dim': (dim_input, )}] # length scale
         })
 
-        [n.demos, n.demou, n.d_log_iw, n.samples, n.sampleu, n.s_log_iw, n.l, n.total] = L.Python(
-            ntop=8, python_param=dict(module='ioc_layers', param_str=data_layer_info,
+        [n.demos, n.demou, n.d_log_iw, n.samples, n.sampleu, n.s_log_iw, n.l] = L.Python(
+            ntop=7, python_param=dict(module='ioc_layers', param_str=data_layer_info,
                                       layer='IOCDataLayer')
             )
         n.net_input = L.Concat(n.demos, n.samples, axis=0)
@@ -387,11 +386,11 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
 
         # Dot product operation with two layers
         n.AxAx = L.Eltwise(n.Ax, n.Ax, operation=EltwiseParameter.PROD)
-        n.all_costs = L.InnerProduct(n.AxAx, num_output=1, axis=2,
+        n.all_costs_preu = L.InnerProduct(n.AxAx, num_output=1, axis=2,  # all costs pre-torque penalty
                                      weight_filler=dict(type='constant', value=1),
                                      bias_filler=dict(type='constant', value=0),
                                      param=[dict(lr_mult=0), dict(lr_mult=0)])
-        n.all_costs = L.Eltwise(n.all_costs, n.all_u, operation=EltwiseParameter.SUM, coeff=[1.0,1.0])
+        n.all_costs = L.Eltwise(n.all_costs_preu, n.all_u, operation=EltwiseParameter.SUM, coeff=[1.0,1.0])
 
     if phase == TRAIN and ioc_loss == 'SUPERVISED':
         n.out = L.EuclideanLoss(n.all_costs, n.cost_labels)
@@ -399,9 +398,9 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         n.demo_costs, n.sample_costs = L.Slice(n.all_costs, axis=0, slice_point=demo_batch_size, ntop=2)
 
         # regularization
-        n.costs_prev, _ = L.Slice(n.all_costs, axis=1, slice_point=T-2, ntop=2)
-        _, n.costs_next = L.Slice(n.all_costs, axis=1, slice_point=2, ntop=2)
-        _, n.costs_cur, _ = L.Slice(n.all_costs, axis=1, slice_point=[1,T-1], ntop=3)
+        n.costs_prev, _ = L.Slice(n.all_costs_preu, axis=1, slice_point=T-2, ntop=2)
+        _, n.costs_next = L.Slice(n.all_costs_preu, axis=1, slice_point=2, ntop=2)
+        _, n.costs_cur, _ = L.Slice(n.all_costs_preu, axis=1, slice_point=[1,T-1], ntop=3)
         # cur-prev
         n.slope_prev = L.Eltwise(n.costs_cur, n.costs_prev, operation=EltwiseParameter.SUM, coeff=[1,-1])
         # next-cur
@@ -409,7 +408,7 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
 
         ### START compute normalization factor of slowness cost (std of c) ###
         # all costs is NxTx1
-        n.allc_reshape = L.Reshape(n.all_costs, shape=dict(dim=[-1]))
+        n.allc_reshape = L.Reshape(n.all_costs_preu, shape=dict(dim=[-1]))
         num_costs = T*(demo_batch_size+sample_batch_size)
         n.cost_mean = L.InnerProduct(n.allc_reshape, num_output=1,
                                      weight_filler=dict(type='constant', value=-1.0/num_costs),
@@ -439,7 +438,7 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=mono_reg_weight,
                               python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
 
-        n.gp_prior_reg = L.Python(n.total, n.all_costs, n.l, loss_weight=gp_reg_weight,
+        n.gp_prior_reg = L.Python(n.all_costs_preu, n.net_input, n.l, loss_weight=gp_reg_weight,
                               python_param=dict(module='ioc_layers', layer='GaussianProcessPriors'))
 
         n.dummy = L.DummyData(ntop=1, shape=dict(dim=[1]), data_filler=dict(type='constant',value=0))
@@ -668,8 +667,8 @@ def construct_fp_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=mono_reg_weight,
                               python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
 
-        n.gp_prior_reg = L.Python(n.total, n.all_costs, n.l, loss_weight=gp_reg_weight,
-                      python_param=dict(module='ioc_layers', layer='GaussianProcessPriors'))
+        #n.gp_prior_reg = L.Python(n.total, n.all_costs, n.l, loss_weight=gp_reg_weight,
+        #              python_param=dict(module='ioc_layers', layer='GaussianProcessPriors'))
 
         n.dummy = L.DummyData(ntop=1, shape=dict(dim=[1]), data_filler=dict(type='constant',value=0))
         # init logZ or Z to 1, only learn the bias

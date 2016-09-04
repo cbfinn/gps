@@ -16,6 +16,7 @@ from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.utility.demo_utils import generate_pos_body_offset, generate_x0, generate_pos_idx
+from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_QUADRATIC, evall1l2term
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
 from gps.gui.config import generate_experiment_info
@@ -66,6 +67,7 @@ agent = {
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                     END_EFFECTOR_POINT_VELOCITIES],
     'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
+    'record_reward': True,
 }
 
 algorithm = {
@@ -102,6 +104,7 @@ fk_cost = {
     'l1': 0.1,
     'l2': 10.0,
     'alpha': 1e-5,
+    'evalnorm': evall1l2term,
 }
 
 algorithm['cost'] = {

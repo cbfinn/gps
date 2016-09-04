@@ -41,7 +41,7 @@ class AlgorithmTrajOpt(Algorithm):
         self._update_dynamics()
 
         # Update the cost during learning if we use IOC.
-        if self._hyperparams['ioc']:
+        if self._hyperparams['ioc'] and self._hyperparams['ioc'] is not 'SUPERVISED':
             self._update_cost()
 
         self._update_step_size()  # KL Divergence step size.
@@ -61,7 +61,7 @@ class AlgorithmTrajOpt(Algorithm):
                 else:
                     self.kl_div[itr].append(-999)
 
-        if self._hyperparams['learning_from_prior']:
+        if 'target_end_effector' in self._hyperparams:
             for i in xrange(self.M):
                 target_position = self._hyperparams['target_end_effector'][:3]
                 cur_samples = sample_lists[i].get_samples()
