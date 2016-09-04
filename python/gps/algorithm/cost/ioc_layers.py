@@ -63,10 +63,9 @@ class GaussianProcessPriors(caffe.Layer):
         pass
 
     def reshape(self, bottom, top):
-        # Assume bottom[0] contains the (Nd+Ns)xTxdO features, bottom[1] contains the
-        # costs in the batch with zero means and normalized with shape (Nd+Ns)xT, and
-        # bottom[3] contains the length scale of each dimension of the feature with
-        # shape TxdO.
+        # bottom[0] contains the costs in the batch with shape (Nd+Ns)xTx1,
+        # bottom[1] contains the (Nd+Ns)xTxdO features,
+        # bottom[2] contains the length scale of each dimension of the feature with shape TxdO.
         top[0].reshape(1)
         self.subsamp = 4 # amount to subsample (for speed)
 
@@ -74,26 +73,32 @@ class GaussianProcessPriors(caffe.Layer):
         # TODO - make these constants somewhere?
         # l is the length scale and sigma is the noise constant
 
-        self._sigma = 1 #1e-4 # hand-engineer this. Probably optimize them in the future.
+        self._sigma = 1e-4 # hand-engineer this. Probably optimize them in the future.
         self._l = bottom[2].data
         batch_size = bottom[0].shape[0]
         T = bottom[0].shape[1]
 
-        X = np.reshape(bottom[0].data, (batch_size*T, -1)) # feature matrix
-        self._Y = np.reshape(0.5*bottom[1].data, (batch_size*T, -1)) # cost
+        num_points = batch_size*T/self.subsamp
 
-        self.randindex = np.random.randint(self.subsamp)
-        X = X[self.randindex::self.subsamp]
-        self._Y = self._Y[self.randindex::self.subsamp]
+        self.randindex = np.random.randint(self.subsamp)  # starting index
+        self._Y = np.reshape(0.5*bottom[0].data[:,self.randindex::self.subsamp],
+                             (num_points, -1)) # cost
+        X = np.reshape(bottom[1].data[:,self.randindex::self.subsamp],
+                       (num_points, -1)) # feature matrix
+
+        # Normalize self._Y (costs)
+        self._Y -= np.mean(self._Y)
+        self._cost_std = np.std(self._Y)
+        self._Y /= self._cost_std
 
         # Compute the kernel matrix
         self._K = squareform(pdist(X,'seuclidean', V=1.0/np.float64(self._l)))
         self._K = np.exp(-0.5*(self._K**2))
-        self._K += self._sigma**2 * np.eye(batch_size*T/self.subsamp)
+        self._K += self._sigma**2 * np.eye(num_points)
 
         self._KinvY = np.linalg.solve(self._K, self._Y)
 
-        top[0].data[...] = -1/2 * (self._Y.T.dot(self._KinvY) + np.log(np.linalg.det(self._K)*2*np.pi))
+        top[0].data[...] = np.float32(-0.5 * (self._Y.T.dot(self._KinvY) + np.log(np.linalg.det(self._K)*2.0*np.pi)))
 
 
     def backward(self, top, propagate_down, bottom):
@@ -101,13 +106,14 @@ class GaussianProcessPriors(caffe.Layer):
         loss_weight = 0.5 * top[0].diff[0]
         batch_size = bottom[0].shape[0]
         T = bottom[0].shape[1]
-        cost_diff = np.zeros_like(bottom[1].diff)
+        cost_diff = np.zeros_like(bottom[0].diff)
 
         # Compute derivative w.r.t. costs.
-        dldy = np.reshape(-0.5*self._KinvY, (batch_size, T/self.subsamp, 1)) # Calculate the derivative of log likelihood w.r.t. Y
+        # Calculate the derivative of log likelihood w.r.t. Y
+        dldy = np.reshape(-0.5*self._KinvY, (batch_size, T/self.subsamp, 1)) / self._cost_std
         cost_diff[:,self.randindex::self.subsamp] = dldy
 
-        bottom[1].diff[...] = loss_weight * cost_diff
+        bottom[0].diff[...] = np.float32(loss_weight * cost_diff)
 
 
 class IOCLoss(caffe.Layer):
