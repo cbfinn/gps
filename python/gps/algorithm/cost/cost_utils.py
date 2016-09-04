@@ -276,7 +276,7 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
 
 def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                           demo_batch_size=5, sample_batch_size=5, phase=TRAIN, ioc_loss='ICML',
-                          Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, learn_wu=False):
+                          Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, gp_reg_weight=0.0, learn_wu=False):
     """
     Construct an anonymous network (no layer names) for a quadratic cost
     function with the specified dimensionality, and return NetParameter proto.
@@ -498,7 +498,7 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
 
 def construct_fp_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                           demo_batch_size=5, sample_batch_size=5, phase=TRAIN, ioc_loss='ICML',
-                          Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, image_size=[200,200]):
+                          Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, gp_reg_weight=0.0, image_size=[200,200]):
     """
     Construct an anonymous network (no layer names) for a quadratic cost
     function with the specified dimensionality, and return NetParameter proto.
