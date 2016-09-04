@@ -172,6 +172,15 @@ class CostIOCNN(Cost):
         sample_idx = range(Ns)
         average_loss = 0
 
+        # Compute the variance in each dimension of the observation.
+        stacked_obs = np.vstack((demoO, sampleO))
+        dO = demoO.shape[2]
+        T = demoO.shape[1]
+        var_obs = np.zeros((T, dO))
+        for i in xrange(dO):
+            var_obs[:, i] = np.var(stacked_obs[:, :, i], axis=0)
+        l_k  = 10**2.0 / var_obs
+
         for i in range(self._hyperparams['iterations']):
           # Randomly sample batches
           np.random.shuffle(demo_idx)
@@ -190,6 +199,8 @@ class CostIOCNN(Cost):
           self.solver.net.blobs[blob_names[3]].data[:] = sampleO[s_idx_i]
           self.solver.net.blobs[blob_names[4]].data[:] = np.sum(self._hyperparams['wu']*sampleU[s_idx_i]**2, axis=2, keepdims=True)
           self.solver.net.blobs[blob_names[5]].data[:] = s_log_iw[s_idx_i]
+          self.solver.net.blobs[blob_names[6]].data[:] = l_k
+          self.solver.net.blobs[blob_names[7]].data[:] = np.vstack((demoO[d_idx_i], sampleO[s_idx_i]))
           self.solver.step(1)
           train_loss = self.solver.net.blobs[blob_names[-1]].data
           average_loss += train_loss
@@ -242,6 +253,7 @@ class CostIOCNN(Cost):
         network_arch_params['Nq'] = self._iteration_count
         network_arch_params['smooth_reg_weight'] = self._hyperparams['smooth_reg_weight']
         network_arch_params['mono_reg_weight'] = self._hyperparams['mono_reg_weight']
+        network_arch_params['gp_reg_weight'] = self._hyperparams['gp_reg_weight']
         network_arch_params['learn_wu'] = self._hyperparams['learn_wu']
         solver_param.train_net_param.CopyFrom(
             self._hyperparams['network_model'](**network_arch_params)
@@ -296,3 +308,58 @@ class CostIOCNN(Cost):
             self._hyperparams['weights_file_prefix'] + '_iter_' +
             str(self.caffe_iter) + '.caffemodel'
         )
+
+
+
+    # TODO - we might want to make the demos and samples input as SampleList objects, rather than arrays.
+    # TODO - also we might want to exclude demoU/sampleU since we generally don't use them
+    def update_supervised(self, sampleU, sampleX, sampleO, sample_cost):
+        """
+        Learn cost function with generic function representation.
+        Args:
+            demoU: the actions of demonstrations.
+            demoX: the states of demonstrations.
+            demoO: the observations of demonstrations.
+            d_log_iw: log importance weights for demos.
+            sampleU: the actions of samples.
+            sampleX: the states of samples.
+            sampleO: the observations of samples.
+            s_log_iw: log importance weights for samples.
+        """
+
+        Ns = sampleO.shape[0]
+
+        sample_batch_size = self.sample_batch_size + self.demo_batch_size
+
+        blob_names = self.solver.net.blobs.keys()
+        sbatches_per_epoch = np.floor(Ns / sample_batch_size)
+
+        sample_idx = range(Ns)
+        average_loss = 0
+
+        for i in range(self._hyperparams['iterations']):
+          # Randomly sample batches
+          np.random.shuffle(sample_idx)
+
+          # Load in data for this batch.
+          s_start_idx = int(i * sample_batch_size %
+              (sbatches_per_epoch * sample_batch_size))
+          s_idx_i = sample_idx[s_start_idx:s_start_idx+sample_batch_size]
+          self.solver.net.blobs[blob_names[0]].data[:] = sampleO[s_idx_i]
+          self.solver.net.blobs[blob_names[1]].data[:] = np.sum(self._hyperparams['wu']*sampleU[s_idx_i]**2, axis=2, keepdims=True)
+          self.solver.net.blobs[blob_names[2]].data[:] = sample_cost[s_idx_i]
+          self.solver.step(1)
+          train_loss = self.solver.net.blobs[blob_names[-1]].data
+          average_loss += train_loss
+          if i % 500 == 0 and i != 0:
+            LOGGER.debug('Caffe iteration %d, average loss %f',
+                         i, average_loss / 500)
+            average_loss = 0
+
+
+        # Keep track of Caffe iterations for loading solver states.
+        self.caffe_iter += self._hyperparams['iterations']
+        self.solver.test_nets[0].share_with(self.solver.net)
+        self.solver.test_nets[1].share_with(self.solver.net)
+
+

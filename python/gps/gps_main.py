@@ -3,6 +3,7 @@
 import matplotlib as mpl
 
 mpl.use('Qt4Agg')
+#mpl.use('Pdf')  # for EC2
 
 import logging
 import imp
@@ -51,7 +52,7 @@ class GPSMain(object):
 
         self.agent = config['agent']['type'](config['agent'])
         self.data_logger = DataLogger()
-        self.gui = GPSTrainingGUI(config['common']) if config['gui_on'] else None
+        self.gui = GPSTrainingGUI(config['common'], gui_on=config['gui_on'])
 
         config['algorithm']['agent'] = self.agent
 
@@ -62,7 +63,7 @@ class GPSMain(object):
             else:
                 # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'
                 # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_no_noise.pkl'
-                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_3.pkl'             
+                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_3.pkl'
             	demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_3pols_9conds.pkl'
             demos = self.data_logger.unpickle(demo_file)
             if demos is None:
@@ -94,7 +95,7 @@ class GPSMain(object):
                 self.algorithm.demo_policy_opt = demo_algorithm.policy_opt.copy()
                 self.algorithm.demo_policy_opt.var = demo_algorithm.policy_opt.var.copy() * var_mult
                 self.algorithm.demo_policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(self.algorithm.demo_policy_opt.var))
-            
+
             self.agent = config['agent']['type'](config['agent'])
             self.algorithm.demoX = demos['demoX']
             self.algorithm.demoU = demos['demoU']
@@ -364,8 +365,6 @@ class GPSMain(object):
         """
 
         if self.using_ioc():
-            demo_sample_list = None  # TODO
-
             # Produce time vs cost plots
             demo_losses = eval_demos_xu(self.agent, self.algorithm.demoX, self.algorithm.demoU, self.algorithm.cost, n=NUM_DEMO_PLOTS)
             sample_losses = self.algorithm.cur[0].cs
@@ -867,7 +866,7 @@ def main():
         mean_dists = []
         # success_ioc_samples = []
         pos_body_offset_dists = [np.linalg.norm(ioc_conditions[i]) for i in xrange(len(ioc_conditions))]
-        
+
         for i in xrange(len(ioc_conditions) / M):
             hyperparams = imp.load_source('hyperparams', hyperparams_file)
             # hyperparams.config['gui_on'] = False

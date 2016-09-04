@@ -276,7 +276,7 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
 
 def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                           demo_batch_size=5, sample_batch_size=5, phase=TRAIN, ioc_loss='ICML',
-                          Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, learn_wu=False):
+                          Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, gp_reg_weight=0.0, learn_wu=False):
     """
     Construct an anonymous network (no layer names) for a quadratic cost
     function with the specified dimensionality, and return NetParameter proto.
@@ -309,18 +309,30 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
 
     # Needed for Caffe to find defined python layers.
     sys.path.append('/'.join(str.split(current_path, '/')[:-1]))
-    if phase == TRAIN:
+    if phase == TRAIN and ioc_loss == 'SUPERVISED':
+        data_layer_info = json.dumps({
+            'shape': [{'dim': (sample_batch_size+demo_batch_size, T, dim_input)}, # sample obs
+                      {'dim': (sample_batch_size+demo_batch_size, T, 1)},  # sample torque norm
+                      {'dim': (sample_batch_size+demo_batch_size, T, 1)}]  # gt cost labels
+        })
+        n.net_input, n.all_u, n.cost_labels = L.Python(ntop=3,
+                               python_param=dict(module='ioc_layers',
+                                                 param_str=data_layer_info,
+                                                 layer='IOCDataLayer'))
+    elif phase == TRAIN:
         data_layer_info = json.dumps({
             'shape': [{'dim': (demo_batch_size, T, dim_input)},  # demo obs
                       {'dim': (demo_batch_size, T, 1)},  # demo torque norm
                       {'dim': (demo_batch_size, 1)},  # demo i.w.
                       {'dim': (sample_batch_size, T, dim_input)},  # sample obs
                       {'dim': (sample_batch_size, T, 1)},  # sample torque norm
-                      {'dim': (sample_batch_size, 1)}]  # sample i.w.
+                      {'dim': (sample_batch_size, 1)}, # sample i.w.
+                      {'dim': (dim_input, 1)}, # length scale
+                      {'dim': (demo_batch_size + sample_batch_size, T, dim_input)}] # demo+sample
         })
 
-        [n.demos, n.demou, n.d_log_iw, n.samples, n.sampleu, n.s_log_iw] = L.Python(
-            ntop=6, python_param=dict(module='ioc_layers', param_str=data_layer_info,
+        [n.demos, n.demou, n.d_log_iw, n.samples, n.sampleu, n.s_log_iw, n.l, n.total] = L.Python(
+            ntop=8, python_param=dict(module='ioc_layers', param_str=data_layer_info,
                                       layer='IOCDataLayer')
             )
         n.net_input = L.Concat(n.demos, n.samples, axis=0)
@@ -381,7 +393,9 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                                      param=[dict(lr_mult=0), dict(lr_mult=0)])
         n.all_costs = L.Eltwise(n.all_costs, n.all_u, operation=EltwiseParameter.SUM, coeff=[1.0,1.0])
 
-    if phase == TRAIN:
+    if phase == TRAIN and ioc_loss == 'SUPERVISED':
+        n.out = L.EuclideanLoss(n.all_costs, n.cost_labels)
+    elif phase == TRAIN:
         n.demo_costs, n.sample_costs = L.Slice(n.all_costs, axis=0, slice_point=demo_batch_size, ntop=2)
 
         # regularization
@@ -418,13 +432,15 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         n.slope_prev_normed = L.Scale(n.prev_reshaped, n.cost_stdinv_tiled, scale_param=dict(axis=0))
         ### END compute normalization factor of slowness cost (std of c) ###
 
-
         n.smooth_reg = L.EuclideanLoss(n.slope_next_normed, n.slope_prev_normed, loss_weight=smooth_reg_weight)
 
         n.demo_slope, _ = L.Slice(n.slope_next, axis=0, slice_point=demo_batch_size, ntop=2)
         n.demo_slope_reshape = L.Reshape(n.demo_slope, shape=dict(dim=[-1,1]))
         n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=mono_reg_weight,
                               python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
+
+        n.gp_prior_reg = L.Python(n.total, n.all_costs, n.l, loss_weight=gp_reg_weight,
+                              python_param=dict(module='ioc_layers', layer='GaussianProcessPriors'))
 
         n.dummy = L.DummyData(ntop=1, shape=dict(dim=[1]), data_filler=dict(type='constant',value=0))
         # init logZ or Z to 1, only learn the bias
@@ -482,7 +498,7 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
 
 def construct_fp_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                           demo_batch_size=5, sample_batch_size=5, phase=TRAIN, ioc_loss='ICML',
-                          Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, image_size=[200,200]):
+                          Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, gp_reg_weight=0.0, image_size=[200,200]):
     """
     Construct an anonymous network (no layer names) for a quadratic cost
     function with the specified dimensionality, and return NetParameter proto.
@@ -520,11 +536,13 @@ def construct_fp_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                       {'dim': (demo_batch_size, 1)},
                       {'dim': (sample_batch_size, T, dim_input)},
                       {'dim': (sample_batch_size, T, 3, image_size[0], image_size[1])},
-                      {'dim': (sample_batch_size, 1)}]
+                      {'dim': (sample_batch_size, 1)},
+                      {'dim': (dim_input, 1)},
+                      {'dim': (demo_batch_size + sample_batch_size, T, dim_input)}]
         })
 
-        [n.demos, n.d_image, n.d_log_iw, n.samples, n.s_image, n.s_log_iw] = L.Python(
-            ntop=6, python_param=dict(
+        [n.demos, n.d_image, n.d_log_iw, n.samples, n.s_image, n.s_log_iw, n.l, n.total] = L.Python(
+            ntop=8, python_param=dict(
                 module='ioc_layers', param_str=data_layer_info,
                 layer='IOCDataLayer'
             )
@@ -649,6 +667,9 @@ def construct_fp_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         n.demo_slope_reshape = L.Reshape(n.demo_slope, shape=dict(dim=[-1,1]))
         n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=mono_reg_weight,
                               python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
+
+        n.gp_prior_reg = L.Python(n.total, n.all_costs, n.l, loss_weight=gp_reg_weight,
+                      python_param=dict(module='ioc_layers', layer='GaussianProcessPriors'))
 
         n.dummy = L.DummyData(ntop=1, shape=dict(dim=[1]), data_filler=dict(type='constant',value=0))
         # init logZ or Z to 1, only learn the bias

@@ -55,6 +55,7 @@ class GenDemo(object):
                  Generate demos and save them in a file for experiment.
                  Returns: None.
                 """
+                return
                 # Load the algorithm
                 import pickle
 
