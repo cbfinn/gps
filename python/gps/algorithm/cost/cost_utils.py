@@ -327,12 +327,11 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                       {'dim': (sample_batch_size, T, dim_input)},  # sample obs
                       {'dim': (sample_batch_size, T, 1)},  # sample torque norm
                       {'dim': (sample_batch_size, 1)}, # sample i.w.
-                      {'dim': (dim_input, 1)}, # length scale
-                      {'dim': (demo_batch_size + sample_batch_size, T, dim_input)}] # demo+sample
+                      {'dim': (dim_input, )}] # length scale
         })
 
-        [n.demos, n.demou, n.d_log_iw, n.samples, n.sampleu, n.s_log_iw, n.l, n.total] = L.Python(
-            ntop=8, python_param=dict(module='ioc_layers', param_str=data_layer_info,
+        [n.demos, n.demou, n.d_log_iw, n.samples, n.sampleu, n.s_log_iw, n.l] = L.Python(
+            ntop=7, python_param=dict(module='ioc_layers', param_str=data_layer_info,
                                       layer='IOCDataLayer')
             )
         n.net_input = L.Concat(n.demos, n.samples, axis=0)
@@ -439,7 +438,7 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=mono_reg_weight,
                               python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
 
-        n.gp_prior_reg = L.Python(n.total, n.all_costs, n.l, loss_weight=gp_reg_weight,
+        n.gp_prior_reg = L.Python(n.net_input, n.all_costs, n.l, loss_weight=gp_reg_weight,
                               python_param=dict(module='ioc_layers', layer='GaussianProcessPriors'))
 
         n.dummy = L.DummyData(ntop=1, shape=dict(dim=[1]), data_filler=dict(type='constant',value=0))
@@ -668,8 +667,8 @@ def construct_fp_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=mono_reg_weight,
                               python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
 
-        n.gp_prior_reg = L.Python(n.total, n.all_costs, n.l, loss_weight=gp_reg_weight,
-                      python_param=dict(module='ioc_layers', layer='GaussianProcessPriors'))
+        #n.gp_prior_reg = L.Python(n.total, n.all_costs, n.l, loss_weight=gp_reg_weight,
+        #              python_param=dict(module='ioc_layers', layer='GaussianProcessPriors'))
 
         n.dummy = L.DummyData(ntop=1, shape=dict(dim=[1]), data_filler=dict(type='constant',value=0))
         # init logZ or Z to 1, only learn the bias
