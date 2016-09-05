@@ -111,6 +111,7 @@ algorithm['cost'] = {
     'type': CostSum,
     'costs': [torque_cost, fk_cost],
     'weights': [100.0, 100.0],
+    'smooth_reg_weight': 0.0,
 }
 
 algorithm['dynamics'] = {

@@ -114,7 +114,7 @@ demo_agent = {
 algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
-    'learning_from_prior': True,
+    'learning_from_prior': False,
     'ioc' : 'MPF',
     'iterations': 20,
     'kl_step': 0.5,
@@ -206,9 +206,10 @@ algorithm['gt_cost'] = {
 
 algorithm['cost'] = {
     'type': CostIOCNN,
-    'wu': 1e-3 / PR2_GAINS,
+    'wu': 100*1e-3 / PR2_GAINS,
     'T': 100,
     'dO': 26,
+    'learn_wu': False,
     'iterations': 5000,
 }
 
@@ -247,5 +248,5 @@ config = {
     'verbose_policy_trials': 1,
     'agent': agent,
     'demo_agent': demo_agent,
-    'gui_on': True,
+    'gui_on': False,
 }

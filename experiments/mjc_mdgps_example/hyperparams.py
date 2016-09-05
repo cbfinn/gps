@@ -165,5 +165,5 @@ config = {
     'verbose_trials': 1,
     'verbose_policy_trials': 1,
     'agent': agent,
-    'gui_on': True,
+    'gui_on': False,
 }
