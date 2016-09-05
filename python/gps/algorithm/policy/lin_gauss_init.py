@@ -163,7 +163,8 @@ def init_demo(hyperparams):
 
 def init_demo_conditions(hyperparams):
     """
-    Initialize the linear Gaussian controller with a demo.
+    Initialize the linear Gaussian controller with a demo, specific to 
+    each condition (uses the average of trajectories for each condition)
     """
     config = copy.deepcopy(INIT_LG_LQR)
     config.update(hyperparams)
