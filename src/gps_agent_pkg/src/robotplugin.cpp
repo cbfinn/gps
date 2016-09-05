@@ -398,6 +398,7 @@ void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::C
         scale.resize(dim_bias, dim_bias);
         Eigen::VectorXd bias;
         bias.resize(dim_bias);
+        int dU = (int) params.dU;
 
         int idx = 0;
         // Unpack the scale matrix
@@ -416,6 +417,14 @@ void RobotPlugin::trial_subscriber_callback(const gps_agent_pkg::TrialCommand::C
         {
             bias(i) = params.bias[idx];
             idx++;
+        }
+        for(int t=0; t<(int)msg->T; t++){
+            Eigen::VectorXd noise;
+            noise.resize(dU);
+            for(int u=0; u<dU; u++){
+                noise(u) = params.noise[u+t*dU];
+            }
+            controller_params["noise_"+to_string(t)] = noise;
         }
 
         controller_params["net_param"] = params.net_param;

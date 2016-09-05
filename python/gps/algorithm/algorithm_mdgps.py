@@ -63,6 +63,17 @@ class AlgorithmMDGPS(Algorithm):
                 prev_samples.extend(sample_lists[m].get_samples())
                 self.sample_list[m] = SampleList(prev_samples)
                 self.N += len(sample_lists[m])
+
+                if 'target_end_effector' in self._hyperparams:
+                    if type(self._hyperparams['target_end_effector']) is list: 
+                        target_position = self._hyperparams['target_end_effector'][m][:3]
+                    else:
+                        target_position = self._hyperparams['target_end_effector'][:3]
+                    cur_samples = sample_lists[m].get_samples()
+                    sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
+                    dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
+                             for i in xrange(len(cur_samples))]
+                    self.dists_to_target[itr].append(sum(dists) / len(cur_samples))
         # Compute mean distance to target. For peg experiment only.
         else:
             for m in xrange(self.M):
