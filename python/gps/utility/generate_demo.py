@@ -114,7 +114,7 @@ class GenDemo(object):
                     for j in xrange(N):
                         demo = self.agent.sample(
                             controllers_var[i], i,
-                            verbose=(i < self.algorithm._hyperparams['demo_verbose']) , noisy=False,
+                            verbose=(i < self.algorithm._hyperparams['demo_verbose']), noisy=False,
                             save = True
                         )
                         demos.append(demo)

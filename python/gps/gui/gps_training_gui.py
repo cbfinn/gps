@@ -117,7 +117,6 @@ class GPSTrainingGUI(object):
                 color='red', label='ground truth cost', gui_on=gui_on)
         self._demo_cost_plotter = LinePlotter(self._fig, self._gs_demo_cost_plotter,
                                          color='blue', label='demo cost', num_plots=NUM_DEMO_PLOTS*2, gui_on=gui_on)
-        self._scatter_cost_plotter = ScatterPlot(self._fig, self._gs_dist_cost_plotter, xlabel='Dist', ylabel='Cost')
         self._traj_visualizer = Plotter3D(self._fig, self._gs_traj_visualizer,
                 num_plots=self._hyperparams['conditions'], gui_on=gui_on)
         if config['image_on']:
