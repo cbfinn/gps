@@ -113,9 +113,9 @@ class GenDemo(object):
                     # Gather demos.
                     for j in xrange(N):
                         demo = self.agent.sample(
-                                controllers_var[i], i,
-                                verbose=(i < self.algorithm._hyperparams['demo_verbose']),
-                                save = True
+                            controllers_var[i], i,
+                            verbose=(i < self.algorithm._hyperparams['demo_verbose']) , noisy=False,
+                            save = True
                         )
                         demos.append(demo)
                         demo_idx_conditions.append(i)
@@ -145,9 +145,9 @@ class GenDemo(object):
                             #       controller = self.linearize_policy(SampleList(samples), j)
                             for k in xrange(N):
                                 demo = self.agent.sample(
-                                                pol, i, # Should be changed back to controller if using linearization
-                                                verbose=(i < self._hyperparams['verbose_trials']), noisy=False
-                                                ) # Add noise seems not working. TODO: figure out why
+                                    pol, i, # Should be changed back to controller if using linearization
+                                    verbose=(i < self._hyperparams['verbose_trials']), noisy=False
+                                    ) # Add noise seems not working. TODO: figure out why
                                 # demos.append(demo)
                                 demos.append(demo)
                                 demo_idx_conditions.append(i)
