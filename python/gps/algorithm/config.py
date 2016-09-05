@@ -56,6 +56,8 @@ ALG = {
     'bootstrap': False,
     # Use 3 policies.
     'multiple_policy': False,
+    # Number of nn policies used.
+    'num_policies': 1,
 }
 
 # Good indices.

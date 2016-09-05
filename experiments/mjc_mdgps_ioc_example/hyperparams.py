@@ -43,6 +43,7 @@ EXP_DIR = BASE_DIR + '/../experiments/mjc_mdgps_ioc_example/'
 DEMO_DIR = BASE_DIR + '/../experiments/mjc_mdgps_example/on_classic/'
 # DEMO_DIR = BASE_DIR + '/../experiments/mjc_badmm_example_'
 LG_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
+DEMO_CONDITIONS = 80
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -51,9 +52,9 @@ common = {
     'demo_exp_dir': DEMO_DIR,
     # 'demo_controller_file': [DEMO_DIR + '%d/' % i + 'data_files/algorithm_itr_11.pkl' for i in xrange(4)],
     # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
-    'demo_controller_file': DEMO_DIR,
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
     'LG_controller_file': LG_DIR + 'data_files/algorithm_itr_09.pkl',
-    'conditions': 9,
+    'conditions': 4,
     # 'dense': True # For dense/sparse demos experiment only
     'nn_demo': True, # Use neural network demonstrations. For experiment only
 }
@@ -71,11 +72,11 @@ agent = {
     'sampling_range_bodypos': [np.array([-0.1,-0.1, 0.0]), np.array([0.1, 0.1, 0.0])], # Format is [lower_lim, upper_lim]
     'prohibited_ranges_bodypos':[[None, None, None, None]],
     'pos_body_idx': np.array([1]),
-    # 'pos_body_offset': [np.array([-0.08, -0.08, 0]), np.array([-0.08, 0.08, 0]),
-    #                     np.array([0.08, 0.08, 0]), np.array([0.08, -0.08, 0])],
-    'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0, 0]), np.array([-0.1, 0.1, 0]),
-                        np.array([0, -0.1, 0]), np.array([0, 0, 0]), np.array([0, 0.1, 0]),
-                        np.array([0.1, 0.1, 0]), np.array([0.1, 0, 0]), np.array([0.1, -0.1, 0])],
+    'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0]),
+                        np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0])],
+    # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0, 0]), np.array([-0.1, 0.1, 0]),
+    #                     np.array([0, -0.1, 0]), np.array([0, 0, 0]), np.array([0, 0.1, 0]),
+    #                     np.array([0.1, 0.1, 0]), np.array([0.1, 0, 0]), np.array([0.1, -0.1, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -90,14 +91,14 @@ demo_agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/pr2_arm3d.xml',
     'x0': generate_x0(np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
-                      np.zeros(7)]), 60),
+                      np.zeros(7)]), DEMO_CONDITIONS),
     'dt': 0.05,
     'substeps': 5,
-    'conditions': 60,
-    'pos_body_idx': generate_pos_idx(60),
+    'conditions': DEMO_CONDITIONS,
+    'pos_body_idx': generate_pos_idx(DEMO_CONDITIONS),
     # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
     #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    'pos_body_offset': generate_pos_body_offset(60),
+    'pos_body_offset': generate_pos_body_offset(DEMO_CONDITIONS),
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -114,7 +115,7 @@ demo_agent = {
 algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
-    'learning_from_prior': False,
+    'learning_from_prior': True,
     'ioc' : 'MPF',
     'iterations': 20,
     'kl_step': 0.5,
@@ -248,5 +249,5 @@ config = {
     'verbose_policy_trials': 1,
     'agent': agent,
     'demo_agent': demo_agent,
-    'gui_on': False,
+    'gui_on': True,
 }

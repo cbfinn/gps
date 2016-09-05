@@ -118,8 +118,13 @@ class GenDemo(object):
             else:
                 # demos = {i : [] for i in xrange(4)} # Take demos for 4 nn policies
                 # Extract the neural network policy.
+                self.algorithm.num_policies = self.algorithm._hyperparams['num_policies']
                 for j in xrange(self.algorithm.num_policies):
-                    pol = self.algorithm.policy_opts[j].policy
+                # for j in xrange(1):
+                    if self.algorithm._hyperparams['multiple_policy']:
+                        pol = self.algorithm.policy_opts[j].policy
+                    else:
+                        pol = self.algorithm.policy_opt.policy
                     pol.chol_pol_covar *= var_mult
 
                     for i in range(M / self.algorithm.num_policies * j, M / self.algorithm.num_policies * (j + 1)):

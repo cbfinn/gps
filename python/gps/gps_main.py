@@ -56,14 +56,14 @@ class GPSMain(object):
         config['algorithm']['agent'] = self.agent
 
         if self.using_ioc():
-            # demo_file = self._data_files_dir + 'demos.pkl'
-            if not config['common']['nn_demo']:
-                demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
-            else:
-                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'
-                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_no_noise.pkl'
-                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_3.pkl'
-            	demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_3pols_9conds.pkl'
+            demo_file = self._data_files_dir + 'demos.pkl'
+            # if not config['common']['nn_demo']:
+            #     demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
+            # else:
+            #     # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'
+            #     # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_no_noise.pkl'
+            #     # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_3.pkl'
+            # 	demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_3pols_9conds.pkl'
             demos = self.data_logger.unpickle(demo_file)
             if demos is None:
               self.demo_gen = GenDemo(config)
@@ -454,6 +454,95 @@ class GPSMain(object):
     def using_ioc(self):
         return 'ioc' in self._hyperparams['algorithm'] and self._hyperparams['algorithm']['ioc']
 
+    def test_samples(self, N, agent_config, itr):
+        from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
+        import matplotlib.pyplot as plt
+
+        pol_iter = self._hyperparams['algorithm']['iterations'] - 1
+        algorithm_ioc = self.data_logger.unpickle(self._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
+        M = agent_config['conditions']
+
+        # pol_ioc = algorithm_ioc.policy_opt.policy
+        controllers = {}
+        for i in xrange(M):
+            controllers[i] = algorithm_ioc.cur[i].traj_distr
+        # pol_ioc.chol_pol_covar *= 0.0
+        samples = []
+        agent = agent_config['type'](agent_config)
+        ioc_conditions = agent_config['pos_body_offset']
+        for i in xrange(M):
+            # Gather demos.
+            for j in xrange(N):
+                sample = agent.sample(
+                    controllers[i], i,
+                    verbose=(i < self._hyperparams['verbose_trials']), noisy=False
+                    )
+                samples.append(sample)
+        target_position = agent_config['target_end_effector'][:3]
+        dists_to_target = [np.zeros((M*N)) for i in xrange(len(samples))]
+        dists_diff = []
+        all_success_conditions = []
+        only_ioc_conditions = []
+        only_demo_conditions = []
+        all_failed_conditions = []
+        percentages = []
+        for i in xrange(len(samples[0])):
+            for j in xrange(len(samples)):
+                sample_end_effector = samples[j][i].get(END_EFFECTOR_POINTS)
+                dists_to_target[j][i] = np.nanmin(np.sqrt(np.sum((sample_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
+                # Just choose the last time step since it may become unstable after achieving the minimum point.
+                # import pdb; pdb.set_trace()
+                # dists_to_target[j][i] = np.sqrt(np.sum((sample_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
+            if dists_to_target[0][i] <= 0.1 and dists_to_target[1][i] <= 0.1:
+                all_success_conditions.append(ioc_conditions[i])
+            elif dists_to_target[0][i] <= 0.1:
+                only_ioc_conditions.append(ioc_conditions[i])
+            elif dists_to_target[1][i] <= 0.1:
+                only_demo_conditions.append(ioc_conditions[i])
+            else:
+                all_failed_conditions.append(ioc_conditions[i])
+            dists_diff.append(np.around(dists_to_target[0][i] - dists_to_target[1][i], decimals=2))
+        percentages.append(np.around(float(len(all_success_conditions))/len(ioc_conditions), decimals=2))
+        percentages.append(np.around(float(len(all_failed_conditions))/len(ioc_conditions), decimals=2))
+        percentages.append(np.around(float(len(only_ioc_conditions))/len(ioc_conditions), decimals=2))
+        percentages.append(np.around(float(len(only_demo_conditions))/len(ioc_conditions), decimals=2))
+        exp_dir = self._data_files_dir.replace("data_files", "")
+
+        from matplotlib.patches import Rectangle
+
+        plt.close('all')
+        ioc_conditions_x = [ioc_conditions[i][0] for i in xrange(len(ioc_conditions))]
+        ioc_conditions_y = [ioc_conditions[i][1] for i in xrange(len(ioc_conditions))]
+        all_success_x = [all_success_conditions[i][0] for i in xrange(len(all_success_conditions))]
+        all_success_y = [all_success_conditions[i][1] for i in xrange(len(all_success_conditions))]
+        all_failed_x = [all_failed_conditions[i][0] for i in xrange(len(all_failed_conditions))]
+        all_failed_y = [all_failed_conditions[i][1] for i in xrange(len(all_failed_conditions))]
+        only_ioc_x = [only_ioc_conditions[i][0] for i in xrange(len(only_ioc_conditions))]
+        only_ioc_y = [only_ioc_conditions[i][1] for i in xrange(len(only_ioc_conditions))]
+        only_demo_x = [only_demo_conditions[i][0] for i in xrange(len(only_demo_conditions))]
+        only_demo_y = [only_demo_conditions[i][1] for i in xrange(len(only_demo_conditions))]
+        subplt = plt.subplot()
+        subplt.plot(all_success_x, all_success_y, 'yo')
+        subplt.plot(all_failed_x, all_failed_y, 'rx')
+        subplt.plot(only_ioc_x, only_ioc_y, 'g^')
+        subplt.plot(only_demo_x, only_demo_y, 'rv')
+        # plt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc= (1, 1))
+        for i, txt in enumerate(dists_diff):
+            subplt.annotate(txt, (ioc_conditions_x[i], ioc_conditions_y[i]))
+        ax = plt.gca()
+        # ax.add_patch(Rectangle((-0.08, -0.08), 0.16, 0.16, fill = False, edgecolor = 'blue')) # peg
+        ax.add_patch(Rectangle((-0.3, -0.3), 0.6, 0.6, fill = False, edgecolor = 'blue')) # reacher
+        box = subplt.get_position()
+        subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
+        subplt.legend(['all_success: ' + repr(percentages[0]), 'all_failed: ' + repr(percentages[1]), 'only_ioc: ' + repr(percentages[2]), \
+                        'only_demo: ' + repr(percentages[3])], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
+                        shadow=True, ncol=2)
+        plt.title("Distribution of samples drawn from demo policy and IOC policy")
+        # plt.xlabel('width')
+        # plt.ylabel('length')
+        plt.savefig(self._data_files_dir + 'distribution_of_sample_conditions_added_per.png')
+        plt.close('all')
+
     def compare_samples(self, N, agent_config, itr):
         from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
         import matplotlib.pyplot as plt
@@ -531,7 +620,8 @@ class GPSMain(object):
         for i, txt in enumerate(dists_diff):
             subplt.annotate(txt, (ioc_conditions_x[i], ioc_conditions_y[i]))
         ax = plt.gca()
-        ax.add_patch(Rectangle((-0.08, -0.08), 0.16, 0.16, fill = False, edgecolor = 'blue'))
+        # ax.add_patch(Rectangle((-0.08, -0.08), 0.16, 0.16, fill = False, edgecolor = 'blue')) # peg
+        ax.add_patch(Rectangle((-0.3, -0.3), 0.6, 0.6, fill = False, edgecolor = 'blue')) # reacher
         box = subplt.get_position()
         subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
         subplt.legend(['all_success: ' + repr(percentages[0]), 'all_failed: ' + repr(percentages[1]), 'only_ioc: ' + repr(percentages[2]), \
