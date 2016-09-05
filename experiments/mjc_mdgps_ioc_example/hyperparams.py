@@ -43,7 +43,7 @@ EXP_DIR = BASE_DIR + '/../experiments/mjc_mdgps_ioc_example/'
 DEMO_DIR = BASE_DIR + '/../experiments/mjc_mdgps_example/on_classic/'
 # DEMO_DIR = BASE_DIR + '/../experiments/mjc_badmm_example_'
 LG_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
-DEMO_CONDITIONS = 80
+DEMO_CONDITIONS = 40
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -52,16 +52,16 @@ common = {
     'demo_exp_dir': DEMO_DIR,
     # 'demo_controller_file': [DEMO_DIR + '%d/' % i + 'data_files/algorithm_itr_11.pkl' for i in xrange(4)],
     # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files_maxent_9cond_0/algorithm_itr_11.pkl',
     'LG_controller_file': LG_DIR + 'data_files/algorithm_itr_09.pkl',
-    'conditions': 4,
+    'conditions': 9,
     # 'dense': True # For dense/sparse demos experiment only
     'nn_demo': True, # Use neural network demonstrations. For experiment only
 }
 
 agent = {
     'type': AgentMuJoCo,
-    'filename': './mjc_models/pr2_arm3d_large_table.xml',
+    'filename': './mjc_models/pr2_arm3d.xml',
     'x0': np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
                           np.zeros(7)]),
     'dt': 0.05,
@@ -72,11 +72,11 @@ agent = {
     'sampling_range_bodypos': [np.array([-0.1,-0.1, 0.0]), np.array([0.1, 0.1, 0.0])], # Format is [lower_lim, upper_lim]
     'prohibited_ranges_bodypos':[[None, None, None, None]],
     'pos_body_idx': np.array([1]),
-    'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0]),
-                        np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0])],
-    # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0, 0]), np.array([-0.1, 0.1, 0]),
-    #                     np.array([0, -0.1, 0]), np.array([0, 0, 0]), np.array([0, 0.1, 0]),
-    #                     np.array([0.1, 0.1, 0]), np.array([0.1, 0, 0]), np.array([0.1, -0.1, 0])],
+    # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0]),
+    #                     np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0])],
+    'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0, 0]), np.array([-0.1, 0.1, 0]),
+                        np.array([0, -0.1, 0]), np.array([0, 0, 0]), np.array([0, 0.1, 0]),
+                        np.array([0.1, 0.1, 0]), np.array([0.1, 0, 0]), np.array([0.1, -0.1, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -116,7 +116,7 @@ algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
     'learning_from_prior': True,
-    'ioc' : 'MPF',
+    'ioc' : 'ICML',
     'iterations': 20,
     'kl_step': 0.5,
     'min_step_mult': 0.05,
