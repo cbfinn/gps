@@ -23,6 +23,7 @@ from random import shuffle
 sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
 from gps.agent.mjc.agent_mjc import AgentMuJoCo
 from gps.utility.data_logger import DataLogger
+from gps.utility.demo_utils import compute_distance
 from gps.sample.sample_list import SampleList
 from gps.algorithm.algorithm_utils import gauss_fit_joint_prior
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
@@ -30,6 +31,8 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
                 END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
                 CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE
 from gps.algorithm.policy.lin_gauss_policy import LinearGaussianPolicy  # Maybe useful if we unpickle the file as controllers
+
+LOGGER = logging.getLogger(__name__)
 
 class GenDemo(object):
         """ Generator of demos. """
@@ -50,12 +53,11 @@ class GenDemo(object):
                 self._algorithm_files_dir = config['common']['demo_controller_file']
                 self.data_logger = DataLogger()
 
-        def generate(self):
+        def generate(self, filename):
                 """
                  Generate demos and save them in a file for experiment.
                  Returns: None.
                 """
-                return
                 # Load the algorithm
                 import pickle
 
@@ -91,6 +93,7 @@ class GenDemo(object):
                 T = self.algorithm.T
                 # T = self.algorithms[0].T
                 demos = []
+                demo_idx_conditions = []  # Stores conditions for each demo
 
                 M = agent_config['conditions']
                 N = self._hyperparams['algorithm']['num_demos']
@@ -115,6 +118,7 @@ class GenDemo(object):
                                                 save = True
                                         )
                                         demos.append(demo)
+                                        demo_idx_conditions.append(i)
                 else:
                         # demos = {i : [] for i in xrange(4)} # Take demos for 4 nn policies
                         # Extract the neural network policy.
@@ -146,10 +150,30 @@ class GenDemo(object):
                                                                 ) # Add noise seems not working. TODO: figure out why
                                                 # demos.append(demo)
                                                 demos.append(demo)
+						demo_idx_conditions.append(i)
 
-                # Filter out worst (M - good_conds) demos.
-                if agent_config['type']==AgentMuJoCo and agent_config['filename'] == './mjc_models/pr2_arm3d.xml':
-                        target_position = agent_config['target_end_effector'][:3]
+                # Filter failed demos
+                if agent_config.get('filter_demos', False):
+                    target_position = agent_config['target_end_effector'][:3]
+                    dist_threshold = agent_config.get('success_upper_bound', 0.01)
+                    dists = compute_distance(target_position, SampleList(demos))
+                    failed_idx = []
+                    for i, distance in enumerate(dists):
+                        distance = distance[-1]
+                        if(distance > dist_threshold):
+                            failed_idx.append(i)
+                    LOGGER.debug("Removing %d failed demos: %s", len(failed_idx), str(failed_idx))
+                    demos_filtered = [demo for (i, demo) in enumerate(demos) if i not in failed_idx]
+                    demo_idx_conditions = [cond for (i, cond) in enumerate(demo_idx_conditions) if i not in failed_idx]
+                    demos = demos_filtered
+                    shuffle(demos)
+                    demo_list = SampleList(demos)
+                    demo_store = {'demoX': demo_list.get_X(), 
+                                  'demoU': demo_list.get_U(), 
+                                  'demoO': demo_list.get_obs(),
+                                  'demoConditions': demo_idx_conditions}
+                else if agent_config['type']==AgentMuJoCo and agent_config['filename'] == './mjc_models/pr2_arm3d.xml':
+			# Filter out worst (M - good_conds) demos.
                         dists_to_target = np.zeros(M*N)
                         # dists_to_target = [np.zeros(M*N) for i in xrange(4)]
                         good_indices = []
@@ -217,10 +241,13 @@ class GenDemo(object):
                 else:
                         shuffle(demos)
                         demo_list = SampleList(demos)
-                        demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs()}
+                        demo_store = {'demoX': demo_list.get_X(), 
+                                      'demoU': demo_list.get_U(), 
+                                      'demoO': demo_list.get_obs(),
+                                      'demoConditions': demo_idx_conditions}
                 # Save the demos.
                 self.data_logger.pickle(
-                        self._data_files_dir + 'demos.pkl',
+                        filename,
                         copy.copy(demo_store)
                 )
 

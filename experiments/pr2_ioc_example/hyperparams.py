@@ -13,11 +13,11 @@ from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
-from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY
+from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_CONSTANT, evall1l2term
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-from gps.algorithm.policy.lin_gauss_init import init_lqr
+from gps.algorithm.policy.lin_gauss_init import init_lqr, init_demo
 from gps.gui.target_setup_gui import load_pose_from_npz
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION, \
@@ -37,7 +37,7 @@ SENSOR_DIMS = {
     ACTION: 7,
 }
 
-PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
+PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.252, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = BASE_DIR + '/../experiments/pr2_ioc_example/'
@@ -54,8 +54,8 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 1,
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
+    'conditions': 4,
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
     'demo_exp_dir': DEMO_DIR,
     'nn_demo': False
 }
@@ -136,6 +136,8 @@ demo_agent = {
     'end_effector_points': EE_POINTS,
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
+    'filter_demos': True,
+    'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
 }
 
 algorithm = {
@@ -145,13 +147,13 @@ algorithm = {
     #'learning_from_prior': True,
     'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
     'ioc': 'ICML',  # 'MPF', 'ICML'
-    'max_ent_traj': 1.0,
+    #'max_ent_traj': 1.0,
     'kl_step': 0.5,
     'min_step_mult': 0.05,
     'max_step_mult': 2.0,
     'demo_distr_empest': True, # For ICML version, importance sampling emperically.
     #'demo_cond': 15,
-    'num_demos': 20,
+    'num_demos': 10,
     'synthetic_cost_samples': 100,
     'demo_var_mult': 1.0  # Increase variance on demos
 }
@@ -168,6 +170,21 @@ algorithm['init_traj_distr'] = {
     'T': agent['T'],
 }
 
+
+algorithm['init_traj_distr'] = {
+    'type': init_demo,
+    'init_gains':  1.0 / PR2_GAINS,
+    'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
+    'init_var': 0.01,
+    'stiffness': 500.0,
+    'stiffness_vel': 0.25,
+    'final_weight': 1.0,
+    'dt': agent['dt'],
+    'T': agent['T'],
+    'demo_file': common['data_files_dir']+'demos_LG.pkl'
+}
+
+
 torque_cost = {
     'type': CostAction,
     'wu': 5e-3 / PR2_GAINS,
@@ -179,37 +196,30 @@ fk_cost1 = {
     # is 0.
     'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
     'wp': np.ones(SENSOR_DIMS[END_EFFECTOR_POINTS]),
-    'l1': 0.1,
-    'l2': 0.0001,
-    'ramp_option': RAMP_LINEAR,
-}
-
-fk_cost2 = {
-    'type': CostFK,
-    'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
-    'wp': np.ones(SENSOR_DIMS[END_EFFECTOR_POINTS]),
     'l1': 1.0,
-    'l2': 0.0,
-    'wp_final_multiplier': 10.0,  # Weight multiplier on final timestep.
-    'ramp_option': RAMP_FINAL_ONLY,
+    'alpha': 1e-5,
+    'l2': 0.0001,
+    'ramp_option': RAMP_CONSTANT,
+    'evalnorm': evall1l2term
 }
 
 algorithm['gt_cost'] = {
     'type': CostSum,
-    'costs': [torque_cost, fk_cost1, fk_cost2],
-    'weights': [1.0, 1.0, 1.0],
+    'costs': [torque_cost, fk_cost1],
+    'weights': [1.0, 1.0],
 }
 
 algorithm['cost'] = {
     'type': CostIOCNN,
-    'wu': 5e-3 / PR2_GAINS,
+    'wu': 5e-1 / PR2_GAINS,
     'T': 100,
     'demo_batch_size': 5,
     'sample_batch_size': 5,
     'dO': 32,
     'iterations': 5000,
-    'smooth_reg_weight': 1.0,
-    'mono_reg_weight': 1.0,
+    #'smooth_reg_weight': 0.1,
+    #'mono_reg_weight': 100.0,
+    #'learn_wu': True
 }
 
 algorithm['dynamics'] = {

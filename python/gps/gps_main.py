@@ -58,7 +58,7 @@ class GPSMain(object):
 
         if self.using_ioc():
             # demo_file = self._data_files_dir + 'demos.pkl'
-            if not config['common']['nn_demo']:
+            if not config['common'].get('nn_demo', False):
                 demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
             else:
                 # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'
@@ -68,8 +68,7 @@ class GPSMain(object):
             demos = self.data_logger.unpickle(demo_file)
             if demos is None:
               self.demo_gen = GenDemo(config)
-              self.demo_gen.generate()
-              demo_file = self._data_files_dir + 'demos.pkl'
+              self.demo_gen.generate(demo_file)
               demos = self.data_logger.unpickle(demo_file)
             config['algorithm']['init_traj_distr']['init_demo_x'] = np.mean(demos['demoX'], 0)
             config['algorithm']['init_traj_distr']['init_demo_u'] = np.mean(demos['demoU'], 0)
