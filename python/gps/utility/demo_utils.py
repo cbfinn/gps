@@ -38,19 +38,19 @@ def generate_pos_idx(conditions):
 
 
 def xu_to_sample_list(agent, X, U):
-	num = X.shape[0]
-	samples = []
-	for demo_idx in range(num):
-		sample = Sample(agent)
-		sample.set_XU(X[demo_idx], U[demo_idx])
-		samples.append(sample)
-	return SampleList(samples)
+    num = X.shape[0]
+    samples = []
+    for demo_idx in range(num):
+        sample = Sample(agent)
+        sample.set_XU(X[demo_idx], U[demo_idx])
+        samples.append(sample)
+    return SampleList(samples)
 
 def eval_demos(agent, demo_file, costfn, n=10):
-	demos = DataLogger.unpickle(demo_file)
-	demoX = demos['demoX']
-	demoU = demos['demoU']
-	return eval_demos_xu(agent, demoX, demoU, costfn, n=n)
+    demos = DataLogger.unpickle(demo_file)
+    demoX = demos['demoX']
+    demoU = demos['demoU']
+    return eval_demos_xu(agent, demoX, demoU, costfn, n=n)
 
 
 def eval_demos_xu(agent, demoX, demoU, costfn, n=-1):
@@ -67,24 +67,27 @@ def eval_demos_xu(agent, demoX, demoU, costfn, n=-1):
         return losses
 
 
+def get_target_end_effector(algorithm, condition=0):
+    target_dict = algorithm._hyperparams['target_end_effector']
+    if type(target_dict) is list:
+        target_position = target_dict[condition][:3]
+    else:
+        target_position = target_dict[:3]
+    return target_position
+
 def compute_distance(target_end_effector, sample_list):
     target_position = target_end_effector
-    if type(target_position) is list:
-    	target_position = target_position[0][:3]
-    else:
-    	target_position - target_position[:3]
     cur_samples = sample_list.get_samples()
     sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
     dists = [(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2,
-									axis = 1)))
-                					for i in xrange(len(cur_samples))]
+                axis=1))) for i in xrange(len(cur_samples))]
     return dists
 
 
 def compute_distance_cost_plot(algorithm, agent, sample_list):
     if 'target_end_effector' not in algorithm._hyperparams:
         return None
-    dists = compute_distance(algorithm._hyperparams['target_end_effector'][:3], sample_list)
+    dists = compute_distance(get_target_end_effector(algorithm), sample_list)
     costs = eval_demos_xu(agent, sample_list.get_X(), sample_list.get_U(), algorithm.cost)
     return flatten_lists(dists), flatten_lists(costs)
 
@@ -93,7 +96,7 @@ def compute_distance_cost_plot_xu(algorithm, agent, X, U):
     if 'target_end_effector' not in algorithm._hyperparams:
         return None
     sample_list = xu_to_sample_list(agent, X, U)
-    dists = compute_distance(algorithm._hyperparams['target_end_effector'][:3], sample_list)
+    dists = compute_distance(get_target_end_effector(algorithm), sample_list)
     costs = eval_demos_xu(agent, sample_list.get_X(), sample_list.get_U(), algorithm.cost)
     return flatten_lists(dists), flatten_lists(costs)
 
