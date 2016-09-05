@@ -88,6 +88,8 @@ agent = {
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
     'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[i], np.array([0., 0., 0.])])
+                            for i in xrange(CONDITIONS)],
 }
 
 demo_agent = {
@@ -107,6 +109,9 @@ demo_agent = {
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
     'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ demo_pos_body_offset[i], np.array([0., 0., 0.])])
+                            for i in xrange(DEMO_CONDITIONS)],
+    'success_upper_bound': 0.01,
 }
 
 
@@ -119,11 +124,13 @@ algorithm = {
     'min_step_mult': 0.05,
     'max_step_mult': 2.0,
     'demo_cond': demo_agent['conditions'],
-    'num_demos': 20,
+    'num_demos': 2,
     'demo_var_mult': 1.0,
     'synthetic_cost_samples': 100,
-    'iterations': 25,
+    'iterations': 15,
     'plot_dir': EXP_DIR,
+    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
+                            for i in xrange(CONDITIONS)],
 }
 
 PR2_GAINS = np.array([1.0, 1.0])
@@ -159,6 +166,7 @@ algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
     'ioc_loss': algorithm['ioc'],
     'smooth_reg_weight': 0.0,
     'mono_reg_weight': 0.0,
+    'learn_wu': False,
 }
 
 #algorithm['init_traj_distr'] = {

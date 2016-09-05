@@ -15,8 +15,9 @@ from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-from gps.algorithm.policy.lin_gauss_init import init_demo
+from gps.algorithm.policy.lin_gauss_init import init_demo, init_lqr
 from gps.utility.demo_utils import generate_pos_body_offset, generate_x0, generate_pos_idx
+from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_QUADRATIC, evall1l2term
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
 from gps.gui.config import generate_experiment_info
@@ -29,6 +30,8 @@ SENSOR_DIMS = {
     ACTION: 7,
 }
 
+DEMO_CONDITIONS = 25
+
 PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
@@ -38,11 +41,12 @@ DEMO_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
 
 
 common = {
-    'experiment_name': 'my_experiment' + '_' + \
+    'experiment_name': 'maxentdemos_icml' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
     'data_files_dir': EXP_DIR + 'data_files/',
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
+    #'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files_nn_ICML_random_cond_0/algorithm_itr_09.pkl',
     'demo_exp_dir': DEMO_DIR,
     #'demo_controller_file': [DEMO_DIR + '%d/' % i + 'data_files/algorithm_itr_11.pkl' for i in xrange(4)],
     'target_filename': EXP_DIR + 'target.npz',
@@ -81,14 +85,14 @@ demo_agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/pr2_arm3d.xml',
     'x0': generate_x0(np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
-                      np.zeros(7)]), 40),
+                      np.zeros(7)]), DEMO_CONDITIONS),
     'dt': 0.05,
     'substeps': 5,
-    'conditions': 40,
-    'pos_body_idx': generate_pos_idx(40),
+    'conditions': DEMO_CONDITIONS,
+    'pos_body_idx': generate_pos_idx(DEMO_CONDITIONS),
     # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
     #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    'pos_body_offset': generate_pos_body_offset(40),
+    'pos_body_offset': generate_pos_body_offset(DEMO_CONDITIONS),
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -106,21 +110,32 @@ algorithm = {
     'type': AlgorithmTrajOpt,
     'ioc' : 'ICML',
     'conditions': common['conditions'],
-    'learning_from_prior': True,
-    'demo_var_mult': 5.0,
+    'learning_from_prior': False,
+    'demo_var_mult': 1.0, #5.0,
     'kl_step': 0.5,
     'max_step_mult': 2.0,
     'min_step_mult': 0.01,
     'max_ent_traj': 1.0,
     'demo_distr_empest': True,
     # 'demo_cond': 15,
-    # 'demo_cond': 25,
-    'num_demos': 1,
+    'demo_cond': 25,
+    'num_demos': 2,
     'iterations': 20,
     'synthetic_cost_samples': 100,
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
     'global_cost': True,
 }
+
+#algorithm['init_traj_distr'] = {
+#    'type': init_lqr,
+#    'init_gains':  1.0 / PR2_GAINS,
+#    'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
+#    'init_var': 1.0,
+#    'stiffness': 1.0,
+#    'stiffness_vel': 0.5,
+#    'dt': agent['dt'],
+#    'T': agent['T'],
+#}
 
 algorithm['init_traj_distr'] = {
     'type': init_demo,
@@ -146,6 +161,7 @@ fk_cost = {
     'l1': 0.1,
     'l2': 10.0,
     'alpha': 1e-5,
+    'evalnorm': evall1l2term,
 }
 
 algorithm['gt_cost'] = {
@@ -156,13 +172,14 @@ algorithm['gt_cost'] = {
 
 algorithm['cost'] = {
     'type': CostIOCNN,
-    'wu': 5e-5 / PR2_GAINS,
+    'wu': 100*5e-5 / PR2_GAINS,
     'T': 100,
     'dO': 26,
     'iterations': 5000,
     'demo_batch_size': 5,
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
+    'learn_wu': False,  # set to true to learn torque penalty
     'smooth_reg_weight': 0.1,
     'mono_reg_weight': 100.0,
 }

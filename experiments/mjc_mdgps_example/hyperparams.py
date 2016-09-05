@@ -12,7 +12,7 @@ from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
-from gps.algorithm.cost.cost_utils import RAMP_FINAL_ONLY
+from gps.algorithm.cost.cost_utils import RAMP_FINAL_ONLY, evall1l2term
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
@@ -42,7 +42,8 @@ common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     # 'conditions': 4,
-    'conditions': 9,
+    # 'conditions': 9,
+    'conditions': 1
 }
 
 agent = {
@@ -58,11 +59,12 @@ agent = {
     'sampling_range_bodypos': [np.array([-0.1,-0.1, 0.0]), np.array([0.1, 0.1, 0.0])], # Format is [lower_lim, upper_lim]
     'prohibited_ranges_bodypos':[[None, None, None, None]],
     'pos_body_idx': np.array([1]),
+    'pos_body_offset': [np.array([-0.08, -0.08, 0])],
     # 'pos_body_offset': [np.array([-0.08, -0.08, 0]), np.array([-0.08, 0.08, 0]),
     #                     np.array([0.08, 0.08, 0]), np.array([0.08, -0.08, 0])],
-    'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0, 0]), np.array([-0.1, 0.1, 0]),
-                        np.array([0, -0.1, 0]), np.array([0, 0, 0]), np.array([0, 0.1, 0]),
-                        np.array([0.1, 0.1, 0]), np.array([0.1, 0, 0]), np.array([0.1, -0.1, 0])],
+    # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0, 0]), np.array([-0.1, 0.1, 0]),
+    #                     np.array([0, -0.1, 0]), np.array([0, 0, 0]), np.array([0, 0.1, 0]),
+    #                     np.array([0.1, 0.1, 0]), np.array([0.1, 0, 0]), np.array([0.1, -0.1, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -76,6 +78,7 @@ algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
     'iterations': 12,
+    'max_ent_traj': 1.0,
     'kl_step': 1.0,
     'min_step_mult': 0.05,
     'max_step_mult': 3.0,
@@ -106,6 +109,7 @@ fk_cost = {
     'l1': 0.1,
     'l2': 10.0,
     'alpha': 1e-5,
+    'evalnorm': evall1l2term,
 }
 
 # Create second cost function for last step only.
@@ -118,12 +122,13 @@ final_cost = {
     'l2': 0.0,
     'alpha': 1e-5,
     'wp_final_multiplier': 10.0,
+    'evalnorm': evall1l2term,
 }
 
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [torque_cost, fk_cost, final_cost],
-    'weights': [1.0, 1.0, 1.0],
+    'weights': [100.0, 100.0, 100.0],
 }
 
 algorithm['dynamics'] = {
@@ -160,5 +165,5 @@ config = {
     'verbose_trials': 1,
     'verbose_policy_trials': 1,
     'agent': agent,
-    'gui_on': True,
+    'gui_on': False,
 }

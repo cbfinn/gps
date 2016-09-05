@@ -13,7 +13,7 @@ from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
-from gps.algorithm.cost.cost_utils import RAMP_FINAL_ONLY
+from gps.algorithm.cost.cost_utils import RAMP_FINAL_ONLY, evall1l2term
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
@@ -114,7 +114,7 @@ demo_agent = {
 algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
-    'learning_from_prior': True,
+    'learning_from_prior': False,
     'ioc' : 'MPF',
     'iterations': 20,
     'kl_step': 0.5,
@@ -125,8 +125,8 @@ algorithm = {
     'policy_sample_mode': 'replace',
     'max_ent_traj': 1.0,
     'demo_distr_empest': True,
-    'demo_var_mult': 4.0,
-    'init_var_mult': 9.0,
+    'demo_var_mult': 1.0,
+    'init_var_mult': 1.0,
     # 'demo_cond': 15,
     # 'num_demos': 3,
     'num_demos': 1,
@@ -182,6 +182,7 @@ fk_cost = {
     'l1': 0.1,
     'l2': 10.0,
     'alpha': 1e-5,
+    'evalnorm': evall1l2term,
 }
 
 # Create second cost function for last step only.
@@ -194,19 +195,21 @@ final_cost = {
     'l2': 0.0,
     'alpha': 1e-5,
     'wp_final_multiplier': 10.0,
+    'evalnorm': evall1l2term,
 }
 
 algorithm['gt_cost'] = {
     'type': CostSum,
     'costs': [torque_cost, fk_cost, final_cost],
-    'weights': [1.0, 1.0, 1.0],
+    'weights': [100.0, 100.0, 100.0],
 }
 
 algorithm['cost'] = {
     'type': CostIOCNN,
-    'wu': 1e-3 / PR2_GAINS,
+    'wu': 100*1e-3 / PR2_GAINS,
     'T': 100,
     'dO': 26,
+    'learn_wu': False,
     'iterations': 5000,
 }
 
@@ -245,5 +248,5 @@ config = {
     'verbose_policy_trials': 1,
     'agent': agent,
     'demo_agent': demo_agent,
-    'gui_on': True,
+    'gui_on': False,
 }
