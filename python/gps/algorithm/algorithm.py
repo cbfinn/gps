@@ -74,6 +74,7 @@ class Algorithm(object):
             init_traj_distr = extract_condition(
                 self._hyperparams['init_traj_distr'], self._cond_idx[m]
             )
+            init_traj_distr['condition'] = m
             self.cur[m].traj_distr = init_traj_distr['type'](init_traj_distr)
             if not self._hyperparams['policy_eval']:
                 self.traj_distr[self.iteration_count].append(self.cur[m].traj_distr)

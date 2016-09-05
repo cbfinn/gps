@@ -12,7 +12,7 @@ from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
-from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY
+from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_CONSTANT, evall1l2term
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
@@ -25,7 +25,7 @@ from gps.utility.general_utils import get_ee_points
 from gps.gui.config import generate_experiment_info
 
 
-EE_POINTS = np.array([[0.02, -0.025, 0.05], [0.02, -0.025, -0.05],
+EE_POINTS = 2*np.array([[0.02, -0.025, 0.05], [0.02, -0.025, -0.05],
                       [0.02, 0.05, 0.0]])
 
 SENSOR_DIMS = {
@@ -36,7 +36,7 @@ SENSOR_DIMS = {
     ACTION: 7,
 }
 
-PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
+PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.252, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = BASE_DIR + '/../experiments/pr2_example/'
@@ -52,7 +52,7 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 3,
+    'conditions': 1,
 }
 
 # TODO(chelsea/zoe) : Move this code to a utility function
@@ -118,7 +118,9 @@ agent = {
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
-    'iterations': 10,
+    'iterations': 15,
+    'max_ent_traj': 0.001,
+    'target_end_effector': np.zeros(3 * EE_POINTS.shape[0])
 }
 
 algorithm['init_traj_distr'] = {
@@ -144,25 +146,17 @@ fk_cost1 = {
     # is 0.
     'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
     'wp': np.ones(SENSOR_DIMS[END_EFFECTOR_POINTS]),
-    'l1': 0.1,
-    'l2': 0.0001,
-    'ramp_option': RAMP_LINEAR,
-}
-
-fk_cost2 = {
-    'type': CostFK,
-    'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
-    'wp': np.ones(SENSOR_DIMS[END_EFFECTOR_POINTS]),
     'l1': 1.0,
-    'l2': 0.0,
-    'wp_final_multiplier': 10.0,  # Weight multiplier on final timestep.
-    'ramp_option': RAMP_FINAL_ONLY,
+    'alpha': 1e-5,
+    'l2': 0.0001,
+    'ramp_option': RAMP_CONSTANT,
+    'evalnorm': evall1l2term
 }
 
 algorithm['cost'] = {
     'type': CostSum,
-    'costs': [torque_cost, fk_cost1, fk_cost2],
-    'weights': [1.0, 1.0, 1.0],
+    'costs': [torque_cost, fk_cost1],
+    'weights': [1.0, 1.0],
 }
 
 algorithm['dynamics'] = {
@@ -172,7 +166,7 @@ algorithm['dynamics'] = {
         'type': DynamicsPriorGMM,
         'max_clusters': 20,
         'min_samples_per_cluster': 40,
-        'max_samples': 20,
+        'max_samples': 5,
     },
 }
 
@@ -189,7 +183,7 @@ config = {
     'agent': agent,
     'gui_on': True,
     'algorithm': algorithm,
-    'num_samples': 5,
+    'num_samples': 2,
 }
 
 common['info'] = generate_experiment_info(config)

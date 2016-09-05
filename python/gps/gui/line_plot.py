@@ -159,3 +159,4 @@ class ScatterPlot(object):
             self._ax.draw_artist(item)
         self._fig.canvas.update()
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+
