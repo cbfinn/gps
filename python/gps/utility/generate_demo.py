@@ -112,45 +112,45 @@ class GenDemo(object):
                     controllers_var[i].chol_pol_covar *= var_mult
                     # Gather demos.
                     for j in xrange(N):
-                            demo = self.agent.sample(
-                                    controllers_var[i], i,
-                                    verbose=(i < self.algorithm._hyperparams['demo_verbose']),
-                                    save = True
-                            )
-                            demos.append(demo)
-                            demo_idx_conditions.append(i)
+                        demo = self.agent.sample(
+                                controllers_var[i], i,
+                                verbose=(i < self.algorithm._hyperparams['demo_verbose']),
+                                save = True
+                        )
+                        demos.append(demo)
+                        demo_idx_conditions.append(i)
                 else:
-                        # demos = {i : [] for i in xrange(4)} # Take demos for 4 nn policies
-                        # Extract the neural network policy.
-                        for j in xrange(self.algorithm.num_policies):
-                                pol = self.algorithm.policy_opts[j].policy
-                                pol.chol_pol_covar *= var_mult
+                    # demos = {i : [] for i in xrange(4)} # Take demos for 4 nn policies
+                    # Extract the neural network policy.
+                    for j in xrange(self.algorithm.num_policies):
+                        pol = self.algorithm.policy_opts[j].policy
+                        pol.chol_pol_covar *= var_mult
 
-                                for i in range(M / self.algorithm.num_policies * j, M / self.algorithm.num_policies * (j + 1)):
-                                        # Gather demos.
-                                        samples = []
-                                        dists = []
-                                        # for _ in xrange(5):
-                                        #       sample = self.agent.sample(
-                                        #               pol, i,
-                                        #               verbose=(i < self._hyperparams['verbose_trials'])
-                                        #               )
-                                        #       # if i in sampled_demo_conds:
-                                        #       #       sampled_demos.append(demo)
-                                        #       samples.append(sample)
-                                        #       sample_end_effector = sample.get(END_EFFECTOR_POINTS)
-                                        #       target_position = agent_config['target_end_effector'][:3]
-                                        #       dists.append(np.sqrt(np.sum((sample_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1])
-                                        # if sum(dists) / len(dists) <= 0.3:
-                                        #       controller = self.linearize_policy(SampleList(samples), j)
-                                        for k in xrange(N):
-                                                demo = self.agent.sample(
-                                                                pol, i, # Should be changed back to controller if using linearization
-                                                                verbose=(i < self._hyperparams['verbose_trials']), noisy=False
-                                                                ) # Add noise seems not working. TODO: figure out why
-                                                # demos.append(demo)
-                                                demos.append(demo)
-						demo_idx_conditions.append(i)
+                        for i in range(M / self.algorithm.num_policies * j, M / self.algorithm.num_policies * (j + 1)):
+                            # Gather demos.
+                            samples = []
+                            dists = []
+                            # for _ in xrange(5):
+                            #       sample = self.agent.sample(
+                            #               pol, i,
+                            #               verbose=(i < self._hyperparams['verbose_trials'])
+                            #               )
+                            #       # if i in sampled_demo_conds:
+                            #       #       sampled_demos.append(demo)
+                            #       samples.append(sample)
+                            #       sample_end_effector = sample.get(END_EFFECTOR_POINTS)
+                            #       target_position = agent_config['target_end_effector'][:3]
+                            #       dists.append(np.sqrt(np.sum((sample_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1])
+                            # if sum(dists) / len(dists) <= 0.3:
+                            #       controller = self.linearize_policy(SampleList(samples), j)
+                            for k in xrange(N):
+                                demo = self.agent.sample(
+                                                pol, i, # Should be changed back to controller if using linearization
+                                                verbose=(i < self._hyperparams['verbose_trials']), noisy=False
+                                                ) # Add noise seems not working. TODO: figure out why
+                                # demos.append(demo)
+                                demos.append(demo)
+                                demo_idx_conditions.append(i)
 
             # Filter failed demos
             if agent_config.get('filter_demos', False):
