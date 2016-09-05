@@ -147,7 +147,7 @@ algorithm = {
     #'learning_from_prior': True,
     'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
     'ioc': 'ICML',  # 'MPF', 'ICML'
-    #'max_ent_traj': 1.0,
+    'max_ent_traj': 1.0,
     'kl_step': 0.5,
     'min_step_mult': 0.05,
     'max_step_mult': 2.0,
@@ -219,9 +219,9 @@ algorithm['cost'] = {
     'sample_batch_size': 5,
     'dO': 32,
     'iterations': 5000,
-    #'smooth_reg_weight': 0.1,
-    #'mono_reg_weight': 100.0,
-    #'learn_wu': True
+    'smooth_reg_weight': 0.0,
+    'mono_reg_weight': 100.0,
+    'learn_wu': False
 }
 
 algorithm['dynamics'] = {
