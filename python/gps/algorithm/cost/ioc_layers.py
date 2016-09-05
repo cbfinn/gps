@@ -67,7 +67,8 @@ class GaussianProcessPriors(caffe.Layer):
         # bottom[1] contains the (Nd+Ns)xTxdO features,
         # bottom[2] contains the length scale of each dimension of the feature with shape TxdO.
         top[0].reshape(1)
-        self.subsamp = 4 # amount to subsample (for speed)
+        T = bottom[0].shape[1]
+        self.subsamp = T / 25 # amount to subsample (for speed). Assuming always a multiple of 25
 
     def forward(self, bottom, top):
         # TODO - make these constants somewhere?
@@ -77,7 +78,6 @@ class GaussianProcessPriors(caffe.Layer):
         self._l = bottom[2].data
         batch_size = bottom[0].shape[0]
         T = bottom[0].shape[1]
-
         num_points = batch_size*T/self.subsamp
 
         self.randindex = np.random.randint(self.subsamp)  # starting index
