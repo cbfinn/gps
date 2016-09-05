@@ -177,6 +177,11 @@ def init_demo_conditions(hyperparams):
     assert len(demo_idxs) >= 1
     init_demo_x = np.mean(demos['demoX'][demo_idxs], axis=0)
     init_demo_u = np.mean(demos['demoU'][demo_idxs], axis=0)
+    ee_tgts = config['ee_tgts']
+    init_demo_x[:,config['ee_idx']] += ee_tgts
+
+    for t in range(T):
+        init_demo_x[t,:] -= config['x0']
 
     init_controller = init_lqr(config)
     ref = np.hstack((init_demo_x, init_demo_u))

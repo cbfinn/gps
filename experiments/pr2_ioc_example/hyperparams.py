@@ -13,11 +13,11 @@ from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
-from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_CONSTANT, evall1l2term
+from gps.algorithm.cost.cost_utils import RAMP_CONSTANT, evall1l2term
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-from gps.algorithm.policy.lin_gauss_init import init_lqr, init_demo
+from gps.algorithm.policy.lin_gauss_init import init_lqr, init_demo_conditions
 from gps.gui.target_setup_gui import load_pose_from_npz
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION, \
@@ -54,8 +54,8 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 4,
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
+    'conditions': 1,
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_14.pkl',
     'demo_exp_dir': DEMO_DIR,
     'nn_demo': False
 }
@@ -172,7 +172,7 @@ algorithm['init_traj_distr'] = {
 
 
 algorithm['init_traj_distr'] = {
-    'type': init_demo,
+    'type': init_demo_conditions,
     'init_gains':  1.0 / PR2_GAINS,
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
     'init_var': 0.01,
@@ -181,7 +181,9 @@ algorithm['init_traj_distr'] = {
     'final_weight': 1.0,
     'dt': agent['dt'],
     'T': agent['T'],
-    'demo_file': common['data_files_dir']+'demos_LG.pkl'
+    'demo_file': common['data_files_dir']+'demos_LG.pkl',
+    'ee_tgts': ee_tgts,
+    'ee_idx': slice(14,23)
 }
 
 

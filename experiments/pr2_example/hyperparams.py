@@ -52,7 +52,7 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 4,
+    'conditions': 1,
 }
 
 # TODO(chelsea/zoe) : Move this code to a utility function
@@ -120,6 +120,7 @@ algorithm = {
     'conditions': common['conditions'],
     'iterations': 15,
     'max_ent_traj': 0.001,
+    'target_end_effector': np.zeros(3 * EE_POINTS.shape[0])
 }
 
 algorithm['init_traj_distr'] = {
@@ -182,7 +183,7 @@ config = {
     'agent': agent,
     'gui_on': True,
     'algorithm': algorithm,
-    'num_samples': 5,
+    'num_samples': 2,
 }
 
 common['info'] = generate_experiment_info(config)
