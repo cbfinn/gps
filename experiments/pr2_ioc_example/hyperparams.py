@@ -147,7 +147,7 @@ algorithm = {
     #'learning_from_prior': True,
     'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
     'ioc': 'ICML',  # 'MPF', 'ICML'
-    #'max_ent_traj': 1.0,
+    'max_ent_traj': 1.0,
     'kl_step': 0.5,
     'min_step_mult': 0.05,
     'max_step_mult': 2.0,
