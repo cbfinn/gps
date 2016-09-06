@@ -62,7 +62,7 @@ common = {
 
 # TODO(chelsea/zoe) : Move this code to a utility function
 # Set up each condition.
-for i in xrange(common['conditions']):
+for i in xrange(5): #xrange(common['conditions']):
 
     ja_x0, ee_pos_x0, ee_rot_x0 = load_pose_from_npz(
         common['target_filename'], 'trial_arm', str(i), 'initial'
@@ -111,9 +111,9 @@ agent = {
     'dt': 0.05,
     'conditions': common['conditions'],
     'T': 100,
-    'x0': x0s,
-    'ee_points_tgt': ee_tgts,
-    'reset_conditions': reset_conditions,
+    'x0': [x0s[4]],
+    'ee_points_tgt': [ee_tgts[4]],
+    'reset_conditions': [reset_conditions[4]],
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
@@ -125,11 +125,11 @@ agent = {
 demo_agent = {
     'type': AgentROS,
     'dt': 0.05,
-    'conditions': common['conditions'],
+    'conditions': 5, #common['conditions'],
     'T': 100,
-    'x0': x0s,
-    'ee_points_tgt': ee_tgts,
-    'reset_conditions': reset_conditions,
+    'x0': x0s[:5],
+    'ee_points_tgt': ee_tgts[:5],
+    'reset_conditions': reset_conditions[:5],
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
@@ -158,6 +158,7 @@ algorithm = {
     'demo_var_mult': 1.0  # Increase variance on demos
 }
 
+"""
 algorithm['init_traj_distr'] = {
     'type': init_lqr,
     'init_gains':  1.0 / PR2_GAINS,
@@ -169,21 +170,23 @@ algorithm['init_traj_distr'] = {
     'dt': agent['dt'],
     'T': agent['T'],
 }
+"""
 
 
 algorithm['init_traj_distr'] = {
     'type': init_demo_conditions,
     'init_gains':  1.0 / PR2_GAINS,
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-    'init_var': 0.01,
-    'stiffness': 500.0,
+    'init_var': 0.5,
+    'stiffness': 10.0,
     'stiffness_vel': 0.25,
     'final_weight': 1.0,
     'dt': agent['dt'],
     'T': agent['T'],
     'demo_file': common['data_files_dir']+'demos_LG.pkl',
     'ee_tgts': ee_tgts,
-    'ee_idx': slice(14,23)
+    'ee_idx': slice(14,23),
+    'combine_conditions': False
 }
 
 
@@ -219,9 +222,9 @@ algorithm['cost'] = {
     'sample_batch_size': 5,
     'dO': 32,
     'iterations': 5000,
-    #'smooth_reg_weight': 0.1,
-    #'mono_reg_weight': 100.0,
-    #'learn_wu': True
+    'smooth_reg_weight': 0.0,
+    'mono_reg_weight': 100.0,
+    'learn_wu': False
 }
 
 algorithm['dynamics'] = {
