@@ -90,7 +90,7 @@ class LinePlotter(object):
 
 
 class ScatterPlot(object):
-    def __init__(self, fig, gs, xlabel='', ylabel='', color='black', gui_on=True):
+    def __init__(self, fig, gs, xlabel='', ylabel='', gui_on=True):
         self._fig = fig
         self._gs = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=gs)
         self._ax = plt.subplot(self._gs[0])
@@ -98,8 +98,6 @@ class ScatterPlot(object):
 
         self._ax.set_xlabel(xlabel)
         self._ax.set_ylabel(ylabel)
-
-        self._color = color
 
         self._ax.set_xlim(0-0.5, 100)
         self._ax.set_ylim(0, 1)
@@ -123,6 +121,7 @@ class ScatterPlot(object):
         self._plots = []
         self._xdata = []
         self._ydata = []
+        self._ax.clear()
 
     def add_data(self, x, y, color='blue'):
         #import pdb; pdb.set_trace()
@@ -131,12 +130,14 @@ class ScatterPlot(object):
 
         self._xdata.extend(x)
         self._ydata.extend(y)
-        self._plots.append(self._ax.scatter(x,y, c=color))
 
         x_min, x_max = np.amin(self._xdata), np.amax(self._xdata)
         self._ax.set_xlim(buffered_axis_limits(x_min, x_max, buffer_factor=1.1))
         y_min, y_max = np.amin(self._ydata), np.amax(self._ydata)
         self._ax.set_ylim(buffered_axis_limits(y_min, y_max, buffer_factor=1.1))
+
+        self._plots.append(self._ax.scatter(x,y, c=color))
+
         self.draw()
 
     def draw(self):
