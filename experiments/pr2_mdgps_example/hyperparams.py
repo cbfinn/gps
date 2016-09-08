@@ -9,6 +9,7 @@ import numpy as np
 from gps import __file__ as gps_filepath
 from gps.agent.ros.agent_ros import AgentROS
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
+from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
@@ -16,6 +17,8 @@ from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_CON
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
+from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
+from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.gui.target_setup_gui import load_pose_from_npz
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
@@ -39,7 +42,7 @@ SENSOR_DIMS = {
 PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.252, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/pr2_example/'
+EXP_DIR = BASE_DIR + '/../experiments/pr2_mdgps_example/'
 
 x0s = []
 ee_tgts = []
@@ -52,7 +55,7 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 1,
+    'conditions': 4,
 }
 
 # TODO(chelsea/zoe) : Move this code to a utility function
@@ -112,15 +115,22 @@ agent = {
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
     'end_effector_points': EE_POINTS,
-    'obs_include': [],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
+                      END_EFFECTOR_POINT_VELOCITIES],
 }
 
 algorithm = {
-    'type': AlgorithmTrajOpt,
+    'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
-    'iterations': 15,
-    'max_ent_traj': 0.001,
-    'target_end_effector': np.zeros(3 * EE_POINTS.shape[0])
+    'iterations': 20,
+    'max_ent_traj': 0.01,
+    'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
+    'kl_step': 1.0,
+    'min_step_mult': 0.05,
+    'max_step_mult': 3.0,
+    'policy_sample_mode': 'replace',
+    'sample_on_policy': True,
+    'step_rule': 'classic',
 }
 
 algorithm['init_traj_distr'] = {
@@ -130,7 +140,7 @@ algorithm['init_traj_distr'] = {
     'init_var': 1.0,
     'stiffness': 0.5,
     'stiffness_vel': 0.25,
-    'final_weight': 50,
+    'final_weight': 1,
     'dt': agent['dt'],
     'T': agent['T'],
 }
@@ -174,9 +184,18 @@ algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
 }
 
-algorithm['policy_opt'] = {}
+algorithm['policy_opt'] = {
+    'type': PolicyOptCaffe,
+    'iterations': 4000,
+    'weights_file_prefix': EXP_DIR + 'policy',
+}
 
-
+algorithm['policy_prior'] = {
+    'type': PolicyPriorGMM,
+    'max_clusters': 20,
+    'min_samples_per_cluster': 40,
+    'max_samples': 20,
+}
 config = {
     'iterations': algorithm['iterations'],
     'common': common,
@@ -184,7 +203,7 @@ config = {
     'agent': agent,
     'gui_on': True,
     'algorithm': algorithm,
-    'num_samples': 2,
+    'num_samples': 5,
 }
 
 common['info'] = generate_experiment_info(config)

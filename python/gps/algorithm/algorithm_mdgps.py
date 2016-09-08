@@ -39,6 +39,7 @@ class AlgorithmMDGPS(Algorithm):
             self.policy_opt = self._hyperparams['policy_opt']['type'](
                 self._hyperparams['policy_opt'], self.dO, self.dU
             )
+            self.num_policies = 1
         else:
             self.num_policies = self._hyperparams['num_policies']
             self.policy_opts = [self._hyperparams['policy_opt'][i]['type'](

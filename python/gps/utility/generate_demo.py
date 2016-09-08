@@ -122,8 +122,10 @@ class GenDemo(object):
             else:
                 # demos = {i : [] for i in xrange(4)} # Take demos for 4 nn policies
                 # Extract the neural network policy.
+                if not hasattr(self.algorithm, 'num_policies'):
+                    self.algorithm.num_policies = 1
                 for j in xrange(self.algorithm.num_policies):
-                    pol = self.algorithm.policy_opts[j].policy
+                    pol = self.algorithm.policy_opt.policy
                     pol.chol_pol_covar *= var_mult
 
                     for i in range(M / self.algorithm.num_policies * j, M / self.algorithm.num_policies * (j + 1)):
@@ -146,7 +148,7 @@ class GenDemo(object):
                         for k in xrange(N):
                             demo = self.agent.sample(
                                 pol, i, # Should be changed back to controller if using linearization
-                                verbose=(i < self._hyperparams['verbose_trials']), noisy=False
+                                verbose=(i < self._hyperparams['verbose_trials']), noisy=True
                                 ) # Add noise seems not working. TODO: figure out why
                             # demos.append(demo)
                             demos.append(demo)
