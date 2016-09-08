@@ -41,8 +41,8 @@ EXP_DIR = BASE_DIR + '/../experiments/mjc_mdgps_example/'
 common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
-    # 'conditions': 4,
-    'conditions': 9,
+    'conditions': 4,
+    # 'conditions': 9,
 }
 
 agent = {
@@ -61,9 +61,14 @@ agent = {
     # 'pos_body_offset': [np.array([-0.08, -0.08, 0])],
     # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0]),
     #                     np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0])],
-    'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0, 0]), np.array([-0.1, 0.1, 0]),
-                        np.array([0, -0.1, 0]), np.array([0, 0, 0]), np.array([0, 0.1, 0]),
-                        np.array([0.1, 0.1, 0]), np.array([0.1, 0, 0]), np.array([0.1, -0.1, 0])],
+    'pos_body_offset': [np.array([-0.05, -0.05, -0.05]), np.array([-0.05, 0.05, 0.05]),
+                         np.array([0.05, -0.05, 0.05]), np.array([0.05, 0.05, 0.05])],
+    # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0, 0]), np.array([-0.1, 0.1, 0]),
+    #                     np.array([0, -0.1, 0]), np.array([0, 0, 0]), np.array([0, 0.1, 0]),
+    #                     np.array([0.1, 0.1, 0]), np.array([0.1, 0, 0]), np.array([0.1, -0.1, 0])],
+    # 'pos_body_offset': [np.array([-0.05, -0.05, 0]), np.array([-0.05, 0, 0]), np.array([-0.05, 0.05, 0]),
+    #             np.array([0, -0.05, 0]), np.array([0, 0, 0]), np.array([0, 0.05, 0]),
+    #             np.array([0.05, 0.05, 0]), np.array([0.05, 0, 0]), np.array([0.05, -0.05, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -128,7 +133,7 @@ final_cost = {
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [torque_cost, fk_cost, final_cost],
-    'weights': [100.0, 100.0, 100.0],
+    'weights': [1000.0, 1000.0, 1000.0],
 }
 
 algorithm['dynamics'] = {

@@ -43,7 +43,7 @@ EXP_DIR = BASE_DIR + '/../experiments/mjc_mdgps_ioc_example/'
 DEMO_DIR = BASE_DIR + '/../experiments/mjc_mdgps_example/on_classic/'
 # DEMO_DIR = BASE_DIR + '/../experiments/mjc_badmm_example_'
 LG_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
-DEMO_CONDITIONS = 40
+DEMO_CONDITIONS = 60
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -52,7 +52,7 @@ common = {
     'demo_exp_dir': DEMO_DIR,
     # 'demo_controller_file': [DEMO_DIR + '%d/' % i + 'data_files/algorithm_itr_11.pkl' for i in xrange(4)],
     # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
-    'demo_controller_file': DEMO_DIR + 'data_files_maxent_9cond_0/algorithm_itr_11.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files_maxent_4cond_0.05_z_0/algorithm_itr_11.pkl',
     'LG_controller_file': LG_DIR + 'data_files/algorithm_itr_09.pkl',
     'conditions': 9,
     # 'dense': True # For dense/sparse demos experiment only
@@ -74,9 +74,9 @@ agent = {
     'pos_body_idx': np.array([1]),
     # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0]),
     #                     np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0])],
-    'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0, 0]), np.array([-0.1, 0.1, 0]),
-                        np.array([0, -0.1, 0]), np.array([0, 0, 0]), np.array([0, 0.1, 0]),
-                        np.array([0.1, 0.1, 0]), np.array([0.1, 0, 0]), np.array([0.1, -0.1, 0])],
+    'pos_body_offset': [np.array([-0.05, -0.05, -0.05]), np.array([-0.05, -0.05, 0.05]), np.array([-0.05, 0.05, -0.05]),
+                np.array([-0.05, 0.05, 0.05]), np.array([0, 0, 0]), np.array([0.05, -0.05, -0.05]),
+                np.array([0.05, -0.05, 0.05]), np.array([0.05, 0.05, -0.05]), np.array([0.05, 0.05, 0.05])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -119,7 +119,7 @@ algorithm = {
     'ioc' : 'ICML',
     'iterations': 20,
     'kl_step': 0.5,
-    'min_step_mult': 0.05,
+    'min_step_mult': 0.4,
     'max_step_mult': 2.0,
     # 'min_step_mult': 1.0,
     # 'max_step_mult': 1.0,
@@ -202,12 +202,12 @@ final_cost = {
 algorithm['gt_cost'] = {
     'type': CostSum,
     'costs': [torque_cost, fk_cost, final_cost],
-    'weights': [100.0, 100.0, 100.0],
+    'weights': [1000.0, 1000.0, 1000.0],
 }
 
 algorithm['cost'] = {
     'type': CostIOCNN,
-    'wu': 100*1e-3 / PR2_GAINS,
+    'wu': 1000*1e-3 / PR2_GAINS,
     'T': 100,
     'dO': 26,
     'learn_wu': False,
