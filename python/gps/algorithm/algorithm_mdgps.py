@@ -77,7 +77,6 @@ class AlgorithmMDGPS(Algorithm):
                 self.dists_to_target[itr].append(sum(dists) / len(cur_samples))
                 if not self._hyperparams['bootstrap']:
                     self.cur[m].sample_list = sample_lists[m]
-                    self._eval_cost(m)
                     prev_samples = self.sample_list[m].get_samples()
                     prev_samples.extend(sample_lists[m].get_samples())
                     self.sample_list[m] = SampleList(prev_samples)
@@ -92,7 +91,6 @@ class AlgorithmMDGPS(Algorithm):
                         else:
                             failed_samples.append(cur_samples[j])
                     self.cur[m].sample_list = SampleList(failed_samples)
-                    self._eval_cost(m)
                     prev_samples = self.sample_list[m].get_samples()
                     prev_samples.extend(SampleList(failed_samples))
                     self.sample_list[m] = SampleList(prev_samples)
@@ -131,6 +129,7 @@ class AlgorithmMDGPS(Algorithm):
         # Update policy linearizations.
         for m in range(self.M):
             self._update_policy_fit(m)
+            self._eval_cost(m)
 
         # C-step
         if self.iteration_count > 0:
@@ -282,18 +281,21 @@ class AlgorithmMDGPS(Algorithm):
         # Compute current cost.
         cur_laplace = np.arange(self.M)
         cur_mc = np.arange(self.M)
-        if self._hyperparams['ioc']:
-            self._eval_cost(m, prev_cost=True)
-            traj_info = self.cur[m].prevcost_traj_info
-        else:
-            traj_info = self.cur[m].traj_info
         for m in range(self.M):
+            if self._hyperparams['ioc']:
+                self._eval_cost(m, prev_cost=True)
+                traj_info = self.cur[m].prevcost_traj_info
+            else:
+                traj_info = self.cur[m].traj_info
             cur_nn = self.cur[m].pol_info.traj_distr()
             # This is the actual cost we have under the current trajectory
             # based on the latest samples.
-            cur_laplace[m] = self.traj_opt.estimate_cost(
-                    cur_nn, traj_info
-            ).sum()
+            try:
+                cur_laplace[m] = self.traj_opt.estimate_cost(
+                        cur_nn, traj_info
+                ).sum()
+            except OverflowError:
+                import pdb; pdb.set_trace()
             if self._hyperparams['ioc']:
                 cur_mc[m] = self.cur[m].prevcost_cs.mean(axis=0).sum()
             else:
