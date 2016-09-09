@@ -84,7 +84,7 @@ algorithm = {
     'iterations': 12,
     'max_ent_traj': 1.0,
     'kl_step': 1.0,
-    'min_step_mult': 0.05,
+    'min_step_mult': 0.5,
     'max_step_mult': 3.0,
     'policy_sample_mode': 'replace',
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),

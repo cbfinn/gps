@@ -75,7 +75,6 @@ ALG_BADMM = {
     'ent_reg_schedule': 0.0,
     'init_pol_wt': 0.01,
     'policy_sample_mode': 'add',
-    'max_policy_samples': 20,
     'exp_step_increase': 2.0,
     'exp_step_decrease': 0.5,
     'exp_step_upper': 0.5,
@@ -87,6 +86,6 @@ ALG_MDGPS = {
     # TODO: remove need for init_pol_wt in MDGPS
     'init_pol_wt': 0.01,
     'policy_sample_mode': 'add',
-    'max_policy_samples': 20,
-    'step_rule': 'classic',
+    # Whether to use 'laplace' or 'mc' cost in step adjusment
+    'step_rule': 'laplace',
 }
