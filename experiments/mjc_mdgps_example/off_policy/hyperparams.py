@@ -24,7 +24,6 @@ if not os.path.exists(common['data_files_dir']):
 algorithm = default.algorithm.copy()
 algorithm.update({
     'sample_on_policy': False,
-    'step_rule': 'classic',
 })
 
 algorithm['policy_opt'].update({

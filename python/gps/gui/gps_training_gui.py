@@ -36,6 +36,9 @@ from gps.gui.line_plot import LinePlotter, ScatterPlot
 
 NUM_DEMO_PLOTS = 5
 
+# Needed for typechecks
+from gps.algorithm.algorithm_badmm import AlgorithmBADMM
+from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 
 class GPSTrainingGUI(object):
 
@@ -289,8 +292,7 @@ class GPSTrainingGUI(object):
         and the 3D trajectory visualizations (if end effector points exist).
         """
         if self._first_update:
-            policy_titles = pol_sample_lists != None
-            self._output_column_titles(algorithm, policy_titles)
+            self._output_column_titles(algorithm)
             self._first_update = False
         costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
         if algorithm._hyperparams['ioc']:
@@ -320,7 +322,7 @@ class GPSTrainingGUI(object):
         controller entropies, and initial/final KL divergences for BADMM.
         """
         self.set_output_text(self._hyperparams['experiment_name'])
-        if policy_titles:
+        if isinstance(algorithm, AlgorithmMDGPS) or isinstance(algorithm, AlgorithmBADMM):
             condition_titles = '%3s | %8s %12s' % ('', '', '')
             itr_data_fields  = '%3s | %8s %12s' % ('itr', 'avg_cost', 'avg_pol_cost')
         else:
@@ -329,18 +331,20 @@ class GPSTrainingGUI(object):
         for m in range(algorithm.M):
             condition_titles += ' | %8s %9s %-7d' % ('', 'condition', m)
             itr_data_fields  += ' | %8s %8s %8s' % ('  cost  ', '  step  ', 'entropy ')
-            if algorithm.prev[0].pol_info is not None:
-                condition_titles += ' %8s %8s' % ('', '')
-                itr_data_fields  += ' %8s %8s' % ('kl_div_i', 'kl_div_f')
+
             if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
                 condition_titles += ' %8s' % ('')
                 itr_data_fields  += ' %8s' % ('kl_div')
             if 'target_end_effector' in algorithm._hyperparams:
                 condition_titles += ' %8s' % ('')
                 itr_data_fields  += ' %8s' % ('mean_dist')
-            if policy_titles:
+
+            if isinstance(algorithm, AlgorithmBADMM):
                 condition_titles += ' %8s %8s %8s' % ('', '', '')
                 itr_data_fields  += ' %8s %8s %8s' % ('pol_cost', 'kl_div_i', 'kl_div_f')
+            elif isinstance(algorithm, AlgorithmMDGPS):
+                condition_titles += ' %8s' % ('')
+                itr_data_fields  += ' %8s' % ('pol_cost')
         self.append_output_text(condition_titles)
         self.append_output_text(itr_data_fields)
 
@@ -352,15 +356,17 @@ class GPSTrainingGUI(object):
         """
         avg_cost = np.mean(costs)
         if pol_sample_lists is not None:
+            test_idx = algorithm._hyperparams['test_conditions']
+            # pol_sample_lists is a list of singletons
+            samples = [sl[0] for sl in pol_sample_lists]
             if 'global_cost' in algorithm._hyperparams and algorithm._hyperparams['global_cost'] and \
                     type(algorithm.cost) != list:
-                pol_costs = [np.mean([np.sum(algorithm.cost.eval(s)[0]) \
-                        for s in pol_sample_lists[m]]) \
-                        for m in range(algorithm.M)]
+                pol_costs = [np.sum(algorithm.cost.eval(s)[0])
+                        for s in samples]
             else:
-                pol_costs = [np.mean([np.sum(algorithm.cost[m].eval(s)[0]) \
-                    for s in pol_sample_lists[m]]) \
-                    for m in range(algorithm.M)]
+                
+                pol_costs = [np.sum(algorithm.cost[idx].eval(s)[0])
+                        for s, idx in zip(samples, test_idx)]
             itr_data = '%3d | %8.2f %12.2f' % (itr, avg_cost, np.mean(pol_costs))
         else:
             itr_data = '%3d | %8.2f' % (itr, avg_cost)
@@ -392,10 +398,16 @@ class GPSTrainingGUI(object):
                                 target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
                                 for i in xrange(len(cur_samples))]
                     itr_data += ' %8.2f' % (sum(dists) / len(cur_samples))
-            if pol_sample_lists is not None:
+            if isinstance(algorithm, AlgorithmBADMM):
                 kl_div_i = algorithm.cur[m].pol_info.init_kl.mean()
                 kl_div_f = algorithm.cur[m].pol_info.prev_kl.mean()
                 itr_data += ' %8.2f %8.2f %8.2f' % (pol_costs[m], kl_div_i, kl_div_f)
+            elif isinstance(algorithm, AlgorithmMDGPS):
+                # TODO: Change for test/train better.
+                if test_idx == algorithm._hyperparams['train_conditions']:
+                    itr_data += ' %8.2f' % (pol_costs[m])
+                else:
+                    itr_data += ' %8s' % ("N/A")
         self.append_output_text(itr_data)
 
     def _update_trajectory_visualizations(self, algorithm, agent,
