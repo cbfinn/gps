@@ -152,7 +152,7 @@ class GenDemo(object):
                         for k in xrange(N):
                             demo = self.agent.sample(
                                 pol, i, # Should be changed back to controller if using linearization
-                                verbose=(i < self._hyperparams['verbose_trials']), noisy=False
+                                verbose=(i < self._hyperparams['verbose_trials']), noisy=True
                                 ) # Add noise seems not working. TODO: figure out why
                             # demos.append(demo)
                             demos.append(demo)
@@ -162,7 +162,7 @@ class GenDemo(object):
                     for m in xrange(demo_agent_config['conditions']):
                         demo = demo_agent.sample(
                             pol, m, 
-                            verbose=(m < self._hyperparams['verbose_trials']), noisy=False)
+                            verbose=(m < self._hyperparams['verbose_trials']), noisy=True)
                         demos.append(demo)
                         demo_idx_conditions.append(m)
                     agent_config['pos_body_offset'].extend(demo_agent_config['pos_body_offset'])
