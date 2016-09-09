@@ -70,6 +70,7 @@ class GPSMain(object):
               self.demo_gen = GenDemo(config)
               self.demo_gen.generate(demo_file)
               demos = self.data_logger.unpickle(demo_file)
+            print 'Num demos:', demos['demoX'].shape[0]
             config['algorithm']['init_traj_distr']['init_demo_x'] = np.mean(demos['demoX'], 0)
             config['algorithm']['init_traj_distr']['init_demo_u'] = np.mean(demos['demoU'], 0)
             self.algorithm = config['algorithm']['type'](config['algorithm'])
@@ -426,7 +427,7 @@ class GPSMain(object):
             )
         if 'no_sample_logging' in self._hyperparams['common']:
             return
-        if True or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
+        if (itr % 5 == 0) or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
             self.algorithm.demo_policy = None
             self.data_logger.pickle(
                 self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
