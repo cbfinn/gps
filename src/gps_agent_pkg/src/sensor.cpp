@@ -14,8 +14,8 @@ Sensor* Sensor::create_sensor(SensorType type, ros::NodeHandle& n, RobotPlugin *
     case CameraSensorType:
         return CameraSensor(n,plugin);
     */
-    //case ROSTopicSensorType:
-    //	return (Sensor *) (new ROSTopicSensor(n,plugin));
+    case ROSTopicSensorType:
+    	return (Sensor *) (new ROSTopicSensor(n,plugin));
 
     default:
         ROS_ERROR("Unknown sensor type %i requested from sensor constructor!",type);
