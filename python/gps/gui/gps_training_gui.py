@@ -376,10 +376,6 @@ class GPSTrainingGUI(object):
             entropy = 2*np.sum(np.log(np.diagonal(algorithm.prev[m].traj_distr.chol_pol_covar,
                     axis1=1, axis2=2)))
             itr_data += ' | %8.2f %8.2f %8.2f' % (cost, step, entropy)
-            if algorithm.prev[0].pol_info is not None:
-                kl_div_i = algorithm.prev[m].pol_info.prev_kl[0]
-                kl_div_f = algorithm.prev[m].pol_info.prev_kl[-1]
-                itr_data += ' %8.2f %8.2f' % (kl_div_i, kl_div_f)
             if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
                 itr_data += ' %8.2f' % (algorithm.kl_div[itr][m])
                 

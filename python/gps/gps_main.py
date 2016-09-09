@@ -380,16 +380,15 @@ class GPSMain(object):
         # TODO: Make this noisy? Add hyperparam?
         # TODO: Take at all conditions for GUI?
         for cond in range(len(self._test_idx)):
-            for i in range(N):
-                if not self.algorithm._hyperparams['multiple_policy']:
-                    pol_samples[cond][i] = self.agent.sample(
-                        self.algorithm.policy_opt.policy, self._test_idx[cond],
-                        verbose=True, save=False, noisy=False)
-                else:
-                    pol = self.algorithm.policy_opts[cond / self.algorithm.num_policies].policy
-                    pol_samples[cond][i] = self.agent.sample(
-                        pol, self._test_idx[cond],
-                        verbose=True, save=False, noisy=False)
+            if not self.algorithm._hyperparams['multiple_policy']:
+                pol_samples[cond][0] = self.agent.sample(
+                    self.algorithm.policy_opt.policy, self._test_idx[cond],
+                    verbose=True, save=False, noisy=False)
+            else:
+                pol = self.algorithm.policy_opts[cond / self.algorithm.num_policies].policy
+                pol_samples[cond][0] = self.agent.sample(
+                    pol, self._test_idx[cond],
+                    verbose=True, save=False, noisy=False)
         return [SampleList(samples) for samples in pol_samples]
 
     def _log_data(self, itr, traj_sample_lists, pol_sample_lists=None):
@@ -746,8 +745,8 @@ def main():
     import matplotlib.pyplot as plt
     import random
     import numpy as np
-    random.seed(2)
-    np.random.seed(2)
+    random.seed(0)
+    np.random.seed(0)
 
     if args.targetsetup:
         try:
@@ -1237,9 +1236,9 @@ def main():
                 # gps_global.test_policy(itr=i, N=compare_costs)
                 plt.close()
     else:
-        hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_z_0.05_2/'
-        if not os.path.exists(exp_dir + 'data_files_maxent_9cond_z_0.05_2/'):
-            os.makedirs(exp_dir + 'data_files_maxent_9cond_z_0.05_2/')
+        hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_z_0.05_0/'
+        if not os.path.exists(exp_dir + 'data_files_maxent_9cond_z_0.05_0/'):
+            os.makedirs(exp_dir + 'data_files_maxent_9cond_z_0.05_0/')
         # hyperparams.config['agent']['randomly_sample_bodypos'] = True
         hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
         gps = GPSMain(hyperparams.config)

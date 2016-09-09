@@ -294,7 +294,10 @@ class AlgorithmMDGPS(Algorithm):
             cur_laplace[m] = self.traj_opt.estimate_cost(
                     cur_nn, traj_info
             ).sum()
-            cur_mc[m] = self.cur[m].cs.mean(axis=0).sum()
+            if self._hyperparams['ioc']:
+                cur_mc[m] = self.cur[m].prevcost_cs.mean(axis=0).sum()
+            else:
+                cur_mc[m] = self.cur[m].cs.mean(axis=0).sum()
 
         # Compute predicted and actual improvement.
         prev_laplace = prev_laplace.mean()
