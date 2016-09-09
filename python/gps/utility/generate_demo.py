@@ -1,6 +1,7 @@
 """ This file generates for a point mass for 4 starting positions and a single goal position. """
 
 import matplotlib as mpl
+from mpl_toolkits.mplot3d import Axes3D
 
 mpl.use('Qt4Agg')
 
@@ -122,10 +123,13 @@ class GenDemo(object):
             else:
                 # demos = {i : [] for i in xrange(4)} # Take demos for 4 nn policies
                 # Extract the neural network policy.
-                if not hasattr(self.algorithm, 'num_policies'):
-                    self.algorithm.num_policies = 1
+                self.algorithm.num_policies = self.algorithm._hyperparams.get('num_policies', 1)
                 for j in xrange(self.algorithm.num_policies):
-                    pol = self.algorithm.policy_opt.policy
+                # for j in xrange(1):
+                    if self.algorithm._hyperparams['multiple_policy']:
+                        pol = self.algorithm.policy_opts[j].policy
+                    else:
+                        pol = self.algorithm.policy_opt.policy
                     pol.chol_pol_covar *= var_mult
 
                     for i in range(M / self.algorithm.num_policies * j, M / self.algorithm.num_policies * (j + 1)):
@@ -148,12 +152,20 @@ class GenDemo(object):
                         for k in xrange(N):
                             demo = self.agent.sample(
                                 pol, i, # Should be changed back to controller if using linearization
-                                verbose=(i < self._hyperparams['verbose_trials']), noisy=True
+                                verbose=(i < self._hyperparams['verbose_trials']), noisy=False
                                 ) # Add noise seems not working. TODO: figure out why
                             # demos.append(demo)
                             demos.append(demo)
                             demo_idx_conditions.append(i)
-
+                    demo_agent_config = self._hyperparams['real_demo_agent']
+                    demo_agent = demo_agent_config['type'](demo_agent_config)
+                    for m in xrange(demo_agent_config['conditions']):
+                        demo = demo_agent.sample(
+                            pol, m, 
+                            verbose=(m < self._hyperparams['verbose_trials']), noisy=False)
+                        demos.append(demo)
+                        demo_idx_conditions.append(m)
+                    agent_config['pos_body_offset'].extend(demo_agent_config['pos_body_offset'])
             # Filter failed demos
             if agent_config.get('filter_demos', False):
                 target_position = agent_config['target_end_effector'][:3]
@@ -177,12 +189,14 @@ class GenDemo(object):
             # Filter out worst (M - good_conds) demos.
             elif agent_config['type']==AgentMuJoCo and agent_config['filename'] == './mjc_models/pr2_arm3d.xml':
                 target_position = agent_config['target_end_effector'][:3]
-                dists_to_target = np.zeros(M*N)
+                # dists_to_target = np.zeros(M*N)
+                dists_to_target = np.zeros(len(demos)*N)
                 # dists_to_target = [np.zeros(M*N) for i in xrange(4)]
                 good_indices = []
                 failed_indices = []
                 # M = len(demos)/N
-                for i in xrange(M):
+                # for i in xrange(M):
+                for i in xrange(len(demos)):
                     if type(agent_config['target_end_effector']) is list: 
                         target_position = agent_config['target_end_effector'][i][:3]
                     else:
@@ -197,7 +211,8 @@ class GenDemo(object):
                         # dists_to_target[k][i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
                         if dists_to_target[i*N + j] > agent_config['success_upper_bound']:
                             failed_indices.append(i)
-                good_indices = [i for i in xrange(M) if i not in failed_indices]
+                # good_indices = [i for i in xrange(M) if i not in failed_indices]
+                good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
                 import pdb; pdb.set_trace()
                 self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
                 filtered_demos = []
@@ -214,7 +229,8 @@ class GenDemo(object):
                         f.write('\n' + str(agent_config['pos_body_offset'][i]) + '\n')
                 with open(exp_dir + 'log.txt', 'a') as f:
                     f.write('\nThe failed badmm conditions are: \n')
-                for i in xrange(M):
+                # for i in xrange(M):
+                for i in xrange(len(demos)):
                     if i not in good_indices:
                         failed_conditions.append(agent_config['pos_body_offset'][i])
                         with open(exp_dir + 'log.txt', 'a') as f:
@@ -227,23 +243,34 @@ class GenDemo(object):
                 from matplotlib.patches import Rectangle
 
                 plt.close()
+                fig = plt.figure()
+                ax = Axes3D(fig)
                 demo_conditions_x = [demo_conditions[i][0] for i in xrange(len(demo_conditions))]
                 demo_conditions_y = [demo_conditions[i][1] for i in xrange(len(demo_conditions))]
+                demo_conditions_z = [demo_conditions[i][2] for i in xrange(len(demo_conditions))]
                 failed_conditions_x = [failed_conditions[i][0] for i in xrange(len(failed_conditions))]
                 failed_conditions_y = [failed_conditions[i][1] for i in xrange(len(failed_conditions))]
-                subplt = plt.subplot()
-                subplt.plot(demo_conditions_x, demo_conditions_y, 'go')
-                subplt.plot(failed_conditions_x, failed_conditions_y, 'rx')
-                ax = plt.gca()
-                ax.add_patch(Rectangle((-0.1, -0.1), 0.2, 0.2, fill = False, edgecolor = 'blue'))
-                box = subplt.get_position()
-                subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
-                subplt.legend(['demo_cond', 'failed_badmm'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
+                failed_conditions_z = [failed_conditions[i][2] for i in xrange(len(failed_conditions))]
+                # subplt = plt.subplot()
+                ax.scatter(demo_conditions_x, demo_conditions_y, demo_conditions_z, c='g', marker='o')
+                ax.scatter(failed_conditions_x, failed_conditions_y, failed_conditions_z, c='r', marker='x')
+                ax.scatter([-0.05, -0.05, .05, .05], [-0.05, 0.05, -.05, .05], [-0.05, 0.05, .05, .05], c='b', marker='*')
+                # subplt.plot(demo_conditions_x, demo_conditions_y, 'go')
+                # subplt.plot(failed_conditions_x, failed_conditions_y, 'rx')
+                # ax = plt.gca()
+                # ax.add_patch(Rectangle((-0.1, -0.1), 0.2, 0.2, fill = False, edgecolor = 'blue'))
+                # box = subplt.get_position()
+                # subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
+                # subplt.legend(['demo_cond', 'failed_badmm'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
+                #                     shadow=True, ncol=2)
+                box = ax.get_position()
+                ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
+                ax.legend(['demo_cond', 'failed_badmm'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
                                     shadow=True, ncol=2)
                 plt.title("Distribution of demo conditions")
                 # plt.xlabel('width')
                 # plt.ylabel('length')
-                plt.savefig(self._data_files_dir + 'distribution_of_demo_conditions_multiple.png')
+                plt.savefig(self._data_files_dir + 'distribution_of_demo_conditions_MaxEnt_z_0.05.png')
                 plt.close()
             else:
                 shuffle(demos)
