@@ -171,9 +171,13 @@ def init_demo_conditions(hyperparams):
     dX, dU, T = config['dX'], config['dU'], config['T']
 
     demo_file = config['demo_file']
+    combine_conditions = config.get('combine_conditions', False)
     data_logger = DataLogger()
     demos = data_logger.unpickle(demo_file)
-    demo_idxs = [i for (i, cond) in enumerate(demos['demoConditions']) if cond==config['condition']]
+    if combine_conditions:
+        demo_idxs = range(len(demos['demoConditions']))
+    else:
+        demo_idxs = [i for (i, cond) in enumerate(demos['demoConditions']) if cond==config['condition']]
     assert len(demo_idxs) >= 1
     init_demo_x = np.mean(demos['demoX'][demo_idxs], axis=0)
     init_demo_u = np.mean(demos['demoU'][demo_idxs], axis=0)

@@ -403,12 +403,12 @@ class GPSMain(object):
 
         if self.using_ioc():
             # Produce time vs cost plots
-            demo_losses = eval_demos_xu(self.agent, self.algorithm.demoX, self.algorithm.demoU, self.algorithm.cost, n=NUM_DEMO_PLOTS)
             sample_losses = self.algorithm.cur[0].cs
             if sample_losses is None:
                 sample_losses = self.algorithm.prev[0].cs
-            assert sample_losses.shape[0] >= NUM_DEMO_PLOTS
-            sample_losses = sample_losses[:NUM_DEMO_PLOTS]
+            if sample_losses.shape[0] < NUM_DEMO_PLOTS:
+                sample_losses = np.tile(sample_losses, [NUM_DEMO_PLOTS, 1])[:NUM_DEMO_PLOTS]
+            demo_losses = eval_demos_xu(self.agent, self.algorithm.demoX, self.algorithm.demoU, self.algorithm.cost, n=NUM_DEMO_PLOTS)
 
             # Produce distance vs cost plots
             dists_vs_costs = compute_distance_cost_plot(self.algorithm, self.agent, traj_sample_lists[0])

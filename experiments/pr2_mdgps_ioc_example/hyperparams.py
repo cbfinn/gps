@@ -9,6 +9,7 @@ import numpy as np
 from gps import __file__ as gps_filepath
 from gps.agent.ros.agent_ros import AgentROS
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
+from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
@@ -16,6 +17,8 @@ from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.cost.cost_utils import RAMP_CONSTANT, evall1l2term
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
+from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
+from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy.lin_gauss_init import init_lqr, init_demo_conditions
 from gps.gui.target_setup_gui import load_pose_from_npz
@@ -40,8 +43,8 @@ SENSOR_DIMS = {
 PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.252, 0.098])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/pr2_ioc_example/'
-DEMO_DIR = BASE_DIR + '/../experiments/pr2_example/'
+EXP_DIR = BASE_DIR + '/../experiments/pr2_mdgps_ioc_example/'
+DEMO_DIR = BASE_DIR + '/../experiments/pr2_mdgps_example/'
 
 x0s = []
 ee_tgts = []
@@ -54,15 +57,15 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 1,
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_14.pkl',
+    'conditions': 4,
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_19.pkl',
     'demo_exp_dir': DEMO_DIR,
     'nn_demo': False
 }
 
 # TODO(chelsea/zoe) : Move this code to a utility function
 # Set up each condition.
-for i in xrange(common['conditions']):
+for i in xrange(8): #xrange(common['conditions']):
 
     ja_x0, ee_pos_x0, ee_rot_x0 = load_pose_from_npz(
         common['target_filename'], 'trial_arm', str(i), 'initial'
@@ -111,9 +114,9 @@ agent = {
     'dt': 0.05,
     'conditions': common['conditions'],
     'T': 100,
-    'x0': [x0s[4]],
-    'ee_points_tgt': [ee_tgts[4]],
-    'reset_conditions': [reset_conditions[4]],
+    'x0': x0s[4:],
+    'ee_points_tgt': ee_tgts[4:],
+    'reset_conditions': reset_conditions[4:],
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
@@ -125,11 +128,11 @@ agent = {
 demo_agent = {
     'type': AgentROS,
     'dt': 0.05,
-    'conditions': 5,
+    'conditions': 4, #common['conditions'],
     'T': 100,
-    'x0': x0s[:5],
-    'ee_points_tgt': ee_tgts[:5],
-    'reset_conditions': reset_conditions[:5],
+    'x0': x0s[:4],
+    'ee_points_tgt': ee_tgts[:4],
+    'reset_conditions': reset_conditions[:4],
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
@@ -144,7 +147,7 @@ algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
     'iterations': 25,
-    #'learning_from_prior': True,
+    'learning_from_prior': True,
     'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
     'ioc': 'ICML',  # 'MPF', 'ICML'
     'max_ent_traj': 1.0,
@@ -159,11 +162,33 @@ algorithm = {
 }
 
 
+algorithm = {
+    'type': AlgorithmMDGPS,
+    'conditions': common['conditions'],
+    'learning_from_prior': True,
+    'ioc': 'ICML', 
+    'demo_distr_empest': True, # For ICML version, importance sampling emperically.
+    'num_demos': 10,
+    'synthetic_cost_samples': 100,
+    'demo_var_mult': 1.0,  # Increase variance on demos
+
+    'iterations': 20,
+    'max_ent_traj': 0.01,
+    'target_end_effector': np.zeros(3 * EE_POINTS.shape[0]),
+    'kl_step': 0.5,
+    'min_step_mult': 0.05,
+    'max_step_mult': 3.0,
+    'policy_sample_mode': 'replace',
+    'sample_on_policy': True,
+    'step_rule': 'classic',
+}
+
+
 algorithm['init_traj_distr'] = {
     'type': init_demo_conditions,
     'init_gains':  1.0 / PR2_GAINS,
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-    'init_var': 0.5,
+    'init_var': 1.0,
     'stiffness': 10.0,
     'stiffness_vel': 0.25,
     'final_weight': 1.0,
@@ -172,7 +197,7 @@ algorithm['init_traj_distr'] = {
     'demo_file': common['data_files_dir']+'demos_LG.pkl',
     'ee_tgts': ee_tgts,
     'ee_idx': slice(14,23),
-    'combine_conditions': False
+    'combine_conditions': True
 }
 
 
@@ -228,7 +253,18 @@ algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
 }
 
-algorithm['policy_opt'] = {}
+algorithm['policy_opt'] = {
+    'type': PolicyOptCaffe,
+    'iterations': 4000,
+    'weights_file_prefix': EXP_DIR + 'policy',
+}
+
+algorithm['policy_prior'] = {
+    'type': PolicyPriorGMM,
+    'max_clusters': 20,
+    'min_samples_per_cluster': 40,
+    'max_samples': 20,
+}
 
 config = {
     'iterations': algorithm['iterations'],
