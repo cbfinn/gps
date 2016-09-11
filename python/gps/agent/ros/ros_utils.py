@@ -143,5 +143,5 @@ class ServiceEmulator(object):
             rospy.sleep(poll_delay)
             time_waited += 0.01
             if time_waited > timeout:
-                raise TimeoutException(time_waited)
+                import pdb; pdb.set_trace()
         return self._subscriber_msg

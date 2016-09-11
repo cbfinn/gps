@@ -34,6 +34,8 @@ class Algorithm(object):
         else:
             self.M = self._hyperparams['conditions']
             self._cond_idx = range(self.M)
+            self._hyperparams['train_conditions'] = self._cond_idx
+            self._hyperparams['test_conditions'] = self._cond_idx
         self.iteration_count = 0
 
         # Grab a few values from the agent.
@@ -67,9 +69,9 @@ class Algorithm(object):
         self.dists_to_target = {self.iteration_count:[]}
         self.sample_list = {i: SampleList([]) for i in range(self.M)}
 
+        dynamics = self._hyperparams['dynamics']
         for m in range(self.M):
             self.cur[m].traj_info = TrajectoryInfo()
-            dynamics = self._hyperparams['dynamics']
             self.cur[m].traj_info.dynamics = dynamics['type'](dynamics)
             init_traj_distr = extract_condition(
                 self._hyperparams['init_traj_distr'], self._cond_idx[m]
@@ -112,28 +114,29 @@ class Algorithm(object):
         Instantiate dynamics objects and update prior. Fit dynamics to
         current samples.
         """
-        for cond in range(self.M):
-            if self.iteration_count >= 1:
-                self.prev[cond].traj_info.dynamics = \
-                        self.cur[cond].traj_info.dynamics.copy()
-            cur_data = self.cur[cond].sample_list
-            self.cur[cond].traj_info.dynamics.update_prior(cur_data)
+        for m in range(self.M):
+            cur_data = self.cur[m].sample_list
+            X = cur_data.get_X()
+            U = cur_data.get_U()
 
-            self.cur[cond].traj_info.dynamics.fit(cur_data)
+            # Update prior and fit dynamics.
+            self.cur[m].traj_info.dynamics.update_prior(cur_data)
+            self.cur[m].traj_info.dynamics.fit(X, U)
 
-            init_X = cur_data.get_X()[:, 0, :]
-            x0mu = np.mean(init_X, axis=0)
-            self.cur[cond].traj_info.x0mu = x0mu
-            self.cur[cond].traj_info.x0sigma = np.diag(
-                np.maximum(np.var(init_X, axis=0),
+            # Fit x0mu/x0sigma.
+            x0 = X[:, 0, :]
+            x0mu = np.mean(x0, axis=0)
+            self.cur[m].traj_info.x0mu = x0mu
+            self.cur[m].traj_info.x0sigma = np.diag(
+                np.maximum(np.var(x0, axis=0),
                            self._hyperparams['initial_state_var'])
             )
 
-            prior = self.cur[cond].traj_info.dynamics.get_prior()
+            prior = self.cur[m].traj_info.dynamics.get_prior()
             if prior:
                 mu0, Phi, priorm, n0 = prior.initial_state()
                 N = len(cur_data)
-                self.cur[cond].traj_info.x0sigma += \
+                self.cur[m].traj_info.x0sigma += \
                         Phi + (N*priorm) / (N+priorm) * \
                         np.outer(x0mu-mu0, x0mu-mu0) / (N+n0)
 
@@ -244,6 +247,9 @@ class Algorithm(object):
         """
         self.iteration_count += 1
         self.prev = copy.deepcopy(self.cur)
+        # TODO: change IterationData to reflect new stuff better
+        for m in range(self.M):
+            self.prev[m].new_traj_distr = self.new_traj_distr[m]
         self.cur = [IterationData() for _ in range(self.M)]
         if not self._hyperparams['policy_eval']:
             self.traj_distr[self.iteration_count] = []
