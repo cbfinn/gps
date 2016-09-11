@@ -66,7 +66,7 @@ class GPSMain(object):
                 # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_3.pkl'
             	# demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_3pols_9conds.pkl'
                 # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_maxent_4_cond.pkl'
-                demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_MaxEnt_4_cond_z_0.05.pkl'
+                demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_MaxEnt_4_cond_z_0.05_noise.pkl'
             demos = self.data_logger.unpickle(demo_file)
             if demos is None:
               self.demo_gen = GenDemo(config)
@@ -567,10 +567,12 @@ class GPSMain(object):
     def compare_samples(self, N, agent_config, itr):
         from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
         import matplotlib.pyplot as plt
+        from mpl_toolkits.mplot3d import Axes3D
 
-        pol_iter = self._hyperparams['algorithm']['iterations'] - 1
+        pol_iter = self._hyperparams['algorithm']['iterations'] - 2
         algorithm_ioc = self.data_logger.unpickle(self._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
-        algorithm_demo = self.data_logger.unpickle(self._hyperparams['common']['demo_exp_dir'] + 'data_files_maxent_9cond_0.05_%d' % itr + '/algorithm_itr_11.pkl') # Assuming not using 4 policies
+        algorithm_demo = self.data_logger.unpickle(self._hyperparams['common']['demo_exp_dir'] + 'data_files_maxent_4cond_0.05_z_0/algorithm_itr_11.pkl') # Assuming not using 4 policies
+        pos_body_offset = self._hyperparams['agent']['pos_body_offset']
         M = agent_config['conditions']
 
         pol_ioc = algorithm_ioc.policy_opt.policy
@@ -586,7 +588,7 @@ class GPSMain(object):
                 for k in xrange(len(samples)):
                     sample = agent.sample(
                         policies[k], i,
-                        verbose=(i < self._hyperparams['verbose_trials']), noisy=False
+                        verbose=1000, noisy=True
                         )
                     samples[k].append(sample)
         target_position = agent_config['target_end_effector'][:3]
@@ -617,36 +619,46 @@ class GPSMain(object):
         percentages.append(round(float(len(all_failed_conditions))/len(ioc_conditions), 2))
         percentages.append(round(float(len(only_ioc_conditions))/len(ioc_conditions), 2))
         percentages.append(round(float(len(only_demo_conditions))/len(ioc_conditions), 2))
-        exp_dir = self._data_files_dir.replace("data_files", "")
 
         from matplotlib.patches import Rectangle
 
         plt.close('all')
+        fig = plt.figure()
+        ax = Axes3D(fig)
         ioc_conditions_x = [ioc_conditions[i][0] for i in xrange(len(ioc_conditions))]
         ioc_conditions_y = [ioc_conditions[i][1] for i in xrange(len(ioc_conditions))]
+        ioc_conditions_z = [ioc_conditions[i][2] for i in xrange(len(ioc_conditions))]
         all_success_x = [all_success_conditions[i][0] for i in xrange(len(all_success_conditions))]
         all_success_y = [all_success_conditions[i][1] for i in xrange(len(all_success_conditions))]
+        all_success_z = [all_success_conditions[i][2] for i in xrange(len(all_success_conditions))]
         all_failed_x = [all_failed_conditions[i][0] for i in xrange(len(all_failed_conditions))]
         all_failed_y = [all_failed_conditions[i][1] for i in xrange(len(all_failed_conditions))]
+        all_failed_z = [all_failed_conditions[i][2] for i in xrange(len(all_failed_conditions))]
         only_ioc_x = [only_ioc_conditions[i][0] for i in xrange(len(only_ioc_conditions))]
         only_ioc_y = [only_ioc_conditions[i][1] for i in xrange(len(only_ioc_conditions))]
+        only_ioc_z = [only_ioc_conditions[i][2] for i in xrange(len(only_ioc_conditions))]
         only_demo_x = [only_demo_conditions[i][0] for i in xrange(len(only_demo_conditions))]
         only_demo_y = [only_demo_conditions[i][1] for i in xrange(len(only_demo_conditions))]
-        subplt = plt.subplot()
-        subplt.plot(all_success_x, all_success_y, 'yo')
-        subplt.plot(all_failed_x, all_failed_y, 'rx')
-        subplt.plot(only_ioc_x, only_ioc_y, 'g^')
-        subplt.plot(only_demo_x, only_demo_y, 'rv')
+        only_demo_z = [only_demo_conditions[i][2] for i in xrange(len(only_demo_conditions))]
+        # subplt = plt.subplot()
+        ax.scatter(all_success_x, all_success_y, all_success_z, c='y', marker='o')
+        ax.scatter(all_failed_x, all_failed_y, all_failed_z, c='r', marker='x')
+        ax.scatter(only_ioc_x, only_ioc_y, only_ioc_z, c='g', marker='^')
+        ax.scatter(only_demo_x, only_demo_y, only_demo_z, c='r', marker='v')
+        training_positions = zip(*pos_body_offset)
+        ax.scatter(training_positions[0], training_positions[1], training_positions[2], s=40, c='b', marker='*')
         # plt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc= (1, 1))
-        for i, txt in enumerate(dists_diff):
-            subplt.annotate(txt, (ioc_conditions_x[i], ioc_conditions_y[i]))
-        ax = plt.gca()
-        ax.add_patch(Rectangle((-0.1, -0.1), 0.2, 0.2, fill = False, edgecolor = 'blue')) # peg
+        # for i, txt in enumerate(dists_diff):
+        #     # subplt.annotate(txt, (ioc_conditions_x[i], ioc_conditions_y[i]))
+        #     ax.annotate(txt, (ioc_conditions_x[i], ioc_conditions_y[i], ioc_conditions_z[i]))
+        # ax = plt.gca()
+        # ax.add_patch(Rectangle((-0.1, -0.1), 0.2, 0.2, fill = False, edgecolor = 'blue')) # peg
         # ax.add_patch(Rectangle((-0.3, -0.3), 0.6, 0.6, fill = False, edgecolor = 'blue')) # reacher
-        box = subplt.get_position()
-        subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
-        subplt.legend(['all_success: ' + repr(percentages[0]), 'all_failed: ' + repr(percentages[1]), 'only_ioc: ' + repr(percentages[2]), \
-                        'only_demo: ' + repr(percentages[3])], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
+        # box = subplt.get_position()
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
+        ax.legend(['all_success: ' + repr(percentages[0]), 'all_failed: ' + repr(percentages[1]), 'only_ioc: ' + repr(percentages[2]), \
+                        'only_demo: ' + repr(percentages[3])], loc='upper center', bbox_to_anchor=(0.5, 0.05), \
                         shadow=True, ncol=2)
         plt.title("Distribution of samples drawn from demo policy and IOC policy")
         # plt.xlabel('width')
@@ -808,14 +820,14 @@ def main():
         else:
             gps.test_policy(itr=current_itr, N=test_policy_N)
     elif measure_samples:
-        for itr in xrange(3):
+        for itr in xrange(1):
             random.seed(itr)
             np.random.seed(itr)
             hyperparams = imp.load_source('hyperparams', hyperparams_file)
-            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_0.05_%d' % itr + '/'
+            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_z_0.05_%d' % itr + '/'
             hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
-            if not os.path.exists(exp_dir + 'data_files_maxent_9cond_0.05_%d' % itr + '/'):
-                os.makedirs(exp_dir + 'data_files_maxent_9cond_0.05_%d' % itr + '/')
+            if not os.path.exists(exp_dir + 'data_files_maxent_9cond_z_0.05_%d' % itr + '/'):
+                os.makedirs(exp_dir + 'data_files_maxent_9cond_z_0.05_%d' % itr + '/')
             gps_samples = GPSMain(hyperparams.config)
             agent_config = gps_samples._hyperparams['demo_agent']
             plt.close()

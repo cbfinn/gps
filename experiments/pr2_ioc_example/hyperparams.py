@@ -62,7 +62,7 @@ common = {
 
 # TODO(chelsea/zoe) : Move this code to a utility function
 # Set up each condition.
-for i in xrange(5): #xrange(common['conditions']):
+for i in xrange(common['conditions']):
 
     ja_x0, ee_pos_x0, ee_rot_x0 = load_pose_from_npz(
         common['target_filename'], 'trial_arm', str(i), 'initial'
@@ -125,7 +125,7 @@ agent = {
 demo_agent = {
     'type': AgentROS,
     'dt': 0.05,
-    'conditions': 5, #common['conditions'],
+    'conditions': 5,
     'T': 100,
     'x0': x0s[:5],
     'ee_points_tgt': ee_tgts[:5],
@@ -157,20 +157,6 @@ algorithm = {
     'synthetic_cost_samples': 100,
     'demo_var_mult': 1.0  # Increase variance on demos
 }
-
-"""
-algorithm['init_traj_distr'] = {
-    'type': init_lqr,
-    'init_gains':  1.0 / PR2_GAINS,
-    'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-    'init_var': 1.0,
-    'stiffness': 0.5,
-    'stiffness_vel': 0.25,
-    'final_weight': 50,
-    'dt': agent['dt'],
-    'T': agent['T'],
-}
-"""
 
 
 algorithm['init_traj_distr'] = {

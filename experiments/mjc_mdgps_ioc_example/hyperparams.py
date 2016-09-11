@@ -40,10 +40,10 @@ PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = BASE_DIR + '/../experiments/mjc_mdgps_ioc_example/'
 # DEMO_DIR = BASE_DIR + '/../experiments/mjc_mdgps_multiple_example/on_classic/'
-DEMO_DIR = BASE_DIR + '/../experiments/mjc_mdgps_example/on_policy/'
+DEMO_DIR = BASE_DIR + '/../experiments/mjc_mdgps_example/on_classic/'
 # DEMO_DIR = BASE_DIR + '/../experiments/mjc_badmm_example_'
 LG_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
-DEMO_CONDITIONS = 60
+DEMO_CONDITIONS = 70
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -52,7 +52,8 @@ common = {
     'demo_exp_dir': DEMO_DIR,
     # 'demo_controller_file': [DEMO_DIR + '%d/' % i + 'data_files/algorithm_itr_11.pkl' for i in xrange(4)],
     # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
-    'demo_controller_file': DEMO_DIR + 'data_files_maxent_9cond_z_0.05_0/algorithm_itr_11.pkl',
+    # 'demo_controller_file': DEMO_DIR + 'data_files_maxent_9cond_z_0.05_0/algorithm_itr_11.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files_maxent_4cond_0.05_z_0/algorithm_itr_11.pkl',
     'LG_controller_file': LG_DIR + 'data_files/algorithm_itr_09.pkl',
     'conditions': 9,
     # 'dense': True # For dense/sparse demos experiment only

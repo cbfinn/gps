@@ -157,7 +157,6 @@ class GenDemo(object):
                             # demos.append(demo)
                             demos.append(demo)
                             demo_idx_conditions.append(i)
-
             # Filter failed demos
             if agent_config.get('filter_demos', False):
                 target_position = agent_config['target_end_effector'][:3]

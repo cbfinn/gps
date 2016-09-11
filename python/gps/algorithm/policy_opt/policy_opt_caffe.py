@@ -86,7 +86,6 @@ class PolicyOptCaffe(PolicyOpt):
             solver_param.test_iter.append(1)
             solver_param.test_interval = 1000000
 
-
             f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
             f.write(MessageToString(solver_param))
             f.close()
@@ -237,6 +236,7 @@ class PolicyOptCaffe(PolicyOpt):
             'scale': self.policy.scale,
             'bias': self.policy.bias,
             'caffe_iter': self.caffe_iter,
+            'var': self.var,
         }
 
     # For unpickling.
@@ -245,6 +245,8 @@ class PolicyOptCaffe(PolicyOpt):
         self.policy.scale = state['scale']
         self.policy.bias = state['bias']
         self.caffe_iter = state['caffe_iter']
+        self.var = state['var']
+        self.policy.chol_pol_covar = np.diag(np.sqrt(self.var))
         self.solver.restore(
             self._hyperparams['weights_file_prefix'] + '_iter_' +
             str(self.caffe_iter) + '.solverstate'

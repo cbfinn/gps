@@ -8,6 +8,7 @@ from gps.sample.sample import Sample
 from gps.sample.sample import Sample
 from gps.sample.sample_list import SampleList
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
+from gps.utility.data_logger import DataLogger
 from gps.utility.general_utils import flatten_lists
 
 
@@ -16,7 +17,7 @@ def generate_pos_body_offset(conditions):
 	pos_body_offset = []
 	for i in xrange(conditions):
 		# Make the uniform distribution to be [-0.12, 0.12] for learning from prior. For peg ioc, this should be [-0.1, -0.1].
-		pos_body_offset.append((0.24 * (np.random.rand(1, 3) - 0.5)).reshape((3, )))
+		pos_body_offset.append((0.1 * (np.random.rand(1, 3) - 0.5)).reshape((3, )))
 	return pos_body_offset
 
 def generate_x0(x0, conditions):
@@ -36,6 +37,9 @@ def generate_pos_idx(conditions):
 	""" Generate the indices of states. """
 	return [np.array([1]) for i in xrange(conditions)]
 
+def extract_demos(demo_file):
+    demos = DataLogger().unpickle(demo_file)
+    return demos['demoX'], demos['demoU'], demos['demoO']
 
 def xu_to_sample_list(agent, X, U):
     num = X.shape[0]

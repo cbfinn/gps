@@ -176,7 +176,6 @@ algorithm['traj_opt'] = {
 
 algorithm['policy_opt'] = {}
 
-
 config = {
     'iterations': algorithm['iterations'],
     'common': common,
