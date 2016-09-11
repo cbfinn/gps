@@ -57,16 +57,16 @@ class GPSMain(object):
         config['algorithm']['agent'] = self.agent
 
         if self.using_ioc():
-            # demo_file = self._data_files_dir + 'demos.pkl'
-            if not config['common'].get('nn_demo', False):
-                demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
-            else:
-                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'
-                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_no_noise.pkl'
-                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_3.pkl'
-            	# demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_3pols_9conds.pkl'
-                # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_maxent_4_cond.pkl'
-                demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_MaxEnt_9_cond_z_0.1_no_noise.pkl'
+            demo_file = self._data_files_dir + 'demos.pkl'
+            # if not config['common'].get('nn_demo', False):
+            #     demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
+            # else:
+            #     # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn.pkl'
+            #     # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_no_noise.pkl'
+            #     # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_3.pkl'
+            # 	# demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_3pols_9conds.pkl'
+            #     # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_maxent_4_cond.pkl'
+            #     demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_MaxEnt_9_cond_z_0.1_noise.pkl'
             demos = self.data_logger.unpickle(demo_file)
             if demos is None:
               self.demo_gen = GenDemo(config)
@@ -1250,11 +1250,11 @@ def main():
                 # gps_global.test_policy(itr=i, N=compare_costs)
                 plt.close()
     else:
-        hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_z_train_demo_0/'
-        if not os.path.exists(exp_dir + 'data_files_maxent_9cond_z_train_demo_0/'):
-            os.makedirs(exp_dir + 'data_files_maxent_9cond_z_train_demo_0/')
-        # hyperparams.config['agent']['randomly_sample_bodypos'] = True
-        hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
+        # hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_z_train_demo_noise_0/'
+        # if not os.path.exists(exp_dir + 'data_files_maxent_9cond_z_train_demo_noise_0/'):
+        #     os.makedirs(exp_dir + 'data_files_maxent_9cond_z_train_demo_noise_0/')
+        # # hyperparams.config['agent']['randomly_sample_bodypos'] = True
+        # hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:
             run_gps = threading.Thread(

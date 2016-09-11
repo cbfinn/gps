@@ -114,7 +114,7 @@ class GenDemo(object):
                     for j in xrange(N):
                         demo = self.agent.sample(
                             controllers_var[i], i,
-                            verbose=(i < self.algorithm._hyperparams['demo_verbose']), noisy=False,
+                            verbose=(i < self.algorithm._hyperparams['demo_verbose']), noisy=True,
                             save = True
                         )
                         demos.append(demo)
@@ -140,7 +140,7 @@ class GenDemo(object):
                         for j in xrange(N):
                             demo = self.agent.sample(
                                 pol, i, # Should be changed back to controller if using linearization
-                                verbose=(i < self._hyperparams['verbose_trials']), noisy=False
+                                verbose=(i < self._hyperparams['verbose_trials']), noisy=True
                                 ) # Add noise seems not working. TODO: figure out why
                             # demos.append(demo)
                             demos.append(demo)
@@ -177,13 +177,13 @@ class GenDemo(object):
             # Filter out worst (M - good_conds) demos.
             elif agent_config['type']==AgentMuJoCo and agent_config['filename'] == './mjc_models/pr2_arm3d.xml':
                 target_position = agent_config['target_end_effector'][:3]
-                # dists_to_target = np.zeros(M*N)
-                dists_to_target = np.zeros(len(demos)*N)
+                N = 3 * N
+                dists_to_target = np.zeros(M*N)
+                # dists_to_target = np.zeros(len(demos)*N)
                 # dists_to_target = [np.zeros(M*N) for i in xrange(4)]
                 good_indices = []
                 failed_indices = []
                 # M = len(demos)/N
-                N = 3 * N
                 for i in xrange(M):
                 # for i in xrange(len(demos)):
                     if type(agent_config['target_end_effector']) is list: 
