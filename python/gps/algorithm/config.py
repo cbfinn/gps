@@ -20,6 +20,7 @@ ALG = {
     'demo_distr_empest': True,
     # Flag if the algorithm is using IOC
     'ioc': None,  # ICML, MPF, IOCGAN, XENTGAN
+    'ioc_maxent_iter': -1, # number of iterations to run maxent and IOC for (-1 if all iters)
     # Flag if the algorithm is learning from prior experience
     'learning_from_prior': False,
     # Dynamics hyperaparams.

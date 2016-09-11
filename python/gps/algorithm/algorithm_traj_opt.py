@@ -42,7 +42,8 @@ class AlgorithmTrajOpt(Algorithm):
 
         # Update the cost during learning if we use IOC.
         if self._hyperparams['ioc'] and self._hyperparams['ioc'] is not 'SUPERVISED':
-            self._update_cost()
+            if self._hyperparams['ioc_maxent_iter'] == -1 or self.iteration_count < self._hyperparams['ioc_maxent_iter']:
+                self._update_cost()
 
         self._update_step_size()  # KL Divergence step size.
 
@@ -63,7 +64,7 @@ class AlgorithmTrajOpt(Algorithm):
 
         if 'target_end_effector' in self._hyperparams:
             for i in xrange(self.M):
-                if type(self._hyperparams['target_end_effector']) is list: 
+                if type(self._hyperparams['target_end_effector']) is list:
                     target_position = self._hyperparams['target_end_effector'][m][:3]
                 else:
                     target_position = self._hyperparams['target_end_effector'][:3]
@@ -178,7 +179,10 @@ class AlgorithmTrajOpt(Algorithm):
         """ Compute cost estimates used in the LQR backward pass. """
         # TODO generate synethic samples here if desired? (or somewhere else)?
         traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
-        multiplier = self._hyperparams["max_ent_traj"]
+        if self._hyperparams['ioc_maxent_iter'] == -1 or self.iteration_count < self._hyperparams['ioc_maxent_iter']:
+            multiplier = self._hyperparams["max_ent_traj"]
+        else:
+            multiplier = 0.0
         fCm, fcv = traj_info.Cm / (eta + multiplier), traj_info.cv / (eta + multiplier)
         K, ipc, k = traj_distr.K, traj_distr.inv_pol_covar, traj_distr.k
 
