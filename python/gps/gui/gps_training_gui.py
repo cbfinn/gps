@@ -371,6 +371,7 @@ class GPSTrainingGUI(object):
         else:
             test_idx = None
             itr_data = '%3d | %8.2f' % (itr, avg_cost)
+
         for m in range(algorithm.M):
             cost = costs[m]
             step = algorithm.prev[m].step_mult * algorithm.base_kl_step

@@ -21,9 +21,12 @@ class CostIOCSupervised(CostIOCNN):
     def __init__(self, hyperparams):
         super(CostIOCSupervised, self).__init__(hyperparams)
         self.gt_cost = hyperparams['gt_cost']  # Ground truth cost
+        self.gt_cost = self.gt_cost['type'](self.gt_cost)
         self.agent = hyperparams['agent']  # Required for sample packing
-        if hyperparams.get('init_from_demos', False):
+        self.agent = self.agent['type'](self.agent)
+        if hyperparams.get('init_from_demos', True):
             self.init_supervised_demos(hyperparams['demo_file'])
+        self.finetune = hyperparams.get('finetune', False)
 
     def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw):
         """
@@ -38,17 +41,23 @@ class CostIOCSupervised(CostIOCNN):
             sampleO: the observations of samples.
             s_log_iw: log importance weights for samples.
         """
-        pass # Do nothing
+        if self.finetune:
+            super(CostIOCSupervised, self).update(demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw)
+        else:
+            return
+
 
     def init_supervised_demos(self, demo_file):
         X, U, O = extract_demos(demo_file)
         self.init_supervised(U, X, O)
+
 
     def init_supervised(self, sampleU, sampleX, sampleO):
         """
         """
 
         Ns = sampleO.shape[0]  # Num samples
+        print 'Num samples:', Ns
 
         sample_batch_size = self.sample_batch_size + self.demo_batch_size
 
@@ -63,6 +72,8 @@ class CostIOCSupervised(CostIOCNN):
         for n in range(Ns):
             l, _, _, _, _, _ = self.gt_cost.eval(sample_list[n])
             sample_costs.append(l)
+        sample_costs = np.array(sample_costs)
+        sample_costs = np.expand_dims(sample_costs, -1)
 
         for i in range(self._hyperparams['iterations']):
           # Randomly sample batches
@@ -82,6 +93,7 @@ class CostIOCSupervised(CostIOCNN):
             LOGGER.debug('Caffe iteration %d, average loss %f',
                          i, average_loss / 500)
             average_loss = 0
+        import pdb; pdb.set_trace()
 
 
         # Keep track of Caffe iterations for loading solver states.
