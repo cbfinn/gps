@@ -8,6 +8,7 @@ from gps.sample.sample import Sample
 from gps.sample.sample import Sample
 from gps.sample.sample_list import SampleList
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
+from gps.utility.data_logger import DataLogger
 from gps.utility.general_utils import flatten_lists
 
 
@@ -36,6 +37,9 @@ def generate_pos_idx(conditions):
 	""" Generate the indices of states. """
 	return [np.array([1]) for i in xrange(conditions)]
 
+def extract_demos(demo_file):
+    demos = DataLogger().unpickle(demo_file)
+    return demos['demoX'], demos['demoU'], demos['demoO']
 
 def xu_to_sample_list(agent, X, U):
     num = X.shape[0]
