@@ -40,20 +40,22 @@ PR2_GAINS = np.array([3.09, 1.08, 0.393, 0.674, 0.111, 0.152, 0.098])
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = BASE_DIR + '/../experiments/mjc_mdgps_ioc_example/'
 # DEMO_DIR = BASE_DIR + '/../experiments/mjc_mdgps_multiple_example/on_classic/'
-DEMO_DIR = BASE_DIR + '/../experiments/mjc_mdgps_example/on_classic/'
+DEMO_DIR = BASE_DIR + '/../experiments/mjc_mdgps_example/on_policy/'
+DEMO_POLICY_DIR = [DEMO_DIR + 'data_files_maxent_9cond_z_0.05_%d/' % i for i in xrange(3)]
+DEMO_POLICY_INDEX = ['11', '11', '11']
 # DEMO_DIR = BASE_DIR + '/../experiments/mjc_badmm_example_'
 LG_DIR = BASE_DIR + '/../experiments/mjc_peg_example/'
-DEMO_CONDITIONS = 70
+DEMO_CONDITIONS = 80
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_06.pkl',
     'demo_exp_dir': DEMO_DIR,
-    # 'demo_controller_file': [DEMO_DIR + '%d/' % i + 'data_files/algorithm_itr_11.pkl' for i in xrange(4)],
+    'demo_controller_file': [DEMO_POLICY_DIR[i] + 'algorithm_itr_' + DEMO_POLICY_INDEX[i] + '.pkl' for i in xrange(3)],
     # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
     # 'demo_controller_file': DEMO_DIR + 'data_files_maxent_9cond_z_0.05_0/algorithm_itr_11.pkl',
-    'demo_controller_file': DEMO_DIR + 'data_files_maxent_4cond_0.05_z_0/algorithm_itr_11.pkl',
+    # 'demo_controller_file': DEMO_DIR + 'data_files_maxent_4cond_0.05_z_0/algorithm_itr_11.pkl',
     'LG_controller_file': LG_DIR + 'data_files/algorithm_itr_09.pkl',
     'conditions': 9,
     # 'dense': True # For dense/sparse demos experiment only
@@ -75,9 +77,12 @@ agent = {
     'pos_body_idx': np.array([1]),
     # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0]),
     #                     np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0])],
-    'pos_body_offset': [np.array([-0.05, -0.05, -0.05]), np.array([-0.05, -0.05, 0.05]), np.array([-0.05, 0.05, -0.05]),
-                np.array([-0.05, 0.05, 0.05]), np.array([0, 0, 0]), np.array([0.05, -0.05, -0.05]),
-                np.array([0.05, -0.05, 0.05]), np.array([0.05, 0.05, -0.05]), np.array([0.05, 0.05, 0.05])],
+    # 'pos_body_offset': [np.array([-0.05, -0.05, -0.05]), np.array([-0.05, -0.05, 0.05]), np.array([-0.05, 0.05, -0.05]),
+    #             np.array([-0.05, 0.05, 0.05]), np.array([0, 0, 0]), np.array([0.05, -0.05, -0.05]),
+    #             np.array([0.05, -0.05, 0.05]), np.array([0.05, 0.05, -0.05]), np.array([0.05, 0.05, 0.05])],
+    'pos_body_offset': [np.array([-0.1, -0.1, -0.1]), np.array([-0.1, -0.1, 0.1]), np.array([-0.1, 0.1, -0.1]),
+                np.array([-0.1, 0.1, 0.1]), np.array([0, 0, 0]), np.array([0.1, -0.1, -0.1]),
+                np.array([0.1, -0.1, 0.1]), np.array([0.1, 0.1, -0.1]), np.array([0.1, 0.1, 0.1])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -88,18 +93,54 @@ agent = {
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
 }
 
+# demo_agent = {
+#     'type': AgentMuJoCo,
+#     'filename': './mjc_models/pr2_arm3d.xml',
+#     'x0': generate_x0(np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
+#                       np.zeros(7)]), DEMO_CONDITIONS),
+#     'dt': 0.05,
+#     'substeps': 5,
+#     'conditions': DEMO_CONDITIONS,
+#     'pos_body_idx': generate_pos_idx(DEMO_CONDITIONS),
+#     # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
+#     #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
+#     'pos_body_offset': generate_pos_body_offset(DEMO_CONDITIONS),
+#     'T': 100,
+#     'sensor_dims': SENSOR_DIMS,
+#     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
+#                       END_EFFECTOR_POINT_VELOCITIES],
+#     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
+#                     END_EFFECTOR_POINT_VELOCITIES],
+#     'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
+#     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
+#     'peg_height': 0.1,
+#     'success_upper_bound': 0.01,
+#     'failure_lower_bound': 0.15,
+# }
+
 demo_agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/pr2_arm3d.xml',
-    'x0': generate_x0(np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
-                      np.zeros(7)]), DEMO_CONDITIONS),
+    'x0': np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
+                          np.zeros(7)]),
     'dt': 0.05,
     'substeps': 5,
-    'conditions': DEMO_CONDITIONS,
-    'pos_body_idx': generate_pos_idx(DEMO_CONDITIONS),
-    # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
-    #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    'pos_body_offset': generate_pos_body_offset(DEMO_CONDITIONS),
+    'conditions': common['conditions'],
+    'pos_body_idx': np.array([1]),
+    # 'pos_body_offset': [np.array([-0.08, -0.08, 0])],
+    # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0]),
+    #                     np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0])],
+    'pos_body_offset': [np.array([-0.05, -0.05, -0.05]), np.array([-0.05, 0.05, 0.05]),
+                        np.array([-0.05, -0.05, 0.05]), np.array([0.0,0.0,0.0]),
+                        np.array([-0.05,0.05,-0.05]), np.array([0.05,0.05,-0.05]),
+                        np.array([0.05,-0.05,-0.05]),
+                        np.array([0.05, -0.05, 0.05]), np.array([0.05, 0.05, 0.05])],
+    # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0, 0]), np.array([-0.1, 0.1, 0]),
+    #                     np.array([0, -0.1, 0]), np.array([0, 0, 0]), np.array([0, 0.1, 0]),
+    #                     np.array([0.1, 0.1, 0]), np.array([0.1, 0, 0]), np.array([0.1, -0.1, 0])],
+    # 'pos_body_offset': [np.array([-0.05, -0.05, 0]), np.array([-0.05, 0, 0]), np.array([-0.05, 0.05, 0]),
+    #             np.array([0, -0.05, 0]), np.array([0, 0, 0]), np.array([0, 0.05, 0]),
+    #             np.array([0.05, 0.05, 0]), np.array([0.05, 0, 0]), np.array([0.05, -0.05, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -107,10 +148,10 @@ demo_agent = {
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                     END_EFFECTOR_POINT_VELOCITIES],
     'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
+    'render': False,
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
     'peg_height': 0.1,
-    'success_upper_bound': 0.01,
-    'failure_lower_bound': 0.15,
+    'success_upper_bound': 0.09,
 }
 
 real_demo_agent = {
@@ -151,7 +192,7 @@ algorithm = {
     'conditions': common['conditions'],
     'learning_from_prior': True,
     'ioc' : 'ICML',
-    'iterations': 20,
+    'iterations': 30,
     'kl_step': 0.5,
     'min_step_mult': 0.4,
     'max_step_mult': 4.0,
@@ -164,7 +205,7 @@ algorithm = {
     'init_var_mult': 1.0,
     # 'demo_cond': 15,
     # 'num_demos': 3,
-    'num_demos': 1,
+    'num_demos': 2,
     'init_samples': 5,
     'synthetic_cost_samples': 100,
     # 'synthetic_cost_samples': 0, # Remember to change back to 100 when done with the 50 samples exp

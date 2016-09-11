@@ -62,20 +62,19 @@ class GenDemo(object):
             # Load the algorithm
             import pickle
 
-            algorithm_file = self._algorithm_files_dir # This should give us the optimal controller. Maybe set to 'controller_itr_%02d.pkl' % itr_load will be better?
-            # algorithm_file = self._exp_dir
-            # algorithm_files = self._algorithm_files_dir
-            # self.algorithms = [] # A list of neural nets.
-            # for i in range(4):
-            #       algorithm = pickle.load(open(algorithm_files[i]))
-            #       self.algorithms.append(algorithm)
-            self.algorithm = pickle.load(open(algorithm_file)) # Just one demo algorithm for now.
-            if self.algorithm is None:
-                print("Error: cannot find '%s.'" % algorithm_file)
-                os._exit(1) # called instead of sys.exit(), since t
-                # if algorithm is None:
-                #       print("Error: cannot find '%s.'" % algorithm_file)
-                #       os._exit(1) # called instead of sys.exit(), since t
+            # algorithm_file = self._algorithm_files_dir # This should give us the optimal controller. Maybe set to 'controller_itr_%02d.pkl' % itr_load will be better?
+            # self.algorithm = pickle.load(open(algorithm_file)) # Just one demo algorithm for now.
+            # if self.algorithm is None:
+            #     print("Error: cannot find '%s.'" % algorithm_file)
+            #     os._exit(1) # called instead of sys.exit(), since t
+            algorithm_files = self._algorithm_files_dir
+            self.algorithms = [] # A list of neural nets.
+            for i in range(3):
+                algorithm = pickle.load(open(algorithm_files[i]))
+                self.algorithms.append(algorithm)
+                if algorithm is None:
+                      print("Error: cannot find '%s.'" % algorithm_file)
+                      os._exit(1) # called instead of sys.exit(), since t
 
             # Keep the initial states of the agent the sames as the demonstrations.
             if 'learning_from_prior' in self._hyperparams['algorithm']:
@@ -92,8 +91,8 @@ class GenDemo(object):
 
             # Roll out the demonstrations from controllers
             var_mult = self._hyperparams['algorithm']['demo_var_mult']
-            T = self.algorithm.T
-            # T = self.algorithms[0].T
+            # T = self.algorithm.T
+            T = self.algorithms[0].T
             demos = []
             demo_idx_conditions = []  # Stores conditions for each demo
 
@@ -123,49 +122,37 @@ class GenDemo(object):
             else:
                 # demos = {i : [] for i in xrange(4)} # Take demos for 4 nn policies
                 # Extract the neural network policy.
-                self.algorithm.num_policies = self.algorithm._hyperparams['num_policies']
-                for j in xrange(self.algorithm.num_policies):
+                # self.algorithm.num_policies = self.algorithm._hyperparams['num_policies']
+                # for j in xrange(self.algorithms[0].num_policies):
                 # for j in xrange(1):
-                    if self.algorithm._hyperparams['multiple_policy']:
-                        pol = self.algorithm.policy_opts[j].policy
-                    else:
-                        pol = self.algorithm.policy_opt.policy
-                    pol.chol_pol_covar *= var_mult
+                    # if self.algorithm._hyperparams['multiple_policy']:
+                    #     pol = self.algorithm.policy_opts[j].policy
+                    # else:
+                    #     pol = self.algorithm.policy_opt.policy
+                    # pol.chol_pol_covar *= var_mult
 
-                    for i in range(M / self.algorithm.num_policies * j, M / self.algorithm.num_policies * (j + 1)):
-                        # Gather demos.
-                        samples = []
-                        dists = []
-                        # for _ in xrange(5):
-                        #       sample = self.agent.sample(
-                        #               pol, i,
-                        #               verbose=(i < self._hyperparams['verbose_trials'])
-                        #               )
-                        #       # if i in sampled_demo_conds:
-                        #       #       sampled_demos.append(demo)
-                        #       samples.append(sample)
-                        #       sample_end_effector = sample.get(END_EFFECTOR_POINTS)
-                        #       target_position = agent_config['target_end_effector'][:3]
-                        #       dists.append(np.sqrt(np.sum((sample_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1])
-                        # if sum(dists) / len(dists) <= 0.3:
-                        #       controller = self.linearize_policy(SampleList(samples), j)
-                        for k in xrange(N):
+                    # for i in range(M / self.algorithm.num_policies * j, M / self.algorithm.num_policies * (j + 1)):
+                for i in xrange(M):
+                    # Gather demos.
+                    for alg in self.algorithms:
+                        pol = alg.policy_opt.policy
+                        for j in xrange(N):
                             demo = self.agent.sample(
                                 pol, i, # Should be changed back to controller if using linearization
-                                verbose=(i < self._hyperparams['verbose_trials']), noisy=True
+                                verbose=(i < self._hyperparams['verbose_trials']), noisy=False
                                 ) # Add noise seems not working. TODO: figure out why
                             # demos.append(demo)
                             demos.append(demo)
                             demo_idx_conditions.append(i)
-                    demo_agent_config = self._hyperparams['real_demo_agent']
-                    demo_agent = demo_agent_config['type'](demo_agent_config)
-                    for m in xrange(demo_agent_config['conditions']):
-                        demo = demo_agent.sample(
-                            pol, m, 
-                            verbose=(m < self._hyperparams['verbose_trials']), noisy=True)
-                        demos.append(demo)
-                        demo_idx_conditions.append(m)
-                    agent_config['pos_body_offset'].extend(demo_agent_config['pos_body_offset'])
+                    # demo_agent_config = self._hyperparams['real_demo_agent']
+                    # demo_agent = demo_agent_config['type'](demo_agent_config)
+                    # for m in xrange(demo_agent_config['conditions']):
+                    #     demo = demo_agent.sample(
+                    #         pol, m, 
+                    #         verbose=(m < self._hyperparams['verbose_trials']), noisy=False)
+                    #     demos.append(demo)
+                    #     demo_idx_conditions.append(m)
+                    # agent_config['pos_body_offset'].extend(demo_agent_config['pos_body_offset'])
             # Filter failed demos
             if agent_config.get('filter_demos', False):
                 target_position = agent_config['target_end_effector'][:3]
@@ -195,8 +182,9 @@ class GenDemo(object):
                 good_indices = []
                 failed_indices = []
                 # M = len(demos)/N
-                # for i in xrange(M):
-                for i in xrange(len(demos)):
+                N = 3 * N
+                for i in xrange(M):
+                # for i in xrange(len(demos)):
                     if type(agent_config['target_end_effector']) is list: 
                         target_position = agent_config['target_end_effector'][i][:3]
                     else:
@@ -209,10 +197,12 @@ class GenDemo(object):
                         # Just choose the last time step since it may become unstable after achieving the minimum point.
                         dists_to_target[i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
                         # dists_to_target[k][i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
-                        if dists_to_target[i*N + j] > agent_config['success_upper_bound']:
-                            failed_indices.append(i)
+                        # if dists_to_target[i*N + j] > agent_config['success_upper_bound']:
+                        #     failed_indices.append(i)
+                        if dists_to_target[i*N + j] <= agent_config['success_upper_bound']:
+                            good_indices.append(i)
                 # good_indices = [i for i in xrange(M) if i not in failed_indices]
-                good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
+                # good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
                 import pdb; pdb.set_trace()
                 self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
                 filtered_demos = []
@@ -229,8 +219,8 @@ class GenDemo(object):
                         f.write('\n' + str(agent_config['pos_body_offset'][i]) + '\n')
                 with open(exp_dir + 'log.txt', 'a') as f:
                     f.write('\nThe failed badmm conditions are: \n')
-                # for i in xrange(M):
-                for i in xrange(len(demos)):
+                for i in xrange(M):
+                # for i in xrange(len(demos)):
                     if i not in good_indices:
                         failed_conditions.append(agent_config['pos_body_offset'][i])
                         with open(exp_dir + 'log.txt', 'a') as f:
@@ -265,7 +255,7 @@ class GenDemo(object):
                 #                     shadow=True, ncol=2)
                 box = ax.get_position()
                 ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
-                ax.legend(['demo_cond', 'failed_badmm'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
+                ax.legend(['demo_cond', 'failed_demo'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
                                     shadow=True, ncol=2)
                 plt.title("Distribution of demo conditions")
                 # plt.xlabel('width')

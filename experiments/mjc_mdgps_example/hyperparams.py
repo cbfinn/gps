@@ -41,8 +41,8 @@ EXP_DIR = BASE_DIR + '/../experiments/mjc_mdgps_example/'
 common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
-    'conditions': 4,
-    # 'conditions': 9,
+    #'conditions': 4,
+    'conditions': 9,
 }
 
 agent = {
@@ -62,7 +62,10 @@ agent = {
     # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0]),
     #                     np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0])],
     'pos_body_offset': [np.array([-0.05, -0.05, -0.05]), np.array([-0.05, 0.05, 0.05]),
-                         np.array([0.05, -0.05, 0.05]), np.array([0.05, 0.05, 0.05])],
+                        np.array([-0.05, -0.05, 0.05]), np.array([0.0,0.0,0.0]),
+                        np.array([-0.05,0.05,-0.05]), np.array([0.05,0.05,-0.05]),
+                        np.array([0.05,-0.05,-0.05]),
+                        np.array([0.05, -0.05, 0.05]), np.array([0.05, 0.05, 0.05])],
     # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0, 0]), np.array([-0.1, 0.1, 0]),
     #                     np.array([0, -0.1, 0]), np.array([0, 0, 0]), np.array([0, 0.1, 0]),
     #                     np.array([0.1, 0.1, 0]), np.array([0.1, 0, 0]), np.array([0.1, -0.1, 0])],
@@ -76,6 +79,7 @@ agent = {
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                     END_EFFECTOR_POINT_VELOCITIES],
     'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
+    'render': False,
 }
 
 algorithm = {
@@ -83,9 +87,9 @@ algorithm = {
     'conditions': common['conditions'],
     'iterations': 12,
     'max_ent_traj': 1.0,
-    'kl_step': 1.0,
+    'kl_step': 2.0, #1.0
     'min_step_mult': 0.5,
-    'max_step_mult': 3.0,
+    'max_step_mult': 2.0, # 3.0
     'policy_sample_mode': 'replace',
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
 }
@@ -167,8 +171,9 @@ algorithm['policy_prior'] = {
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': 5,
-    'verbose_trials': 1,
+    'verbose_trials': 0,
     'verbose_policy_trials': 1,
     'agent': agent,
     'gui_on': True,
 }
+

@@ -66,7 +66,7 @@ class GPSMain(object):
                 # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_multiple_3.pkl'
             	# demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_3pols_9conds.pkl'
                 # demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_maxent_4_cond.pkl'
-                demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_MaxEnt_4_cond_z_0.05_noise.pkl'
+                demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_nn_MaxEnt_9_cond_z_0.1_no_noise.pkl'
             demos = self.data_logger.unpickle(demo_file)
             if demos is None:
               self.demo_gen = GenDemo(config)
@@ -552,7 +552,7 @@ class GPSMain(object):
         import matplotlib.pyplot as plt
         from mpl_toolkits.mplot3d import Axes3D
 
-        pol_iter = self._hyperparams['algorithm']['iterations'] - 2
+        pol_iter = self._hyperparams['algorithm']['iterations'] - 1
         algorithm_ioc = self.data_logger.unpickle(self._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
         algorithm_demo = self.data_logger.unpickle(self._hyperparams['common']['demo_exp_dir'] + 'data_files_maxent_4cond_0.05_z_0/algorithm_itr_11.pkl') # Assuming not using 4 policies
         pos_body_offset = self._hyperparams['agent']['pos_body_offset']
@@ -571,7 +571,7 @@ class GPSMain(object):
                 for k in xrange(len(samples)):
                     sample = agent.sample(
                         policies[k], i,
-                        verbose=1000, noisy=True
+                        verbose=(i < self._hyperparams['verbose_trials']), noisy=True
                         )
                     samples[k].append(sample)
         target_position = agent_config['target_end_effector'][:3]
@@ -1250,9 +1250,9 @@ def main():
                 # gps_global.test_policy(itr=i, N=compare_costs)
                 plt.close()
     else:
-        hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_z_0.05_0/'
-        if not os.path.exists(exp_dir + 'data_files_maxent_9cond_z_0.05_0/'):
-            os.makedirs(exp_dir + 'data_files_maxent_9cond_z_0.05_0/')
+        hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_z_train_demo_0/'
+        if not os.path.exists(exp_dir + 'data_files_maxent_9cond_z_train_demo_0/'):
+            os.makedirs(exp_dir + 'data_files_maxent_9cond_z_train_demo_0/')
         # hyperparams.config['agent']['randomly_sample_bodypos'] = True
         hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
         gps = GPSMain(hyperparams.config)

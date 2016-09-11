@@ -266,9 +266,12 @@ class AlgorithmMDGPS(Algorithm):
             # Compute values under Laplace approximation. This is the policy
             # that the previous samples were actually drawn from under the
             # dynamics that were estimated from the previous samples.
-            prev_laplace[m] = self.traj_opt.estimate_cost(
-                    prev_nn, self.prev[m].traj_info
-            ).sum()
+            try:
+                prev_laplace[m] = self.traj_opt.estimate_cost(
+                        prev_nn, self.prev[m].traj_info
+                ).sum()
+            except OverflowError:
+                import pdb; pdb.set_trace()
             # This is the actual cost that we experienced.
             prev_mc[m] = self.prev[m].cs.mean(axis=0).sum()
             # This is the policy that we just used under the dynamics that
