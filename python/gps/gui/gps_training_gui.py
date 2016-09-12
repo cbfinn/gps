@@ -332,9 +332,9 @@ class GPSTrainingGUI(object):
             condition_titles += ' | %8s %9s %-7d' % ('', 'condition', m)
             itr_data_fields  += ' | %8s %8s %8s' % ('  cost  ', '  step  ', 'entropy ')
 
-            if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
-                condition_titles += ' %8s' % ('')
-                itr_data_fields  += ' %8s' % ('kl_div')
+            #if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
+            #    condition_titles += ' %8s' % ('')
+            #    itr_data_fields  += ' %8s' % ('kl_div')
             if 'target_end_effector' in algorithm._hyperparams:
                 condition_titles += ' %8s' % ('')
                 itr_data_fields  += ' %8s' % ('mean_dist')
@@ -361,10 +361,17 @@ class GPSTrainingGUI(object):
             samples = [sl[0] for sl in pol_sample_lists]
             if 'global_cost' in algorithm._hyperparams and algorithm._hyperparams['global_cost'] and \
                     type(algorithm.cost) != list:
+                #if algorithm._hyperparams['ioc']:
+                #    pol_costs = [np.sum(algorithm.gt_cost.eval(s)[0])
+                #            for s in samples]
+                #else:
                 pol_costs = [np.sum(algorithm.cost.eval(s)[0])
                         for s in samples]
             else:
-                
+                #if algorithm._hyperparams['ioc']:
+                #    pol_costs = [np.sum(algorithm.gt_cost.eval(s)[0])
+                #            for s in samples]
+                #else:
                 pol_costs = [np.sum(algorithm.cost[idx].eval(s)[0])
                         for s, idx in zip(samples, test_idx)]
             itr_data = '%3d | %8.2f %12.2f' % (itr, avg_cost, np.mean(pol_costs))
@@ -376,15 +383,15 @@ class GPSTrainingGUI(object):
             entropy = 2*np.sum(np.log(np.diagonal(algorithm.prev[m].traj_distr.chol_pol_covar,
                     axis1=1, axis2=2)))
             itr_data += ' | %8.2f %8.2f %8.2f' % (cost, step, entropy)
-            if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
-                itr_data += ' %8.2f' % (algorithm.kl_div[itr][m])
-                
+            #if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
+            #    itr_data += ' %8.2f' % (algorithm.kl_div[itr][m])
+
             if pol_sample_lists is None:
                 itr_data += ' %8.2f' % (algorithm.dists_to_target[itr][m])
             else:
                 if 'target_end_effector' in algorithm._hyperparams:
                     from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
-                    if type(algorithm._hyperparams['target_end_effector']) is list: 
+                    if type(algorithm._hyperparams['target_end_effector']) is list:
                         target_position = algorithm._hyperparams['target_end_effector'][m][:3]
                     else:
                         target_position = algorithm._hyperparams['target_end_effector'][:3]
@@ -486,7 +493,7 @@ class GPSTrainingGUI(object):
         for i in range(len(demo_losses)):
             self._demo_cost_plotter.set_sequence(i, demo_losses[i])
 
-        for i in range(len(sample_losses)):
+        for i in range(5): #len(sample_losses)):
             self._demo_cost_plotter.set_sequence(len(demo_losses)+i, sample_losses[i], style='--')
 
     def _update_ioc_dist_plot(self, dist_cost, demo_dist_cost):
