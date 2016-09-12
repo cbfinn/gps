@@ -301,7 +301,8 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         A NetParameter specification of the network.
     """
     from gps.algorithm.cost.config import COST_IOC_NN
-
+    num_hidden = 2
+    dim_hidden = 42
     if dim_hidden is None:
         dim_hidden = 42
 
@@ -381,7 +382,7 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                                      axis=2)
         n.Ax = L.InnerProduct(n.feat, num_output=dim_hidden,
                               weight_filler=dict(type='gaussian', std=0.01),
-                              bias_filler=dict(type='constant', value=0),
+                              bias_filler=dict(type='constant', value=1),
                               axis=2)
 
         # Dot product operation with two layers

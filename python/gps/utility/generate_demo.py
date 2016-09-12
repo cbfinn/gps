@@ -106,7 +106,6 @@ class GenDemo(object):
                 controllers = {}
 
                 # Store each controller under M conditions into controllers.
-                import pdb; pdb.set_trace()
                 for i in xrange(M):
                     controllers[i] = self.algorithm.cur[i].traj_distr
                 controllers_var = copy.copy(controllers)
@@ -155,7 +154,6 @@ class GenDemo(object):
                     #    demo_idx_conditions.append(m)
                     #agent_config['pos_body_offset'].extend(demo_agent_config['pos_body_offset'])
             # Filter failed demos
-            import pdb; pdb.set_trace()
             if agent_config.get('filter_demos', False): # USED FOR PR2
                 target_position = agent_config['target_end_effector'][:3]
                 dist_threshold = agent_config.get('success_upper_bound', 0.01)

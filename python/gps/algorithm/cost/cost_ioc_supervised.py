@@ -22,6 +22,8 @@ class CostIOCSupervised(CostIOCNN):
         super(CostIOCSupervised, self).__init__(hyperparams)
         self.gt_cost = hyperparams['gt_cost']  # Ground truth cost
         self.gt_cost = self.gt_cost['type'](self.gt_cost)
+        self.eval_gt = hyperparams.get('eval_gt', False)
+
         self.agent = hyperparams['agent']  # Required for sample packing
         self.agent = self.agent['type'](self.agent)
         self.weights_dir = hyperparams['weight_dir']
@@ -36,6 +38,12 @@ class CostIOCSupervised(CostIOCNN):
         solver.net.copy_from(self.weight_file)  # Load weights into train net
 
         self.finetune = hyperparams.get('finetune', False)
+
+    def eval(self, sample):
+        if self.eval_gt:
+            return self.gt_cost.eval(sample)
+        else:
+            return super(CostIOCSupervised, self).eval(sample)
 
     def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw):
         """
@@ -61,7 +69,7 @@ class CostIOCSupervised(CostIOCNN):
         self.init_supervised(solver, U, X, O)
 
 
-    def init_supervised(self, solver, sampleU, sampleX, sampleO, heartbeat=5):
+    def init_supervised(self, solver, sampleU, sampleX, sampleO, heartbeat=10):
         """
         """
 
@@ -83,6 +91,7 @@ class CostIOCSupervised(CostIOCNN):
             sample_costs.append(l)
         sample_costs = np.array(sample_costs)
         sample_costs = np.expand_dims(sample_costs, -1)
+        T = sample_costs.shape[1]
 
         for i in range(self._hyperparams['iterations']):
           # Randomly sample batches
@@ -113,7 +122,14 @@ class CostIOCSupervised(CostIOCNN):
             supervised_losses.append(l)
         supervised_losses = np.array(supervised_losses)
         supervised_losses = np.expand_dims(supervised_losses, -1)
-        import pdb; pdb.set_trace()
+
+        import matplotlib.pyplot as plt
+        plt.figure()
+        linestyles = ['-', ':', 'dashed']
+        for i in range(4):
+            plt.plot(np.arange(T), sample_costs[i], color='red', linestyle=linestyles[i%len(linestyles)])
+            plt.plot(np.arange(T), 2*supervised_losses[i], color='blue', linestyle=linestyles[i%len(linestyles)])
+        plt.show()
 
         solver.net.save(self.weight_file)
 
