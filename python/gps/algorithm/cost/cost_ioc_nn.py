@@ -267,13 +267,7 @@ class CostIOCNN(Cost):
             self._hyperparams['network_model'](**network_arch_params)
         )
 
-        network_arch_params['phase'] = 'supervised'
-        solver_param.test_net_param.add().CopyFrom(
-            self._hyperparams['network_model'](**network_arch_params)
-        )
-
         # These are required by Caffe to be set, but not used.
-        solver_param.test_iter.append(1)
         solver_param.test_iter.append(1)
         solver_param.test_iter.append(1)
         solver_param.test_interval = 1000000
