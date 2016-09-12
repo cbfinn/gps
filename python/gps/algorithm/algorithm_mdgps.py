@@ -299,6 +299,8 @@ class AlgorithmMDGPS(Algorithm):
         elif self._hyperparams['step_rule'] == 'mc':
             predicted_impr = prev_mc - prev_predicted
             actual_impr = prev_mc - cur_mc
+        else:
+            raise NotImplementedError()
         LOGGER.debug('Previous cost: Laplace: %f, MC: %f',
                      prev_laplace, prev_mc)
         LOGGER.debug('Predicted cost: Laplace: %f', prev_predicted)

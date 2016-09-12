@@ -51,10 +51,14 @@ class CostFK(Cost):
         tgt = self._hyperparams['target_end_effector']
         pt = sample.get(END_EFFECTOR_POINTS)
         dist = pt - tgt
-        # TODO - These should be partially zeros so we're not double
-        #        counting.
-        #        (see pts_jacobian_only in matlab costinfos code)
-        jx = sample.get(END_EFFECTOR_POINT_JACOBIANS)
+
+        if self._hyperparams.get('use_jacobian', True):
+            # TODO - These should be partially zeros so we're not double
+            #        counting.
+            #        (see pts_jacobian_only in matlab costinfos code)
+            jx = sample.get(END_EFFECTOR_POINT_JACOBIANS)
+        else:
+            jx = np.zeros((T, dist.shape[1], dU))
 
         # Evaluate penalty term. Use estimated Jacobians and no higher
         # order terms.

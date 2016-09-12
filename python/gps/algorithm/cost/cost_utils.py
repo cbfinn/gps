@@ -309,7 +309,7 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
 
     # Needed for Caffe to find defined python layers.
     sys.path.append('/'.join(str.split(current_path, '/')[:-1]))
-    if phase == TRAIN and ioc_loss == 'SUPERVISED':
+    if phase == 'supervised':
         data_layer_info = json.dumps({
             'shape': [{'dim': (sample_batch_size+demo_batch_size, T, dim_input)}, # sample obs
                       {'dim': (sample_batch_size+demo_batch_size, T, 1)},  # sample torque norm
@@ -392,7 +392,7 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                                      param=[dict(lr_mult=0), dict(lr_mult=0)])
         n.all_costs = L.Eltwise(n.all_costs_preu, n.all_u, operation=EltwiseParameter.SUM, coeff=[1.0,1.0])
 
-    if phase == TRAIN and ioc_loss == 'SUPERVISED':
+    if phase == 'supervised':
         n.out = L.EuclideanLoss(n.all_costs, n.cost_labels)
     elif phase == TRAIN:
         n.demo_costs, n.sample_costs = L.Slice(n.all_costs, axis=0, slice_point=demo_batch_size, ntop=2)
