@@ -9,7 +9,6 @@ import caffe
 from caffe.proto.caffe_pb2 import SolverParameter, TRAIN, TEST
 from google.protobuf.text_format import MessageToString
 
-from gps.algorithm.cost.config import COST_IOC_NN
 from gps.algorithm.cost.cost import Cost
 from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.utility.demo_utils import xu_to_sample_list, extract_demos
@@ -26,12 +25,14 @@ class CostIOCSupervised(CostIOCNN):
         self.agent = hyperparams['agent']  # Required for sample packing
         self.agent = self.agent['type'](self.agent)
         self.weights_dir = hyperparams['weight_dir']
-        self.weight_file = join(self.weight_dir, 'supervised_net.net')
+        self.weight_file = join(self.weights_dir, 'supervised_net.weights')
+        self.params_file = join(self.weights_dir, 'supervised_net.params')
 
-        solver = init_solver(phase='supervised')
+        #import pdb; pdb.set_trace()
+        solver = self.init_solver(phase='supervised')
         if hyperparams.get('init_from_demos', True):
-            self.init_supervised_demos(hyperparams['demo_file'])
-        solver = init_solver(phase=TRAIN)
+            self.init_supervised_demos(solver, hyperparams['demo_file'])
+        solver = self.init_solver(phase=TRAIN)
         solver.net.copy_from(self.weight_file)  # Load weights into train net
 
         self.finetune = hyperparams.get('finetune', False)
@@ -55,12 +56,12 @@ class CostIOCSupervised(CostIOCNN):
             return
 
 
-    def init_supervised_demos(self, demo_file):
+    def init_supervised_demos(self, solver, demo_file):
         X, U, O = extract_demos(demo_file)
-        self.init_supervised(U, X, O)
+        self.init_supervised(solver, U, X, O)
 
 
-    def init_supervised(self, solver, sampleU, sampleX, sampleO):
+    def init_supervised(self, solver, sampleU, sampleX, sampleO, heartbeat=5):
         """
         """
 
@@ -97,18 +98,24 @@ class CostIOCSupervised(CostIOCNN):
           solver.step(1)
           train_loss = solver.net.blobs[blob_names[-1]].data
           average_loss += train_loss
-          if i % 500 == 0 and i != 0:
+          if i % heartbeat == 0 and i != 0:
             LOGGER.debug('Caffe iteration %d, average loss %f',
-                         i, average_loss / 500)
+                         i, average_loss / heartbeat)
             average_loss = 0
-        import pdb; pdb.set_trace()
-
         # Keep track of Caffe iterations for loading solver states.
         self.caffe_iter += self._hyperparams['iterations']
         solver.test_nets[0].share_with(solver.net)
         solver.test_nets[1].share_with(solver.net)
 
-        solver.save(self.weight_file)
+        supervised_losses = []
+        for n in range(Ns):
+            l, _, _, _, _, _ = self.eval(sample_list[n])
+            supervised_losses.append(l)
+        supervised_losses = np.array(supervised_losses)
+        supervised_losses = np.expand_dims(supervised_losses, -1)
+        import pdb; pdb.set_trace()
+
+        solver.net.save(self.weight_file)
 
 
     def init_solver(self, phase='supervised', sample_batch_size=None):
@@ -160,9 +167,12 @@ class CostIOCSupervised(CostIOCNN):
         solver_param.test_iter.append(1)
         solver_param.test_interval = 1000000
 
-        f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
-        f.write(MessageToString(solver_param))
-        f.close()
-        self.solver = caffe.get_solver(f.name)
+        #f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
+        #f.write(MessageToString(solver_param))
+        #f.close()
+        with open(self.params_file+'.'+str(phase), 'w+') as f:
+            f.write(MessageToString(solver_param))
+            fname = f.name
+        self.solver = caffe.get_solver(fname)
         self.caffe_iter = 0
         return self.solver
