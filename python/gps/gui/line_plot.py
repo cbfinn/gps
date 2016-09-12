@@ -11,7 +11,7 @@ from gps.gui.util import buffered_axis_limits
 
 
 class LinePlotter(object):
-    def __init__(self, fig, gs, label='mean', color='black', num_plots=10, gui_on=True):
+    def __init__(self, fig, gs, label='mean', color='black', num_plots=20, gui_on=True):
         self._fig = fig
         self._gs = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=gs)
         self._ax = plt.subplot(self._gs[0])
