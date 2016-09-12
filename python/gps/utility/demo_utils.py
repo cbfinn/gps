@@ -17,7 +17,7 @@ def generate_pos_body_offset(conditions):
 	pos_body_offset = []
 	for i in xrange(conditions):
 		# Make the uniform distribution to be [-0.12, 0.12] for learning from prior. For peg ioc, this should be [-0.1, -0.1].
-		pos_body_offset.append((0.2 * (np.random.rand(1, 3) - 0.5)).reshape((3, )))
+		pos_body_offset.append((0.3 * (np.random.rand(1, 3) - 0.5)).reshape((3, )))
 	return pos_body_offset
 
 def generate_x0(x0, conditions):

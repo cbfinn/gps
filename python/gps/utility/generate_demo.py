@@ -125,22 +125,23 @@ class GenDemo(object):
 
                 # self.algorithm.num_policies = self.algorithm._hyperparams.get('num_policies', 1)
                 # for j in xrange(self.algorithm.num_policies):
-                # for j in xrange(1):
-                    # if self.algorithm._hyperparams['multiple_policy']:
-                    #     pol = self.algorithm.policy_opts[j].policy
-                    # else:
-                    #     pol = self.algorithm.policy_opt.policy
-                    # pol.chol_pol_covar *= var_mult
+                # # for j in xrange(1):
+                #     if self.algorithm._hyperparams['multiple_policy']:
+                #         pol = self.algorithm.policy_opts[j].policy
+                #     else:
+                #         pol = self.algorithm.policy_opt.policy
+                #     pol.chol_pol_covar *= var_mult
 
-                    # for i in range(M / self.algorithm.num_policies * j, M / self.algorithm.num_policies * (j + 1)):
-                for i in xrange(M):
+                # for i in range(M / self.algorithm.num_policies * j, M / self.algorithm.num_policies * (j + 1)):
+                # for i in xrange(M):
                     # Gather demos.
-                    for alg in self.algorithms:
-                        pol = alg.policy_opt.policy
+                for a in xrange(len(self.algorithms)):
+                    pol = self.algorithms[a].policy_opt.policy
+                    for i in xrange(M / len(self.algorithms) * a, M / len(self.algorithms) * (a + 1)):
                         for j in xrange(N):
                             demo = self.agent.sample(
                                 pol, i, # Should be changed back to controller if using linearization
-                                verbose=(i < self._hyperparams['verbose_trials']), noisy=True
+                                verbose=(i < self._hyperparams['verbose_trials']), noisy=False
                                 ) # Add noise seems not working. TODO: figure out why
                             # demos.append(demo)
                             demos.append(demo)
@@ -177,7 +178,6 @@ class GenDemo(object):
             # Filter out worst (M - good_conds) demos.
             elif agent_config['type']==AgentMuJoCo and agent_config['filename'] == './mjc_models/pr2_arm3d.xml':
                 target_position = agent_config['target_end_effector'][:3]
-                N = 3 * N
                 dists_to_target = np.zeros(M*N)
                 # dists_to_target = np.zeros(len(demos)*N)
                 # dists_to_target = [np.zeros(M*N) for i in xrange(4)]
@@ -198,11 +198,11 @@ class GenDemo(object):
                         # Just choose the last time step since it may become unstable after achieving the minimum point.
                         dists_to_target[i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
                         # dists_to_target[k][i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
-                        # if dists_to_target[i*N + j] > agent_config['success_upper_bound']:
-                        #     failed_indices.append(i)
-                        if dists_to_target[i*N + j] <= agent_config['success_upper_bound']:
-                            good_indices.append(i)
-                # good_indices = [i for i in xrange(M) if i not in failed_indices]
+                        if dists_to_target[i*N + j] > agent_config['success_upper_bound']:
+                            failed_indices.append(i)
+                        # if dists_to_target[i*N + j] <= agent_config['success_upper_bound']:
+                        #     good_indices.append(i)
+                good_indices = [i for i in xrange(M) if i not in failed_indices]
                 # good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
                 import pdb; pdb.set_trace()
                 self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
@@ -245,7 +245,7 @@ class GenDemo(object):
                 # subplt = plt.subplot()
                 ax.scatter(demo_conditions_x, demo_conditions_y, demo_conditions_z, c='g', marker='o')
                 ax.scatter(failed_conditions_x, failed_conditions_y, failed_conditions_z, c='r', marker='x')
-                ax.scatter([-0.05, -0.05, .05, .05], [-0.05, 0.05, -.05, .05], [-0.05, 0.05, .05, .05], c='b', marker='*')
+                # ax.scatter([-0.05, -0.05, .05, .05], [-0.05, 0.05, -.05, .05], [-0.05, 0.05, .05, .05], c='b', marker='*')
                 # subplt.plot(demo_conditions_x, demo_conditions_y, 'go')
                 # subplt.plot(failed_conditions_x, failed_conditions_y, 'rx')
                 # ax = plt.gca()
