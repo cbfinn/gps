@@ -13,6 +13,9 @@ from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.cost.cost_state import CostState
+from gps.algorithm.cost.cost_ioc_supervised import CostIOCSupervised
+from gps.algorithm.cost.cost_ioc_wrapper import CostIOCWrapper
+
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_sum import CostSum
 #from gps.algorithm.cost.cost_gym import CostGym
@@ -48,6 +51,8 @@ np.random.seed(47)
 pos_body_offset = []
 pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
 #pos_body_offset.append(np.array([0.05, 0.2, 0.0]))
+#for _ in range(CONDITIONS):
+#    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
 
 demo_pos_body_offset = []
 #demo_pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
@@ -131,6 +136,8 @@ algorithm = {
     'plot_dir': EXP_DIR,
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
                             for i in xrange(CONDITIONS)],
+    #'global_cost': True,
+    #'demo_conditions': [],
 }
 
 PR2_GAINS = np.array([1.0, 1.0])
@@ -138,6 +145,7 @@ torque_cost_1 = [{
     'type': CostAction,
     'wu': 1 / PR2_GAINS,
 } for i in range(common['conditions'])]
+
 
 fk_cost_1 = [{
     'type': CostFK,
@@ -147,7 +155,22 @@ fk_cost_1 = [{
     'l2': 10.0,
     'alpha': 1e-5,
     'evalnorm': evall1l2term,
+    #'use_jacobian': False
 } for i in range(common['conditions'])]
+
+
+"""
+state_cost = [{
+    'type': CostState,
+    'A': np.eye(SENSOR_DIMS[END_EFFECTOR_POINTS]),
+    'wp': np.array([1, 1, 1, 0, 0, 0]),
+    'l1': 0.1,
+    'l2': 10.0,
+    'alpha': 1e-5,
+    'data_type': END_EFFECTOR_POINTS,
+    'evalnorm': evall1l2term,
+} for i in range(common['conditions'])]
+"""
 
 algorithm['gt_cost'] = [{
     'type': CostSum,
@@ -155,12 +178,13 @@ algorithm['gt_cost'] = [{
     'weights': [200.0, 100.0],
 }  for i in range(common['conditions'])][0]
 
+
 algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
     'type': CostIOCNN,
     'wu': 200 / PR2_GAINS,
     'T': agent['T'],
     'dO': 16,
-    'iterations': 5000,
+    'iterations': 1000,
     'demo_batch_size': 5,
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
@@ -168,6 +192,36 @@ algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
     'mono_reg_weight': 0.0,
     'learn_wu': False,
 }
+
+"""
+algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
+    'type': CostIOCSupervised,
+    'weight_dir': common['data_files_dir'],
+    'agent': demo_agent,
+    'gt_cost': algorithm['gt_cost'],
+    'demo_file': os.path.join(common['data_files_dir'], 'demos_LG.pkl'),
+    'finetune': False,
+
+    'wu': 200 / PR2_GAINS,
+    'T': agent['T'],
+    'dO': 16,
+    'iterations': 1000,
+    'demo_batch_size': 5,
+    'sample_batch_size': 5,
+    'ioc_loss': algorithm['ioc'],
+    'smooth_reg_weight': 0.0,
+    'mono_reg_weight': 0.0,
+    'learn_wu': False,
+}
+"""
+
+"""
+algorithm['cost'] = {
+    'type': CostIOCWrapper,
+    'wrapped_cost': algorithm['gt_cost']
+}
+"""
+
 
 #algorithm['init_traj_distr'] = {
 #    'type': init_demo,
@@ -226,7 +280,7 @@ algorithm['policy_prior'] = {
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': 10,
-    'verbose_trials': 5,
+    'verbose_trials': 1,
     'verbose_policy_trials': 0,
     'common': common,
     'agent': agent,
