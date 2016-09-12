@@ -42,22 +42,41 @@ SENSOR_DIMS = {
 
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
-DEMO_DIR = BASE_DIR + '/../experiments/reacher/'
+#DEMO_DIR = BASE_DIR + '/../experiments/reacher/'
+DEMO_DIR = BASE_DIR + '/../experiments/reacher_mdgps/'
 
-CONDITIONS = 1
-DEMO_CONDITIONS = 20
+#CONDITIONS = 1
+#DEMO_CONDITIONS = 4
+
+#np.random.seed(47)
+#pos_body_offset = []
+#pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
+
+#demo_pos_body_offset = []
+#for _ in range(DEMO_CONDITIONS):
+#    demo_pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
+
+#CONDITIONS = 1
+TRAIN_CONDITIONS = 9
 
 np.random.seed(47)
-pos_body_offset = []
-pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
-#pos_body_offset.append(np.array([0.05, 0.2, 0.0]))
-#for _ in range(CONDITIONS):
-#    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
+DEMO_CONDITIONS = 20
+TEST_CONDITIONS = 9
+TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
 
 demo_pos_body_offset = []
-#demo_pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
 for _ in range(DEMO_CONDITIONS):
     demo_pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
+
+pos_body_offset = []
+for _ in range(TOTAL_CONDITIONS):
+    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
+
+CONDITIONS = 1 #TRAIN_CONDITIONS
+pos_body_offset = [pos_body_offset[1]]
+pos_body_offset = []
+pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
+
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -67,9 +86,15 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_exp_dir': DEMO_DIR,
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_14.pkl',
+    #'demo_controller_file': DEMO_DIR + 'data_files_maxent_9cond_z_0.05_1/algorithm_itr_14.pkl',
+    #'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_14.pkl',
+    'nn_demo': True,
+    'demo_controller_file': DEMO_DIR + 'data_files_maxent_9cond_z_0.05_1/algorithm_itr_09.pkl',
+    #'nn_demo': True,
     'conditions': CONDITIONS,
-    'nn_demo': False,
+    #'conditions': TOTAL_CONDITIONS,
+    #'train_conditions': range(TRAIN_CONDITIONS),
+    #'test_conditions': range(TRAIN_CONDITIONS, TOTAL_CONDITIONS),
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -93,8 +118,10 @@ agent = {
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
     'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    #'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(CONDITIONS)],
+    'render': True,
 }
 
 demo_agent = {
@@ -114,17 +141,22 @@ demo_agent = {
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
     'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    #'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ demo_pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(DEMO_CONDITIONS)],
     'success_upper_bound': 0.01,
+    'render': True,
 }
 
 
 algorithm = {
     'type': AlgorithmTrajOpt,
     'ioc' : 'ICML',
+    'global_cost': True,
     'max_ent_traj': 1.0,
     'conditions': common['conditions'],
+    #'train_conditions': common['train_conditions'],
+    #'test_conditions': common['test_conditions'],
     'kl_step': 0.5,
     'min_step_mult': 0.05,
     'max_step_mult': 2.0,
@@ -175,13 +207,14 @@ state_cost = [{
 algorithm['gt_cost'] = [{
     'type': CostSum,
     'costs': [torque_cost_1[i], fk_cost_1[i]],
-    'weights': [200.0, 100.0],
+    'weights': [2.0, 1.0],
 }  for i in range(common['conditions'])][0]
 
 
 algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
     'type': CostIOCNN,
     'wu': 200 / PR2_GAINS,
+    #'wu': 20000 / PR2_GAINS,
     'T': agent['T'],
     'dO': 16,
     'iterations': 1000,

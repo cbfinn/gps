@@ -7,14 +7,11 @@ import operator
 
 from gps import __file__ as gps_filepath
 from gps.agent.mjc.agent_mjc import AgentMuJoCo
-from gps.algorithm.algorithm_badmm import AlgorithmBADMM
-from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_sum import CostSum
-#from gps.algorithm.cost.cost_gym import CostGym
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
@@ -41,11 +38,13 @@ EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
 
 np.random.seed(47)
-CONDITIONS = 20
+TRAIN_CONDITIONS = 20 # 4
+TEST_CONDITIONS = 20 # 9
+TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
 pos_body_offset = []
 #pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
 #pos_body_offset.append(np.array([0.05, 0.2, 0.0]))
-for _ in range(CONDITIONS):
+for _ in range(TOTAL_CONDITIONS):
     pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
 
 common = {
@@ -55,7 +54,9 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': CONDITIONS,
+    'conditions': TOTAL_CONDITIONS,
+    'train_conditions': range(TRAIN_CONDITIONS),
+    'test_conditions': range(TRAIN_CONDITIONS, TOTAL_CONDITIONS),
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -70,6 +71,8 @@ agent = {
     'pos_body_offset': pos_body_offset,
     'pos_body_idx': np.array([4]),
     'conditions': common['conditions'],
+    'train_conditions': common['train_conditions'],
+    'test_conditions': common['test_conditions'],
     'T': 50,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, \
@@ -79,36 +82,30 @@ agent = {
     'meta_include': [],
     'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[i], np.array([0., 0., 0.])])
-                            for i in xrange(CONDITIONS)],
+        for i in range(TOTAL_CONDITIONS)],
+    'render':True,
 }
+
 
 algorithm = {
-    'type': AlgorithmTrajOpt,
-    'max_ent_traj': 0.01,
+    'type': AlgorithmMDGPS,
+    'sample_on_policy': True,
     'conditions': common['conditions'],
-    'iterations': 15,
-    'step_rule': 'classic',
-    'plot_dir': EXP_DIR,
-    'agent_x0': agent['x0'],
+    'train_conditions': common['train_conditions'],
+    'test_conditions': common['test_conditions'],
+    'iterations': 10,
+    'kl_step': 1.0,
+    'max_ent_traj': 0.0001,
+    'min_step_mult': 0.2,
+    'max_step_mult': 2.0,
+    'policy_sample_mode': 'replace',
     'agent_pos_body_idx': agent['pos_body_idx'],
     'agent_pos_body_offset': agent['pos_body_offset'],
+    'plot_dir': EXP_DIR,
+    'agent_x0': agent['x0'],
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
-                            for i in xrange(CONDITIONS)],
+        for i in range(TOTAL_CONDITIONS)],
 }
-
-
-#algorithm = {
-#    'type': AlgorithmMDGPS,
-#    'sample_on_policy': True,
-#    'conditions': common['conditions'],
-#    'train_conditions': common['train_conditions'],
-#    'test_conditions': common['test_conditions'],
-#    'iterations': 10,
-#    'kl_step': 1.0,
-#    'min_step_mult': 0.2,
-#    'max_step_mult': 2.0,
-#    'policy_sample_mode': 'replace',
-#}
 
 PR2_GAINS = np.array([1.0, 1.0])
 torque_cost_1 = [{
@@ -138,7 +135,7 @@ algorithm['cost'] = [{
     #'type': CostAction,
     #'wu': np.ones(2),
 #}
-
+#
 
 #state_cost = {
     #'type': CostState,
@@ -160,11 +157,11 @@ algorithm['cost'] = [{
 #    'type': CostGym,
 #}
 
-#algorithm['policy_opt'] = {
-#    'type': PolicyOptCaffe,
-#    'iterations': 5000,
-#    'weights_file_prefix': common['data_files_dir'] + 'policy',
-#}
+algorithm['policy_opt'] = {
+    'type': PolicyOptCaffe,
+    'iterations': 5000,
+    'weights_file_prefix': common['data_files_dir'] + 'policy',
+}
 
 algorithm['init_traj_distr'] = {
     'type': init_lqr,
@@ -203,13 +200,15 @@ algorithm['policy_prior'] = {
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': 5,
-    'verbose_trials': 5,
-    'verbose_policy_trials': 0,
+    'verbose_trials': 1,
+    'verbose_policy_trials': 1,
     'common': common,
     'agent': agent,
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
+    'train_conditions': common['train_conditions'],
+    'test_conditions': common['test_conditions'],
     'random_seed': 1,
 }
 
