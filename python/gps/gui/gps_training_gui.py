@@ -382,7 +382,9 @@ class GPSTrainingGUI(object):
                 itr_data += ' %8.2f' % (algorithm.kl_div[itr][m])
                 
             if pol_sample_lists is None:
-                itr_data += ' %8.2f' % (algorithm.dists_to_target[itr][m])
+                if algorithm.dists_to_target:
+                    if itr in algorithm.dists_to_target and algorithm.dists_to_target[itr]:
+                        itr_data += ' %8.2f' % (algorithm.dists_to_target[itr][m])
             else:
                 if 'target_end_effector' in algorithm._hyperparams:
                     from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
@@ -488,8 +490,9 @@ class GPSTrainingGUI(object):
         for i in range(len(demo_losses)):
             self._demo_cost_plotter.set_sequence(i, demo_losses[i])
 
-        for i in range(len(sample_losses)):
-            self._demo_cost_plotter.set_sequence(len(demo_losses)+i, sample_losses[i], style='--')
+        for i in range(max(NUM_DEMO_PLOTS, len(sample_losses))):
+            pass
+            #self._demo_cost_plotter.set_sequence(len(demo_losses)+i, sample_losses[i], style='--')
 
     def _update_ioc_dist_plot(self, dist_cost, demo_dist_cost):
         self._scatter_cost_plotter.clear()
