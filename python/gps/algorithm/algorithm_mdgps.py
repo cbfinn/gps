@@ -70,10 +70,6 @@ class AlgorithmMDGPS(Algorithm):
                     target_position = self._hyperparams['target_end_effector'][:3]
                 cur_samples = sample_lists[m].get_samples()
 
-                # TODO - ONLY FOR REACHER
-                pos_body_offset = cur_samples[0].agent._hyperparams['pos_body_offset'][m]
-                target_position = np.array([.1,-.1,.01])+pos_body_offset
-
                 sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
                 dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
                          for i in xrange(len(cur_samples))]
@@ -335,10 +331,10 @@ class AlgorithmMDGPS(Algorithm):
         if not self._hyperparams['global_cost']:
             for i in xrange(M):
                 self.cost[i].update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, self.sample_list[i].get_U(),
-                                self.sample_list[i].get_X(), self.sample_list[i].get_obs(), samples_logiw[i])
+                                self.sample_list[i].get_X(), self.sample_list[i].get_obs(), samples_logiw[i], itr=self.iteration_count)
         else:
             self.cost.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, sampleU_arr, sampleX_arr,
-                                                        sampleO_arr, samples_logiw_arr)
+                                                        sampleO_arr, samples_logiw_arr, itr=self.iteration_count)
 
     def compute_costs(self, m, eta):
         """ Compute cost estimates used in the LQR backward pass. """

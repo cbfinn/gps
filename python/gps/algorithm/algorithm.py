@@ -99,14 +99,6 @@ class Algorithm(object):
                 for _ in range(self.M)
             ]
 
-        if self._hyperparams.get('gt_conditions', []):
-            #gt_costs = self._hyperparams['gt_costs']
-            #if isinstance(gt_costs, list):
-            #    self.gt_cost = [gt_costs[i]['type'](gt_costs) for i in range(len(gt_costs))]
-            #else:
-            #    self.gt_cost = gt_costs['type'](gt_costs)
-            pass
-
         if self._hyperparams['ioc']:
             self.gt_cost = [
                 self._hyperparams['gt_cost']['type'](self._hyperparams['gt_cost'])
