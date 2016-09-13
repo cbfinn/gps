@@ -184,6 +184,24 @@ algorithm['cost'] = {
     'mono_reg_weight': 100.0,
 }
 
+algorithm['cost'] = {
+    'type': CostIOCSupervised,
+    'weight_dir': common['data_files_dir'],
+    'agent': demo_agent,
+    'gt_cost': algorithm['gt_cost'],
+
+    'wu': 100*5e-5 / PR2_GAINS,
+    'T': 100,
+    'dO': 26,
+    'iterations': 5000,
+    'demo_batch_size': 5,
+    'sample_batch_size': 5,
+    'ioc_loss': algorithm['ioc'],
+    'learn_wu': False,  # set to true to learn torque penalty
+    'smooth_reg_weight': 0.1,
+    'mono_reg_weight': 100.0,
+}
+
 # algorithm['gt_cost'] = {
 #     'type': CostFK,
 #     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),

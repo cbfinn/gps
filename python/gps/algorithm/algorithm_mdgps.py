@@ -56,57 +56,31 @@ class AlgorithmMDGPS(Algorithm):
         itr = self.iteration_count
         self.N = sum(len(self.sample_list[i]) for i in self.sample_list.keys())
         self.num_samples = [len(self.sample_list[i]) for i in self.sample_list.keys()]
-        if not self._hyperparams['learning_from_prior']:
-            for m in range(self.M):
-                self.cur[m].sample_list = sample_lists[m]
-                self._eval_cost(m)
-                prev_samples = self.sample_list[m].get_samples()
-                prev_samples.extend(sample_lists[m].get_samples())
-                self.sample_list[m] = SampleList(prev_samples)
-                self.N += len(sample_lists[m])
-
-                if 'target_end_effector' in self._hyperparams:
-                    if type(self._hyperparams['target_end_effector']) is list: 
-                        target_position = self._hyperparams['target_end_effector'][m][:3]
-                    else:
-                        target_position = self._hyperparams['target_end_effector'][:3]
-                    cur_samples = sample_lists[m].get_samples()
-                    sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
-                    dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
-                             for i in xrange(len(cur_samples))]
-                    self.dists_to_target[itr].append(sum(dists) / len(cur_samples))
-        # Compute mean distance to target. For peg experiment only.
-        else:
-            for m in xrange(self.M):
-                if type(self._hyperparams['target_end_effector']) is list: 
+        for m in range(self.M):
+            self.cur[m].sample_list = sample_lists[m]
+            prev_samples = self.sample_list[m].get_samples()
+            prev_samples.extend(sample_lists[m].get_samples())
+            self.sample_list[m] = SampleList(prev_samples)
+            self.N += len(sample_lists[m])
+            # Compute mean distance to target. For peg experiment only.
+            if 'target_end_effector' in self._hyperparams:
+                if type(self._hyperparams['target_end_effector']) is list:
                     target_position = self._hyperparams['target_end_effector'][m][:3]
                 else:
                     target_position = self._hyperparams['target_end_effector'][:3]
                 cur_samples = sample_lists[m].get_samples()
+
+                # TODO - ONLY FOR REACHER
+                pos_body_offset = cur_samples[0].agent._hyperparams['pos_body_offset'][m]
+                target_position = np.array([.1,-.1,.01])+pos_body_offset
+
                 sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
                 dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
                          for i in xrange(len(cur_samples))]
                 self.dists_to_target[itr].append(sum(dists) / len(cur_samples))
-                if not self._hyperparams['bootstrap']:
-                    self.cur[m].sample_list = sample_lists[m]
-                    prev_samples = self.sample_list[m].get_samples()
-                    prev_samples.extend(sample_lists[m].get_samples())
-                    self.sample_list[m] = SampleList(prev_samples)
-                    self.N += len(sample_lists[m])
-                else:
-                    failed_samples = []
-                    for j in xrange(len(cur_samples)):
-                        if dists[j] <= self._hyperparams['success_upper_bound']:
-                            self.demoU = np.vstack((self.demoU, cur_samples[j].get_U().reshape(1, self.T, -1)))
-                            self.demoX = np.vstack((self.demoX, cur_samples[j].get_X().reshape(1, self.T, -1)))
-                            self.demoO = np.vstack((self.demoO, cur_samples[j].get_obs().reshape(1, self.T, -1)))
-                        else:
-                            failed_samples.append(cur_samples[j])
-                    self.cur[m].sample_list = SampleList(failed_samples)
-                    prev_samples = self.sample_list[m].get_samples()
-                    prev_samples.extend(SampleList(failed_samples))
-                    self.sample_list[m] = SampleList(prev_samples)
-                    self.num_samples[m] += len(failed_samples)
+        #if not self._hyperparams['learning_from_prior']:
+        #    for m in range(self.M):
+        #        self._eval_cost(m)
 
         # Comment this when use random policy initialization and add after line 78
         if self.iteration_count == 0 and self._hyperparams['policy_eval']:
@@ -117,7 +91,8 @@ class AlgorithmMDGPS(Algorithm):
 
         # Move this after line 78 if using random initializarion.
         if self._hyperparams['ioc'] and self._hyperparams['init_demo_policy']:
-            self._update_cost()
+            if self._hyperparams['ioc_maxent_iter'] == -1 or itr < self._hyperparams['ioc_maxent_iter']:
+                self._update_cost()
 
         # On the first iteration we need to make sure that the policy somewhat
         # matches the init controller. Otherwise the LQR backpass starts with
@@ -136,27 +111,31 @@ class AlgorithmMDGPS(Algorithm):
         #     self.linear_policies[self.iteration_count].append(self.cur[m].pol_info.traj_distr())
         if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
         # if self._hyperparams['ioc'] and self._hyperparams['init_demo_policy']:
-            self._update_cost()
+            if self._hyperparams['ioc_maxent_iter'] == -1 or itr < self._hyperparams['ioc_maxent_iter']:
+                self._update_cost()
 
         # Update policy linearizations.
         for m in range(self.M):
-            self._update_policy_fit(m)
             self._eval_cost(m)
+            self._update_policy_fit(m)
 
         # C-step
         if self.iteration_count > 0:
-            self._stepadjust()
+            try:
+                self._stepadjust()
+            except OverflowError:
+                import pdb; pdb.set_trace()
         self._update_trajectories()
 
         # S-step
         self._update_policy()
 
         # Computing KL-divergence between sample distribution and demo distribution
-        if self._hyperparams['ioc'] and not self._hyperparams['learning_from_prior']:
-            for i in xrange(self.M):
-                mu, sigma = self.traj_opt.forward(self.traj_distr[itr][i], self.traj_info[itr][i])
-                # KL divergence between current traj. distribution and gt distribution
-                self.kl_div[itr].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][i], self.demo_traj[0])) # Assuming Md == 1
+        #if self._hyperparams['ioc'] and not self._hyperparams['learning_from_prior']:
+        #    for i in xrange(self.M):
+        #        mu, sigma = self.traj_opt.forward(self.traj_distr[itr][i], self.traj_info[itr][i])
+        #        # KL divergence between current traj. distribution and gt distribution
+        #        self.kl_div[itr].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][i], self.demo_traj[0])) # Assuming Md == 1
 
         # Prepare for next iteration
         self._advance_iteration_variables()
@@ -364,7 +343,10 @@ class AlgorithmMDGPS(Algorithm):
     def compute_costs(self, m, eta):
         """ Compute cost estimates used in the LQR backward pass. """
         traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
-        multiplier = self._hyperparams['max_ent_traj']
+        if self._hyperparams['ioc_maxent_iter'] == -1 or self.iteration_count < self._hyperparams['ioc_maxent_iter']:
+            multiplier = self._hyperparams['max_ent_traj']
+        else:
+            multiplier = 0.0
         pol_info = self.cur[m].pol_info
         T, dU, dX = traj_distr.T, traj_distr.dU, traj_distr.dX
         Cm, cv = np.copy(traj_info.Cm), np.copy(traj_info.cv)
