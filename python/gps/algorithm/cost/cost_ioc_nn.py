@@ -10,6 +10,8 @@ from google.protobuf.text_format import MessageToString
 
 from gps.algorithm.cost.config import COST_IOC_NN
 from gps.algorithm.cost.cost import Cost
+from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES,\
+    END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, END_EFFECTOR_POINT_JACOBIANS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +25,8 @@ class CostIOCNN(Cost):
 
         self._dO = self._hyperparams['dO']
         self._T = self._hyperparams['T']
+        self.use_jacobian = self._hyperparams['use_jacobian']
+
 
         # By default using caffe
         if self._hyperparams['use_gpu']:
@@ -135,6 +139,19 @@ class CostIOCNN(Cost):
         for t in xrange(T):
           lx[t, :] = dfdx[t, :, :].T.dot(dldf[:dF, t])
           lxx[t, :, :] = dfdx[t, :, :].T.dot(A[:dF,:dF]).dot(dfdx[t, :, :])
+
+        if self.use_jacobian and END_EFFECTOR_POINT_JACOBIANS in sample._data:
+            jnt_idx = sample.agent.get_idx_x(JOINT_ANGLES)
+            vel_idx = sample.agent.get_idx_x(JOINT_VELOCITIES)
+
+            jx = sample.get(END_EFFECTOR_POINT_JACOBIANS)
+            dl_dee = sample.agent.unpack_data_x(lx, [END_EFFECTOR_POINTS])
+            dl_dev = sample.agent.unpack_data_x(lx, [END_EFFECTOR_POINT_VELOCITIES])
+
+            for t in xrange(T):
+                lx[t, jnt_idx] += jx[t].T.dot(dl_dee[t])
+                lx[t, vel_idx] += jx[t].T.dot(dl_dev[t])
+
         return l, lx, lu, lxx, luu, lux
 
     # TODO - we might want to make the demos and samples input as SampleList objects, rather than arrays.
