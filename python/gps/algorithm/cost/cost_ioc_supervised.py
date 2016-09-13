@@ -28,15 +28,21 @@ class CostIOCSupervised(CostIOCNN):
         self.agent = hyperparams['agent']  # Required for sample packing
         self.agent = self.agent['type'](self.agent)
         self.weights_dir = hyperparams['weight_dir']
-        self.weight_file = join(self.weights_dir, 'supervised_net.weights')
+        #self.weight_file = join(self.weights_dir, 'supervised_net.weights')
         self.params_file = join(self.weights_dir, 'supervised_net.params')
 
-        #import pdb; pdb.set_trace()
-        solver = self.init_solver(phase='supervised')
+        # Debugging
+        X, U, O, cond = extract_demos(self._hyperparams['demo_file'])
+        self.test_sample_list = xu_to_sample_list(self.agent, X, U)
+
+        sup_solver = self.init_solver(phase='supervised')
         if hyperparams.get('init_from_demos', True):
-            self.init_supervised_demos(solver, hyperparams['demo_file'])
+            self.init_supervised_demos(sup_solver, hyperparams['demo_file'], hyperparams.get('traj_samples', []))
         solver = self.init_solver(phase=TRAIN)
-        solver.net.copy_from(self.weight_file)  # Load weights into train net
+        solver.net.share_with(sup_solver.net)
+        solver.test_nets[0].share_with(sup_solver.net)
+        solver.test_nets[1].share_with(sup_solver.net)
+        #solver.net.copy_from(self.weight_file)  # Load weights into train net
 
         self.finetune = hyperparams.get('finetune', False)
 
@@ -45,6 +51,11 @@ class CostIOCSupervised(CostIOCNN):
             return self.gt_cost.eval(sample)
         else:
             return super(CostIOCSupervised, self).eval(sample)
+
+
+    def test_eval(self):
+        return self.eval(self.test_sample_list[0])[0]
+
 
     def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw):
         """
@@ -65,16 +76,31 @@ class CostIOCSupervised(CostIOCNN):
             return
 
 
-    def init_supervised_demos(self, solver, demo_file):
+    def init_supervised_demos(self, solver, demo_file, traj_files):
         X, U, O, cond = extract_demos(demo_file)
-        self.init_supervised(solver, U, X, O)
 
+        import pickle
 
-    def init_supervised(self, solver, sampleU, sampleX, sampleO, heartbeat=100):
+        for traj_file in traj_files:
+            with open(traj_file, 'r') as f:
+                sample_lists = pickle.load(f)
+                for sample_list in sample_lists:
+                    X = np.r_[sample_list.get_X(), X]
+                    U = np.r_[sample_list.get_U(), U]
+                    # O = np.r_[sample_list.get_obs(), O]
+        n_test = 5
+        testX = X[-n_test:]
+        testU = U[-n_test:]
+        X = X[:-n_test]
+        U = U[:-n_test]
+
+        self.init_supervised(solver, U, X, O, testX, testU)
+
+    def init_supervised(self, solver, sampleU, sampleX, sampleO, testX, testU, heartbeat=100):
         """
         """
 
-        Ns = sampleO.shape[0]  # Num samples
+        Ns = sampleX.shape[0]  # Num samples
         print 'Num samples:', Ns
 
         sample_batch_size = self.sample_batch_size + self.demo_batch_size
@@ -95,46 +121,63 @@ class CostIOCSupervised(CostIOCNN):
         T = sample_costs.shape[1]
 
         for i in range(self._hyperparams['init_iterations']):
-          # Randomly sample batches
-          np.random.shuffle(sample_idx)
+            # Randomly sample batches
+            np.random.shuffle(sample_idx)
 
-          # Load in data for this batch.
-          s_start_idx = int(i * sample_batch_size %
-              (sbatches_per_epoch * sample_batch_size))
-          s_idx_i = sample_idx[s_start_idx:s_start_idx+sample_batch_size]
-          solver.net.blobs[blob_names[0]].data[:] = sampleO[s_idx_i]
-          solver.net.blobs[blob_names[1]].data[:] = np.sum(self._hyperparams['wu']*sampleU[s_idx_i]**2, axis=2, keepdims=True)
-          solver.net.blobs[blob_names[2]].data[:] = sample_costs[s_idx_i]
-          solver.step(2)
-          train_loss = solver.net.blobs[blob_names[-1]].data
-          average_loss += train_loss
-          if i % heartbeat == 0 and i != 0:
-            LOGGER.debug('Caffe iteration %d, average loss %f',
-                         i, average_loss / heartbeat)
-            average_loss = 0
+            # Load in data for this batch.
+            s_start_idx = int(i * sample_batch_size %
+                              (sbatches_per_epoch * sample_batch_size))
+            s_idx_i = sample_idx[s_start_idx:s_start_idx + sample_batch_size]
+            solver.net.blobs[blob_names[0]].data[:] = sampleX[s_idx_i]
+            solver.net.blobs[blob_names[1]].data[:] = np.sum(self._hyperparams['wu'] * sampleU[s_idx_i] ** 2, axis=2,
+                                                             keepdims=True)
+            solver.net.blobs[blob_names[2]].data[:] = sample_costs[s_idx_i]
+            solver.step(2)
+            train_loss = solver.net.blobs[blob_names[-1]].data
+            # test_loss = solver.test_nets[0].blobs[blob_names[-1]].data
+            average_loss += train_loss
+            if i % heartbeat == 0 and i != 0:
+                LOGGER.debug('Caffe iteration %d, average loss %f',
+                             i, average_loss / heartbeat)
+                # print 'test_loss:', test_loss
+                print 'train_loss:', train_loss
+                average_loss = 0
         # Keep track of Caffe iterations for loading solver states.
-        self.caffe_iter += self._hyperparams['iterations']
+        # self.caffe_iter += self._hyperparams['iterations']
         solver.test_nets[0].share_with(solver.net)
         solver.test_nets[1].share_with(solver.net)
 
-        supervised_losses = []
-        for n in range(Ns):
-            l, _, _, _, _, _ = self.eval(sample_list[n])
-            supervised_losses.append(l)
-        supervised_losses = np.array(supervised_losses)
-        supervised_losses = np.expand_dims(supervised_losses, -1)
+        # supervised_losses = []
+        # for n in range(Ns):
+        #    l, _, _, _, _, _ = self.eval(sample_list[n])
+        #    supervised_losses.append(l)
+        # supervised_losses = np.array(supervised_losses)
+        # supervised_losses = np.expand_dims(supervised_losses, -1)
 
         import matplotlib.pyplot as plt
+        test_costs = []
+        nTest = testX.shape[0]
+        sample_list = xu_to_sample_list(self.agent, testX, testU)
+        for n in range(nTest):
+            l, _, _, _, _, _ = self.gt_cost.eval(sample_list[n])
+            test_costs.append(l)
+        test_costs = np.array(test_costs)
+
+        supervised_test = []
+        for n in range(nTest):
+            l, _, _, _, _, _ = self.eval(sample_list[n])
+            supervised_test.append(l)
+        supervised_test = np.array(supervised_test)
+        supervised_test = np.expand_dims(supervised_test, -1)
+
         plt.figure()
         linestyles = ['-', ':', 'dashed']
         for i in range(4):
-            plt.plot(np.arange(T), sample_costs[i], color='red', linestyle=linestyles[i%len(linestyles)])
-            plt.plot(np.arange(T), 2*supervised_losses[i], color='blue', linestyle=linestyles[i%len(linestyles)])
+            plt.plot(np.arange(T), test_costs[i], color='red', linestyle=linestyles[i % len(linestyles)])
+            plt.plot(np.arange(T), 2 * supervised_test[i], color='blue', linestyle=linestyles[i % len(linestyles)])
         plt.show()
-        import pdb; pdb.set_trace()
 
-        solver.net.save(self.weight_file)
-
+        #solver.net.save(self.weight_file)
 
     def init_solver(self, phase='supervised', sample_batch_size=None):
         """ Helper method to initialize the solver. """
