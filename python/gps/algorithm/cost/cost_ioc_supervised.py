@@ -22,6 +22,7 @@ class CostIOCSupervised(CostIOCNN):
         super(CostIOCSupervised, self).__init__(hyperparams)
         self.gt_cost = hyperparams['gt_cost']  # Ground truth cost
         self.gt_cost = self.gt_cost['type'](self.gt_cost)
+
         self.eval_gt = hyperparams.get('eval_gt', False)
 
         self.agent = hyperparams['agent']  # Required for sample packing
@@ -65,7 +66,7 @@ class CostIOCSupervised(CostIOCNN):
 
 
     def init_supervised_demos(self, solver, demo_file):
-        X, U, O = extract_demos(demo_file)
+        X, U, O, cond = extract_demos(demo_file)
         self.init_supervised(solver, U, X, O)
 
 

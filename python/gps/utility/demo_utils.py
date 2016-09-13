@@ -39,7 +39,7 @@ def generate_pos_idx(conditions):
 
 def extract_demos(demo_file):
     demos = DataLogger().unpickle(demo_file)
-    return demos['demoX'], demos['demoU'], demos['demoO']
+    return demos['demoX'], demos['demoU'], demos['demoO'], demos['demoConditions']
 
 def xu_to_sample_list(agent, X, U):
     num = X.shape[0]

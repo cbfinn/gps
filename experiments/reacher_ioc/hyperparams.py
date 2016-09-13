@@ -43,7 +43,7 @@ SENSOR_DIMS = {
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 #DEMO_DIR = BASE_DIR + '/../experiments/reacher/'
-DEMO_DIR = BASE_DIR + '/../experiments/reacher_mdgps/'
+DEMO_DIR = BASE_DIR + '/../experiments/reacher/'
 
 #CONDITIONS = 1
 #DEMO_CONDITIONS = 4
@@ -89,7 +89,7 @@ common = {
     #'demo_controller_file': DEMO_DIR + 'data_files_maxent_9cond_z_0.05_1/algorithm_itr_14.pkl',
     #'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_14.pkl',
     'nn_demo': True,
-    'demo_controller_file': DEMO_DIR + 'data_files_maxent_9cond_z_0.05_1/algorithm_itr_09.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_10.pkl',
     #'nn_demo': True,
     'conditions': CONDITIONS,
     #'conditions': TOTAL_CONDITIONS,
@@ -153,7 +153,7 @@ algorithm = {
     'type': AlgorithmTrajOpt,
     'ioc' : 'ICML',
     'global_cost': True,
-    'max_ent_traj': 1.0,
+    'max_ent_traj': 0.001,
     'conditions': common['conditions'],
     #'train_conditions': common['train_conditions'],
     #'test_conditions': common['test_conditions'],
@@ -187,11 +187,11 @@ fk_cost_1 = [{
     'l2': 10.0,
     'alpha': 1e-5,
     'evalnorm': evall1l2term,
-    #'use_jacobian': False
+    'use_jacobian': False
 } for i in range(common['conditions'])]
 
 
-"""
+
 state_cost = [{
     'type': CostState,
     'A': np.eye(SENSOR_DIMS[END_EFFECTOR_POINTS]),
@@ -200,15 +200,18 @@ state_cost = [{
     'l2': 10.0,
     'alpha': 1e-5,
     'data_type': END_EFFECTOR_POINTS,
+    'target': agent['target_end_effector'][0],
     'evalnorm': evall1l2term,
 } for i in range(common['conditions'])]
-"""
 
-algorithm['gt_cost'] = [{
+
+gt_costs = [{
     'type': CostSum,
-    'costs': [torque_cost_1[i], fk_cost_1[i]],
+    'costs': [torque_cost_1[i], state_cost[i]],
     'weights': [2.0, 1.0],
-}  for i in range(common['conditions'])][0]
+}  for i in range(common['conditions'])]
+
+algorithm['gt_cost'] = gt_costs[0]
 
 
 algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
@@ -222,31 +225,32 @@ algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
     'smooth_reg_weight': 0.0,
-    'mono_reg_weight': 0.0,
+    'mono_reg_weight': 100.0,
     'learn_wu': False,
 }
 
-"""
+
 algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
     'type': CostIOCSupervised,
     'weight_dir': common['data_files_dir'],
     'agent': demo_agent,
-    'gt_cost': algorithm['gt_cost'],
-    'demo_file': os.path.join(common['data_files_dir'], 'demos_LG.pkl'),
+    'gt_cost': gt_costs,
+    'demo_file': os.path.join(common['data_files_dir'], 'demos_nn_MaxEnt_4_cond_z_0.05_noise_seed1.pkl'),
     'finetune': False,
 
-    'wu': 200 / PR2_GAINS,
+    'wu': 1 / PR2_GAINS,
     'T': agent['T'],
     'dO': 16,
     'iterations': 1000,
+    'init_iterations': 10000,
     'demo_batch_size': 5,
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
     'smooth_reg_weight': 0.0,
-    'mono_reg_weight': 0.0,
+    'mono_reg_weight': 100.0,
     'learn_wu': False,
 }
-"""
+
 
 """
 algorithm['cost'] = {
@@ -254,6 +258,7 @@ algorithm['cost'] = {
     'wrapped_cost': algorithm['gt_cost']
 }
 """
+
 
 
 #algorithm['init_traj_distr'] = {

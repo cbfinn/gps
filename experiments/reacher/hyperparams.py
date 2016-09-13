@@ -84,7 +84,7 @@ agent = {
 
 algorithm = {
     'type': AlgorithmTrajOpt,
-    'max_ent_traj': 0.01,
+    'max_ent_traj': 0.001,
     'conditions': common['conditions'],
     'iterations': 15,
     'step_rule': 'classic',
@@ -130,6 +130,7 @@ algorithm['cost'] = [{
     'type': CostSum,
     'costs': [torque_cost_1[i], fk_cost_1[i]],
     'weights': [2.0, 1.0],
+    'evalnorm': evall1l2term,
 }  for i in range(common['conditions'])]
 
 
@@ -203,7 +204,7 @@ algorithm['policy_prior'] = {
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': 5,
-    'verbose_trials': 5,
+    'verbose_trials': 1,
     'verbose_policy_trials': 0,
     'common': common,
     'agent': agent,

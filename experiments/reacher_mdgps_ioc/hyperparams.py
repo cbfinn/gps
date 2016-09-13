@@ -71,7 +71,7 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_exp_dir': DEMO_DIR,
-    'demo_controller_file': DEMO_DIR + 'data_files_maxent_9cond_z_0.05_0/algorithm_itr_14.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_14.pkl',
     #'demo_controller_file': DEMO_DIR + 'data_files_maxent_9cond_z_0.05_1/algorithm_itr_09.pkl',
     'nn_demo': False, # Use neural network demonstrations. For experiment only
     'conditions': TOTAL_CONDITIONS,
@@ -206,7 +206,7 @@ algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
     'wu': 200 / PR2_GAINS,
     'T': agent['T'],
     'dO': 16,
-    'iterations': 5000,
+    'iterations': 1000,
     'demo_batch_size': 5,
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
