@@ -57,7 +57,7 @@ class CostIOCSupervised(CostIOCNN):
         return self.eval(self.test_sample_list[0])[0]
 
 
-    def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw):
+    def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, itr=-1):
         """
         Learn cost function with generic function representation.
         Args:
@@ -71,7 +71,8 @@ class CostIOCSupervised(CostIOCNN):
             s_log_iw: log importance weights for samples.
         """
         if self.finetune:
-            super(CostIOCSupervised, self).update(demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw)
+            if itr >= 5:
+                super(CostIOCSupervised, self).update(demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, itr=itr)
         else:
             return
 

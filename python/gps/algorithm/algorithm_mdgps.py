@@ -331,10 +331,10 @@ class AlgorithmMDGPS(Algorithm):
         if not self._hyperparams['global_cost']:
             for i in xrange(M):
                 self.cost[i].update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, self.sample_list[i].get_U(),
-                                self.sample_list[i].get_X(), self.sample_list[i].get_obs(), samples_logiw[i])
+                                self.sample_list[i].get_X(), self.sample_list[i].get_obs(), samples_logiw[i], itr=self.iteration_count)
         else:
             self.cost.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, sampleU_arr, sampleX_arr,
-                                                        sampleO_arr, samples_logiw_arr)
+                                                        sampleO_arr, samples_logiw_arr, itr=self.iteration_count)
 
     def compute_costs(self, m, eta):
         """ Compute cost estimates used in the LQR backward pass. """
