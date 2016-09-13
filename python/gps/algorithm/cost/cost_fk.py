@@ -52,10 +52,12 @@ class CostFK(Cost):
         pt = sample.get(END_EFFECTOR_POINTS)
         dist = pt - tgt
 
-        if self._hyperparams.get('use_jacobian', True) and END_EFFECTOR_POINT_JACOBIANS in sample._data:
+        if self._hyperparams.get('use_jacobian', True):
             # TODO - These should be partially zeros so we're not double
             #        counting.
             #        (see pts_jacobian_only in matlab costinfos code)
+            if not END_EFFECTOR_POINT_JACOBIANS in sample._data:
+                raise NotImplementedError()
             jx = sample.get(END_EFFECTOR_POINT_JACOBIANS)
         else:
             jx = np.zeros((T, dist.shape[1], dU))

@@ -301,10 +301,10 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         A NetParameter specification of the network.
     """
     from gps.algorithm.cost.config import COST_IOC_NN
-    num_hidden = 2
-    dim_hidden = 42
+    num_hidden = 1
+    dim_hidden = 16
     if dim_hidden is None:
-        dim_hidden = 42
+        dim_hidden = 21
 
     n = caffe.NetSpec()
 

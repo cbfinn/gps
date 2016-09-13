@@ -22,6 +22,7 @@ class CostIOCSupervised(CostIOCNN):
         super(CostIOCSupervised, self).__init__(hyperparams)
         self.gt_cost = hyperparams['gt_cost']  # Ground truth cost
         self.gt_cost = self.gt_cost['type'](self.gt_cost)
+
         self.eval_gt = hyperparams.get('eval_gt', False)
 
         self.agent = hyperparams['agent']  # Required for sample packing
@@ -65,11 +66,11 @@ class CostIOCSupervised(CostIOCNN):
 
 
     def init_supervised_demos(self, solver, demo_file):
-        X, U, O = extract_demos(demo_file)
+        X, U, O, cond = extract_demos(demo_file)
         self.init_supervised(solver, U, X, O)
 
 
-    def init_supervised(self, solver, sampleU, sampleX, sampleO, heartbeat=10):
+    def init_supervised(self, solver, sampleU, sampleX, sampleO, heartbeat=100):
         """
         """
 
@@ -93,7 +94,7 @@ class CostIOCSupervised(CostIOCNN):
         sample_costs = np.expand_dims(sample_costs, -1)
         T = sample_costs.shape[1]
 
-        for i in range(self._hyperparams['iterations']):
+        for i in range(self._hyperparams['init_iterations']):
           # Randomly sample batches
           np.random.shuffle(sample_idx)
 
@@ -104,7 +105,7 @@ class CostIOCSupervised(CostIOCNN):
           solver.net.blobs[blob_names[0]].data[:] = sampleO[s_idx_i]
           solver.net.blobs[blob_names[1]].data[:] = np.sum(self._hyperparams['wu']*sampleU[s_idx_i]**2, axis=2, keepdims=True)
           solver.net.blobs[blob_names[2]].data[:] = sample_costs[s_idx_i]
-          solver.step(1)
+          solver.step(2)
           train_loss = solver.net.blobs[blob_names[-1]].data
           average_loss += train_loss
           if i % heartbeat == 0 and i != 0:
@@ -130,6 +131,7 @@ class CostIOCSupervised(CostIOCNN):
             plt.plot(np.arange(T), sample_costs[i], color='red', linestyle=linestyles[i%len(linestyles)])
             plt.plot(np.arange(T), 2*supervised_losses[i], color='blue', linestyle=linestyles[i%len(linestyles)])
         plt.show()
+        import pdb; pdb.set_trace()
 
         solver.net.save(self.weight_file)
 

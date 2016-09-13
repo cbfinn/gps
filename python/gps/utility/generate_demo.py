@@ -261,13 +261,16 @@ class GenDemo(object):
                 good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
                 self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
                 filtered_demos = []
+                filtered_demo_conditions = []
                 for i in good_indices:
                     filtered_demos.append(demos[i])
+                    filtered_demo_conditions.append(demo_idx_conditions[i])
 
-                import pdb; pdb.set_trace()
-                shuffle(filtered_demos)
+                print 'Num demos:', len(filtered_demos)
+                #shuffle(filtered_demos)
                 demo_list =  SampleList(filtered_demos)
-                demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs()} #, \
+                demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs(),
+                              'demoConditions': filtered_demo_conditions} #, \
             else:
                 shuffle(demos)
                 demo_list = SampleList(demos)
