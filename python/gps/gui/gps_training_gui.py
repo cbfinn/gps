@@ -497,9 +497,9 @@ class GPSTrainingGUI(object):
         for i in range(len(demo_losses)):
             self._demo_cost_plotter.set_sequence(i, demo_losses[i])
 
-        for i in range(max(NUM_DEMO_PLOTS, len(sample_losses))):
+        for i in range(min(NUM_DEMO_PLOTS, len(sample_losses))):
             pass
-            #self._demo_cost_plotter.set_sequence(len(demo_losses)+i, sample_losses[i], style='--')
+            self._demo_cost_plotter.set_sequence(len(demo_losses)+i, sample_losses[i], style='--')
 
     def _update_ioc_dist_plot(self, dist_cost, demo_dist_cost):
         self._scatter_cost_plotter.clear()

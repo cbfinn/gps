@@ -274,7 +274,7 @@ class GenDemo(object):
                 for i in good_indices:
                     filtered_demos.append(demos[i])
 
-                import pdb; pdb.set_trace()
+                print 'Num demos:', len(filtered_demos)
                 shuffle(filtered_demos)
                 demo_list =  SampleList(filtered_demos)
                 demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs()} #, \

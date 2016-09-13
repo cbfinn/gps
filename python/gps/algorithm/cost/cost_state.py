@@ -67,4 +67,5 @@ class CostState(Cost):
         sample.agent.pack_data_x(final_lx, ls, data_types=[data_type])
         sample.agent.pack_data_x(final_lxx, lss,
                                  data_types=[data_type, data_type])
+
         return final_l, final_lx, final_lu, final_lxx, final_luu, final_lux
