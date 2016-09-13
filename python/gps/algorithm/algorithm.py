@@ -85,6 +85,7 @@ class Algorithm(object):
         self.traj_opt = self._hyperparams['traj_opt']['type'](
             self._hyperparams['traj_opt']
         )
+
         if self._hyperparams['global_cost']:
             if type(hyperparams['cost']) == list:
                 self.cost = [
@@ -97,6 +98,7 @@ class Algorithm(object):
                 self._hyperparams['cost']['type'](self._hyperparams['cost'])
                 for _ in range(self.M)
             ]
+
         if self._hyperparams['ioc']:
             self.gt_cost = [
                 self._hyperparams['gt_cost']['type'](self._hyperparams['gt_cost'])
@@ -177,6 +179,8 @@ class Algorithm(object):
           all_samples = self.cur[cond].sample_list
         N = len(all_samples)
 
+        gt_conditions = self._hyperparams.get('gt_conditions', [])
+
         # Compute cost.
         cs = np.zeros((N, T))
         cc = np.zeros((N, T))
@@ -187,16 +191,21 @@ class Algorithm(object):
         for n in range(N):
             sample = all_samples[n]
             # Get costs.
+            cost = self.cost
             if prev_cost:
-                if self._hyperparams['global_cost']:
-                    l, lx, lu, lxx, luu, lux = self.previous_cost.eval(sample)
+                cost = self.previous_cost
+
+            if cond in gt_conditions:
+                if isinstance(self.gt_cost, list):
+                    cost = self.gt_cost[cond]
                 else:
-                    l, lx, lu, lxx, luu, lux = self.previous_cost[cond].eval(sample)
+                    cost = self.gt_cost
+
+            if self._hyperparams['global_cost'] and type(self.cost) != list:
+                l, lx, lu, lxx, luu, lux = cost.eval(sample)
             else:
-                if self._hyperparams['global_cost'] and type(self.cost) != list:
-                    l, lx, lu, lxx, luu, lux = self.cost.eval(sample)
-                else:
-                    l, lx, lu, lxx, luu, lux = self.cost[cond].eval(sample)
+                l, lx, lu, lxx, luu, lux = cost[cond].eval(sample)
+
             # Compute the ground truth cost
             if self._hyperparams['ioc'] and n >= synN:
                 l_gt, _, _, _, _, _ = self.gt_cost[cond].eval(sample)

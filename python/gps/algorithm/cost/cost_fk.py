@@ -56,9 +56,12 @@ class CostFK(Cost):
             # TODO - These should be partially zeros so we're not double
             #        counting.
             #        (see pts_jacobian_only in matlab costinfos code)
+            if not END_EFFECTOR_POINT_JACOBIANS in sample._data:
+                raise NotImplementedError()
             jx = sample.get(END_EFFECTOR_POINT_JACOBIANS)
         else:
             jx = np.zeros((T, dist.shape[1], dU))
+            # Dim_EE by dJoint
 
         # Evaluate penalty term. Use estimated Jacobians and no higher
         # order terms.

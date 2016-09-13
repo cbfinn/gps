@@ -69,6 +69,7 @@ class AlgorithmMDGPS(Algorithm):
                 else:
                     target_position = self._hyperparams['target_end_effector'][:3]
                 cur_samples = sample_lists[m].get_samples()
+
                 sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
                 dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
                          for i in xrange(len(cur_samples))]
@@ -116,7 +117,10 @@ class AlgorithmMDGPS(Algorithm):
 
         # C-step
         if self.iteration_count > 0:
-            self._stepadjust()
+            try:
+                self._stepadjust()
+            except OverflowError:
+                import pdb; pdb.set_trace()
         self._update_trajectories()
 
         # S-step
@@ -239,9 +243,9 @@ class AlgorithmMDGPS(Algorithm):
         """
         # Compute previous cost and previous expected cost.
         prev_M = len(self.prev) # May be different in future.
-        prev_laplace = np.arange(prev_M)
-        prev_mc = np.arange(prev_M)
-        prev_predicted = np.arange(prev_M)
+        prev_laplace = np.arange(prev_M).astype(np.float32)
+        prev_mc = np.arange(prev_M).astype(np.float32)
+        prev_predicted = np.arange(prev_M).astype(np.float32)
         for m in range(prev_M):
             prev_nn = self.prev[m].pol_info.traj_distr()
             prev_lg = self.prev[m].new_traj_distr
@@ -262,8 +266,8 @@ class AlgorithmMDGPS(Algorithm):
             ).sum()
 
         # Compute current cost.
-        cur_laplace = np.arange(self.M)
-        cur_mc = np.arange(self.M)
+        cur_laplace = np.arange(self.M).astype(np.float32)
+        cur_mc = np.arange(self.M).astype(np.float32)
         for m in range(self.M):
             if self._hyperparams['ioc']:
                 self._eval_cost(m, prev_cost=True)
