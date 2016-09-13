@@ -78,6 +78,7 @@ IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
     'learn_wu': False,  # Learn multiplier on torque penalty, in addition to wu.
     'wu': np.array([]), # Torque penalties, must be 1 x dU numpy array.
     'weights_file_prefix': '',
+    'use_jacobian': True,
 }
 
 #CostIOCQuadratic
