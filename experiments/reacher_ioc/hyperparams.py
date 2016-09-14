@@ -13,6 +13,9 @@ from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.cost.cost_state import CostState
+from gps.algorithm.cost.cost_ioc_supervised import CostIOCSupervised
+from gps.algorithm.cost.cost_ioc_wrapper import CostIOCWrapper
+
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_sum import CostSum
 #from gps.algorithm.cost.cost_gym import CostGym
@@ -39,20 +42,41 @@ SENSOR_DIMS = {
 
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
+#DEMO_DIR = BASE_DIR + '/../experiments/reacher/'
 DEMO_DIR = BASE_DIR + '/../experiments/reacher/'
 
-CONDITIONS = 1
-DEMO_CONDITIONS = 20
+#CONDITIONS = 1
+#DEMO_CONDITIONS = 4
+
+#np.random.seed(47)
+#pos_body_offset = []
+#pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
+
+#demo_pos_body_offset = []
+#for _ in range(DEMO_CONDITIONS):
+#    demo_pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
+
+#CONDITIONS = 1
+TRAIN_CONDITIONS = 9
 
 np.random.seed(47)
-pos_body_offset = []
-pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
-#pos_body_offset.append(np.array([0.05, 0.2, 0.0]))
+DEMO_CONDITIONS = 20
+TEST_CONDITIONS = 9
+TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
 
 demo_pos_body_offset = []
-#demo_pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
 for _ in range(DEMO_CONDITIONS):
     demo_pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
+
+pos_body_offset = []
+for _ in range(TOTAL_CONDITIONS):
+    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
+
+CONDITIONS = 1 #TRAIN_CONDITIONS
+pos_body_offset = [pos_body_offset[1]]
+pos_body_offset = []
+pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
+
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -62,9 +86,15 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_exp_dir': DEMO_DIR,
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_14.pkl',
+    #'demo_controller_file': DEMO_DIR + 'data_files_maxent_9cond_z_0.05_1/algorithm_itr_14.pkl',
+    #'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_14.pkl',
+    'nn_demo': True,
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_10.pkl',
+    #'nn_demo': True,
     'conditions': CONDITIONS,
-    'nn_demo': False,
+    #'conditions': TOTAL_CONDITIONS,
+    #'train_conditions': range(TRAIN_CONDITIONS),
+    #'test_conditions': range(TRAIN_CONDITIONS, TOTAL_CONDITIONS),
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -88,8 +118,10 @@ agent = {
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
     'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    #'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(CONDITIONS)],
+    'render': True,
 }
 
 demo_agent = {
@@ -109,17 +141,22 @@ demo_agent = {
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
     'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    #'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ demo_pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(DEMO_CONDITIONS)],
     'success_upper_bound': 0.01,
+    'render': True,
 }
 
 
 algorithm = {
     'type': AlgorithmTrajOpt,
     'ioc' : 'ICML',
-    'max_ent_traj': 1.0,
+    'global_cost': True,
+    'max_ent_traj': 0.001,
     'conditions': common['conditions'],
+    #'train_conditions': common['train_conditions'],
+    #'test_conditions': common['test_conditions'],
     'kl_step': 0.5,
     'min_step_mult': 0.05,
     'max_step_mult': 2.0,
@@ -131,6 +168,8 @@ algorithm = {
     'plot_dir': EXP_DIR,
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
                             for i in xrange(CONDITIONS)],
+    #'global_cost': True,
+    #'demo_conditions': [],
 }
 
 PR2_GAINS = np.array([1.0, 1.0])
@@ -138,6 +177,7 @@ torque_cost_1 = [{
     'type': CostAction,
     'wu': 1 / PR2_GAINS,
 } for i in range(common['conditions'])]
+
 
 fk_cost_1 = [{
     'type': CostFK,
@@ -147,27 +187,79 @@ fk_cost_1 = [{
     'l2': 10.0,
     'alpha': 1e-5,
     'evalnorm': evall1l2term,
+    'use_jacobian': False
 } for i in range(common['conditions'])]
 
-algorithm['gt_cost'] = [{
+
+
+state_cost = [{
+    'type': CostState,
+    'A': np.eye(SENSOR_DIMS[END_EFFECTOR_POINTS]),
+    'wp': np.array([1, 1, 1, 0, 0, 0]),
+    'l1': 0.1,
+    'l2': 10.0,
+    'alpha': 1e-5,
+    'data_type': END_EFFECTOR_POINTS,
+    'target': agent['target_end_effector'][0],
+    'evalnorm': evall1l2term,
+} for i in range(common['conditions'])]
+
+
+gt_costs = [{
     'type': CostSum,
-    'costs': [torque_cost_1[i], fk_cost_1[i]],
-    'weights': [200.0, 100.0],
-}  for i in range(common['conditions'])][0]
+    'costs': [torque_cost_1[i], state_cost[i]],
+    'weights': [2.0, 1.0],
+}  for i in range(common['conditions'])]
+
+algorithm['gt_cost'] = gt_costs[0]
+
 
 algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
     'type': CostIOCNN,
     'wu': 200 / PR2_GAINS,
+    #'wu': 20000 / PR2_GAINS,
     'T': agent['T'],
     'dO': 16,
-    'iterations': 5000,
+    'iterations': 1000,
     'demo_batch_size': 5,
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
     'smooth_reg_weight': 0.0,
-    'mono_reg_weight': 0.0,
+    'mono_reg_weight': 100.0,
     'learn_wu': False,
 }
+
+
+algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
+    'type': CostIOCSupervised,
+    'weight_dir': common['data_files_dir'],
+    'agent': demo_agent,
+    'gt_cost': gt_costs,
+    'demo_file': os.path.join(common['data_files_dir'], 'demos_nn_MaxEnt_4_cond_z_0.05_noise_seed1.pkl'),
+    'finetune': False,
+
+    'wu': 1 / PR2_GAINS,
+    'T': agent['T'],
+    'dO': 16,
+    'iterations': 1000,
+    'init_iterations': 10000,
+    'demo_batch_size': 5,
+    'sample_batch_size': 5,
+    'ioc_loss': algorithm['ioc'],
+    'smooth_reg_weight': 0.0,
+    'mono_reg_weight': 100.0,
+    'learn_wu': False,
+}
+
+
+"""
+algorithm['cost'] = {
+    'type': CostIOCWrapper,
+    'wrapped_cost': algorithm['gt_cost']
+}
+"""
+
+
 
 #algorithm['init_traj_distr'] = {
 #    'type': init_demo,
@@ -226,7 +318,7 @@ algorithm['policy_prior'] = {
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': 10,
-    'verbose_trials': 5,
+    'verbose_trials': 1,
     'verbose_policy_trials': 0,
     'common': common,
     'agent': agent,

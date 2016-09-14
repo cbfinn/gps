@@ -70,6 +70,8 @@ class AlgorithmTrajOpt(Algorithm):
                     target_position = self._hyperparams['target_end_effector'][:3]
                 cur_samples = sample_lists[i].get_samples()
                 sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
+                #'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[i], np.array([0., 0., 0.])])
+                #            for i in xrange(TOTAL_CONDITIONS)],
                 dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
                          for i in xrange(len(cur_samples))]
                 self.min_sample = cur_samples[dists.index(min(dists))]

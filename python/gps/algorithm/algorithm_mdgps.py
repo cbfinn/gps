@@ -69,6 +69,7 @@ class AlgorithmMDGPS(Algorithm):
                 else:
                     target_position = self._hyperparams['target_end_effector'][:3]
                 cur_samples = sample_lists[m].get_samples()
+
                 sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
                 dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
                          for i in xrange(len(cur_samples))]
@@ -116,7 +117,10 @@ class AlgorithmMDGPS(Algorithm):
 
         # C-step
         if self.iteration_count > 0:
-            self._stepadjust()
+            try:
+                self._stepadjust()
+            except OverflowError:
+                import pdb; pdb.set_trace()
         self._update_trajectories()
 
         # S-step
