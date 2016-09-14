@@ -116,7 +116,7 @@ class GenDemo(object):
                     for j in xrange(N):
                         demo = self.agent.sample(
                             controllers_var[i], i,
-                            verbose=1000, noisy=True, #(i < self.algorithm._hyperparams['demo_verbose']), noisy=True, # TODO
+                            verbose=0, noisy=True, #(i < self.algorithm._hyperparams['demo_verbose']), noisy=True, # TODO
                             save = True
                         )
                         demos.append(demo)
@@ -143,16 +143,6 @@ class GenDemo(object):
                                 ) # Add noise seems not working. TODO: figure out why
                             demos.append(demo)
                             demo_idx_conditions.append(i)
-                            all_pos_body_offsets.append(agent_config['pos_body_offset'][i])
-                    #demo_agent_config = self._hyperparams['real_demo_agent']
-                    #demo_agent = demo_agent_config['type'](demo_agent_config)
-                    #for m in xrange(demo_agent_config['conditions']):
-                    #    demo = demo_agent.sample(
-                    #        pol, m,
-                    #        verbose=100, noisy=True, #(m < self._hyperparams['verbose_trials']), noisy=True)
-                    #    demos.append(demo)
-                    #    demo_idx_conditions.append(m)
-                    #agent_config['pos_body_offset'].extend(demo_agent_config['pos_body_offset'])
             # Filter failed demos
             if agent_config.get('filter_demos', False): # USED FOR PR2
                 target_position = agent_config['target_end_effector'][:3]
@@ -161,6 +151,7 @@ class GenDemo(object):
                 failed_idx = []
                 for i, distance in enumerate(dists):
                     distance = distance[-1]
+                    print distance
                     if(distance > dist_threshold):
                         failed_idx.append(i)
                 LOGGER.debug("Removing %d failed demos: %s", len(failed_idx), str(failed_idx))

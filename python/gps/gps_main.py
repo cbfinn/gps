@@ -73,6 +73,7 @@ class GPSMain(object):
               self.demo_gen = GenDemo(config)
               self.demo_gen.generate(demo_file)
               demos = self.data_logger.unpickle(demo_file)
+            print 'Num demos:', demos['demoX'].shape[0]
             config['algorithm']['init_traj_distr']['init_demo_x'] = np.mean(demos['demoX'], 0)
             config['algorithm']['init_traj_distr']['init_demo_u'] = np.mean(demos['demoU'], 0)
             self.algorithm = config['algorithm']['type'](config['algorithm'])
@@ -292,6 +293,22 @@ class GPSMain(object):
                     'Press \'go\' to begin.') % itr_load)
             return itr_load + 1
 
+    def _run_policy(self, condition, itr_load=0, local_pol=False, repl=True):
+        itr = self._initialize(itr_load)
+        if itr == 0:
+            raise NotImplementedError("Could not find iteration file!")
+        if local_pol:
+            policy = self.algorithm.cur[condition].traj_distr
+        else:
+            policy = self.algorithm.policy_opt.policy
+        if repl:
+            while True:
+                cond = int(input("Condition >> "))
+                self.agent.sample(policy, cond)
+
+        else:
+            self.agent.sample(policy, condition)
+
     def _take_sample(self, itr, cond, i):
         """
         Collect a sample from the agent.
@@ -431,7 +448,7 @@ class GPSMain(object):
             )
         if 'no_sample_logging' in self._hyperparams['common']:
             return
-        if itr >= self.algorithm._hyperparams['iterations'] - 5: # Just save the last iteration of the algorithm file
+        if (itr % 5 == 0) or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
             self.algorithm.demo_policy = None
             self.data_logger.pickle(
                 self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
@@ -720,6 +737,8 @@ def main():
                         help='run multiple experiments')
     parser.add_argument('-e', '--eval', metavar='N', type=int,
                         help='eval the policy samples over iterations')
+    parser.add_argument('--dry_run', nargs=2, type=int, default=None,
+                        help='Condition to dry-run the policy')
     args = parser.parse_args()
 
     exp_name = args.experiment
@@ -736,6 +755,14 @@ def main():
     gps_dir = '/'.join(str.split(gps_filepath, '/')[:-3]) + '/'
     exp_dir = gps_dir + 'experiments/' + exp_name + '/'
     hyperparams_file = exp_dir + 'hyperparams.py'
+
+
+    if args.dry_run:
+        import caffe
+        hyperparams = imp.load_source('hyperparams', hyperparams_file)
+        gps = GPSMain(hyperparams.config)
+        gps._run_policy(args.dry_run[0], args.dry_run[1])
+        import sys; sys.exit(0)
 
     if args.silent:
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
