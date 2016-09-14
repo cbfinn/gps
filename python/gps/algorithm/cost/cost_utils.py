@@ -351,7 +351,7 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         })
 
         [n.demos, n.demou, n.d_log_iw, n.samples, n.sampleu, n.s_log_iw, n.l, n.sup_obs, n.supu, n.cost_labels] = L.Python(
-            ntop=7, python_param=dict(module='ioc_layers', param_str=data_layer_info,
+            ntop=10, python_param=dict(module='ioc_layers', param_str=data_layer_info,
                                       layer='IOCDataLayer')
             )
         n.net_input = L.Concat(n.demos, n.samples, n.sup_obs, axis=0)

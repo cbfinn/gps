@@ -303,9 +303,10 @@ class CostIOCSupervised(CostIOCNN):
           self.solver.net.blobs[blob_names[4]].data[:] = np.sum(self._hyperparams['wu']*sampleU[s_idx_i]**2, axis=2, keepdims=True)
           self.solver.net.blobs[blob_names[5]].data[:] = s_log_iw[s_idx_i]
           self.solver.net.blobs[blob_names[6]].data[:] = l_k
-          self.solver.net.blobs[blob_names[6]].data[:] = supervised_X_batch
-          self.solver.net.blobs[blob_names[6]].data[:] = supervised_U_batch
-          self.solver.net.blobs[blob_names[6]].data[:] = supervised_cost_batch
+          self.solver.net.blobs[blob_names[7]].data[:] = supervised_X_batch
+          self.solver.net.blobs[blob_names[8]].data[:] = np.sum(self._hyperparams['wu'] * supervised_U_batch ** 2, axis=2,
+                                                             keepdims=True)
+          self.solver.net.blobs[blob_names[9]].data[:] = supervised_cost_batch
 
           self.solver.step(1)
           train_loss = self.solver.net.blobs[blob_names[-1]].data
