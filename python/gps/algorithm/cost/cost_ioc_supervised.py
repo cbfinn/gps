@@ -27,8 +27,6 @@ class CostIOCSupervised(CostIOCNN):
 
         self.agent = hyperparams['agent']  # Required for sample packing
         self.agent = self.agent['type'](self.agent)
-        self.weights_dir = hyperparams['weight_dir']
-        #self.weight_file = join(self.weights_dir, 'supervised_net.weights')
         self.params_file = join(self.weights_dir, 'supervised_net.params')
 
         # Debugging
