@@ -51,8 +51,9 @@ class CostFK(Cost):
         tgt = self._hyperparams['target_end_effector']
         pt = sample.get(END_EFFECTOR_POINTS)
         dist = pt - tgt
-
-        if self._hyperparams.get('use_jacobian', True):
+        # import pdb; pdb.set_trace()
+        # if self._hyperparams.get('use_jacobian', True):
+        if self._hyperparams.get('use_jacobian', False):
             # TODO - These should be partially zeros so we're not double
             #        counting.
             #        (see pts_jacobian_only in matlab costinfos code)
