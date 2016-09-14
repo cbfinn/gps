@@ -135,7 +135,7 @@ class AgentROS(Agent):
                        condition_data[TRIAL_ARM]['data'])
         self.reset_arm(AUXILIARY_ARM, condition_data[AUXILIARY_ARM]['mode'],
                        condition_data[AUXILIARY_ARM]['data'])
-        time.sleep(1.5)
+        time.sleep(2.0)
 
     def sample(self, policy, condition, verbose=True, save=True, noisy=True):
         """
