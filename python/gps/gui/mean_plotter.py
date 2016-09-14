@@ -16,7 +16,7 @@ from gps.gui.util import buffered_axis_limits
 
 class MeanPlotter:
 
-    def __init__(self, fig, gs, label='mean', color='black', alpha=1.0, min_itr=20, gui_on=True):
+    def __init__(self, fig, gs, label='mean', color='black', alpha=1.0, min_itr=40, gui_on=True):
         self._fig = fig
         self.gui_on = gui_on
         self._gs = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=gs)

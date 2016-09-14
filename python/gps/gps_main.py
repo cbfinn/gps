@@ -430,7 +430,7 @@ class GPSMain(object):
             )
         if 'no_sample_logging' in self._hyperparams['common']:
             return
-        if itr >= self.algorithm._hyperparams['iterations'] - 5: # Just save the last iteration of the algorithm file
+        if itr == self.algorithm._hyperparams['iterations'] - 1 or itr == self.algorithm._hyperparams['ioc_maxent_iter'] - 1: # Just save the last iteration of the algorithm file
             self.algorithm.demo_policy = None
             self.data_logger.pickle(
                 self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
@@ -757,8 +757,8 @@ def main():
     import matplotlib.pyplot as plt
     import random
     import numpy as np
-    random.seed(0)
-    np.random.seed(0)
+    random.seed(1)
+    np.random.seed(1)
 
     if args.targetsetup:
         try:
@@ -797,10 +797,10 @@ def main():
             random.seed(itr)
             np.random.seed(itr)
             hyperparams = imp.load_source('hyperparams', hyperparams_file)
-            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_z_train_demo_random_%d' % itr + '/'
+            hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_z_3pols_%d' % itr + '/'
             hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
-            if not os.path.exists(exp_dir + 'data_files_maxent_9cond_z_train_demo_random_%d' % itr + '/'):
-                os.makedirs(exp_dir + 'data_files_maxent_9cond_z_train_demo_random_%d' % itr + '/')
+            if not os.path.exists(exp_dir + 'data_files_maxent_9cond_z_3pols_%d' % itr + '/'):
+                os.makedirs(exp_dir + 'data_files_maxent_9cond_z_3pols_%d' % itr + '/')
             gps_samples = GPSMain(hyperparams.config)
             agent_config = gps_samples._hyperparams['demo_agent']
             plt.close()
@@ -1250,9 +1250,9 @@ def main():
                 # gps_global.test_policy(itr=i, N=compare_costs)
                 plt.close()
     else:
-        hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_z_3pols_0/'
-        if not os.path.exists(exp_dir + 'data_files_maxent_9cond_z_3pols_0/'):
-            os.makedirs(exp_dir + 'data_files_maxent_9cond_z_3pols_0/')
+        hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_z_3pols_1/'
+        if not os.path.exists(exp_dir + 'data_files_maxent_9cond_z_3pols_1/'):
+            os.makedirs(exp_dir + 'data_files_maxent_9cond_z_3pols_1/')
         # hyperparams.config['agent']['randomly_sample_bodypos'] = True
         hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
         gps = GPSMain(hyperparams.config)

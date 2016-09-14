@@ -296,7 +296,6 @@ class Algorithm(object):
         new_mult = predicted_impr / (2.0 * max(1e-4,
                                                predicted_impr - actual_impr))
         new_mult = max(0.1, min(5.0, new_mult))
-        import pdb; pdb.set_trace()
         if self._hyperparams['ioc_maxent_iter'] == -1 or self.iteration_count < self._hyperparams['ioc_maxent_iter']:
             new_step = max(
                 min(new_mult * self.cur[m].step_mult,

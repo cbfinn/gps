@@ -72,7 +72,7 @@ IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
     # Set gpu usage.
     'use_gpu': 1,  # Whether or not to use the GPU for caffe training.
     'gpu_id': 0,
-    'smooth_reg_weight': 0.1,
+    'smooth_reg_weight': 0.0,
     'mono_reg_weight': 100,
     'gp_reg_weight': 0.0, # Make it zero for now.
     'learn_wu': False,  # Learn multiplier on torque penalty, in addition to wu.

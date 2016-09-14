@@ -162,6 +162,7 @@ fk_cost = {
     'l2': 10.0,
     'alpha': 1e-5,
     'evalnorm': evall1l2term,
+    'use_jacobian': False,
 }
 
 algorithm['gt_cost'] = {
@@ -188,6 +189,7 @@ algorithm['cost'] = {
     'type': CostIOCSupervised,
     'weight_dir': common['data_files_dir'],
     'agent': demo_agent,
+    'demo_file': os.path.join(common['data_files_dir'], 'demos_**.pkl'),
     'gt_cost': algorithm['gt_cost'],
 
     'wu': 100*5e-5 / PR2_GAINS,
