@@ -28,6 +28,7 @@ class CostIOCSupervised(CostIOCNN):
 
         self.agent = hyperparams['agent']  # Required for sample packing
         self.agent = self.agent['type'](self.agent)
+        self.weights_dir = hyperparams['weight_dir']
         self.params_file = join(self.weights_dir, 'supervised_net.params')
 
         # Debugging
@@ -50,7 +51,6 @@ class CostIOCSupervised(CostIOCNN):
             return self.gt_cost.eval(sample)
         else:
             return super(CostIOCSupervised, self).eval(sample)
-
 
     def test_eval(self):
         return self.eval(self.test_sample_list[0])[0]
@@ -168,7 +168,6 @@ class CostIOCSupervised(CostIOCNN):
             l, _, _, _, _, _ = self.eval(sample_list[n])
             supervised_test.append(l)
         supervised_test = np.array(supervised_test)
-        supervised_test = np.expand_dims(supervised_test, -1)
 
         plt.figure()
         linestyles = ['-', ':', 'dashed']

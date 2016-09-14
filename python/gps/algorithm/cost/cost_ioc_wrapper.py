@@ -14,5 +14,5 @@ class CostIOCWrapper(Cost):
     def eval(self, sample):
         return self.cost.eval(sample)
 
-    def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw):
+    def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, itr=-1):
         return
