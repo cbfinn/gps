@@ -343,11 +343,11 @@ def construct_nn_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                       {'dim': (sample_batch_size, T, dim_input)},  # sample obs
                       {'dim': (sample_batch_size, T, 1)},  # sample torque norm
                       {'dim': (sample_batch_size, 1)}, # sample i.w.
-                      {'dim': (dim_input, )}, # l
+                      {'dim': (dim_input, )}, # length scale
                       {'dim': (sample_batch_size + demo_batch_size, T, dim_input)},  # supervised obs
                       {'dim': (sample_batch_size + demo_batch_size, T, 1)},  # supervised torque norm
                       {'dim': (sample_batch_size + demo_batch_size, T, 1)} # supervised_cost_labels
-                      ] # length scale
+                      ]
         })
 
         [n.demos, n.demou, n.d_log_iw, n.samples, n.sampleu, n.s_log_iw, n.l, n.sup_obs, n.supu, n.cost_labels] = L.Python(
