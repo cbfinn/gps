@@ -189,7 +189,7 @@ algorithm['cost'] = {
     'type': CostIOCSupervised,
     'weight_dir': common['data_files_dir'],
     'agent': demo_agent,
-    'demo_file': os.path.join(common['data_files_dir'], 'demos_**.pkl'),
+    'demo_file': os.path.join(common['data_files_dir'], 'demos_LG.pkl'),
     'gt_cost': algorithm['gt_cost'],
 
     'wu': 100*5e-5 / PR2_GAINS,

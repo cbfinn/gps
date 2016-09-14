@@ -30,6 +30,11 @@ algorithm['policy_opt'].update({
     'weights_file_prefix': common['data_files_dir'] + 'policy',
 })
 
+algorithm['cost'].update({
+	'demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_nn_MaxEnt_9_cond_z_0.05_3pols_no_noise.pkl'),
+	'weight_dir': common['data_files_dir'],
+})
+    
 config = default.config.copy()
 config.update({
     'common': common,

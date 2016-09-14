@@ -13,6 +13,7 @@ from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
+from gps.algorithm.cost.cost_ioc_supervised import CostIOCSupervised
 from gps.algorithm.cost.cost_utils import RAMP_FINAL_ONLY, evall1l2term
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
@@ -193,9 +194,9 @@ algorithm = {
     'learning_from_prior': True,
     'ioc' : 'ICML',
     'ioc_maxent_iter': -1,
-    'iterations': 50,
+    'iterations': 40,
     'kl_step': 0.5,
-    'min_step_mult': 0.6,
+    'min_step_mult': 0.4,
     'max_step_mult': 4.0,
     'kl_step_no_ioc': 0.5,
     'min_step_mult_no_ioc': 0.6,
@@ -284,13 +285,37 @@ algorithm['gt_cost'] = {
     'weights': [1000.0, 1000.0, 1000.0],
 }
 
+# algorithm['cost'] = {
+#     'type': CostIOCNN,
+#     'wu': 1000*1e-3 / PR2_GAINS,
+#     'T': 100,
+#     'dO': 26,
+#     'learn_wu': False,
+#     'iterations': 5000,
+# }
+
 algorithm['cost'] = {
-    'type': CostIOCNN,
-    'wu': 1000*1e-3 / PR2_GAINS,
+    'type': CostIOCSupervised,
+    'agent': demo_agent,
+    'demo_file': os.path.join(DEMO_DIR, 'data_files', 'demos_nn_MaxEnt_9_cond_z_0.05_3pols_no_noise.pkl'),
+    'traj_samples': [os.path.join(common['demo_exp_dir'], 'data_files_maxent_9cond_z_train_demo_1', 'traj_sample_itr_%02d.pkl' % i) for i in range(12)],
+    'gt_cost': algorithm['gt_cost'],   
+    'finetune': True,
+    'init_iterations': 20000,
+    'use_jacobian': False,
+    'update_after': 5,
+    'gt_cost': algorithm['gt_cost'],
+
+    'wu': 1000*5e-5 / PR2_GAINS,
     'T': 100,
     'dO': 26,
-    'learn_wu': False,
     'iterations': 5000,
+    'demo_batch_size': 5,
+    'sample_batch_size': 5,
+    'ioc_loss': algorithm['ioc'],
+    'learn_wu': False,  # set to true to learn torque penalty
+    'smooth_reg_weight': 0.1,
+    'mono_reg_weight': 100.0,
 }
 
 algorithm['dynamics'] = {

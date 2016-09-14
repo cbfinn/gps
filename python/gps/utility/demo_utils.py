@@ -39,6 +39,8 @@ def generate_pos_idx(conditions):
 
 def extract_demos(demo_file):
     demos = DataLogger().unpickle(demo_file)
+    if not demos.get('demoConditions', False):
+        demos['demoConditions'] = None
     return demos['demoX'], demos['demoU'], demos['demoO'], demos['demoConditions']
 
 def xu_to_sample_list(agent, X, U):
