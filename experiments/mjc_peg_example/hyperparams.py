@@ -42,7 +42,7 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 9,
+    'conditions': 1,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -57,11 +57,12 @@ agent = {
     'substeps': 5,
     'conditions': common['conditions'],
     'pos_body_idx': np.array([1]),
+    'pos_body_offset': [np.array([0, 0.2, 0])],
     # 'pos_body_offset': [np.array([0, 0.2, 0]), np.array([0, 0.1, 0]),
     #                     np.array([0, -0.1, 0]), np.array([0, -0.2, 0])],
-    'pos_body_offset': [np.array([-0.05, -0.05, -0.05]), np.array([-0.05, -0.05, 0.05]), np.array([-0.05, 0.05, -0.05]),
-                        np.array([-0.05, 0.05, 0.05]), np.array([0., 0., 0.]), np.array([0.05, -0.05, -0.05]),
-                        np.array([0.05, -0.05, 0.05]), np.array([0.05, 0.05, -0.05]), np.array([0.05, 0.05, 0.05])],
+    # 'pos_body_offset': [np.array([-0.05, -0.05, -0.05]), np.array([-0.05, -0.05, 0.05]), np.array([-0.05, 0.05, -0.05]),
+    #                     np.array([-0.05, 0.05, 0.05]), np.array([0., 0., 0.]), np.array([0.05, -0.05, -0.05]),
+    #                     np.array([0.05, -0.05, 0.05]), np.array([0.05, 0.05, -0.05]), np.array([0.05, 0.05, 0.05])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,

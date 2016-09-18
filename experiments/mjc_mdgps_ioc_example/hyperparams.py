@@ -192,14 +192,14 @@ algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
     'learning_from_prior': True,
-    'ioc' : 'ICML',
-    'ioc_maxent_iter': -1,
+    'ioc' : 'MPF',
+    'ioc_maxent_iter': 30,
     'iterations': 40,
     'kl_step': 0.5,
     'min_step_mult': 0.4,
     'max_step_mult': 4.0,
     'kl_step_no_ioc': 0.5,
-    'min_step_mult_no_ioc': 0.6,
+    'min_step_mult_no_ioc': 0.4,
     'max_step_mult_no_ioc': 4.0,
     # 'min_step_mult': 1.0,
     # 'max_step_mult': 1.0,
@@ -215,7 +215,7 @@ algorithm = {
     'synthetic_cost_samples': 100,
     # 'synthetic_cost_samples': 0, # Remember to change back to 100 when done with the 50 samples exp
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
-    'global_cost': True,
+    'global_cost': False,
     'sample_on_policy': True,
     'init_demo_policy': False,
     'policy_eval': False,
@@ -282,7 +282,7 @@ final_cost = {
 algorithm['gt_cost'] = {
     'type': CostSum,
     'costs': [torque_cost, fk_cost, final_cost],
-    'weights': [1000.0, 1000.0, 1000.0],
+    'weights': [100.0, 100.0, 100.0],
 }
 
 # algorithm['cost'] = {
@@ -306,7 +306,7 @@ algorithm['cost'] = {
     'update_after': 5,
     'gt_cost': algorithm['gt_cost'],
 
-    'wu': 1000*5e-5 / PR2_GAINS,
+    'wu': 100*5e-5 / PR2_GAINS,
     'T': 100,
     'dO': 26,
     'iterations': 5000,
@@ -314,7 +314,7 @@ algorithm['cost'] = {
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
     'learn_wu': False,  # set to true to learn torque penalty
-    'smooth_reg_weight': 0.1,
+    'smooth_reg_weight': 0.0,
     'mono_reg_weight': 100.0,
 }
 
@@ -343,7 +343,7 @@ algorithm['policy_prior'] = {
     'type': PolicyPriorGMM,
     'max_clusters': 20,
     'min_samples_per_cluster': 40,
-    'max_samples': 10,
+    'max_samples': 20,
 }
 
 config = {

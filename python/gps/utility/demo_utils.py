@@ -63,6 +63,8 @@ def eval_demos_xu(agent, demoX, demoU, costfn, n=-1):
     for demo_idx in range(num_demos):
         sample = Sample(agent)
         sample.set_XU(demoX[demo_idx], demoU[demo_idx])
+        if type(costfn) is list:
+            costfn = costfn[6]
         l, _, _, _, _, _ = costfn.eval(sample)
         losses.append(l)
     if n>0:
