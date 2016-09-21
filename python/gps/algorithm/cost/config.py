@@ -105,3 +105,9 @@ COST_IOC_VISION = {
 
 COST_IOC_VISION.update(IOC_CONFIG)
 
+# Cost IOC config 
+COST_IOC_TF = {
+    
+}
+
+COST_IOC_TF.update(IOC_CONFIG)

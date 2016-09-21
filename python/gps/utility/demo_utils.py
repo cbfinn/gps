@@ -106,3 +106,43 @@ def compute_distance_cost_plot_xu(algorithm, agent, X, U):
     costs = eval_demos_xu(agent, sample_list.get_X(), sample_list.get_U(), algorithm.cost)
     return flatten_lists(dists), flatten_lists(costs)
 
+def measure_distance_and_success(gps):
+    """
+    Take the algorithm states for all iterations and extract the
+    mean distance to the target position and measure the success
+    rate of inserting the peg. (For the peg experiment only)
+    Args:
+        None
+    Returns: the mean distance and the success rate
+    """
+    from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
+
+    pol_iter = gps._hyperparams['algorithm']['iterations']
+    peg_height = gps._hyperparams['demo_agent']['peg_height']
+    mean_dists = []
+    success_rates = []
+    for i in xrange(pol_iter):
+        # if 'sample_on_policy' in gps._hyperparams['algorithm'] and \
+        #     gps._hyperparams['algorithm']['sample_on_policy']:
+        #     pol_samples_file = gps._data_files_dir + 'pol_sample_itr_%02d.pkl' % i
+        # else:
+        pol_samples_file = gps._data_files_dir + 'traj_sample_itr_%02d.pkl' % i
+        pol_sample_lists = gps.data_logger.unpickle(pol_samples_file)
+        if pol_sample_lists is None:
+            print("Error: cannot find '%s.'" % pol_samples_file)
+            os._exit(1) # called instead of sys.exit(), since t
+        samples = []
+        for m in xrange(len(pol_sample_lists)):
+            curSamples = pol_sample_lists[m].get_samples()
+            for sample in curSamples:
+                samples.append(sample)
+        if type(gps.algorithm._hyperparams['target_end_effector']) is list:
+                target_position = gps.algorithm._hyperparams['target_end_effector'][m][:3]
+        else:
+            target_position = gps.algorithm._hyperparams['target_end_effector'][:3]
+        dists_to_target = [np.nanmin(np.sqrt(np.sum((sample.get(END_EFFECTOR_POINTS)[:, :3] - \
+                            target_position.reshape(1, -1))**2, axis = 1)), axis = 0) for sample in samples]
+        mean_dists.append(sum(dists_to_target)/len(dists_to_target))
+        success_rates.append(float(sum(1 for dist in dists_to_target if dist <= peg_height))/ \
+                                len(dists_to_target))
+    return mean_dists, success_rates
