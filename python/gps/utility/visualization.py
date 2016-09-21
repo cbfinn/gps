@@ -118,71 +118,59 @@ def compare_samples(gps, N, agent_config):
         plt.savefig(gps._data_files_dir + 'distribution_of_sample_conditions_added_per.png')
         plt.close('all')
 
-
-def compare_experiments(hyperparams_file):
+def get_comparison_hyperparams(hyperparam_file):
     """ 
-    Compare the performance of two experiments.
+    Compare the performance of two experiments and plot their mean distance to target effector and success rate.
     Args:
-        hyperparams_file: hyperparams to be hard-coded for comparison.
+        hyperparam_file: the hyperparam file to be changed for two different experiments for comparison.
     """
-    mean_dists_global_dict, mean_dists_no_global_dict, success_rates_global_dict, \
-            success_rates_no_global_dict, mean_dists_classic_dict, success_rates_classic_dict \
-             = {}, {}, {}, {}, {}, {}
-    seeds = [0, 1, 2] 
-    for itr in seeds:
-        random.seed(itr)
-        np.random.seed(itr)
-        hyperparams = imp.load_source('hyperparams', hyperparams_file)
-        hyperparams.config['common']['nn_demo'] = True
-        hyperparams.config['algorithm']['init_demo_policy'] = False
-        hyperparams.config['algorithm']['policy_eval'] = False
-        hyperparams.config['algorithm']['ioc'] = 'ICML'
-        
-        hyperparams.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_z_0.05_%d' % itr + '/'
-        if not os.path.exists(exp_dir + 'data_files_maxent_9cond_z_0.05_%d' % itr + '/'):
-          os.makedirs(exp_dir + 'data_files_maxent_9cond_z_0.05_%d' % itr + '/')
-        hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'        
-        gps_global = GPSMain(hyperparams.config)
-        pol_iter = gps_global.algorithm._hyperparams['iterations']
-        for i in xrange(pol_iter):
-            if hyperparams.config['gui_on']:
-                gps_global.run()
-                plt.close()
-            else:
-                gps_global.run()
-                plt.close()
-        mean_dists_global_dict[itr], success_rates_global_dict[itr] = gps_global.measure_distance_and_success()
+    hyperparams_1 = imp.load_source('hyperparams', hyperparams_file)
+    hyperparams_1.config['common']['nn_demo'] = True
+    hyperparams_1.config['algorithm']['init_demo_policy'] = False
+    hyperparams_1.config['algorithm']['policy_eval'] = False
+    hyperparams_1.config['algorithm']['ioc'] = 'ICML'
+    
+    hyperparams_1.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_z_0.05_%d' % itr + '/'
+    if not os.path.exists(exp_dir + 'data_files_maxent_9cond_z_0.05_%d' % itr + '/'):
+      os.makedirs(exp_dir + 'data_files_maxent_9cond_z_0.05_%d' % itr + '/')
+    hyperparams_1.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams_1.config['common']['data_files_dir'] + 'policy'
+    hyperparams_2 = imp.load_source('hyperparams', hyperparams_file)
+    hyperparams_2.config['common']['nn_demo'] = True
+    hyperparams_2.config['algorithm']['init_demo_policy'] = False
+    hyperparams_2.config['algorithm']['policy_eval'] = False
+    hyperparams_2.config['algorithm']['ioc'] = 'ICML'
+    exp_dir_classic = exp_dir.replace('on_global', 'on_classic')
+    hyperparams_2.config['common']['data_files_dir'] = exp_dir_classic + 'data_files_nn_ICML_3pol_9cond_%d' % itr + '/'
+    if not os.path.exists(exp_dir_classic + 'data_files_nn_ICML_3pol_9cond_%d' % itr + '/'):
+        os.makedirs(exp_dir_classic + 'data_files_nn_ICML_3pol_9cond_%d' % itr + '/')
 
-        plt.close()
-        hyperparams = imp.load_source('hyperparams', hyperparams_file)
-        hyperparams.config['common']['nn_demo'] = True
-        hyperparams.config['algorithm']['init_demo_policy'] = False
-        hyperparams.config['algorithm']['policy_eval'] = False
-        hyperparams.config['algorithm']['ioc'] = 'ICML'
-        exp_dir_classic = exp_dir.replace('on_global', 'on_classic')
-        hyperparams.config['common']['data_files_dir'] = exp_dir_classic + 'data_files_nn_ICML_3pol_9cond_%d' % itr + '/'
-        if not os.path.exists(exp_dir_classic + 'data_files_nn_ICML_3pol_9cond_%d' % itr + '/'):
-            os.makedirs(exp_dir_classic + 'data_files_nn_ICML_3pol_9cond_%d' % itr + '/')
+    hyperparams_2.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams_2.config['common']['data_files_dir'] + 'policy'
+    return hyperparams_1, hyperparams_2
 
-        hyperparams.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams.config['common']['data_files_dir'] + 'policy'
-        gps_classic = GPSMain(hyperparams.config)
-        pol_iter = gps_classic.algorithm._hyperparams['iterations']
-        mean_dists_classic_dict[itr], success_rates_classic_dict[itr] = gps_classic.measure_distance_and_success()
-        plt.close()
+def compare_experiments(mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
+                                success_rates_2_dict):
+    """ 
+    Compare the performance of two experiments and plot their mean distance to target effector and success rate.
+    Args:
+        mean_dists_1_dict: mean distance dictionary for one of two experiments to be compared.
+        mean_dists_2_dict: mean distance dictionary for one of two experiments to be compared.
+        success_rates_1_dict: success rates dictionary for one of the two experiments to be compared.
+        success_rates_2_dict: success rates dictionary for one of the two experiments to be compared.
+    """
 
     plt.close('all')
-    avg_dists_global = [float(sum(mean_dists_global_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
-    avg_succ_rate_global = [float(sum(success_rates_global_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
-    avg_dists_classic = [float(sum(mean_dists_classic_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
-    avg_succ_rate_classic = [float(sum(success_rates_classic_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
+    avg_dists_global = [float(sum(mean_dists_1_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
+    avg_succ_rate_global = [float(sum(success_rates_1_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
+    avg_dists_classic = [float(sum(mean_dists_2_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
+    avg_succ_rate_classic = [float(sum(success_rates_2_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
     # avg_dists_no_global = [float(sum(mean_dists_no_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
     # avg_succ_rate_no_global = [float(sum(success_rates_no_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
     plt.plot(range(pol_iter), avg_dists_global, '-x', color='red')
     plt.plot(range(pol_iter), avg_dists_classic, '-x', color='green')
     # plt.plot(range(pol_iter), avg_dists_no_global, '-x', color='green')
     for i in seeds:
-        plt.plot(range(pol_iter), mean_dists_global_dict[i], 'ko')
-        plt.plot(range(pol_iter), mean_dists_classic_dict[i], 'co')
+        plt.plot(range(pol_iter), mean_dists_1_dict[i], 'ko')
+        plt.plot(range(pol_iter), mean_dists_2_dict[i], 'co')
     #   plt.plot(range(pol_iter), mean_dists_no_global_dict[i], 'co')
     #   plt.annotate(np.around(txt, decimals=2), (i, txt))
     plt.legend(['avg MaxEnt', 'avg non-MaxEnt', 'MaxEnt', 'non-MaxEnt'], loc='upper right', ncol=2)
@@ -197,8 +185,8 @@ def compare_experiments(hyperparams_file):
     plt.plot(range(pol_iter), avg_succ_rate_global, '-x', color='red')
     plt.plot(range(pol_iter), avg_succ_rate_classic, '-x', color='green')
     for i in seeds:
-        plt.plot(range(pol_iter), success_rates_global_dict[i], 'ko')
-        plt.plot(range(pol_iter), success_rates_classic_dict[i], 'co')
+        plt.plot(range(pol_iter), success_rates_1_dict[i], 'ko')
+        plt.plot(range(pol_iter), success_rates_2_dict[i], 'co')
         # plt.plot(range(pol_iter), success_rates_no_global_dict[i], 'co')
     plt.legend(['avg MaxEnt', 'avg non-MaxEnt', 'MaxEnt', 'non-MaxEnt'], loc='upper right', ncol=2)
     plt.xlabel("iterations")

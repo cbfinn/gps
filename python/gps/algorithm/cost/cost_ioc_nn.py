@@ -154,8 +154,6 @@ class CostIOCNN(Cost):
 
         return l, lx, lu, lxx, luu, lux
 
-    # TODO - we might want to make the demos and samples input as SampleList objects, rather than arrays.
-    # TODO - also we might want to exclude demoU/sampleU since we generally don't use them
     def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, itr=-1):
         """
         Learn cost function with generic function representation.

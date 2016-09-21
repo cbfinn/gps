@@ -24,8 +24,8 @@ from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
 from gps.utility.generate_demo import GenDemo
 from gps.utility.general_utils import disable_caffe_logs
-from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu
-
+from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, measure_distance_and_success
+from gps.utility.visualization import get_comparison_hyperparams, compare_experiments 
 
 class GPSMain(object):
     """ Main class to run algorithms and experiments. """
@@ -448,11 +448,14 @@ def main():
                         help='quit GUI automatically when finished')
     parser.add_argument('--dry_run', nargs=2, type=int, default=None,
                         help='Condition to dry-run the policy')
+    parser.add_argument('-c', '--compare', metavar='N', type=int,
+                    help='compare two experiments')
     args = parser.parse_args()
 
     exp_name = args.experiment
     resume_training_itr = args.resume
     test_policy_N = args.policy
+    compare = args.compare
 
     from gps import __file__ as gps_filepath
     gps_filepath = os.path.abspath(gps_filepath)
@@ -550,6 +553,33 @@ def main():
             plt.show()
         else:
             gps.test_policy(itr=current_itr, N=test_policy_N)
+    elif compare:
+        hyperparams_1, hyperparams_2 = get_comparison_hyperparams(hyperparams_file)
+        mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
+            success_rates_2_dict = {}, {}, {}, {}
+        seeds = [0, 1, 2] 
+        for itr in seeds:
+            random.seed(itr)
+            np.random.seed(itr)
+            gps = GPSMain(hyperparams_1.config)
+            if hyperparams.config['gui_on']:
+                gps_global.run()
+                plt.close()
+            else:
+                gps_global.run()
+                plt.close()
+            mean_dists_1_dict[itr], success_rates_1_dict[itr] = measure_distance_and_success(gps)
+            gps_classic = GPSMain(hyperparams.config)
+            if hyperparams.config['gui_on']:
+                gps_classic.run()
+                plt.close()
+            else:
+                gps_classic.run()
+                plt.close()
+            mean_dists_2_dict[itr], success_rates_2_dict[itr] = measure_distance_and_success(gps)
+            plt.close()
+        compare_experiments(mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
+                                success_rates_2_dict)
     else:
         if hyperparams.config['gui_on']:
             run_gps = threading.Thread(

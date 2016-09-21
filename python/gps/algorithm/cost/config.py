@@ -1,5 +1,6 @@
 """ Default configuration and hyperparameter values for costs. """
 import numpy as np
+import os
 
 from gps.algorithm.cost.cost_utils import RAMP_CONSTANT, evallogl2term
 try:
@@ -105,9 +106,12 @@ COST_IOC_VISION = {
 
 COST_IOC_VISION.update(IOC_CONFIG)
 
-# Cost IOC config 
+checkpoint_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                               '..', 'cost/tf_checkpoint/cost_checkpoint.ckpt'))
+# CostIOCTF
 COST_IOC_TF = {
-    
+    # Other hyperparameters.
+    'checkpoint_prefix': checkpoint_path
 }
 
 COST_IOC_TF.update(IOC_CONFIG)
