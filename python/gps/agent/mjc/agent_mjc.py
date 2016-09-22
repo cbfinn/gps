@@ -27,7 +27,13 @@ class AgentMuJoCo(Agent):
         config.update(hyperparams)
         Agent.__init__(self, config)
         self._setup_conditions()
-        self._setup_world(hyperparams['filename'])
+        if 'models' in hyperparams:
+            # If MJCModel objects are provided, load those instead
+            files = [model.open() for model in hyperparams['models']]
+            self._setup_world([f.name for f in files])
+            [f.close() for f in files]
+        else:
+            self._setup_world(hyperparams['filename'])
 
     def _setup_conditions(self):
         """
@@ -57,7 +63,7 @@ class AgentMuJoCo(Agent):
                            for i in range(self._hyperparams['conditions'])]
         else:
             for i in range(self._hyperparams['conditions']):
-                self._world.append(mjcpy.MJCWorld(self._hyperparams['filename'][i]))
+                self._world.append(mjcpy.MJCWorld(filename[i]))
                 self._model.append(self._world[i].get_model())
 
         for i in range(self._hyperparams['conditions']):
