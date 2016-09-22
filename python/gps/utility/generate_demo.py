@@ -41,14 +41,7 @@ class GenDemo(object):
             self._hyperparams = config
             self._conditions = config['common']['conditions']
 
-            # if 'train_conditions' in config['common']:
-            #       self._train_idx = config['common']['train_conditions']
-            #       self._test_idx = config['common']['test_conditions']
-            # else:
-            #       self._train_idx = range(self._conditions)
-            #       config['common']['train_conditions'] = config['common']['conditions']
-            #       self._hyperparams=config
-            #       self._test_idx = self._train_idx
+            self.nn_demo = config['common']['nn_demo']
             self._exp_dir = config['common']['demo_exp_dir']
             self._data_files_dir = config['common']['data_files_dir']
             self._algorithm_files_dir = config['common']['demo_controller_file']
@@ -77,16 +70,7 @@ class GenDemo(object):
                       os._exit(1) # called instead of sys.exit(), since t
 
             # Keep the initial states of the agent the sames as the demonstrations.
-            if 'learning_from_prior' in self._hyperparams['algorithm']:
-                self._learning = self._hyperparams['algorithm']['learning_from_prior'] # if the experiment is learning from prior experience
-            else:
-                self._learning = False
             agent_config = self._hyperparams['demo_agent']
-            #if agent_config['type']==AgentMuJoCo and (agent_config['filename'] == './mjc_models/pr2_arm3d.xml' or \
-            #            agent_config['filename'] == './mjc_models/reacher_img.xml') and not self._learning:
-            #    agent_config['x0'] = self.algorithm._hyperparams['agent_x0']
-            #    agent_config['pos_body_idx'] = self.algorithm._hyperparams['agent_pos_body_idx']
-            #    agent_config['pos_body_offset'] = self.algorithm._hyperparams['agent_pos_body_offset']
             self.agent = agent_config['type'](agent_config)
 
             # Roll out the demonstrations from controllers
@@ -98,10 +82,7 @@ class GenDemo(object):
 
             M = agent_config['conditions']
             N = self._hyperparams['algorithm']['num_demos']
-            sampled_demo_conds = [random.randint(0, M-1) for i in xrange(M)]
-            sampled_demos = []
-            #if True: #not self._learning: # LG
-            if True:
+            if not self.nn_demo:
                 controllers = {}
 
                 # Store each controller under M conditions into controllers.
@@ -201,26 +182,14 @@ class GenDemo(object):
                 import pdb; pdb.set_trace()
                 good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
                 self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
-                filtered_demos = []
-                demo_conditions = []
-                failed_conditions = []
-                #exp_dir = self._data_files_dir.replace("data_files", "")
-                exp_dir = self._data_files_dir
-                with open(exp_dir + 'log.txt', 'a') as f:
-                    f.write('\nThe demo conditions are: \n')
+                filtered_demos, demo_conditions, failed_conditions = []
                 for i in good_indices:
                     filtered_demos.append(demos[i])
                     demo_conditions.append(all_pos_body_offsets[i])
-                    with open(exp_dir + 'log.txt', 'a') as f:
-                        f.write('\n' + str(all_pos_body_offsets[i]) + '\n')
-                with open(exp_dir + 'log.txt', 'a') as f:
-                    f.write('\nThe failed badmm conditions are: \n')
                 for i in xrange(M):
                 # for i in xrange(len(demos)):
                     if i not in good_indices:
                         failed_conditions.append(all_pos_body_offsets[i])
-                        with open(exp_dir + 'log.txt', 'a') as f:
-                            f.write('\n' + str(all_pos_body_offsets[i]) + '\n')
                 shuffle(filtered_demos)
                 demo_list =  SampleList(filtered_demos)
                 demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs(), \
@@ -231,15 +200,11 @@ class GenDemo(object):
                 plt.close()
                 fig = plt.figure()
                 ax = Axes3D(fig)
-                demo_conditions_x = [demo_conditions[i][0] for i in xrange(len(demo_conditions))]
-                demo_conditions_y = [demo_conditions[i][1] for i in xrange(len(demo_conditions))]
-                demo_conditions_z = [demo_conditions[i][2] for i in xrange(len(demo_conditions))]
-                failed_conditions_x = [failed_conditions[i][0] for i in xrange(len(failed_conditions))]
-                failed_conditions_y = [failed_conditions[i][1] for i in xrange(len(failed_conditions))]
-                failed_conditions_z = [failed_conditions[i][2] for i in xrange(len(failed_conditions))]
+                demo_conditions_zip = zip(*demo_conditions)
+                failed_conditions_zip = zip(*failed_conditions)
                 # subplt = plt.subplot()
-                ax.scatter(demo_conditions_x, demo_conditions_y, demo_conditions_z, c='g', marker='o')
-                ax.scatter(failed_conditions_x, failed_conditions_y, failed_conditions_z, c='r', marker='x')
+                ax.scatter(demo_conditions_zip[0], demo_conditions_zip[1], demo_conditions_zip[2], c='g', marker='o')
+                ax.scatter(failed_conditions_zip[0], failed_conditions_zip[1], failed_conditions_zip[2], c='r', marker='x')
                 # ax.scatter([-0.05, -0.05, .05, .05], [-0.05, 0.05, -.05, .05], [-0.05, 0.05, .05, .05], c='b', marker='*')
                 # subplt.plot(demo_conditions_x, demo_conditions_y, 'go')
                 # subplt.plot(failed_conditions_x, failed_conditions_y, 'rx')

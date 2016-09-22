@@ -46,11 +46,8 @@ def compare_samples(gps, N, agent_config):
         target_position = agent_config['target_end_effector'][:3]
         dists_to_target = [np.zeros((M*N)) for i in xrange(len(samples))]
         dists_diff = []
-        all_success_conditions = []
-        only_ioc_conditions = []
-        only_demo_conditions = []
-        all_failed_conditions = []
-        percentages = []
+        all_success_conditions, only_ioc_conditions, only_demo_conditions, all_failed_conditions, \
+            percentages = [], [], [], [], []
         for i in xrange(len(samples[0])):
             for j in xrange(len(samples)):
                 sample_end_effector = samples[j][i].get(END_EFFECTOR_POINTS)
@@ -77,26 +74,17 @@ def compare_samples(gps, N, agent_config):
         plt.close('all')
         fig = plt.figure()
         ax = Axes3D(fig)
-        ioc_conditions_x = [ioc_conditions[i][0] for i in xrange(len(ioc_conditions))]
-        ioc_conditions_y = [ioc_conditions[i][1] for i in xrange(len(ioc_conditions))]
-        ioc_conditions_z = [ioc_conditions[i][2] for i in xrange(len(ioc_conditions))]
-        all_success_x = [all_success_conditions[i][0] for i in xrange(len(all_success_conditions))]
-        all_success_y = [all_success_conditions[i][1] for i in xrange(len(all_success_conditions))]
-        all_success_z = [all_success_conditions[i][2] for i in xrange(len(all_success_conditions))]
-        all_failed_x = [all_failed_conditions[i][0] for i in xrange(len(all_failed_conditions))]
-        all_failed_y = [all_failed_conditions[i][1] for i in xrange(len(all_failed_conditions))]
-        all_failed_z = [all_failed_conditions[i][2] for i in xrange(len(all_failed_conditions))]
-        only_ioc_x = [only_ioc_conditions[i][0] for i in xrange(len(only_ioc_conditions))]
-        only_ioc_y = [only_ioc_conditions[i][1] for i in xrange(len(only_ioc_conditions))]
-        only_ioc_z = [only_ioc_conditions[i][2] for i in xrange(len(only_ioc_conditions))]
-        only_demo_x = [only_demo_conditions[i][0] for i in xrange(len(only_demo_conditions))]
-        only_demo_y = [only_demo_conditions[i][1] for i in xrange(len(only_demo_conditions))]
-        only_demo_z = [only_demo_conditions[i][2] for i in xrange(len(only_demo_conditions))]
+        ioc_conditions_zip = zip(*ioc_conditions)
+        all_success_zip = zip(*all_success_conditions)
+        all_failed_zip = zip(*all_failed_conditions)
+        only_ioc_zip = zip(*only_ioc_conditions)
+        only_demo_zip = zip(*only_demo_conditions)
+
         # subplt = plt.subplot()
-        ax.scatter(all_success_x, all_success_y, all_success_z, c='y', marker='o')
-        ax.scatter(all_failed_x, all_failed_y, all_failed_z, c='r', marker='x')
-        ax.scatter(only_ioc_x, only_ioc_y, only_ioc_z, c='g', marker='^')
-        ax.scatter(only_demo_x, only_demo_y, only_demo_z, c='r', marker='v')
+        ax.scatter(all_success_zip[0], all_success_zip[1], all_success_zip[2], c='y', marker='o')
+        ax.scatter(all_failed_zip[0], all_failed_zip[1], all_failed_zip[2], c='r', marker='x')
+        ax.scatter(only_ioc_zip[0], only_ioc_zip[1], only_ioc_zip[2], c='g', marker='^')
+        ax.scatter(only_demo_zip[0], only_demo_zip[1], only_demo_zip[2], c='r', marker='v')
         training_positions = zip(*pos_body_offset)
         ax.scatter(training_positions[0], training_positions[1], training_positions[2], s=40, c='b', marker='*')
         # plt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc= (1, 1))
@@ -115,40 +103,22 @@ def compare_samples(gps, N, agent_config):
         plt.title("Distribution of samples drawn from demo policy and IOC policy")
         # plt.xlabel('width')
         # plt.ylabel('length')
-        plt.savefig(gps._data_files_dir + 'distribution_of_sample_conditions_added_per.png')
+        plt.savefig(gps._data_files_dir + 'distribution_of_sample_conditions.png')
         plt.close('all')
 
-def get_comparison_hyperparams(hyperparam_file):
+def get_comparison_hyperparams(hyperparam_file, itr):
     """ 
-    Compare the performance of two experiments and plot their mean distance to target effector and success rate.
+    Make the iteration number the same as the experiment data directory index.
     Args:
         hyperparam_file: the hyperparam file to be changed for two different experiments for comparison.
     """
-    hyperparams_1 = imp.load_source('hyperparams', hyperparams_file)
-    hyperparams_1.config['common']['nn_demo'] = True
-    hyperparams_1.config['algorithm']['init_demo_policy'] = False
-    hyperparams_1.config['algorithm']['policy_eval'] = False
-    hyperparams_1.config['algorithm']['ioc'] = 'ICML'
-    
-    hyperparams_1.config['common']['data_files_dir'] = exp_dir + 'data_files_maxent_9cond_z_0.05_%d' % itr + '/'
-    if not os.path.exists(exp_dir + 'data_files_maxent_9cond_z_0.05_%d' % itr + '/'):
-      os.makedirs(exp_dir + 'data_files_maxent_9cond_z_0.05_%d' % itr + '/')
-    hyperparams_1.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams_1.config['common']['data_files_dir'] + 'policy'
-    hyperparams_2 = imp.load_source('hyperparams', hyperparams_file)
-    hyperparams_2.config['common']['nn_demo'] = True
-    hyperparams_2.config['algorithm']['init_demo_policy'] = False
-    hyperparams_2.config['algorithm']['policy_eval'] = False
-    hyperparams_2.config['algorithm']['ioc'] = 'ICML'
-    exp_dir_classic = exp_dir.replace('on_global', 'on_classic')
-    hyperparams_2.config['common']['data_files_dir'] = exp_dir_classic + 'data_files_nn_ICML_3pol_9cond_%d' % itr + '/'
-    if not os.path.exists(exp_dir_classic + 'data_files_nn_ICML_3pol_9cond_%d' % itr + '/'):
-        os.makedirs(exp_dir_classic + 'data_files_nn_ICML_3pol_9cond_%d' % itr + '/')
-
-    hyperparams_2.config['algorithm']['policy_opt']['weights_file_prefix'] = hyperparams_2.config['common']['data_files_dir'] + 'policy'
-    return hyperparams_1, hyperparams_2
+    hyperparams = imp.load_source('hyperparams', hyperparams_file)
+    hyperparams.config['plot']['itr'] = itr
+    return hyperparams
 
 def compare_experiments(mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
-                                success_rates_2_dict):
+                                success_rates_2_dict, pol_iter, exp_dir, hyperparams_compare, \
+                                hyperparams):
     """ 
     Compare the performance of two experiments and plot their mean distance to target effector and success rate.
     Args:
@@ -156,46 +126,40 @@ def compare_experiments(mean_dists_1_dict, mean_dists_2_dict, success_rates_1_di
         mean_dists_2_dict: mean distance dictionary for one of two experiments to be compared.
         success_rates_1_dict: success rates dictionary for one of the two experiments to be compared.
         success_rates_2_dict: success rates dictionary for one of the two experiments to be compared.
+        pol_iter: number of iterations of the algorithm.
+        exp_dir: directory of the experiment.
+        hyperparams_compare: the hyperparams of the control group.
+        hyperparams: the hyperparams of the experimental group.
     """
 
     plt.close('all')
-    avg_dists_global = [float(sum(mean_dists_1_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
-    avg_succ_rate_global = [float(sum(success_rates_1_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
-    avg_dists_classic = [float(sum(mean_dists_2_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
-    avg_succ_rate_classic = [float(sum(success_rates_2_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
-    # avg_dists_no_global = [float(sum(mean_dists_no_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
-    # avg_succ_rate_no_global = [float(sum(success_rates_no_global_dict[i][j] for i in xrange(3)))/3 for j in xrange(pol_iter)]
-    plt.plot(range(pol_iter), avg_dists_global, '-x', color='red')
-    plt.plot(range(pol_iter), avg_dists_classic, '-x', color='green')
-    # plt.plot(range(pol_iter), avg_dists_no_global, '-x', color='green')
+    avg_dists_1 = [float(sum(mean_dists_1_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
+    avg_succ_rate_1 = [float(sum(success_rates_1_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
+    avg_dists_2 = [float(sum(mean_dists_2_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
+    avg_succ_rate_2 = [float(sum(success_rates_2_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
+    plt.plot(range(pol_iter), avg_dists_1, '-x', color='red')
+    plt.plot(range(pol_iter), avg_dists_2, '-x', color='green')
     for i in seeds:
         plt.plot(range(pol_iter), mean_dists_1_dict[i], 'ko')
         plt.plot(range(pol_iter), mean_dists_2_dict[i], 'co')
-    #   plt.plot(range(pol_iter), mean_dists_no_global_dict[i], 'co')
-    #   plt.annotate(np.around(txt, decimals=2), (i, txt))
-    plt.legend(['avg MaxEnt', 'avg non-MaxEnt', 'MaxEnt', 'non-MaxEnt'], loc='upper right', ncol=2)
-    plt.title("mean distances to target over time with MaxEnt demo and not-MaxEnt demo")
-    plt.xlabel("iterations")
-    plt.ylabel("mean distances")
-    #plt.savefig(exp_dir + 'mean_dists_during_iteration_comparison_maxent.png')
-    plt.savefig(exp_dir + 'mean_dists_during_iteration_comparison_maxent.pdf')
-    # plt.savefig(exp_dir + 'mean_dists_during_iteration_comparison.png')
-    # plt.savefig(exp_dir + 'mean_dists_during_iteration_var.png')
+    avg_legend, legend, avg_compare_legend, compare_legend = hyperparams['plot']['avg_legend'], \
+            hyperparams['plot']['legend'], hyperparams_compare['plot']['avg_legend'], \
+            hyperparams_compare['plot']['legend']
+    plt.legend([avg_legend, legend, avg_compare_legend, compare_legend], loc='upper right', ncol=2)
+    plt.title(hyperparams['plot']['mean_dist_title'])
+    plt.xlabel(hyperparams['plot']['xlabel'])
+    plt.ylabel(hyperparams['plot']['ylabel'])
+    plt.savefig(exp_dir + hyperparams['plot']['mean_dist_plot_name'])
     plt.close()
-    plt.plot(range(pol_iter), avg_succ_rate_global, '-x', color='red')
-    plt.plot(range(pol_iter), avg_succ_rate_classic, '-x', color='green')
+    plt.plot(range(pol_iter), avg_succ_rate_1, '-x', color='red')
+    plt.plot(range(pol_iter), avg_succ_rate_2, '-x', color='green')
     for i in seeds:
         plt.plot(range(pol_iter), success_rates_1_dict[i], 'ko')
         plt.plot(range(pol_iter), success_rates_2_dict[i], 'co')
-        # plt.plot(range(pol_iter), success_rates_no_global_dict[i], 'co')
-    plt.legend(['avg MaxEnt', 'avg non-MaxEnt', 'MaxEnt', 'non-MaxEnt'], loc='upper right', ncol=2)
-    plt.xlabel("iterations")
-    plt.ylabel("success rate")
-    plt.title("success rates during iterations with MaxEnt demo and not-MaxEnt dem")
-    # plt.title("success rates during iterations with with nn and LG demo")
-    #plt.savefig(exp_dir + 'success_rate_during_iteration_comparison_maxent.png')
-    plt.savefig(exp_dir + 'success_rate_during_iteration_comparison_maxent.pdf')
-    # plt.savefig(exp_dir + 'success_rate_during_iteration_comparison.png')
-    # plt.savefig(exp_dir + 'success_rate_during_iteration_var.png')
+    plt.legend([avg_legend, legend, avg_compare_legend, compare_legend], loc='upper right', ncol=2)
+    plt.xlabel(hyperparams['plot']['xlabel'])
+    plt.ylabel(hyperparams['plot']['ylabel'])
+    plt.title(hyperparams['success_title'])
+    plt.savefig(exp_dir + hyperparams['plot']['success_plot_name'])
 
     plt.close()

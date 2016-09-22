@@ -63,6 +63,19 @@ common = {
     'nn_demo': True, # Use neural network demonstrations. For experiment only
 }
 
+plot = {
+    'itr' = 0, # For comparison experiments
+    'avg_legend': 'avg_maxent', # Legends for visualization
+    'legend': 'maxent', # Legends for visualization
+    'mean_dist_title': "mean distances to target over time with MaxEnt demo and not-MaxEnt demo",
+    'success_title': "success rates during iterations with MaxEnt demo and not-MaxEnt demo",
+    'xlabel': "iterations",
+    'mean_dist_ylabel': "mean distances",
+    'success_ylabel': "success rate",
+    'mean_dist_plot_name': 'mean_dists_during_iteration_comparison_maxent.pdf',
+    'success_plot_name': 'success_rate_during_iteration_comparison_maxent.pdf',
+}
+
 agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/pr2_arm3d.xml',
@@ -76,11 +89,6 @@ agent = {
     'sampling_range_bodypos': [np.array([-0.15,-0.15, -0.15]), np.array([0.15, 0.15, 0.15])], # Format is [lower_lim, upper_lim]
     'prohibited_ranges_bodypos':[[None, None, None, None]],
     'pos_body_idx': np.array([1]),
-    # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0]),
-    #                     np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0])],
-    # 'pos_body_offset': [np.array([-0.05, -0.05, -0.05]), np.array([-0.05, -0.05, 0.05]), np.array([-0.05, 0.05, -0.05]),
-    #             np.array([-0.05, 0.05, 0.05]), np.array([0, 0, 0]), np.array([0.05, -0.05, -0.05]),
-    #             np.array([0.05, -0.05, 0.05]), np.array([0.05, 0.05, -0.05]), np.array([0.05, 0.05, 0.05])],
     'pos_body_offset': [np.array([-0.1, -0.1, -0.1]), np.array([-0.1, -0.1, 0.1]), np.array([-0.1, 0.1, -0.1]),
                 np.array([-0.1, 0.1, 0.1]), np.array([0, 0, 0]), np.array([0.1, -0.1, -0.1]),
                 np.array([0.1, -0.1, 0.1]), np.array([0.1, 0.1, -0.1]), np.array([0.1, 0.1, 0.1])],
@@ -119,80 +127,12 @@ demo_agent = {
     'failure_lower_bound': 0.15,
 }
 
-# demo_agent = {
-#     'type': AgentMuJoCo,
-#     'filename': './mjc_models/pr2_arm3d.xml',
-#     'x0': np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
-#                           np.zeros(7)]),
-#     'dt': 0.05,
-#     'substeps': 5,
-#     'conditions': common['conditions'],
-#     'pos_body_idx': np.array([1]),
-#     # 'pos_body_offset': [np.array([-0.08, -0.08, 0])],
-#     # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0]),
-#     #                     np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0])],
-#     'pos_body_offset': [np.array([-0.05, -0.05, -0.05]), np.array([-0.05, 0.05, 0.05]),
-#                         np.array([-0.05, -0.05, 0.05]), np.array([0.0,0.0,0.0]),
-#                         np.array([-0.05,0.05,-0.05]), np.array([0.05,0.05,-0.05]),
-#                         np.array([0.05,-0.05,-0.05]),
-#                         np.array([0.05, -0.05, 0.05]), np.array([0.05, 0.05, 0.05])],
-#     # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0, 0]), np.array([-0.1, 0.1, 0]),
-#     #                     np.array([0, -0.1, 0]), np.array([0, 0, 0]), np.array([0, 0.1, 0]),
-#     #                     np.array([0.1, 0.1, 0]), np.array([0.1, 0, 0]), np.array([0.1, -0.1, 0])],
-#     # 'pos_body_offset': [np.array([-0.05, -0.05, 0]), np.array([-0.05, 0, 0]), np.array([-0.05, 0.05, 0]),
-#     #             np.array([0, -0.05, 0]), np.array([0, 0, 0]), np.array([0, 0.05, 0]),
-#     #             np.array([0.05, 0.05, 0]), np.array([0.05, 0, 0]), np.array([0.05, -0.05, 0])],
-#     'T': 100,
-#     'sensor_dims': SENSOR_DIMS,
-#     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-#                       END_EFFECTOR_POINT_VELOCITIES],
-#     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-#                     END_EFFECTOR_POINT_VELOCITIES],
-#     'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
-#     'render': False,
-#     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
-#     'peg_height': 0.1,
-#     'success_upper_bound': 0.09,
-# }
-
-real_demo_agent = {
-    'type': AgentMuJoCo,
-    'filename': './mjc_models/pr2_arm3d.xml',
-    'x0': np.concatenate([np.array([0.1, 0.1, -1.54, -1.7, 1.54, -0.2, 0]),
-                          np.zeros(7)]),
-    'dt': 0.05,
-    'substeps': 5,
-    'conditions': 4,
-    'randomly_sample_bodypos': False,
-    'randomly_sample_x0': False,
-    'sampling_range_bodypos': [np.array([-0.1,-0.1, 0.0]), np.array([0.1, 0.1, 0.0])], # Format is [lower_lim, upper_lim]
-    'prohibited_ranges_bodypos':[[None, None, None, None]],
-    'pos_body_idx': np.array([1]),
-    # 'pos_body_offset': [np.array([-0.08, -0.08, 0])],
-    # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0]),
-    #                     np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0])],
-    'pos_body_offset': [np.array([-0.05, -0.05, -0.05]), np.array([-0.05, 0.05, 0.05]),
-                         np.array([0.05, -0.05, 0.05]), np.array([0.05, 0.05, 0.05])],
-    # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0, 0]), np.array([-0.1, 0.1, 0]),
-    #                     np.array([0, -0.1, 0]), np.array([0, 0, 0]), np.array([0, 0.1, 0]),
-    #                     np.array([0.1, 0.1, 0]), np.array([0.1, 0, 0]), np.array([0.1, -0.1, 0])],
-    # 'pos_body_offset': [np.array([-0.05, -0.05, 0]), np.array([-0.05, 0, 0]), np.array([-0.05, 0.05, 0]),
-    #             np.array([0, -0.05, 0]), np.array([0, 0, 0]), np.array([0, 0.05, 0]),
-    #             np.array([0.05, 0.05, 0]), np.array([0.05, 0, 0]), np.array([0.05, -0.05, 0])],
-    'T': 100,
-    'sensor_dims': SENSOR_DIMS,
-    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-                      END_EFFECTOR_POINT_VELOCITIES],
-    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-                    END_EFFECTOR_POINT_VELOCITIES],
-    'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
-}
 
 algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
     'learning_from_prior': True,
-    'ioc' : 'MPF',
+    'ioc' : 'ICML',
     'ioc_maxent_iter': 30,
     'iterations': 40,
     'kl_step': 0.5,
@@ -215,7 +155,7 @@ algorithm = {
     'synthetic_cost_samples': 100,
     # 'synthetic_cost_samples': 0, # Remember to change back to 100 when done with the 50 samples exp
     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
-    'global_cost': False,
+    'global_cost': True,
     'sample_on_policy': True,
     'init_demo_policy': False,
     'policy_eval': False,
@@ -353,6 +293,5 @@ config = {
     'verbose_policy_trials': 1,
     'agent': agent,
     'demo_agent': demo_agent,
-    'real_demo_agent':real_demo_agent,
     'gui_on': True,
 }

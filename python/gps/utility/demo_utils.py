@@ -10,6 +10,7 @@ from gps.sample.sample_list import SampleList
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 from gps.utility.data_logger import DataLogger
 from gps.utility.general_utils import flatten_lists
+from gps.utility.generate_demo import GenDemo
 
 
 def generate_pos_body_offset(conditions):
@@ -106,7 +107,7 @@ def compute_distance_cost_plot_xu(algorithm, agent, X, U):
     costs = eval_demos_xu(agent, sample_list.get_X(), sample_list.get_U(), algorithm.cost)
     return flatten_lists(dists), flatten_lists(costs)
 
-def measure_distance_and_success(gps):
+def measure_distance_and_success_peg(gps):
     """
     Take the algorithm states for all iterations and extract the
     mean distance to the target position and measure the success
@@ -146,3 +147,43 @@ def measure_distance_and_success(gps):
         success_rates.append(float(sum(1 for dist in dists_to_target if dist <= peg_height))/ \
                                 len(dists_to_target))
     return mean_dists, success_rates
+
+def get_demos(gps):
+    """
+    Gather the demos for IOC algorithm. If there's no demo file available, generate it.
+    Args:
+        gps: the gps object.
+    Returns: the demo dictionary of demo tracjectories.
+    """
+    # demo_file = gps._data_files_dir + 'demos.pkl'
+    if not gps._hyperparams['common'].get('nn_demo', False):
+        demo_file = gps._hyperparams['common']['NN_demo_file'] # using neural network demos
+    else:
+        demo_file = gps._hyperparams['common']['LG_demo_file'] # using linear-Gaussian demos
+    demos = gps.data_logger.unpickle(demo_file)
+    if demos is None:
+      gps.demo_gen = GenDemo(gps._hyperparams)
+      gps.demo_gen.generate(demo_file)
+      demos = gps.data_logger.unpickle(demo_file)
+    print 'Num demos:', demos['demoX'].shape[0]
+    gps._hyperparams['algorithm']['init_traj_distr']['init_demo_x'] = np.mean(demos['demoX'], 0)
+    gps._hyperparams['algorithm']['init_traj_distr']['init_demo_u'] = np.mean(demos['demoU'], 0)
+    gps.algorithm = gps._hyperparams['algorithm']['type'](gps._hyperparams['algorithm'])
+
+    if gps.algorithm._hyperparams.get('init_demo_policy', False):
+        demo_algorithm_file = gps._hyperparams['common']['demo_controller_file']
+        demo_algorithm = gps.data_logger.unpickle(demo_algorithm_file)
+        if demo_algorithm is None:
+            print("Error: cannot find '%s.'" % algorithm_file)
+            os._exit(1) # called instead of sys.exit(), since t
+        var_mult = gps.algorithm._hyperparams['init_var_mult']
+        gps.algorithm.policy_opt.var = demo_algorithm.policy_opt.var.copy() * var_mult
+        gps.algorithm.policy_opt.policy = demo_algorithm.policy_opt.copy().policy
+        gps.algorithm.policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(gps.algorithm.policy_opt.var))
+        gps.algorithm.policy_opt.solver.net.share_with(gps.algorithm.policy_opt.policy.net)
+
+        var_mult = gps.algorithm._hyperparams['demo_var_mult']
+        gps.algorithm.demo_policy_opt = demo_algorithm.policy_opt.copy()
+        gps.algorithm.demo_policy_opt.var = demo_algorithm.policy_opt.var.copy() * var_mult
+        gps.algorithm.demo_policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(gps.algorithm.demo_policy_opt.var))
+    return demos        
