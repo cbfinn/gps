@@ -156,7 +156,7 @@ def get_demos(gps):
     Returns: the demo dictionary of demo tracjectories.
     """
     # demo_file = gps._data_files_dir + 'demos.pkl'
-    if not gps._hyperparams['common'].get('nn_demo', False):
+    if gps._hyperparams['common'].get('nn_demo', False):
         demo_file = gps._hyperparams['common']['NN_demo_file'] # using neural network demos
     else:
         demo_file = gps._hyperparams['common']['LG_demo_file'] # using linear-Gaussian demos
