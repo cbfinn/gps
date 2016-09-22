@@ -542,6 +542,7 @@ def main():
                                 success_rates_2_dict, gps._hyperparams['algorithm']['iterations'], \
                                 exp_dir, hyperparams_compare.config, hyperparams.config)
     else:
+        gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:
             run_gps = threading.Thread(
                 target=lambda: gps.run(itr_load=resume_training_itr)
