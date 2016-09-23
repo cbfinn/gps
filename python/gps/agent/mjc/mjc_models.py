@@ -1,6 +1,6 @@
 import numpy as np
 
-from gps.agent.mjc.model_builder import default_model
+from gps.agent.mjc.model_builder import default_model, pointmass_model
 
 
 COLOR_MAP = {
@@ -97,4 +97,37 @@ def colored_reacher(ncubes=6, target_color="red", cube_size=0.015):
     actuator = mjcmodel.root.actuator()
     actuator.motor(ctrllimited="true",ctrlrange="-1.0 1.0",gear="200.0",joint="joint0")
     actuator.motor(ctrllimited="true",ctrlrange="-1.0 1.0",gear="200.0",joint="joint1")
+    return mjcmodel
+
+def obstacle_pointmass():
+    """
+    An example usage of MJCModel building the pointmass task
+
+    Returns:
+        An MJCModel
+    """
+    mjcmodel = pointmass_model('pointmass')
+    worldbody = mjcmodel.root.worldbody()
+
+    # Particle
+    body = worldbody.body(name='particle', pos="0 0 0")
+    body.geom(name="particle_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.05")
+    body.site(name="particle_site", pos="0 0 0", size="0.01")
+    body.joint(name="ball_x", type="slide", pos="0 0 0", axis="1 0 0")
+    body.joint(name="ball_y", type="slide", pos="0 0 0", axis="0 1 0")
+
+    # Target
+    body = worldbody.body(name="target", pos="3 0 0")
+    body.geom(name="target_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.1", rgba="0 0.9 0.1 1")
+
+    # Walls
+    body = worldbody.body(name="wall1", pos="1 0.8 0")
+    body.geom(name="wall1_geom", type="capsule", fromto="0 -0.6 0 0 1.0 0.0", size="0.1", contype="1", rgba="0.9 0 0.1 1")
+    body = worldbody.body(name="wall2", pos="1 -0.8 0")
+    body.geom(name="wall2_geom", type="capsule", fromto="0 -1.0 0 0 0.6 0.0", size="0.1", contype="1", rgba="0.9 0 0.1 1")
+
+    # Actuators
+    actuator = mjcmodel.root.actuator()
+    actuator.motor(joint="ball_x", ctrlrange="-1.0 1.0", ctrllimited="true")
+    actuator.motor(joint="ball_y", ctrlrange="-1.0 1.0", ctrllimited="true")
     return mjcmodel

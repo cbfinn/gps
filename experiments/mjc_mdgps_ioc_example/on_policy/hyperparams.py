@@ -15,6 +15,8 @@ common.update({
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
+    'NN_demo_file': EXP_DIR + 'data_files/demo_NN.pkl',
+    'LG_demo_file': EXP_DIR + 'data_files/demo_LG.pkl',
 })
 
 if not os.path.exists(common['data_files_dir']):

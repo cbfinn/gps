@@ -22,9 +22,10 @@ sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
 from gps.gui.gps_training_gui import GPSTrainingGUI, NUM_DEMO_PLOTS
 from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
-from gps.utility.generate_demo import GenDemo
+# from gps.utility.generate_demo import GenDemo
 from gps.utility.general_utils import disable_caffe_logs
-from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, measure_distance_and_success
+from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
+                                    measure_distance_and_success_peg, get_demos
 from gps.utility.visualization import get_comparison_hyperparams, compare_experiments 
 
 class GPSMain(object):
@@ -57,39 +58,7 @@ class GPSMain(object):
         config['algorithm']['agent'] = self.agent
 
         if self.using_ioc():
-            # demo_file = self._data_files_dir + 'demos.pkl'
-            if not config['common'].get('nn_demo', False):
-                demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_LG.pkl' # for mdgps experiment
-            else:
-                demo_file = self._hyperparams['common']['experiment_dir'] + 'data_files/' + 'demos_NN.pkl'
-            demos = self.data_logger.unpickle(demo_file)
-            if demos is None:
-              self.demo_gen = GenDemo(config)
-              self.demo_gen.generate(demo_file)
-              demos = self.data_logger.unpickle(demo_file)
-            print 'Num demos:', demos['demoX'].shape[0]
-            config['algorithm']['init_traj_distr']['init_demo_x'] = np.mean(demos['demoX'], 0)
-            config['algorithm']['init_traj_distr']['init_demo_u'] = np.mean(demos['demoU'], 0)
-            self.algorithm = config['algorithm']['type'](config['algorithm'])
-
-            if 'init_demo_policy' in self.algorithm._hyperparams and \
-                        self.algorithm._hyperparams['init_demo_policy']:
-                demo_algorithm_file = config['common']['demo_controller_file']
-                demo_algorithm = self.data_logger.unpickle(demo_algorithm_file)
-                if demo_algorithm is None:
-                    print("Error: cannot find '%s.'" % algorithm_file)
-                    os._exit(1) # called instead of sys.exit(), since t
-                var_mult = self.algorithm._hyperparams['init_var_mult']
-                self.algorithm.policy_opt.var = demo_algorithm.policy_opt.var.copy() * var_mult
-                self.algorithm.policy_opt.policy = demo_algorithm.policy_opt.copy().policy
-                self.algorithm.policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(self.algorithm.policy_opt.var))
-                self.algorithm.policy_opt.solver.net.share_with(self.algorithm.policy_opt.policy.net)
-
-                var_mult = self.algorithm._hyperparams['demo_var_mult']
-                self.algorithm.demo_policy_opt = demo_algorithm.policy_opt.copy()
-                self.algorithm.demo_policy_opt.var = demo_algorithm.policy_opt.var.copy() * var_mult
-                self.algorithm.demo_policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(self.algorithm.demo_policy_opt.var))
-
+            demos = get_demos(self)
             self.agent = config['agent']['type'](config['agent'])
             self.algorithm.demoX = demos['demoX']
             self.algorithm.demoU = demos['demoU']
@@ -462,7 +431,7 @@ def main():
     gps_dir = '/'.join(str.split(gps_filepath, '/')[:-3]) + '/'
     exp_dir = gps_dir + 'experiments/' + exp_name + '/'
     hyperparams_file = exp_dir + 'hyperparams.py'
-
+    hyperparams_file_compare = exp_dir + 'hyperparams_compare.py'
 
     if args.dry_run:
         import caffe
@@ -554,32 +523,24 @@ def main():
         else:
             gps.test_policy(itr=current_itr, N=test_policy_N)
     elif compare:
-        hyperparams_1, hyperparams_2 = get_comparison_hyperparams(hyperparams_file)
         mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
             success_rates_2_dict = {}, {}, {}, {}
         seeds = [0, 1, 2] 
         for itr in seeds:
             random.seed(itr)
             np.random.seed(itr)
-            gps = GPSMain(hyperparams_1.config)
-            if hyperparams.config['gui_on']:
-                gps_global.run()
-                plt.close()
-            else:
-                gps_global.run()
-                plt.close()
-            mean_dists_1_dict[itr], success_rates_1_dict[itr] = measure_distance_and_success(gps)
-            gps_classic = GPSMain(hyperparams.config)
-            if hyperparams.config['gui_on']:
-                gps_classic.run()
-                plt.close()
-            else:
-                gps_classic.run()
-                plt.close()
-            mean_dists_2_dict[itr], success_rates_2_dict[itr] = measure_distance_and_success(gps)
+            hyperparams_compare = get_comparison_hyperparams(hyperparams_file_compare, itr)
+            gps = GPSMain(hyperparams.config)
+            gps.run()
             plt.close()
+            mean_dists_1_dict[itr], success_rates_1_dict[itr] = measure_distance_and_success_peg(gps) # For peg only
+            gps_classic = GPSMain(hyperparams_compare.config)
+            gps.run()
+            plt.close()
+            mean_dists_2_dict[itr], success_rates_2_dict[itr] = measure_distance_and_success_peg(gps) # For peg only
         compare_experiments(mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
-                                success_rates_2_dict)
+                                success_rates_2_dict, gps._hyperparams['algorithm']['iterations'], \
+                                exp_dir, hyperparams_compare.config, hyperparams.config)
     else:
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:
