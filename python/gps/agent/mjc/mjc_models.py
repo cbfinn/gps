@@ -116,7 +116,9 @@ def pointmass():
     body.joint(name="ball_x", type="slide", pos="0 0 0", axis="1 0 0")
     body.joint(name="ball_y", type="slide", pos="0 0 0", axis="0 1 0")
 
-    # target
-    body = worldbody.body(name="target", pos="2.5 0 0")
-    body.geom(name="target_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.05", rgba="0 0.9 0.1 1")
-    
+    # Target
+    body = worldbody.body(name="target", pos="3 0 0")
+    body.geom(name="target_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.1", rgba="0 0.9 0.1 1")
+
+    # Walls
+
