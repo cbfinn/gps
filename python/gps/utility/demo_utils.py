@@ -10,7 +10,6 @@ from gps.sample.sample_list import SampleList
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 from gps.utility.data_logger import DataLogger
 from gps.utility.general_utils import flatten_lists
-from gps.utility.generate_demo import GenDemo
 
 
 def generate_pos_body_offset(conditions):
@@ -116,7 +115,6 @@ def measure_distance_and_success_peg(gps):
         None
     Returns: the mean distance and the success rate
     """
-    from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 
     pol_iter = gps._hyperparams['algorithm']['iterations']
     peg_height = gps._hyperparams['demo_agent']['peg_height']
@@ -147,7 +145,7 @@ def measure_distance_and_success_peg(gps):
         success_rates.append(float(sum(1 for dist in dists_to_target if dist <= peg_height))/ \
                                 len(dists_to_target))
     return mean_dists, success_rates
-
+      
 def get_demos(gps):
     """
     Gather the demos for IOC algorithm. If there's no demo file available, generate it.
@@ -155,6 +153,8 @@ def get_demos(gps):
         gps: the gps object.
     Returns: the demo dictionary of demo tracjectories.
     """
+    from gps.utility.generate_demo import GenDemo
+
     # demo_file = gps._data_files_dir + 'demos.pkl'
     if gps._hyperparams['common'].get('nn_demo', False):
         demo_file = gps._hyperparams['common']['NN_demo_file'] # using neural network demos
@@ -186,4 +186,4 @@ def get_demos(gps):
         gps.algorithm.demo_policy_opt = demo_algorithm.policy_opt.copy()
         gps.algorithm.demo_policy_opt.var = demo_algorithm.policy_opt.var.copy() * var_mult
         gps.algorithm.demo_policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(gps.algorithm.demo_policy_opt.var))
-    return demos        
+    return demos  

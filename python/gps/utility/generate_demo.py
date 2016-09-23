@@ -258,6 +258,7 @@ class GenDemo(object):
                 copy.copy(demo_store)
             )
 
+
         def linearize_policy(self, samples, cond):
             policy_prior = self.algorithms[cond]._hyperparams['policy_prior']
             init_policy_prior = policy_prior['type'](policy_prior)

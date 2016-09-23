@@ -22,10 +22,10 @@ sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
 from gps.gui.gps_training_gui import GPSTrainingGUI, NUM_DEMO_PLOTS
 from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
-from gps.utility.generate_demo import GenDemo
+# from gps.utility.generate_demo import GenDemo
 from gps.utility.general_utils import disable_caffe_logs
 from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
-                                    measure_distance_and_success, get_demos
+                                    measure_distance_and_success_peg, get_demos
 from gps.utility.visualization import get_comparison_hyperparams, compare_experiments 
 
 class GPSMain(object):

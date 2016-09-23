@@ -1,6 +1,6 @@
 import numpy as np
 
-from gps.agent.mjc.model_builder import default_model
+from gps.agent.mjc.model_builder import default_model, pointmass_model
 
 
 COLOR_MAP = {
@@ -98,3 +98,25 @@ def colored_reacher(ncubes=6, target_color="red", cube_size=0.015):
     actuator.motor(ctrllimited="true",ctrlrange="-1.0 1.0",gear="200.0",joint="joint0")
     actuator.motor(ctrllimited="true",ctrlrange="-1.0 1.0",gear="200.0",joint="joint1")
     return mjcmodel
+
+def pointmass():
+    """
+    An example usage of MJCModel building the pointmass task
+
+    Returns:
+        An MJCModel
+    """
+    mjcmodel = pointmass_model('pointmass')
+    worldbody = mjcmodel.root.worldbody()
+
+    # Particle
+    body = worldbody.body(name='particle', pos="0 0 0")
+    body.geom(name="particle_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.05")
+    body.site(name="particle_site", pos="0 0 0", size="0.01")
+    body.joint(name="ball_x", type="slide", pos="0 0 0", axis="1 0 0")
+    body.joint(name="ball_y", type="slide", pos="0 0 0", axis="0 1 0")
+
+    # target
+    body = worldbody.body(name="target", pos="2.5 0 0")
+    body.geom(name="target_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.05", rgba="0 0.9 0.1 1")
+    

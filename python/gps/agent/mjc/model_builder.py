@@ -24,6 +24,20 @@ def default_model(name):
     root.option(gravity="0 0 -9.81", integrator="RK4", timestep=0.01)
     return model
 
+def pointmass_model(name):
+    """
+    Get a model with basic settings such as gravity and Euler integration enabled
+    """
+    model = MJCModel(name)
+    root = model.root
+
+    # Setup
+    root.compiler(angle="radian", inertiafromgeom="true", coordinate="local")
+    default = root.default()
+    default.joint(limited="false", damping=1)
+    default.geom(contype="2", conaffinity="1", condim="1", friction=".5 .1 .1", density="1000", margin="0.002")
+    root.option(timestep="0.01", gravity="0 0 0", iterations="20", integrator="Euler")
+    return model
 
 class MJCModel(object):
     def __init__(self, name):
