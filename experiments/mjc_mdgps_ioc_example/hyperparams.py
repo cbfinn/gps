@@ -63,19 +63,6 @@ common = {
     'nn_demo': True, # Use neural network demonstrations. For experiment only
 }
 
-plot = {
-    'itr' = 0, # For comparison experiments
-    'avg_legend': 'avg_maxent', # Legends for visualization
-    'legend': 'maxent', # Legends for visualization
-    'mean_dist_title': "mean distances to target over time with MaxEnt demo and not-MaxEnt demo",
-    'success_title': "success rates during iterations with MaxEnt demo and not-MaxEnt demo",
-    'xlabel': "iterations",
-    'mean_dist_ylabel': "mean distances",
-    'success_ylabel': "success rate",
-    'mean_dist_plot_name': 'mean_dists_during_iteration_comparison_maxent.pdf',
-    'success_plot_name': 'success_rate_during_iteration_comparison_maxent.pdf',
-}
-
 agent = {
     'type': AgentMuJoCo,
     'filename': './mjc_models/pr2_arm3d.xml',

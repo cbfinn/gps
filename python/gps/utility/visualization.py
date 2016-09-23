@@ -13,19 +13,25 @@ import threading
 import time
 import scipy.io
 
-def compare_samples(gps, N, agent_config):
+def compare_samples(gps, N, agent_config, three_dim=True, experiment='peg'):
         """
-        Compare samples between IOC and demo policies and visualize them in a 3D plot.
+        Compare samples between IOC and demo policies and visualize them in a plot.
         Args:
             gps: GPS object.
             N: number of samples taken from the policy for comparison
             config: Configuration of the agent to sample.
+            three_dim: whether the plot is 3D or 2D.
+            experiment: whether the experiment is peg or reacher.
         """
         pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
         algorithm_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
         algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_maxent_9cond_z_train_demo_1/algorithm_itr_11.pkl') # Assuming not using 4 policies
         pos_body_offset = gps._hyperparams['agent']['pos_body_offset']
         M = agent_config['conditions']
+        if experiment == 'reacher': #reset body offsets
+            np.random.seed(101)
+            for m in range(M):
+                self.agent.reset_initial_body_offset(m)
 
         pol_ioc = algorithm_ioc.policy_opt.policy
         # pol_ioc.chol_pol_covar *= 0.0
@@ -49,6 +55,9 @@ def compare_samples(gps, N, agent_config):
         all_success_conditions, only_ioc_conditions, only_demo_conditions, all_failed_conditions, \
             percentages = [], [], [], [], []
         for i in xrange(len(samples[0])):
+            if experiment == 'reacher':
+                pos_body_offset = gps.agent._hyperparams['pos_body_offset'][i]
+                target_position = np.array([.1,-.1,.01])+pos_body_offset
             for j in xrange(len(samples)):
                 sample_end_effector = samples[j][i].get(END_EFFECTOR_POINTS)
                 dists_to_target[j][i] = np.nanmin(np.sqrt(np.sum((sample_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
@@ -80,31 +89,36 @@ def compare_samples(gps, N, agent_config):
         only_ioc_zip = zip(*only_ioc_conditions)
         only_demo_zip = zip(*only_demo_conditions)
 
-        # subplt = plt.subplot()
-        ax.scatter(all_success_zip[0], all_success_zip[1], all_success_zip[2], c='y', marker='o')
-        ax.scatter(all_failed_zip[0], all_failed_zip[1], all_failed_zip[2], c='r', marker='x')
-        ax.scatter(only_ioc_zip[0], only_ioc_zip[1], only_ioc_zip[2], c='g', marker='^')
-        ax.scatter(only_demo_zip[0], only_demo_zip[1], only_demo_zip[2], c='r', marker='v')
-        training_positions = zip(*pos_body_offset)
-        ax.scatter(training_positions[0], training_positions[1], training_positions[2], s=40, c='b', marker='*')
-        # plt.legend(['demo_cond', 'failed_badmm', 'success_ioc', 'failed_ioc'], loc= (1, 1))
-        # for i, txt in enumerate(dists_diff):
-        #     # subplt.annotate(txt, (ioc_conditions_x[i], ioc_conditions_y[i]))
-        #     ax.annotate(txt, (ioc_conditions_x[i], ioc_conditions_y[i], ioc_conditions_z[i]))
-        # ax = plt.gca()
-        # ax.add_patch(Rectangle((-0.1, -0.1), 0.2, 0.2, fill = False, edgecolor = 'blue')) # peg
-        # ax.add_patch(Rectangle((-0.3, -0.3), 0.6, 0.6, fill = False, edgecolor = 'blue')) # reacher
-        # box = subplt.get_position()
-        box = ax.get_position()
+        if three_dim:
+            ax.scatter(all_success_zip[0], all_success_zip[1], all_success_zip[2], c='y', marker='o')
+            ax.scatter(all_failed_zip[0], all_failed_zip[1], all_failed_zip[2], c='r', marker='x')
+            ax.scatter(only_ioc_zip[0], only_ioc_zip[1], only_ioc_zip[2], c='g', marker='^')
+            ax.scatter(only_demo_zip[0], only_demo_zip[1], only_demo_zip[2], c='r', marker='v')
+            training_positions = zip(*pos_body_offset)
+            ax.scatter(training_positions[0], training_positions[1], training_positions[2], s=40, c='b', marker='*')
+            box = ax.get_position()
+        else:
+            subplt = plt.subplot()
+            subplot.plot(all_success_zip[0], all_success_zip[1], all_success_zip, c='y', marker='o')
+            subplot.plot(all_failed_zip[0], all_failed_zip[1], all_failed_zip, c='r', marker='x')
+            subplot.plot(only_ioc_zip[0], only_ioc_zip[1], only_ioc_zip, c='g', marker='^')
+            subplot.plot(only_demo_zip[0], only_demo_zip[1], only_demo_zip, c='r', marker='v')
+            for i, txt in enumerate(dists_diff):
+                subplt.annotate(txt, (ioc_conditions_zip[0], ioc_conditions_zip[1]))
+            ax = plt.gca()
+            if experiment == 'peg':
+                ax.add_patch(Rectangle((-0.1, -0.1), 0.2, 0.2, fill = False, edgecolor = 'blue')) # peg
+            else:
+                ax.add_patch(Rectangle((-0.3, -0.3), 0.6, 0.6, fill = False, edgecolor = 'blue')) # reacher
+            box = subplt.get_position()
         ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
         ax.legend(['all_success: ' + repr(percentages[0]), 'all_failed: ' + repr(percentages[1]), 'only_ioc: ' + repr(percentages[2]), \
                         'only_demo: ' + repr(percentages[3])], loc='upper center', bbox_to_anchor=(0.5, 0.05), \
                         shadow=True, ncol=2)
         plt.title("Distribution of samples drawn from demo policy and IOC policy")
-        # plt.xlabel('width')
-        # plt.ylabel('length')
         plt.savefig(gps._data_files_dir + 'distribution_of_sample_conditions.png')
         plt.close('all')
+
 
 def get_comparison_hyperparams(hyperparam_file, itr):
     """ 
@@ -142,14 +156,14 @@ def compare_experiments(mean_dists_1_dict, mean_dists_2_dict, success_rates_1_di
     for i in seeds:
         plt.plot(range(pol_iter), mean_dists_1_dict[i], 'ko')
         plt.plot(range(pol_iter), mean_dists_2_dict[i], 'co')
-    avg_legend, legend, avg_compare_legend, compare_legend = hyperparams['plot']['avg_legend'], \
-            hyperparams['plot']['legend'], hyperparams_compare['plot']['avg_legend'], \
-            hyperparams_compare['plot']['legend']
+    avg_legend, legend, avg_compare_legend, compare_legend = hyperparams_compare['plot']['avg_legend'], \
+            hyperparams_compare['plot']['legend'], hyperparams_compare['plot']['avg_legend_compare'], \
+            hyperparams_compare['plot']['legend_compare']
     plt.legend([avg_legend, legend, avg_compare_legend, compare_legend], loc='upper right', ncol=2)
-    plt.title(hyperparams['plot']['mean_dist_title'])
-    plt.xlabel(hyperparams['plot']['xlabel'])
-    plt.ylabel(hyperparams['plot']['ylabel'])
-    plt.savefig(exp_dir + hyperparams['plot']['mean_dist_plot_name'])
+    plt.title(hyperparams_compare['plot']['mean_dist_title'])
+    plt.xlabel(hyperparams_compare['plot']['xlabel'])
+    plt.ylabel(hyperparams_compare['plot']['ylabel'])
+    plt.savefig(exp_dir + hyperparams_compare['plot']['mean_dist_plot_name'])
     plt.close()
     plt.plot(range(pol_iter), avg_succ_rate_1, '-x', color='red')
     plt.plot(range(pol_iter), avg_succ_rate_2, '-x', color='green')
@@ -157,9 +171,9 @@ def compare_experiments(mean_dists_1_dict, mean_dists_2_dict, success_rates_1_di
         plt.plot(range(pol_iter), success_rates_1_dict[i], 'ko')
         plt.plot(range(pol_iter), success_rates_2_dict[i], 'co')
     plt.legend([avg_legend, legend, avg_compare_legend, compare_legend], loc='upper right', ncol=2)
-    plt.xlabel(hyperparams['plot']['xlabel'])
-    plt.ylabel(hyperparams['plot']['ylabel'])
-    plt.title(hyperparams['success_title'])
-    plt.savefig(exp_dir + hyperparams['plot']['success_plot_name'])
+    plt.xlabel(hyperparams_compare['plot']['xlabel'])
+    plt.ylabel(hyperparams_compare['plot']['ylabel'])
+    plt.title(hyperparams_compare['success_title'])
+    plt.savefig(exp_dir + hyperparams_compare['plot']['success_plot_name'])
 
     plt.close()
