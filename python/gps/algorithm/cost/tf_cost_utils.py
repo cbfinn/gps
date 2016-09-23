@@ -38,7 +38,8 @@ def jacobian(y, x):
 
 def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
                              demo_batch_size=5, sample_batch_size=5, phase=None, ioc_loss='ICML',
-                             Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, multi_obj_supervised_wt=1.0, learn_wu=False):
+                             Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, gp_reg_weight=0.0,
+                             multi_obj_supervised_wt=1.0, learn_wu=False):
 
     inputs = {}
     inputs['demo_obs'] = demo_obs = tf.placeholder(tf.float32, shape=(demo_batch_size, T, dim_input))
@@ -53,11 +54,11 @@ def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
     inputs['sup_cost_labels'] = sup_cost_labels = tf.placeholder(tf.float32, shape=(sup_batch_size, T, 1))
 
     # Inputs for single eval test runs
-    inputs['test_obs'] = test_obs = tf.placeholder(tf.float32, shape=(1, T, dim_input))
-    inputs['test_torque_norm'] = test_torque_norm = tf.placeholder(tf.float32, shape=(1, T, 1))
+    inputs['test_obs'] = test_obs = tf.placeholder(tf.float32, shape=(T, dim_input), name='test_obs')
+    inputs['test_torque_norm'] = test_torque_norm = tf.placeholder(tf.float32, shape=(T, 1), name='test_torque_u')
 
-    inputs['test_obs_single'] = test_obs_single = tf.placeholder(tf.float32, shape=(dim_input))
-    inputs['test_torque_single'] = test_torque_single = tf.placeholder(tf.float32, shape=(1))
+    inputs['test_obs_single'] = test_obs_single = tf.placeholder(tf.float32, shape=(dim_input), name='test_obs_single')
+    inputs['test_torque_single'] = test_torque_single = tf.placeholder(tf.float32, shape=(1), name='test_torque_u_single')
 
     with tf.variable_scope('cost_ioc_nn'):
         test_feats = compute_feats(test_obs, num_hidden=num_hidden, dim_hidden=dim_hidden)
@@ -69,8 +70,8 @@ def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
         # Build a differentiable test cost by feeding each timestep individually
         test_obs_single = tf.expand_dims(test_obs_single, 0)
         test_torque_single = tf.expand_dims(test_torque_single, 0)
-        _, test_cost_single = nn_forward(test_obs_single, test_torque_single, num_hidden=num_hidden, dim_hidden=dim_hidden, learn_wu=learn_wu)
-        test_cost_single = tf.squeeze(test_cost_single)
+        test_cost_single_preu, _ = nn_forward(test_obs_single, test_torque_single, num_hidden=num_hidden, dim_hidden=dim_hidden, learn_wu=learn_wu)
+        test_cost_single = tf.squeeze(test_cost_single_preu)
 
         sup_loss = tf.nn.l2_loss(sup_costs - sup_cost_labels)*multi_obj_supervised_wt
 

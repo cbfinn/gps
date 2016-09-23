@@ -4,9 +4,10 @@ import logging
 import numpy as np
 import tempfile
 import uuid
+from itertools import izip
 
 import tensorflow as tf
-from tf_cost_utils import jacobian
+from tf_cost_utils import jacobian, construct_nn_cost_net_tf
 
 from gps.utility.general_utils import BatchSampler
 from gps.algorithm.cost.config import COST_IOC_NN
@@ -72,7 +73,7 @@ class CostIOCTF(Cost):
         lux = np.zeros((T, dU, dX))
 
         tq_norm = np.sum(self._hyperparams['wu'] * (sample_u ** 2), axis=1, keepdims=True)
-        l = self.run([self.outputs['test_loss']], test_obs=obs, test_torque_norm=tq_norm)[0]
+        l[:] = np.squeeze(self.run([self.outputs['test_loss']], test_obs=obs, test_torque_norm=tq_norm)[0])
         lx, lxx = self.compute_lx_lxx(obs)
 
         if self._hyperparams['learn_wu']:
@@ -110,20 +111,22 @@ class CostIOCTF(Cost):
             sampleO: the observations of samples.
             s_log_iw: log importance weights for samples.
         """
-        demo_torque_norm = np.sum(demoU **2, axis=2)
-        sample_torque_norm = np.sum(sampleU **2, axis=2)
+        demo_torque_norm = np.sum(demoU **2, axis=2, keepdims=True)
+        sample_torque_norm = np.sum(sampleU **2, axis=2, keepdims=True)
 
-        sampler = BatchSampler([demoO, demo_torque_norm, d_log_iw, sampleO, sample_torque_norm, s_log_iw])
+        d_sampler = BatchSampler([demoO, demo_torque_norm, d_log_iw])
+        s_sampler = BatchSampler([sampleO, sample_torque_norm, s_log_iw])
 
-        for i, batch in enumerate(sampler.with_replacement(batch_size=5)):
+        for i, (d_batch, s_batch) in enumerate(
+                izip(d_sampler.with_replacement(batch_size=5), s_sampler.with_replacement(batch_size=5))):
             ioc_loss, grad = self.run([self.ioc_loss, self.ioc_optimizer],
-                                      demo_obs=batch[0],
-                                      demo_torque_norm=batch[1],
-                                      demo_iw = batch[2],
-                                      sample_obs = batch[3],
-                                      sample_torque_norm = batch[4],
-                                      sample_iw = batch[5])
-            if i%500 == 0:
+                                      demo_obs=d_batch[0],
+                                      demo_torque_norm=d_batch[1],
+                                      demo_iw = d_batch[2],
+                                      sample_obs = s_batch[0],
+                                      sample_torque_norm = s_batch[1],
+                                      sample_iw = s_batch[2])
+            if i%200 == 0:
                 LOGGER.debug("Iteration %d loss: %f", i, ioc_loss)
 
             if i > self._hyperparams['iterations']:
@@ -149,7 +152,7 @@ class CostIOCTF(Cost):
         network_arch_params['mono_reg_weight'] = self._hyperparams['mono_reg_weight']
         network_arch_params['gp_reg_weight'] = self._hyperparams['gp_reg_weight']
         network_arch_params['learn_wu'] = self._hyperparams['learn_wu']
-        inputs, outputs = self._hyperparams['network_model'](**network_arch_params)
+        inputs, outputs = construct_nn_cost_net_tf(**network_arch_params)
         self.inputs = inputs
         self.outputs = outputs
 
@@ -173,7 +176,7 @@ class CostIOCTF(Cost):
 
     def run(self, targets, **feeds):
         feed_dict = {self.input_dict[k]:v for (k,v) in feeds.iteritems()}
-        self.session.run(targets, feed_dict=feed_dict)
+        return self.session.run(targets, feed_dict=feed_dict)
 
     def save_model(self, fname):
         self.saver.save(self.session, fname)

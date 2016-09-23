@@ -18,6 +18,7 @@ import scipy as sp
 import scipy.io
 import numpy.matlib
 import random
+import pickle
 from random import shuffle
 
 # Add gps/python to path so that imports work.
@@ -54,27 +55,32 @@ class GenDemo(object):
             self._algorithm_files_dir = config['common']['demo_controller_file']
             self.data_logger = DataLogger()
 
+        def load_algorithms(self):
+            algorithm_files = self._algorithm_files_dir
+            if isinstance(algorithm_files, basestring):
+                with open(algorithm_files, 'r') as f:
+                    algorithms = [pickle.load(f)]
+            else:
+                algorithms = []
+                for filename in algorithm_files:
+                    with open(filename, 'r') as f:
+                        algorithms.append(pickle.load(f))
+            return algorithms
+
         def generate(self, demo_file):
             """
              Generate demos and save them in a file for experiment.
              Returns: None.
             """
             # Load the algorithm
-            import pickle
 
             # algorithm_file = self._algorithm_files_dir # This should give us the optimal controller. Maybe set to 'controller_itr_%02d.pkl' % itr_load will be better?
             # self.algorithm = pickle.load(open(algorithm_file)) # Just one demo algorithm for now.
             # if self.algorithm is None:
             #     print("Error: cannot find '%s.'" % algorithm_file)
             #     os._exit(1) # called instead of sys.exit(), since t
-            algorithm_files = self._algorithm_files_dir
-            self.algorithms = [] # A list of neural nets.
-            for i in range(3):
-                algorithm = pickle.load(open(algorithm_files[i]))
-                self.algorithms.append(algorithm)
-                if algorithm is None:
-                      print("Error: cannot find '%s.'" % algorithm_file)
-                      os._exit(1) # called instead of sys.exit(), since t
+            self.algorithms = self.load_algorithms()
+            self.algorithm = self.algorithms[0]
 
             # Keep the initial states of the agent the sames as the demonstrations.
             if 'learning_from_prior' in self._hyperparams['algorithm']:
