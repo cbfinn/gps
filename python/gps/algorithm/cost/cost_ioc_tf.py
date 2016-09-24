@@ -32,11 +32,13 @@ class CostIOCTF(Cost):
         self.demo_batch_size = self._hyperparams['demo_batch_size']
         self.sample_batch_size = self._hyperparams['sample_batch_size']
 
-        self._init_solver()
+        self.graph = tf.Graph()
+        with self.graph.as_default():
+            self._init_solver()
 
     def copy(self):
         new_cost = CostIOCTF(self._hyperparams)
-        with tempfile.NamedTemporaryFile('w+b') as f:
+        with tempfile.NamedTemporaryFile('w+b', suffix='.wts') as f:
             self.save_model(f.name)
             f.seek(0)
             new_cost.restore_model(f.name)
@@ -116,7 +118,6 @@ class CostIOCTF(Cost):
 
         num_samp = sampleU.shape[0]
         s_log_iw = s_log_iw[-num_samp:,:]
-        print 'shapes:', [d.shape for d in [sampleO, sample_torque_norm, s_log_iw]]
         d_sampler = BatchSampler([demoO, demo_torque_norm, d_log_iw])
         s_sampler = BatchSampler([sampleO, sample_torque_norm, s_log_iw])
 
@@ -178,8 +179,10 @@ class CostIOCTF(Cost):
         self.session.run(tf.initialize_all_variables())
 
     def run(self, targets, **feeds):
-        feed_dict = {self.input_dict[k]:v for (k,v) in feeds.iteritems()}
-        return self.session.run(targets, feed_dict=feed_dict)
+        with self.graph.as_default():
+            feed_dict = {self.input_dict[k]:v for (k,v) in feeds.iteritems()}
+            result = self.session.run(targets, feed_dict=feed_dict)
+        return result
 
     def save_model(self, fname):
         self.saver.save(self.session, fname)
@@ -189,7 +192,7 @@ class CostIOCTF(Cost):
 
     # For pickling.
     def __getstate__(self):
-        checkpoint_fname = self._hyperparams['weights_file_prefix']+str(uuid.uuid4())+'.chkpt'
+        checkpoint_fname = self._hyperparams['weights_file_prefix']+str(uuid.uuid4())+'.wts'
         self.save_model(checkpoint_fname)
         return {
             'hyperparams': self._hyperparams,
