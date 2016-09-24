@@ -75,27 +75,30 @@ def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
 
         sup_loss = tf.nn.l2_loss(sup_costs - sup_cost_labels)*multi_obj_supervised_wt
 
+
+        demo_sample_preu = tf.concat(0, [demo_cost_preu, sample_cost_preu])
+        sample_demo_size = sample_batch_size+demo_batch_size
+        assert_shape(demo_sample_preu, [sample_demo_size, T, 1])
+        costs_prev = tf.slice(demo_sample_preu, begin=[0, 0,0], size=[sample_demo_size, T-2, -1])
+        costs_next = tf.slice(demo_sample_preu, begin=[0, 2,0], size=[sample_demo_size, T-2, -1])
+        costs_cur = tf.slice(demo_sample_preu, begin=[0, 1,0], size=[sample_demo_size, T-2, -1])
+        # cur-prev
+        slope_prev = costs_cur-costs_prev
+        # next-cur
+        slope_next = costs_next-costs_cur
+
         if smooth_reg_weight > 0:
             # regularization
-            demo_sample_preu = tf.concat(0, [demo_cost_preu, sample_cost_preu])
-            assert_shape(demo_sample_preu, [sample_batch_size+demo_batch_size, T, 1])
             """
-            costs_prev = tf.slice(demo_sample_preu, begin=[0,0], size=[-1, T-2])
-            costs_next = tf.slice(demo_sample_preu, begin=[2,0], size=[-1, T-2])
-            costs_cur = tf.slice(demo_sample_preu, begin=[1,0], size=[-1, T-2])
-            # cur-prev
-            slope_prev = costs_cur-costs_prev
-            # next-cur
-            slope_next = costs_next-costs_cur
             """
             raise NotImplementedError("Smoothness reg not implemented")
 
         if mono_reg_weight > 0:
-            #demo_slope, _ = tf.slice(slope_next, begin=[0], size=[demo_batch_size])
-            #demo_slope_reshape = tf.reshape(demo_slope, shape=dict(dim=[-1,1]))
-            #mono_reg = L.Python(demo_slope_reshape, loss_weight=mono_reg_weight,
-            #                      python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
-            raise NotImplementedError("Monotonic reg not implemented")
+            demo_slope = tf.slice(slope_next, begin=[0,0,0], size=[demo_batch_size, -1, -1])
+            slope_reshape = tf.reshape(demo_slope, shape=[-1,1])
+            mono_reg = l2_mono_loss(slope_reshape)*mono_reg_weight
+        else:
+            mono_reg = 0
 
         # init logZ or Z to 1, only learn the bias
         # (also might be good to reduce lr on bias)
@@ -109,7 +112,7 @@ def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
     outputs = {
         'multiobj_loss': sup_loss+ioc_loss,
         'sup_loss': sup_loss,
-        'ioc_loss': ioc_loss,
+        'ioc_loss': ioc_loss+mono_reg,
         'feats': test_feats,
         'test_loss': test_cost,
         'test_loss_single': test_cost_single,
@@ -205,9 +208,20 @@ def icml_loss(demo_costs, sample_costs, d_log_iw, s_log_iw, Z):
     assert_shape(loss, [])
     return loss
 
+def l2_mono_loss(slope):
+    #_temp = np.zeros(slope.shape[0])
+    offset = 1.0
+    bottom_data = slope
+
+    #for i in range(batch_size):
+    #    _temp[i] = np.maximum(0.0, bottom_data[i] + offset)
+    _temp = tf.nn.relu(bottom_data+offset)
+    loss = tf.nn.l2_loss(_temp)# _temp*_temp).sum() / batch_size
+    return loss
+
 
 def main():
-    inputs, outputs= construct_nn_cost_net_tf()
+    inputs, outputs= construct_nn_cost_net_tf(mono_reg_weight=1.0)
     Y, X = outputs['test_loss_single'], inputs['test_obs_single']
     dldx =  tf.gradients(Y, X)[0]
     print dldx
