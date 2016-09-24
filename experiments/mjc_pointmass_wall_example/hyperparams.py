@@ -51,6 +51,7 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
+    # TODO: pass in wall and target position here.
     'models': [obstacle_pointmass()],
     # 'x0': [np.array([-1., 1., 0., 0.]), np.array([1., 1., 0., 0.]),
     #        np.array([1., -1., 0., 0.]), np.array([-1., -1., 0., 0.])],
@@ -58,13 +59,13 @@ agent = {
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
-    'T': 100,
+    'T': 500,
     'point_linear': True,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'smooth_noise': False,
-    # 'camera_pos': np.array([0., 0, 0.2, 0.5]),
+    'camera_pos': np.array([2., 0., 10., 0., 0., 0.]),
 }
 
 algorithm = {
@@ -74,13 +75,13 @@ algorithm = {
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
-    'max_ent_traj': 1.0,
+    'max_ent_traj': 50.0,
 }
 
 algorithm['init_traj_distr'] = {
     'type': init_pd,
     'init_var': 1.0,
-    'pos_gains': 0.0,
+    'pos_gains': 1.0,
     'vel_gains_mult': 0.0,
     'dQ': SENSOR_DIMS[ACTION],
     'dt': agent['dt'],
@@ -95,18 +96,17 @@ state_cost = {
     'data_types' : {
         JOINT_ANGLES: {
             'wp': np.ones(SENSOR_DIMS[ACTION]),
-            'target_state': np.array([0.0, 0.0]),
+            'target_state': np.array([1.3, 0.5]),
         },
-        JOINT_VELOCITIES: {
-            'wp': np.ones(SENSOR_DIMS[ACTION]),
-            'target_state': np.array([0.0, 0.0]),
-        },
+        # JOINT_VELOCITIES: {
+        #     'wp': 0*np.ones(SENSOR_DIMS[ACTION]),
+        # },
     },
 }
 
 action_cost = {
     'type': CostAction,
-    'wu': np.array([1e-2, 1e-2])
+    'wu': np.array([1, 1])*1e-5, 
 }
 
 algorithm['cost'] = {
@@ -120,7 +120,7 @@ algorithm['dynamics'] = {
     'regularization': 1e-6,
     'prior': {
         'type': DynamicsPriorGMM,
-        'max_clusters': 40,
+        'max_clusters': 2,
         'min_samples_per_cluster': 20,
         'max_samples': 20,
     }

@@ -117,17 +117,17 @@ def obstacle_pointmass():
     body.joint(name="ball_y", type="slide", pos="0 0 0", axis="0 1 0")
 
     # Target
-    body = worldbody.body(name="target", pos="3 0 0")
-    body.geom(name="target_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.1", rgba="0 0.9 0.1 1")
+    body = worldbody.body(name="target", pos="1.3 0.5 0")
+    body.geom(name="target_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.05", rgba="0 0.9 0.1 1")
 
     # Walls
-    body = worldbody.body(name="wall1", pos="1 0.8 0")
-    body.geom(name="wall1_geom", type="capsule", fromto="0 -0.6 0 0 1.0 0.0", size="0.1", contype="1", rgba="0.9 0 0.1 1")
-    body = worldbody.body(name="wall2", pos="1 -0.8 0")
-    body.geom(name="wall2_geom", type="capsule", fromto="0 -1.0 0 0 0.6 0.0", size="0.1", contype="1", rgba="0.9 0 0.1 1")
+    body = worldbody.body(name="wall1", pos="0.5 0.8 0")
+    body.geom(name="wall1_geom", type="capsule", fromto="0 -0.6 0 0 2.0 0.0", size="0.1", contype="1", rgba="0.9 0 0.1 1")
+    body = worldbody.body(name="wall2", pos="0.5 -0.8 0")
+    body.geom(name="wall2_geom", type="capsule", fromto="0 -2.0 0 0 0.6 0.0", size="0.1", contype="1", rgba="0.9 0 0.1 1")
 
     # Actuators
     actuator = mjcmodel.root.actuator()
-    actuator.motor(joint="ball_x", ctrlrange="-1.0 1.0", ctrllimited="true")
-    actuator.motor(joint="ball_y", ctrlrange="-1.0 1.0", ctrllimited="true")
+    actuator.motor(joint="ball_x", ctrlrange="-10.0 10.0", ctrllimited="true")
+    actuator.motor(joint="ball_y", ctrlrange="-10.0 10.0", ctrllimited="true")
     return mjcmodel

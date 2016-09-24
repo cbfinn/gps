@@ -74,7 +74,7 @@ AGENT_MUJOCO = {
     'randomly_sample_x0': False,
     'randomly_sample_bodypos': False,
     'record_reward': False,
-    'render': False, # for EC2
+    'render': True, # for EC2
     'filename': None,
 }
 
