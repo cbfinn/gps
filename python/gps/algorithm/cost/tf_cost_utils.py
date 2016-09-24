@@ -108,11 +108,12 @@ def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
         # TODO - removed loss weights, changed T, batching, num samples
         # demo cond, num demos, etc.
         ioc_loss = icml_loss(demo_costs, sample_costs, demo_imp_weight, sample_imp_weight, Z)
+        ioc_loss += mono_reg
 
     outputs = {
         'multiobj_loss': sup_loss+ioc_loss,
         'sup_loss': sup_loss,
-        'ioc_loss': ioc_loss+mono_reg,
+        'ioc_loss': ioc_loss,
         'feats': test_feats,
         'test_loss': test_cost,
         'test_loss_single': test_cost_single,

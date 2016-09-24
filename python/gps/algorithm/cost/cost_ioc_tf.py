@@ -114,6 +114,9 @@ class CostIOCTF(Cost):
         demo_torque_norm = np.sum(demoU **2, axis=2, keepdims=True)
         sample_torque_norm = np.sum(sampleU **2, axis=2, keepdims=True)
 
+        num_samp = sampleU.shape[0]
+        s_log_iw = s_log_iw[-num_samp:,:]
+        print 'shapes:', [d.shape for d in [sampleO, sample_torque_norm, s_log_iw]]
         d_sampler = BatchSampler([demoO, demo_torque_norm, d_log_iw])
         s_sampler = BatchSampler([sampleO, sample_torque_norm, s_log_iw])
 
