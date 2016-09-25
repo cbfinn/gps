@@ -135,6 +135,6 @@ def obstacle_pointmass(target_position="1.3 0.5 0", wall_1_center=np.array([0.5,
 
     # Actuators
     actuator = mjcmodel.root.actuator()
-    actuator.motor(joint="ball_x", ctrlrange="-10.0 10.0", ctrllimited="true")
-    actuator.motor(joint="ball_y", ctrlrange="-10.0 10.0", ctrllimited="true")
+    actuator.motor(joint="ball_x", ctrlrange="-1.0 1.0", ctrllimited="true")
+    actuator.motor(joint="ball_y", ctrlrange="-1.0 1.0", ctrllimited="true")
     return mjcmodel

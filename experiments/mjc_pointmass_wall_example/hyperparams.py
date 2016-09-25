@@ -32,7 +32,7 @@ SENSOR_DIMS = {
 }
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/mjc_pointmass_example/'
+EXP_DIR = BASE_DIR + '/../experiments/mjc_pointmass_wall_example/'
 target_pos = np.array([1.3, 0.5, 0.])
 wall_1_center = np.array([0.5, -0.8, 0.])
 wall_2_center = np.array([0.5, 0.8, 0.])
@@ -79,7 +79,8 @@ algorithm = {
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
-    'max_ent_traj': 50.0,
+    'max_ent_traj': 100.0,
+    'target_end_effector': np.array([1.3, 0.5, 0.]),
 }
 
 algorithm['init_traj_distr'] = {
@@ -116,7 +117,7 @@ action_cost = {
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [state_cost, action_cost],
-    'weights': [10.0, 1.0], # used 10,1 for T=3
+    'weights': [1000.0, 1.0], # used 10,1 for T=3
 }
 
 algorithm['dynamics'] = {
