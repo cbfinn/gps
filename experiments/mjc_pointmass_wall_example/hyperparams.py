@@ -33,6 +33,10 @@ SENSOR_DIMS = {
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = BASE_DIR + '/../experiments/mjc_pointmass_example/'
+target_pos = np.array([1.3, 0.5, 0.])
+wall_1_center = np.array([0.5, -0.8, 0.])
+wall_2_center = np.array([0.5, 0.8, 0.])
+wall_height = 2.8
 
 
 common = {
@@ -52,7 +56,7 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentMuJoCo,
     # TODO: pass in wall and target position here.
-    'models': [obstacle_pointmass()],
+    'models': [obstacle_pointmass(target_pos, wall_1_center, wall_2_center, wall_height)],
     # 'x0': [np.array([-1., 1., 0., 0.]), np.array([1., 1., 0., 0.]),
     #        np.array([1., -1., 0., 0.]), np.array([-1., -1., 0., 0.])],
     'x0': [np.array([-1., 1., 0., 0.])],

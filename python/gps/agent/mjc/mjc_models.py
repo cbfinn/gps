@@ -99,10 +99,15 @@ def colored_reacher(ncubes=6, target_color="red", cube_size=0.015):
     actuator.motor(ctrllimited="true",ctrlrange="-1.0 1.0",gear="200.0",joint="joint1")
     return mjcmodel
 
-def obstacle_pointmass():
+def obstacle_pointmass(target_position="1.3 0.5 0", wall_1_center=np.array([0.5, -0.8, 0.]), wall_2_center=np.array([0.5, 0.8, 0.]),
+                        wall_height=2.8):
     """
     An example usage of MJCModel building the pointmass task
-
+    Args:
+        target_position: the position of the target.
+        wall_1_center: the center of the first wall.
+        wall_2_center: the center of the second wall.
+        wall_height: the height of each wall.
     Returns:
         An MJCModel
     """
@@ -117,14 +122,16 @@ def obstacle_pointmass():
     body.joint(name="ball_y", type="slide", pos="0 0 0", axis="0 1 0")
 
     # Target
-    body = worldbody.body(name="target", pos="1.3 0.5 0")
+    body = worldbody.body(name="target", pos=target_position)
     body.geom(name="target_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.05", rgba="0 0.9 0.1 1")
 
     # Walls
-    body = worldbody.body(name="wall1", pos="0.5 0.8 0")
-    body.geom(name="wall1_geom", type="capsule", fromto="0 -0.6 0 0 2.0 0.0", size="0.1", contype="1", rgba="0.9 0 0.1 1")
-    body = worldbody.body(name="wall2", pos="0.5 -0.8 0")
-    body.geom(name="wall2_geom", type="capsule", fromto="0 -2.0 0 0 0.6 0.0", size="0.1", contype="1", rgba="0.9 0 0.1 1")
+    body = worldbody.body(name="wall1", pos=wall_1_center)
+    y1, y2 = wall_1_center[1], wall_2_center[1]
+    h = wall_height / 2
+    body.geom(name="wall1_geom", type="capsule", fromto=np.array([0., y1-h, 0., 0., y1+h, 0.]), size="0.1", contype="1", rgba="0.9 0 0.1 1")
+    body = worldbody.body(name="wall2", pos=wall_2_center)
+    body.geom(name="wall2_geom", type="capsule", fromto=np.array([0., y2-h, 0., 0., y2+h, 0.]), size="0.1", contype="1", rgba="0.9 0 0.1 1")
 
     # Actuators
     actuator = mjcmodel.root.actuator()
