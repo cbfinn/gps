@@ -46,8 +46,8 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    # 'conditions': 4,
-    'conditions': 1,
+    'conditions': 4,
+    # 'conditions': 1,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -56,10 +56,10 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentMuJoCo,
     # TODO: pass in wall and target position here.
-    'models': [obstacle_pointmass(target_pos, wall_1_center, wall_2_center, wall_height)],
-    # 'x0': [np.array([-1., 1., 0., 0.]), np.array([1., 1., 0., 0.]),
-    #        np.array([1., -1., 0., 0.]), np.array([-1., -1., 0., 0.])],
-    'x0': [np.array([-1., 1., 0., 0.])],
+    'models': obstacle_pointmass(target_pos, wall_1_center, wall_2_center, wall_height),
+    'x0': [np.array([-1., 1., 0., 0.]), np.array([-0.5, 1.3, 0., 0.]),
+           np.array([-0.5, -1.3, 0., 0.]), np.array([-1., -1., 0., 0.])],
+    # 'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],

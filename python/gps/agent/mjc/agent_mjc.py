@@ -29,9 +29,14 @@ class AgentMuJoCo(Agent):
         self._setup_conditions()
         if 'models' in hyperparams:
             # If MJCModel objects are provided, load those instead
-            files = [model.open() for model in hyperparams['models']]
-            self._setup_world([f.name for f in files])
-            [f.close() for f in files]
+            if isinstance(hyperparams['models'], list):
+                files = [model.open() for model in hyperparams['models']]
+                self._setup_world([f.name for f in files])
+                [f.close() for f in files]
+            else:
+                file = hyperparams['models'].open()
+                self._setup_world(file.name)
+                file.close()
         else:
             self._setup_world(hyperparams['filename'])
 
