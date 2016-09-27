@@ -153,3 +153,25 @@ def sample_params(sampling_range, prohibited_ranges):
             if not valid_point:
                 break
     return sampled_point
+
+
+class BatchSampler(object):
+    """ Samples data """
+    def __init__(self, data, batch_dim=0):
+        self.data = data
+        self.batch_dim = batch_dim
+
+        # Check that all data has same size on batch_dim
+        self.num_data = data[0].shape[batch_dim]
+        for d in data:
+            assert d.shape[batch_dim] == self.num_data, "Bad shape on axis %d: %s, (expected %d)" % \
+                                                        (batch_dim, str(d.shape), self.num_data)
+
+    def with_replacement(self, batch_size=10):
+        while True:
+            batch_idx = np.random.randint(0, self.num_data, size=batch_size)
+            batch = [data[batch_idx] for data in self.data]
+            yield batch
+
+    def iterate(self, batch_size=10, epochs=float('inf'), shuffle=True):
+        raise NotImplementedError()

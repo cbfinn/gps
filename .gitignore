@@ -90,6 +90,9 @@ MUJOCO_LOG.TXT
 *.caffemodel
 *.solverstate
 
+#Tensorflow
+*.wts
+
 # Data files
 *.pkl
 *.csv
