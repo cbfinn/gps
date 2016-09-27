@@ -37,7 +37,7 @@ class CostIOCTF(Cost):
             self._init_solver()
 
     def copy(self):
-        new_cost = CostIOCTF(self._hyperparams)
+        new_cost = type(self)(self._hyperparams)
         with tempfile.NamedTemporaryFile('w+b', suffix='.wts') as f:
             self.save_model(f.name)
             f.seek(0)
