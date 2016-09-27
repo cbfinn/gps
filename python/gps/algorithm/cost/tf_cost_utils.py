@@ -9,7 +9,7 @@ def logsumexp(x, reduction_indices=None):
     """ Compute numerically stable logsumexp """
     max_val = tf.reduce_max(x)
     exp = tf.exp(x-max_val)
-    _partition = tf.reduce_sum(x, reduction_indices=reduction_indices)
+    _partition = tf.reduce_sum(exp, reduction_indices=reduction_indices)
     _log = tf.log(_partition)+max_val
     return _log
 
@@ -23,39 +23,23 @@ def safe_get(name, *args, **kwargs):
         return tf.get_variable(name, *args, **kwargs)
 
 
-def jacobian_t(y, x):
-    #TODO: Implement this properly
+def jacobian(y, x):
+    dY = y.get_shape()[0].value
+    dX = x.get_shape()[0].value
 
-    #print 'Y:', y
-    #print 'X:', x
-    _, T, dY = y.get_shape()
-    _, T, dX = x.get_shape()
-    #print 'grad:', tf.gradients(y, x)
-
-    y = y[0] # batch size 1
-    jacs = []
-    for t in range(T.value):
-        yt = y[t]
-        jac_t_list = []
-        for idx_y in range(dY.value):
-            grad = tf.gradients(yt[idx_y], x)[0]
-            grad = grad[0][t]
-            jac_t_list.append(grad)
-        jac_t = tf.pack(jac_t_list)
-        assert_shape(jac_t, [dY.value, dX.value])
-
-        jacs.append(jac_t)
-        #print 'jac_t_pack:', jac_t
-        break
-    #jac = tf.pack(jacs)
-    jac = tf.zeros([T.value, dY.value, dX.value])
-    assert_shape(jac, [T.value, dY.value, dX.value])
+    deriv_list = []
+    for idx_y in range(dY):
+        grad = tf.gradients(y[idx_y], x)[0]
+        deriv_list.append(grad)
+    jac = tf.pack(deriv_list)
+    assert_shape(jac, [dY, dX])
     return jac
 
 
 def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
-                             demo_batch_size=5, sample_batch_size=5, phase='train', ioc_loss='ICML',
-                             Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, multi_obj_supervised_wt=1.0, learn_wu=False):
+                             demo_batch_size=5, sample_batch_size=5, phase=None, ioc_loss='ICML',
+                             Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, gp_reg_weight=0.0,
+                             multi_obj_supervised_wt=1.0, learn_wu=False):
 
     inputs = {}
     inputs['demo_obs'] = demo_obs = tf.placeholder(tf.float32, shape=(demo_batch_size, T, dim_input))
@@ -70,39 +54,51 @@ def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
     inputs['sup_cost_labels'] = sup_cost_labels = tf.placeholder(tf.float32, shape=(sup_batch_size, T, 1))
 
     # Inputs for single eval test runs
-    inputs['test_obs'] = test_obs = tf.placeholder(tf.float32, shape=(1, T, dim_input))
-    inputs['test_torque_norm'] = test_torque_norm = tf.placeholder(tf.float32, shape=(1, T, 1))
+    inputs['test_obs'] = test_obs = tf.placeholder(tf.float32, shape=(T, dim_input), name='test_obs')
+    inputs['test_torque_norm'] = test_torque_norm = tf.placeholder(tf.float32, shape=(T, 1), name='test_torque_u')
+
+    inputs['test_obs_single'] = test_obs_single = tf.placeholder(tf.float32, shape=(dim_input), name='test_obs_single')
+    inputs['test_torque_single'] = test_torque_single = tf.placeholder(tf.float32, shape=(1), name='test_torque_u_single')
 
     with tf.variable_scope('cost_ioc_nn'):
         test_feats = compute_feats(test_obs, num_hidden=num_hidden, dim_hidden=dim_hidden)
-        test_cost = nn_forward(test_obs, test_torque_norm, num_hidden=num_hidden, learn_wu=learn_wu, dim_hidden=dim_hidden)
+        _, test_cost  = nn_forward(test_obs, test_torque_norm, num_hidden=num_hidden, learn_wu=learn_wu, dim_hidden=dim_hidden)
         demo_cost_preu, demo_costs = nn_forward(demo_obs, demo_torque_norm, num_hidden=num_hidden, learn_wu=learn_wu, dim_hidden=dim_hidden)
         sample_cost_preu, sample_costs = nn_forward(sample_obs, sample_torque_norm, num_hidden=num_hidden,learn_wu=learn_wu, dim_hidden=dim_hidden)
         sup_cost_preu, sup_costs = nn_forward(sup_obs, sup_torque_norm, num_hidden=num_hidden,learn_wu=learn_wu, dim_hidden=dim_hidden)
 
-        sup_loss = tf.nn.l2_loss(sup_costs - sup_cost_labels)
+        # Build a differentiable test cost by feeding each timestep individually
+        test_obs_single = tf.expand_dims(test_obs_single, 0)
+        test_torque_single = tf.expand_dims(test_torque_single, 0)
+        test_cost_single_preu, _ = nn_forward(test_obs_single, test_torque_single, num_hidden=num_hidden, dim_hidden=dim_hidden, learn_wu=learn_wu)
+        test_cost_single = tf.squeeze(test_cost_single_preu)
+
+        sup_loss = tf.nn.l2_loss(sup_costs - sup_cost_labels)*multi_obj_supervised_wt
+
+
+        demo_sample_preu = tf.concat(0, [demo_cost_preu, sample_cost_preu])
+        sample_demo_size = sample_batch_size+demo_batch_size
+        assert_shape(demo_sample_preu, [sample_demo_size, T, 1])
+        costs_prev = tf.slice(demo_sample_preu, begin=[0, 0,0], size=[sample_demo_size, T-2, -1])
+        costs_next = tf.slice(demo_sample_preu, begin=[0, 2,0], size=[sample_demo_size, T-2, -1])
+        costs_cur = tf.slice(demo_sample_preu, begin=[0, 1,0], size=[sample_demo_size, T-2, -1])
+        # cur-prev
+        slope_prev = costs_cur-costs_prev
+        # next-cur
+        slope_next = costs_next-costs_cur
 
         if smooth_reg_weight > 0:
             # regularization
-            demo_sample_preu = tf.concat(0, [demo_cost_preu, sample_cost_preu])
-            assert_shape(demo_sample_preu, [sample_batch_size+demo_batch_size, T, 1])
             """
-            costs_prev = tf.slice(demo_sample_preu, begin=[0,0], size=[-1, T-2])
-            costs_next = tf.slice(demo_sample_preu, begin=[2,0], size=[-1, T-2])
-            costs_cur = tf.slice(demo_sample_preu, begin=[1,0], size=[-1, T-2])
-            # cur-prev
-            slope_prev = costs_cur-costs_prev
-            # next-cur
-            slope_next = costs_next-costs_cur
             """
             raise NotImplementedError("Smoothness reg not implemented")
 
         if mono_reg_weight > 0:
-            #demo_slope, _ = tf.slice(slope_next, begin=[0], size=[demo_batch_size])
-            #demo_slope_reshape = tf.reshape(demo_slope, shape=dict(dim=[-1,1]))
-            #mono_reg = L.Python(demo_slope_reshape, loss_weight=mono_reg_weight,
-            #                      python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
-            raise NotImplementedError("Monotonic reg not implemented")
+            demo_slope = tf.slice(slope_next, begin=[0,0,0], size=[demo_batch_size, -1, -1])
+            slope_reshape = tf.reshape(demo_slope, shape=[-1,1])
+            mono_reg = l2_mono_loss(slope_reshape)*mono_reg_weight
+        else:
+            mono_reg = 0
 
         # init logZ or Z to 1, only learn the bias
         # (also might be good to reduce lr on bias)
@@ -112,25 +108,31 @@ def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
         # TODO - removed loss weights, changed T, batching, num samples
         # demo cond, num demos, etc.
         ioc_loss = icml_loss(demo_costs, sample_costs, demo_imp_weight, sample_imp_weight, Z)
+        ioc_loss += mono_reg
 
     outputs = {
+        'multiobj_loss': sup_loss+ioc_loss,
         'sup_loss': sup_loss,
         'ioc_loss': ioc_loss,
         'feats': test_feats,
-        'test_loss': test_cost, 
+        'test_loss': test_cost,
+        'test_loss_single': test_cost_single,
     }
     return inputs, outputs
 
 
 def compute_feats(net_input, num_hidden=1, dim_hidden=42):
-    batch_size, T, dinput = net_input.get_shape()
+    if len(net_input.get_shape()) == 3:
+        batch_size, T, dinput = net_input.get_shape()
+    elif len(net_input.get_shape()) == 2:
+        T, dinput = net_input.get_shape()
 
     # Reshape into 2D matrix for matmuls
     net_input = tf.reshape(net_input, [-1, dinput.value])
-    with tf.variable_scope('cost_forward') as scope:
+    with tf.variable_scope('cost_forward'):
         layer = net_input
         for i in range(num_hidden-1):
-            with tf.variable_scope('layer_%d' % i) as scope:
+            with tf.variable_scope('layer_%d' % i):
                 W = safe_get('W', (dim_hidden, layer.get_shape()[1].value))
                 b = safe_get('b', (dim_hidden))
                 layer = tf.nn.relu(tf.matmul(layer, W, transpose_b=True) + b)
@@ -138,35 +140,44 @@ def compute_feats(net_input, num_hidden=1, dim_hidden=42):
         Wfeat = safe_get('Wfeat', (dim_hidden, layer.get_shape()[1].value))
         bfeat = safe_get('bfeat', (dim_hidden))
         feat = tf.matmul(layer, Wfeat, transpose_b=True)+bfeat
+
+    if len(net_input.get_shape()) == 3:
         feat = tf.reshape(feat, [batch_size.value, T.value, dim_hidden])
+    else:
+        feat = tf.reshape(feat, [-1, dim_hidden])
+
     return feat
 
 
 def nn_forward(net_input, u_input, num_hidden=1, dim_hidden=42, wu=1e-3, learn_wu=False):
-    batch_size, T, dinput = net_input.get_shape()
-    batch_size, T = batch_size.value, T.value
-
     # Reshape into 2D matrix for matmuls
-    u_input = tf.reshape(u_input, [batch_size*T, 1])
+    u_input = tf.reshape(u_input, [-1, 1])
+
     feat = compute_feats(net_input, num_hidden=num_hidden, dim_hidden=dim_hidden)
     feat = tf.reshape(feat, [-1, dim_hidden])
 
-    with tf.variable_scope('cost_forward') as scope:
+    with tf.variable_scope('cost_forward'):
         A = safe_get('A', shape=(dim_hidden, dim_hidden))
         Ax = tf.matmul(feat, A, transpose_b=True)
         AxAx = Ax*Ax
 
         # Calculate torque penalty
-        wu = safe_get('wu', initializer=tf.constant(wu), trainable=learn_wu)
-        assert_shape(wu, [])
-        u_cost = u_input*wu
+        u_penalty = safe_get('wu', initializer=tf.constant(1.0), trainable=learn_wu)
+        assert_shape(u_penalty, [])
+        u_cost = u_input*u_penalty*wu
 
-        # Reshape result back into batches
+    # Reshape result back into batches
+    input_shape = net_input.get_shape()
+    if len(input_shape) == 3:
+        batch_size, T, dinput = input_shape
+        batch_size, T = batch_size.value, T.value
         AxAx = tf.reshape(AxAx, [batch_size, T, dim_hidden])
         u_cost = tf.reshape(u_cost, [batch_size, T, 1])
-
-        all_costs_preu = tf.reduce_sum(AxAx, reduction_indices=[2], keep_dims=True)
-        all_costs = all_costs_preu + u_cost
+    elif len(input_shape) == 2:
+        AxAx = tf.reshape(AxAx, [-1, dim_hidden])
+        u_cost = tf.reshape(u_cost, [-1, 1])
+    all_costs_preu = tf.reduce_sum(AxAx, reduction_indices=[-1], keep_dims=True)
+    all_costs = all_costs_preu + u_cost
     return all_costs_preu, all_costs
 
 
@@ -198,11 +209,24 @@ def icml_loss(demo_costs, sample_costs, d_log_iw, s_log_iw, Z):
     assert_shape(loss, [])
     return loss
 
+def l2_mono_loss(slope):
+    #_temp = np.zeros(slope.shape[0])
+    offset = 1.0
+    bottom_data = slope
+
+    #for i in range(batch_size):
+    #    _temp[i] = np.maximum(0.0, bottom_data[i] + offset)
+    _temp = tf.nn.relu(bottom_data+offset)
+    loss = tf.nn.l2_loss(_temp)# _temp*_temp).sum() / batch_size
+    return loss
+
 
 def main():
-    inputs, outputs= construct_nn_cost_net_tf()
-    Y, X = outputs['feats'], inputs['test_obs']
-    dfdx = jacobian_t(Y, X)
+    inputs, outputs= construct_nn_cost_net_tf(mono_reg_weight=1.0)
+    Y, X = outputs['test_loss_single'], inputs['test_obs_single']
+    dldx =  tf.gradients(Y, X)[0]
+    print dldx
+    print jacobian(dldx, X)
     #print dfdx
 
 

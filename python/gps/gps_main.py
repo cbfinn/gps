@@ -338,7 +338,7 @@ class GPSMain(object):
         Returns: None
         """
 
-        if self.using_ioc():
+        if False: #self.using_ioc():
             # Produce time vs cost plots
             sample_losses = self.algorithm.cur[6].cs
             if sample_losses is None:
