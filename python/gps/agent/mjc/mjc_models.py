@@ -99,12 +99,13 @@ def colored_reacher(ncubes=6, target_color="red", cube_size=0.015):
     actuator.motor(ctrllimited="true",ctrlrange="-1.0 1.0",gear="200.0",joint="joint1")
     return mjcmodel
 
-def obstacle_pointmass(target_position="1.3 0.5 0", wall_1_center=np.array([0.5, -0.8, 0.]), wall_2_center=np.array([0.5, 0.8, 0.]),
-                        wall_height=2.8):
+def obstacle_pointmass(target_position=np.array([1.3, 0.5, 0]), wall_center=0.0, hole_height=1.0):
     """
     An example usage of MJCModel building the pointmass task
     Args:
         target_position: the position of the target.
+        wall_center: center of wall hole, y-coordinate
+        hole_height:
         wall_1_center: the center of the first wall.
         wall_2_center: the center of the second wall.
         wall_height: the height of each wall.
@@ -126,15 +127,20 @@ def obstacle_pointmass(target_position="1.3 0.5 0", wall_1_center=np.array([0.5,
     body.geom(name="target_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.05", rgba="0 0.9 0.1 1")
 
     # Walls
+    wall_x = 0.5
+    wall_z = 0.0
+    h = hole_height
+    wall_1_center = [wall_x, wall_center-h/2, wall_z]
+    wall_2_center = [wall_x, wall_center+h/2, wall_z]
+
     body = worldbody.body(name="wall1", pos=wall_1_center)
     y1, y2 = wall_1_center[1], wall_2_center[1]
-    h = wall_height / 2
-    body.geom(name="wall1_geom", type="capsule", fromto=np.array([0., y1-h, 0., 0., y1+h, 0.]), size="0.1", contype="1", rgba="0.9 0 0.1 1")
+    body.geom(name="wall1_geom", type="capsule", fromto=np.array([0., y1-10, 0., 0., y1, 0.]), size="0.1", contype="1", rgba="0.9 0 0.1 1")
     body = worldbody.body(name="wall2", pos=wall_2_center)
-    body.geom(name="wall2_geom", type="capsule", fromto=np.array([0., y2-h, 0., 0., y2+h, 0.]), size="0.1", contype="1", rgba="0.9 0 0.1 1")
+    body.geom(name="wall2_geom", type="capsule", fromto=np.array([0., y2, 0., 0., y2+10, 0.]), size="0.1", contype="1", rgba="0.9 0 0.1 1")
 
     # Actuators
     actuator = mjcmodel.root.actuator()
-    actuator.motor(joint="ball_x", ctrlrange="-1.0 1.0", ctrllimited="true")
-    actuator.motor(joint="ball_y", ctrlrange="-1.0 1.0", ctrllimited="true")
+    actuator.motor(joint="ball_x", ctrlrange=[-10.0, 10.0], ctrllimited="true")
+    actuator.motor(joint="ball_y", ctrlrange=[-10.0, 10.0], ctrllimited="true")
     return mjcmodel
