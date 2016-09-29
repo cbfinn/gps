@@ -93,14 +93,18 @@ demo_agent = {
     'camera_pos': np.array([2., 0., 10., 0., 0., 0.]),
 }
 
+
 algorithm = {
     'type': AlgorithmTrajOpt,
+    'ioc' : 'ICML',
+    'demo_distr_empest': True,
     'conditions': common['conditions'],
     'iterations': 10,
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
     'max_ent_traj': 100.0,
+    'num_demos': 1,
     'target_end_effector': np.array([1.3, 0.5, 0.]),
 }
 
@@ -114,7 +118,20 @@ algorithm['init_traj_distr'] = {
     'T': agent['T'],
 }
 
-state_cost = {
+
+algorithm['cost'] = {
+    #'type': CostIOCQuadratic,
+    'type': CostIOCNN,
+    'wu': np.array([1e-5, 1e-5]),
+    'dO': 10,
+    'T': agent['T'],
+    'iterations': 5000,
+    'demo_batch_size': 15,
+    'sample_batch_size': 15,
+    'ioc_loss': algorithm['ioc'],
+}
+
+algorithm['gt_cost'] = {
     'type': CostState,
     'l2': 10,
     'l1': 0,
@@ -122,23 +139,13 @@ state_cost = {
     'data_types' : {
         JOINT_ANGLES: {
             'wp': np.ones(SENSOR_DIMS[ACTION]),
-            'target_state': np.array([1.3, 0.5]),
+            'target_state': target_pos,
         },
-        # JOINT_VELOCITIES: {
-        #     'wp': 0*np.ones(SENSOR_DIMS[ACTION]),
-        # },
+        JOINT_VELOCITIES: {
+            'wp': np.ones(SENSOR_DIMS[ACTION]),
+            'target_state': target_pos,
+        },
     },
-}
-
-action_cost = {
-    'type': CostAction,
-    'wu': np.array([1, 1])*1e-5, 
-}
-
-algorithm['cost'] = {
-    'type': CostSum,
-    'costs': [state_cost, action_cost],
-    'weights': [1000.0, 1.0], # used 10,1 for T=3
 }
 
 algorithm['dynamics'] = {
