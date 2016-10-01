@@ -9,12 +9,14 @@ import numpy as np
 from gps import __file__ as gps_filepath
 from gps.agent.mjc import AgentMuJoCo, obstacle_pointmass
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
+from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
+from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_pd
@@ -31,10 +33,8 @@ SENSOR_DIMS = {
     ACTION: 2,
 }
 
-BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/mjc_pointmass_wall_example/'
+EXP_DIR = os.path.dirname(__file__)
 target_pos = np.array([1.3, 0.0, 0.])
-# target_pos = np.array([0.43, 0.75, 0])
 wall_1_center = np.array([0.5, -0.8, 0.])
 wall_2_center = np.array([0.5, 0.8, 0.])
 wall_height = 2.8
@@ -57,15 +57,14 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentMuJoCo,
     # TODO: pass in wall and target position here.
-    # 'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3),
-    #            obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3),
-    #            obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3),
-    #            obstacle_pointmass(target_pos, wall_center=0.5, hole_height=0.3),
-    #            ],
-    'models': obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3),
-    'x0': [np.array([-0.75, 0., 0., 0.]), np.array([-0.75, -0.25, 0., 0.]),
-          np.array([-0.75, -0.5, 0., 0.]), np.array([-0.75, -0.75, 0., 0.])],
-    # 'x0': [np.array([-1., 0., 0., 0.])]*4,
+    'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3),
+               obstacle_pointmass(target_pos, wall_center=0.20, hole_height=0.3),
+               obstacle_pointmass(target_pos, wall_center=-0.20, hole_height=0.3),
+               obstacle_pointmass(target_pos, wall_center=0.30, hole_height=0.3),
+               ],
+    #'x0': [np.array([-1., 1., 0., 0.]), np.array([-0.5, 1.3, 0., 0.]),
+    #       np.array([-0.5, -1.3, 0., 0.]), np.array([-1., -1., 0., 0.])],
+    'x0': [np.array([-1., 0., 0., 0.])]*4,
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
@@ -79,13 +78,15 @@ agent = {
 }
 
 algorithm = {
-    'type': AlgorithmTrajOpt,
+    'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
+    'sample_on_policy': True,
     'iterations': 15,
     'kl_step': 1.0,
-    'min_step_mult': 0.01,
+    'min_step_mult': 0.1,
     'max_step_mult': 4.0,
     'max_ent_traj': 1.0,
+    'step_rule': 'laplace',
     'target_end_effector': target_pos,
 }
 
@@ -123,7 +124,7 @@ action_cost = {
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [state_cost, action_cost],
-    'weights': [0.05, 0.05], # used 10,1 for T=3
+    'weights': [0.1, 0.1], # used 10,1 for T=3
 }
 
 algorithm['dynamics'] = {
@@ -131,7 +132,7 @@ algorithm['dynamics'] = {
     'regularization': 1e-6,
     'prior': {
         'type': DynamicsPriorGMM,
-        'max_clusters': 2,
+        'max_clusters': 5,
         'min_samples_per_cluster': 20,
         'max_samples': 20,
     }
@@ -141,18 +142,18 @@ algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
 }
 
-# algorithm['policy_opt'] = {
-#     'type': PolicyOptCaffe,
-#     'weights_file_prefix': EXP_DIR + 'policy',
-#     'iterations': 10000,
-#     'network_arch_params': {
-#         'n_layers': 2,
-#         'dim_hidden': [20],
-#     },
-# }
+
+algorithm['policy_opt'] = {
+    'type': PolicyOptCaffe,
+    'iterations': 4000,
+    'weights_file_prefix': EXP_DIR + 'policy',
+}
 
 algorithm['policy_prior'] = {
-    'type': PolicyPrior,
+    'type': PolicyPriorGMM,
+    'max_clusters': 20,
+    'min_samples_per_cluster': 40,
+    'max_samples': 20,
 }
 
 config = {

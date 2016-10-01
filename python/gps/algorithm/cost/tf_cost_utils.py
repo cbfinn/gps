@@ -227,7 +227,7 @@ def main():
     dldx =  tf.gradients(Y, X)[0]
     print dldx
     print jacobian(dldx, X)
-    #print dfdx
+    print dfdx
 
 
 if __name__ == "__main__":

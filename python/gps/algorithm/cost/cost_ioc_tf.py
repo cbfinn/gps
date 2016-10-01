@@ -37,7 +37,7 @@ class CostIOCTF(Cost):
             self._init_solver()
 
     def copy(self):
-        new_cost = CostIOCTF(self._hyperparams)
+        new_cost = type(self)(self._hyperparams)
         with tempfile.NamedTemporaryFile('w+b', suffix='.wts') as f:
             self.save_model(f.name)
             f.seek(0)
@@ -122,7 +122,8 @@ class CostIOCTF(Cost):
         s_sampler = BatchSampler([sampleO, sample_torque_norm, s_log_iw])
 
         for i, (d_batch, s_batch) in enumerate(
-                izip(d_sampler.with_replacement(batch_size=5), s_sampler.with_replacement(batch_size=5))):
+                izip(d_sampler.with_replacement(batch_size=self.demo_batch_size), \
+                    s_sampler.with_replacement(batch_size=self.sample_batch_size))):
             ioc_loss, grad = self.run([self.ioc_loss, self.ioc_optimizer],
                                       demo_obs=d_batch[0],
                                       demo_torque_norm=d_batch[1],

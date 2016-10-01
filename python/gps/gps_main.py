@@ -344,7 +344,7 @@ class GPSMain(object):
             if sample_losses is None:
                 sample_losses = self.algorithm.prev[6].cs
             if sample_losses.shape[0] < NUM_DEMO_PLOTS:
-                sample_losses = np.tile(sample_losses, [NUM_DEMO_PLOTS, 1])[:NUM_DEMO_PLOTS]
+                sample_losses = np.tile(sample_losses, [NUM_DEMO_PLOTS, 1])[:Fset__NUM_DEMO_PLOTS]
             demo_losses = eval_demos_xu(self.agent, self.algorithm.demoX, self.algorithm.demoU, self.algorithm.cost, n=NUM_DEMO_PLOTS)
 
             # Produce distance vs cost plots

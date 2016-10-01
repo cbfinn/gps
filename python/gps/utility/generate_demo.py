@@ -80,7 +80,8 @@ class GenDemo(object):
             self.agent = agent_config['type'](agent_config)
 
             # Roll out the demonstrations from controllers
-            var_mult = self._hyperparams['algorithm']['demo_var_mult']
+            # var_mult = self._hyperparams['algorithm']['demo_var_mult']
+            var_mult = 1.0
             # T = self.algorithm.T
             T = self.algorithms[0].T
             demos = []
@@ -157,13 +158,14 @@ class GenDemo(object):
                               'demoConditions': demo_idx_conditions}
 
             # Filter out worst (M - good_conds) demos.
-            elif agent_config['type']==AgentMuJoCo and agent_config['filename'] == './mjc_models/pr2_arm3d.xml':
+            elif agent_config['type']==AgentMuJoCo and agent_config.get('filename', False) == './mjc_models/pr2_arm3d.xml':
                 target_position = agent_config['target_end_effector'][:3]
                 dists_to_target = np.zeros(M*N)
                 # dists_to_target = np.zeros(len(demos)*N)
                 # dists_to_target = [np.zeros(M*N) for i in xrange(4)]
                 good_indices = []
                 failed_indices = []
+                success_thresh = 0.05 # For pointmass
                 # M = len(demos)/N
                 for i in xrange(M):
                 # for i in xrange(len(demos)):
@@ -179,7 +181,7 @@ class GenDemo(object):
                         # Just choose the last time step since it may become unstable after achieving the minimum point.
                         dists_to_target[i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
                         # dists_to_target[k][i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
-                        if dists_to_target[i*N + j] > agent_config['success_upper_bound']:
+                        if dists_to_target[i*N + j] > success_thresh:
                             failed_indices.append(i)
                         # if dists_to_target[i*N + j] <= agent_config['success_upper_bound']:
                         #     good_indices.append(i)
@@ -229,12 +231,16 @@ class GenDemo(object):
                 # plt.ylabel('length')
                 plt.savefig(self._data_files_dir + 'distribution_of_demo_conditions_MaxEnt_z_0.05.png')
                 plt.close()
-            elif agent_config['type']==AgentMuJoCo and 'reacher' in agent_config['filename']:
+            elif agent_config['type']==AgentMuJoCo and \
+                ('reacher' in agent_config.get('filename', []) or 'wall' in agent_config.get('exp_name', [])):
                 dists = []; failed_indices = []
-                success_thresh = 0.05
+                success_thresh = 0.30
                 for m in range(M):
-                  target_position = agent_config['target_end_effector'][m][:3]
-                  for i in range(N):
+                    if agent_config['target_end_effector'] is list:
+                        target_position = agent_config['target_end_effector'][m][:3]
+                    else:
+                        target_position = agent_config['target_end_effector'][:3]
+                    for i in range(N):
                       index = m*N + i
                       demo = demos[index]
                       demo_ee = demos[index].get(END_EFFECTOR_POINTS)
@@ -242,6 +248,7 @@ class GenDemo(object):
                       if dists[index] >= success_thresh: #agent_config['success_upper_bound']:
                         failed_indices.append(index)
                 good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
+                import pdb; pdb.set_trace()
                 self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
                 filtered_demos = []
                 filtered_demo_conditions = []
