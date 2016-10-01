@@ -135,11 +135,11 @@ def compute_feats(net_input, num_hidden=1, dim_hidden=42):
             with tf.variable_scope('layer_%d' % i):
                 W = safe_get('W', (dim_hidden, layer.get_shape()[1].value))
                 b = safe_get('b', (dim_hidden))
-                layer = tf.nn.relu(tf.matmul(layer, W, transpose_b=True) + b)
+                layer = tf.nn.relu(tf.matmul(layer, W, transpose_b=True, name='mul_layer'+str(i)) + b)
 
         Wfeat = safe_get('Wfeat', (dim_hidden, layer.get_shape()[1].value))
         bfeat = safe_get('bfeat', (dim_hidden))
-        feat = tf.matmul(layer, Wfeat, transpose_b=True)+bfeat
+        feat = tf.matmul(layer, Wfeat, transpose_b=True, name='mul_feat')+bfeat
 
     if len(net_input.get_shape()) == 3:
         feat = tf.reshape(feat, [batch_size.value, T.value, dim_hidden])
@@ -217,7 +217,7 @@ def main():
     dldx =  tf.gradients(Y, X)[0]
     print dldx
     print jacobian(dldx, X)
-    #print dfdx
+    print dfdx
 
 
 if __name__ == "__main__":

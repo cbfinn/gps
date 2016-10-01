@@ -124,7 +124,8 @@ class CostIOCTF(Cost):
         demo_batch = self._hyperparams['demo_batch_size']
         samp_batch = self._hyperparams['sample_batch_size']
         for i, (d_batch, s_batch) in enumerate(
-                izip(d_sampler.with_replacement(batch_size=demo_batch), s_sampler.with_replacement(batch_size=samp_batch))):
+                izip(d_sampler.with_replacement(batch_size=self.demo_batch_size), \
+                    s_sampler.with_replacement(batch_size=self.sample_batch_size))):
             ioc_loss, grad = self.run([self.ioc_loss, self.ioc_optimizer],
                                       demo_obs=d_batch[0],
                                       demo_torque_norm=d_batch[1],
