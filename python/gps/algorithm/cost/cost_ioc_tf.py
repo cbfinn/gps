@@ -37,8 +37,8 @@ class CostIOCTF(Cost):
             self._init_solver()
 
     def copy(self):
-        new_cost = type(self)(self._hyperparams)
-        with tempfile.NamedTemporaryFile('w+b', suffix='.wts') as f:
+        new_cost = CostIOCTF(self._hyperparams)
+        with tempfile.NamedTemporaryFile('w+b', suffix='.wts', delete=True) as f:
             self.save_model(f.name)
             f.seek(0)
             new_cost.restore_model(f.name)
@@ -121,6 +121,8 @@ class CostIOCTF(Cost):
         d_sampler = BatchSampler([demoO, demo_torque_norm, d_log_iw])
         s_sampler = BatchSampler([sampleO, sample_torque_norm, s_log_iw])
 
+        demo_batch = self._hyperparams['demo_batch_size']
+        samp_batch = self._hyperparams['sample_batch_size']
         for i, (d_batch, s_batch) in enumerate(
                 izip(d_sampler.with_replacement(batch_size=self.demo_batch_size), \
                     s_sampler.with_replacement(batch_size=self.sample_batch_size))):
@@ -158,7 +160,6 @@ class CostIOCTF(Cost):
         network_arch_params['gp_reg_weight'] = self._hyperparams['gp_reg_weight']
         network_arch_params['learn_wu'] = self._hyperparams['learn_wu']
         inputs, outputs = construct_nn_cost_net_tf(**network_arch_params)
-        self.inputs = inputs
         self.outputs = outputs
 
         self.input_dict = inputs
@@ -186,10 +187,12 @@ class CostIOCTF(Cost):
         return result
 
     def save_model(self, fname):
+        LOGGER.debug('Saving model to: %s', fname)
         self.saver.save(self.session, fname)
 
     def restore_model(self, fname):
         self.saver.restore(self.session, fname)
+        LOGGER.debug('Restoring model from: %s', fname)
 
     # For pickling.
     def __getstate__(self):

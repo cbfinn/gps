@@ -49,7 +49,7 @@ def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
     inputs['sample_torque_norm'] = sample_torque_norm = tf.placeholder(tf.float32, shape=(sample_batch_size, T, 1))
     inputs['sample_iw'] = sample_imp_weight = tf.placeholder(tf.float32, shape=(sample_batch_size, 1))
     sup_batch_size = sample_batch_size+demo_batch_size
-    inputs['sub_obs'] = sup_obs = tf.placeholder(tf.float32, shape=(sup_batch_size, T, dim_input))
+    inputs['sup_obs'] = sup_obs = tf.placeholder(tf.float32, shape=(sup_batch_size, T, dim_input))
     inputs['sup_torque_norm'] = sup_torque_norm = tf.placeholder(tf.float32, shape=(sup_batch_size, T, 1))
     inputs['sup_cost_labels'] = sup_cost_labels = tf.placeholder(tf.float32, shape=(sup_batch_size, T, 1))
 
@@ -135,11 +135,11 @@ def compute_feats(net_input, num_hidden=1, dim_hidden=42):
             with tf.variable_scope('layer_%d' % i):
                 W = safe_get('W', (dim_hidden, layer.get_shape()[1].value))
                 b = safe_get('b', (dim_hidden))
-                layer = tf.nn.relu(tf.matmul(layer, W, transpose_b=True) + b)
+                layer = tf.nn.relu(tf.matmul(layer, W, transpose_b=True, name='mul_layer'+str(i)) + b)
 
         Wfeat = safe_get('Wfeat', (dim_hidden, layer.get_shape()[1].value))
         bfeat = safe_get('bfeat', (dim_hidden))
-        feat = tf.matmul(layer, Wfeat, transpose_b=True)+bfeat
+        feat = tf.matmul(layer, Wfeat, transpose_b=True, name='mul_feat')+bfeat
 
     if len(net_input.get_shape()) == 3:
         feat = tf.reshape(feat, [batch_size.value, T.value, dim_hidden])
