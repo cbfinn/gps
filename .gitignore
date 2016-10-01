@@ -92,6 +92,7 @@ MUJOCO_LOG.TXT
 
 #Tensorflow
 *.wts
+*.wts.meta
 
 # Data files
 *.pkl
