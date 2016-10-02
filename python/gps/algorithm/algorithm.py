@@ -259,6 +259,7 @@ class Algorithm(object):
         # TODO: change IterationData to reflect new stuff better
         for m in range(self.M):
             self.prev[m].new_traj_distr = self.new_traj_distr[m]
+            self.prev[m].sample_list = True # don't pickle this.
         self.cur = [IterationData() for _ in range(self.M)]
         if not self._hyperparams['policy_eval']:
             self.traj_distr[self.iteration_count] = []
