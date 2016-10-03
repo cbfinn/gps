@@ -134,7 +134,7 @@ class GenDemo(object):
                                 ) # Add noise seems not working. TODO: figure out why
                             demos.append(demo)
                             demo_idx_conditions.append(i)
-                            
+
             # Filter failed demos
             if agent_config.get('filter_demos', False): # USED FOR PR2
                 target_position = agent_config['target_end_effector'][:3]
@@ -169,7 +169,7 @@ class GenDemo(object):
                 # M = len(demos)/N
                 for i in xrange(M):
                 # for i in xrange(len(demos)):
-                    if type(agent_config['target_end_effector']) is list: 
+                    if type(agent_config['target_end_effector']) is list:
                         target_position = agent_config['target_end_effector'][i][:3]
                     else:
                         target_position = agent_config['target_end_effector'][:3]
@@ -236,7 +236,7 @@ class GenDemo(object):
                 dists = []; failed_indices = []
                 success_thresh = 0.30
                 for m in range(M):
-                    if agent_config['target_end_effector'] is list:
+                    if type(agent_config['target_end_effector']) is list:
                         target_position = agent_config['target_end_effector'][m][:3]
                     else:
                         target_position = agent_config['target_end_effector'][:3]
