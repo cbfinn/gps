@@ -99,7 +99,7 @@ def colored_reacher(ncubes=6, target_color="red", cube_size=0.015):
     actuator.motor(ctrllimited="true",ctrlrange="-1.0 1.0",gear="200.0",joint="joint1")
     return mjcmodel
 
-def obstacle_pointmass(target_position=np.array([1.3, 0., 0.]), wall_center=0.0, hole_height=1.0):
+def obstacle_pointmass(target_position=np.array([1.3, 0.5, 0]), wall_center=0.0, hole_height=1.0, control_limit=100):
     """
     An example usage of MJCModel building the pointmass task
     Args:
@@ -147,6 +147,6 @@ def obstacle_pointmass(target_position=np.array([1.3, 0., 0.]), wall_center=0.0,
 
     # Actuators
     actuator = mjcmodel.root.actuator()
-    actuator.motor(joint="ball_x", ctrlrange=[-10.0, 10.0], ctrllimited="true")
-    actuator.motor(joint="ball_y", ctrlrange=[-10.0, 10.0], ctrllimited="true")
+    actuator.motor(joint="ball_x", ctrlrange=[-control_limit, control_limit], ctrllimited="true")
+    actuator.motor(joint="ball_y", ctrlrange=[-control_limit, control_limit], ctrllimited="true")
     return mjcmodel

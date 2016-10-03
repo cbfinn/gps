@@ -186,27 +186,17 @@ def icml_loss(demo_costs, sample_costs, d_log_iw, s_log_iw, Z):
     num_demos, T, _ = demo_costs.get_shape()
     num_samples, T, _ = sample_costs.get_shape()
 
-    # Sum over time and compute max value for safe logsum.
-    #for i in xrange(num_demos):
-    #    dc[i] = 0.5 * tf.reduce_sum(demo_costs[i])
-    #    loss += dc[i]
-    #    # Add importance weight to demo feature count. Will be negated.
-    #    dc[i] += d_log_iw[i]
-    demo_reduced = 0.5*tf.reduce_sum(demo_costs, reduction_indices=[1,2]) 
-    dc = demo_reduced + tf.reduce_sum(d_log_iw, reduction_indices=[1])
-    assert_shape(dc, [num_demos])
-
-    #for i in xrange(num_samples):
-    #    sc[i] = 0.5 * tf.reduce_sum(sample_costs[i])
-    #    # Add importance weight to sample feature count. Will be negated.
-    #    sc[i] += s_log_iw[i]
-    sc = 0.5*tf.reduce_sum(sample_costs, reduction_indices=[1,2])+tf.reduce_sum(s_log_iw, reduction_indices=[1])
-    assert_shape(sc, [num_samples])
-
-    dc_sc = tf.concat(0, [-dc, -sc])
-
+    demo_reduced = 0.5*tf.reduce_sum(demo_costs, reduction_indices=[1,2])
     loss = tf.reduce_mean(demo_reduced)
-    loss += logsumexp(dc_sc, reduction_indices=[0])
+
+    # Concatenate demos and samples to approximate partition function
+    partition_samples = tf.concat(0, [demo_costs, sample_costs])
+    partition_iw = tf.concat(0, [d_log_iw, s_log_iw])
+    partition = 0.5*tf.reduce_sum(partition_samples, reduction_indices=[1,2])\
+                +tf.reduce_sum(partition_iw, reduction_indices=[1])
+    assert_shape(partition, [num_samples+num_demos])
+    loss += logsumexp(-partition, reduction_indices=[0])
+
     assert_shape(loss, [])
     return loss
 
