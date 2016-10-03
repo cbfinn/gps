@@ -43,7 +43,7 @@ common = {
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
     'demo_exp_dir': DEMO_DIR,
-    'data_files_dir': os.path.join(EXP_DIR, 'data_files'),
+    'data_files_dir': os.path.join(EXP_DIR, 'data_files')+'/',
     'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
@@ -111,7 +111,7 @@ algorithm = {
 
 algorithm['init_traj_distr'] = {
     'type': init_pd,
-    'init_var': 1.0,
+    'init_var': 10.0,
     'pos_gains': 1.0,
     'vel_gains_mult': 0.0,
     'dQ': SENSOR_DIMS[ACTION],

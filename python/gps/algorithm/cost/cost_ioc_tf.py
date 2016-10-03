@@ -3,8 +3,8 @@ import copy
 import logging
 import numpy as np
 import tempfile
-import uuid
 from itertools import izip
+import os
 
 import tensorflow as tf
 from tf_cost_utils import jacobian, construct_nn_cost_net_tf
@@ -42,6 +42,7 @@ class CostIOCTF(Cost):
             self.save_model(f.name)
             f.seek(0)
             new_cost.restore_model(f.name)
+            os.remove(f.name+'.meta')
         return new_cost
 
     def compute_lx_lxx(self, obs):
@@ -201,6 +202,7 @@ class CostIOCTF(Cost):
             f.seek(0)
             with open(f.name, 'r') as f2:
                 wts = f2.read()
+            os.remove(f.name+'.meta')
         return {
             'hyperparams': self._hyperparams,
             'wts': wts,
