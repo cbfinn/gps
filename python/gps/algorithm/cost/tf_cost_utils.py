@@ -122,9 +122,10 @@ def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
 
 
 def compute_feats(net_input, num_hidden=1, dim_hidden=42):
-    if len(net_input.get_shape()) == 3:
+    len_shape = len(net_input.get_shape())
+    if  len_shape == 3:
         batch_size, T, dinput = net_input.get_shape()
-    elif len(net_input.get_shape()) == 2:
+    elif len_shape == 2:
         T, dinput = net_input.get_shape()
 
     # Reshape into 2D matrix for matmuls
@@ -141,7 +142,7 @@ def compute_feats(net_input, num_hidden=1, dim_hidden=42):
         bfeat = safe_get('bfeat', (dim_hidden))
         feat = tf.matmul(layer, Wfeat, transpose_b=True, name='mul_feat')+bfeat
 
-    if len(net_input.get_shape()) == 3:
+    if len_shape == 3:
         feat = tf.reshape(feat, [batch_size.value, T.value, dim_hidden])
     else:
         feat = tf.reshape(feat, [-1, dim_hidden])
