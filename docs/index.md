@@ -212,7 +212,7 @@ python python/gps/gps_main.py mjc_badmm_example
 The robot learns a neural network policy for inserting the peg under varying initial conditions.
 
 To tinker with the hyperparameters and input, take a look at `experiments/mjc_badmm_example/hyperparams.py`.
-Additionally, the neural network library can be changed through the `ALGORITHM_BACKEND` variable which can be set to `caffe` or `tf`.
+Additionally, the neural network library can be changed through the `ALGORITHM_NN_LIBRARY` variable which can be set to `caffe` or `tf`.
 
 #### PR2 example
 

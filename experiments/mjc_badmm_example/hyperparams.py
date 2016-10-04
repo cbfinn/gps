@@ -26,7 +26,7 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
 from gps.gui.config import generate_experiment_info
 
-ALGORITHM_BACKEND = "caffe"
+ALGORITHM_NN_LIBRARY = "caffe"
 
 SENSOR_DIMS = {
     JOINT_ANGLES: 7,
@@ -150,7 +150,7 @@ algorithm['dynamics'] = {
 algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
 }
-if ALGORITHM_BACKEND == "tf":
+if ALGORITHM_NN_LIBRARY == "tf":
     algorithm['policy_opt'] = {
         'type': PolicyOptTf,
         'network_params': {
@@ -161,7 +161,7 @@ if ALGORITHM_BACKEND == "tf":
         'iterations': 3000,
         'network_model': example_tf_network
     }
-elif ALGORITHM_BACKEND = "caffe":
+elif ALGORITHM_NN_LIBRARY = "caffe":
     algorithm['policy_opt'] = {
     'type': PolicyOptCaffe,
     'weights_file_prefix': EXP_DIR + 'policy',
