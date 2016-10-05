@@ -44,10 +44,10 @@ common = {
     'experiment_dir': EXP_DIR,
     'demo_exp_dir': DEMO_DIR,
     'data_files_dir': os.path.join(EXP_DIR, 'data_files')+'/',
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_14.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'demo_conditions': 4,
+    'demo_conditions': 5,
     'conditions': 1,
     'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
     'nn_demo': False,
@@ -58,11 +58,11 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'models': obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3),
+    'models': obstacle_pointmass(target_pos, wall_center=0.5, hole_height=0.3, control_limit=50),
     'filename': '',
     #'x0': [np.array([-1., 1., 0., 0.]), np.array([1., 1., 0., 0.]),
     #       np.array([1., -1., 0., 0.]), np.array([-1., -1., 0., 0.])],
-    'x0': [np.array([-1., 1., 0., 0.])],
+    'x0': [np.array([-1., 0., 0., 0.])],
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
@@ -77,7 +77,12 @@ agent = {
 
 demo_agent = {
     'type': AgentMuJoCo,
-    'models': obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3),
+    'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=-0.2, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3, control_limit=50),
+               ],
     'filename': '',
     'x0': np.array([-1., 0., 0., 0.]),
     # 'x0': [np.array([-1., 1., 0., 0.])],
@@ -105,7 +110,7 @@ algorithm = {
     #'min_step_mult': 1.0,
     'max_step_mult': 10.0,
     'demo_cond': 1,
-    'num_demos': 5,
+    'num_demos': 10,
     'demo_var_mult': 1.0,
 }
 
@@ -125,9 +130,9 @@ algorithm['cost'] = {
     'wu': np.array([1e-5, 1e-5]),
     'dO': 10,
     'T': agent['T'],
-    'iterations': 5000,
-    'demo_batch_size': 15,
-    'sample_batch_size': 15,
+    'iterations': 1000,
+    'demo_batch_size': 10,
+    'sample_batch_size': 10,
     'ioc_loss': algorithm['ioc'],
 }
 
@@ -149,7 +154,7 @@ algorithm['dynamics'] = {
     'regularization': 1e-6,
     'prior': {
         'type': DynamicsPriorGMM,
-        'max_clusters': 40,
+        'max_clusters': 5,
         'min_samples_per_cluster': 20,
         'max_samples': 20,
     }
