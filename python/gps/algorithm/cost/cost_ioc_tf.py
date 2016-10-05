@@ -176,7 +176,7 @@ class CostIOCTF(Cost):
         self.dldxx = jacobian(self.dldx, obs_single)
 
         self.saver = tf.train.Saver()
-        
+
         self.session = tf.Session()
         self.session.run(tf.initialize_all_variables())
 
