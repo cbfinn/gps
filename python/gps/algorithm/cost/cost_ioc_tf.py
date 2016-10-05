@@ -3,8 +3,8 @@ import copy
 import logging
 import numpy as np
 import tempfile
-import uuid
 from itertools import izip
+import os
 
 import tensorflow as tf
 from tf_cost_utils import jacobian, construct_nn_cost_net_tf
@@ -42,6 +42,7 @@ class CostIOCTF(Cost):
             self.save_model(f.name)
             f.seek(0)
             new_cost.restore_model(f.name)
+            os.remove(f.name+'.meta')
         return new_cost
 
     def compute_lx_lxx(self, obs):
@@ -196,18 +197,23 @@ class CostIOCTF(Cost):
 
     # For pickling.
     def __getstate__(self):
-        checkpoint_fname = self._hyperparams['weights_file_prefix']+str(uuid.uuid4())+'.wts'
-        self.save_model(checkpoint_fname)
+        with tempfile.NamedTemporaryFile('w+b', delete=True) as f:
+            self.save_model(f.name)
+            f.seek(0)
+            with open(f.name, 'r') as f2:
+                wts = f2.read()
+            os.remove(f.name+'.meta')
         return {
             'hyperparams': self._hyperparams,
-            'dO': self._dO,
-            'T': self._T,
-            'checkpoint_file': checkpoint_fname,
+            'wts': wts,
         }
 
     # For unpickling.
     def __setstate__(self, state):
         # TODO - finalize this once __init__ is finalized (setting dO and T)
         self.__init__(state['hyperparams'])
-        self.restore_model(state['checkpoint_file'])
+        with tempfile.NamedTemporaryFile('w+b', delete=True) as f:
+            f.write(state['wts'])
+            f.seek(0)
+            self.restore_model(f.name)
 

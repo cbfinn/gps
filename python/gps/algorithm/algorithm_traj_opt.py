@@ -41,7 +41,7 @@ class AlgorithmTrajOpt(Algorithm):
         self._update_dynamics()
 
         # Update the cost during learning if we use IOC.
-        if self._hyperparams['ioc'] and self._hyperparams['ioc'] is not 'SUPERVISED':
+        if self._hyperparams['ioc']:
             if self._hyperparams['ioc_maxent_iter'] == -1 or self.iteration_count < self._hyperparams['ioc_maxent_iter']:
                 self._update_cost()
 

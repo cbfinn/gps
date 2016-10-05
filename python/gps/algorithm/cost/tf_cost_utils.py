@@ -344,7 +344,15 @@ def icml_loss(demo_costs, sample_costs, d_log_iw, s_log_iw, Z):
     dc_sc = tf.concat(0, [-dc, -sc])
 
     loss = tf.reduce_mean(demo_reduced)
-    loss += logsumexp(dc_sc, reduction_indices=[0])
+
+    # Concatenate demos and samples to approximate partition function
+    partition_samples = tf.concat(0, [demo_costs, sample_costs])
+    partition_iw = tf.concat(0, [d_log_iw, s_log_iw])
+    partition = 0.5*tf.reduce_sum(partition_samples, reduction_indices=[1,2])\
+                +tf.reduce_sum(partition_iw, reduction_indices=[1])
+    assert_shape(partition, [num_samples+num_demos])
+    loss += logsumexp(-partition, reduction_indices=[0])
+
     assert_shape(loss, [])
     return loss
 

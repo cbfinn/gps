@@ -7,6 +7,7 @@ import os.path
 import numpy as np
 
 from gps import __file__ as gps_filepath
+from gps.agent.mjc import obstacle_pointmass
 from gps.agent.mjc.agent_mjc import AgentMuJoCo
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
@@ -33,6 +34,7 @@ SENSOR_DIMS = {
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = BASE_DIR + '/../experiments/mjc_pointmass_example/'
+target_pos = np.array([1.3, 0.0, 0.])
 
 
 common = {
@@ -42,7 +44,7 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 4,
+    'conditions': 5,
     # 'conditions': 1,
 }
 
@@ -51,25 +53,31 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'filename': './mjc_models/particle2d.xml',
-    'x0': [np.array([-1., 1., 0., 0.]), np.array([1., 1., 0., 0.]),
-           np.array([1., -1., 0., 0.]), np.array([-1., -1., 0., 0.])],
+    'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=-0.2, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3, control_limit=50),
+               ],
+    #'filename': './mjc_models/particle2d.xml',
+    'x0': np.array([-1., 0., 0., 0.]),
     # 'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
-    'T': 100,
+    'T': 200,
     'point_linear': True,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'smooth_noise': False,
+    'camera_pos': np.array([1., 0., 8., 0., 0., 0.]),
 }
 
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
-    'iterations': 10,
+    'iterations': 15,
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
@@ -78,8 +86,8 @@ algorithm = {
 
 algorithm['init_traj_distr'] = {
     'type': init_pd,
-    'init_var': 1.0,
-    'pos_gains': 0.0,
+    'init_var': 10.0,
+    'pos_gains': 10.0,
     'vel_gains_mult': 0.0,
     'dQ': SENSOR_DIMS[ACTION],
     'dt': agent['dt'],
@@ -88,30 +96,26 @@ algorithm['init_traj_distr'] = {
 
 state_cost = {
     'type': CostState,
-    'l2': 10,
-    'l1': 0,
-    'alpha': 1e-4,
+    'l2': 10.,
+    'l1': 0.,
+    'alpha': 1e-5,
     'data_types' : {
         JOINT_ANGLES: {
             'wp': np.ones(SENSOR_DIMS[ACTION]),
-            'target_state': np.array([0.0, 0.0]),
-        },
-        JOINT_VELOCITIES: {
-            'wp': np.ones(SENSOR_DIMS[ACTION]),
-            'target_state': np.array([0.0, 0.0]),
+            'target_state': target_pos[0:2]
         },
     },
 }
 
 action_cost = {
     'type': CostAction,
-    'wu': np.array([1e-2, 1e-2])
+    'wu': np.array([1., 1.])*1e-2
 }
 
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [state_cost, action_cost],
-    'weights': [10.0, 1.0], # used 10,1 for T=3
+    'weights': [0.1, 0.1], # used 10,1 for T=3
 }
 
 algorithm['dynamics'] = {
@@ -119,7 +123,7 @@ algorithm['dynamics'] = {
     'regularization': 1e-6,
     'prior': {
         'type': DynamicsPriorGMM,
-        'max_clusters': 40,
+        'max_clusters': 5,
         'min_samples_per_cluster': 20,
         'max_samples': 20,
     }
@@ -145,7 +149,7 @@ algorithm['policy_prior'] = {
 
 config = {
     'iterations': algorithm['iterations'],
-    'num_samples': 5,
+    'num_samples': 10,
     'verbose_trials': 1,
     'verbose_policy_trials': 1,
     'common': common,
