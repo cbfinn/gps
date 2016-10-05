@@ -44,7 +44,7 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 4,
+    'conditions': 5,
     # 'conditions': 1,
 }
 
@@ -53,10 +53,11 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3),
-               obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.3),
-               obstacle_pointmass(target_pos, wall_center=-0.2, hole_height=0.3),
-               obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3)
+    'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=-0.2, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3, control_limit=50),
                ],
     #'filename': './mjc_models/particle2d.xml',
     'x0': np.array([-1., 0., 0., 0.]),
@@ -64,7 +65,7 @@ agent = {
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
-    'T': 100,
+    'T': 200,
     'point_linear': True,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
@@ -76,7 +77,7 @@ agent = {
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
-    'iterations': 10,
+    'iterations': 15,
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
@@ -85,8 +86,8 @@ algorithm = {
 
 algorithm['init_traj_distr'] = {
     'type': init_pd,
-    'init_var': 1.0,
-    'pos_gains': 0.0,
+    'init_var': 10.0,
+    'pos_gains': 10.0,
     'vel_gains_mult': 0.0,
     'dQ': SENSOR_DIMS[ACTION],
     'dt': agent['dt'],
@@ -95,9 +96,9 @@ algorithm['init_traj_distr'] = {
 
 state_cost = {
     'type': CostState,
-    'l2': 10,
-    'l1': 0,
-    'alpha': 1e-4,
+    'l2': 10.,
+    'l1': 0.,
+    'alpha': 1e-5,
     'data_types' : {
         JOINT_ANGLES: {
             'wp': np.ones(SENSOR_DIMS[ACTION]),
@@ -108,7 +109,7 @@ state_cost = {
 
 action_cost = {
     'type': CostAction,
-    'wu': np.array([1., 1.])*1e-5
+    'wu': np.array([1., 1.])*1e-2
 }
 
 algorithm['cost'] = {
@@ -122,7 +123,7 @@ algorithm['dynamics'] = {
     'regularization': 1e-6,
     'prior': {
         'type': DynamicsPriorGMM,
-        'max_clusters': 40,
+        'max_clusters': 5,
         'min_samples_per_cluster': 20,
         'max_samples': 20,
     }
