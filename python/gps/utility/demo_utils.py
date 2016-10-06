@@ -37,6 +37,16 @@ def generate_pos_idx(conditions):
 	""" Generate the indices of states. """
 	return [np.array([1]) for i in xrange(conditions)]
 
+def extract_samples(itr, sample_file):
+    """ Extract samples from iteration 0 up to iteration itr. """
+    sample_list = {}
+    for i in xrange(itr):
+        sample_file_i = sample_file + '_%2d' % itr + '.pkl'
+        samples = DataLogger().unpickle(sample_file_i)
+        sample_list[i] = samples
+    return samples
+
+
 def extract_demos(demo_file):
     demos = DataLogger().unpickle(demo_file)
     return demos['demoX'], demos['demoU'], demos['demoO'], demos.get('demoConditions', None)

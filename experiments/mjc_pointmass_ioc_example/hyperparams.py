@@ -84,6 +84,7 @@ demo_agent = {
                obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3, control_limit=50),
                ],
     'filename': '',
+    'exp_name': 'pointmass_wall',
     'x0': np.array([-1., 0., 0., 0.]),
     # 'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
@@ -112,6 +113,7 @@ algorithm = {
     'demo_cond': 1,
     'num_demos': 10,
     'demo_var_mult': 1.0,
+    'target_end_effector': target_pos,
 }
 
 algorithm['init_traj_distr'] = {

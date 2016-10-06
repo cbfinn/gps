@@ -82,6 +82,7 @@ algorithm = {
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
     'max_ent_traj': 1.0,
+    'target_end_effector': target_pos,
 }
 
 algorithm['init_traj_distr'] = {
