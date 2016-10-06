@@ -84,6 +84,17 @@ class Agent(object):
         return (SampleList(self._samples[condition][start:]) if end is None
                 else SampleList(self._samples[condition][start:end]))
 
+    def clear_samples(self, condition=None):
+        """
+        Reset the samples for a given condition, defaulting to all conditions.
+        Args:
+            condition: Condition for which to reset samples.
+        """
+        if condition is None:
+            self._samples = [[] for _ in range(self._hyperparams['conditions'])]
+        else:
+            self._samples[condition] = []
+
     def delete_last_sample(self, condition):
         """ Delete the last sample from the specified condition. """
         self._samples[condition].pop()
