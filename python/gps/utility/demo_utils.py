@@ -43,8 +43,8 @@ def extract_samples(itr, sample_file):
     for i in xrange(itr):
         sample_file_i = sample_file + '_%2d' % itr + '.pkl'
         samples = DataLogger().unpickle(sample_file_i)
-        sample_list[i] = samples
-    return samples
+        sample_list[i] = samples[0]
+    return sample_list
 
 
 def extract_demos(demo_file):
