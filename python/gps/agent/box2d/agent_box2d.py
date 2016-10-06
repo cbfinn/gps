@@ -76,6 +76,7 @@ class AgentBox2D(Agent):
         new_sample.set(ACTION, U)
         if save:
             self._samples[condition].append(new_sample)
+        return new_sample
 
     def _init_sample(self, b2d_X):
         """

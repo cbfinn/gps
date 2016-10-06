@@ -147,9 +147,9 @@ class AlgorithmMDGPS(Algorithm):
         """
         # Compute previous cost and previous expected cost.
         prev_M = len(self.prev) # May be different in future.
-        prev_laplace = np.arange(prev_M)
-        prev_mc = np.arange(prev_M)
-        prev_predicted = np.arange(prev_M)
+        prev_laplace = np.empty(prev_M)
+        prev_mc = np.empty(prev_M)
+        prev_predicted = np.empty(prev_M)
         for m in range(prev_M):
             prev_nn = self.prev[m].pol_info.traj_distr()
             prev_lg = self.prev[m].new_traj_distr
@@ -170,8 +170,8 @@ class AlgorithmMDGPS(Algorithm):
             ).sum()
 
         # Compute current cost.
-        cur_laplace = np.arange(self.M)
-        cur_mc = np.arange(self.M)
+        cur_laplace = np.empty(self.M)
+        cur_mc = np.empty(self.M)
         for m in range(self.M):
             cur_nn = self.cur[m].pol_info.traj_distr()
             # This is the actual cost we have under the current trajectory

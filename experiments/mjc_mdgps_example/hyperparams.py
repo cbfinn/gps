@@ -41,8 +41,15 @@ EXP_DIR = BASE_DIR + '/../experiments/mjc_mdgps_example/'
 common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
+    'experiment_dir': EXP_DIR,
+    'data_files_dir': EXP_DIR + 'data_files/',
+    'target_filename': EXP_DIR + 'target.npz',
+    'log_filename': EXP_DIR + 'log.txt',
     'conditions': 4,
 }
+
+if not os.path.exists(common['data_files_dir']):
+    os.makedirs(common['data_files_dir'])
 
 agent = {
     'type': AgentMuJoCo,
@@ -147,10 +154,14 @@ algorithm['policy_prior'] = {
 }
 
 config = {
+    'gui_on': True,
     'iterations': algorithm['iterations'],
     'num_samples': 5,
     'verbose_trials': 1,
     'verbose_policy_trials': 1,
+    'common': common,
     'agent': agent,
-    'gui_on': True,
+    'algorithm': algorithm,
 }
+
+common['info'] = generate_experiment_info(config)
