@@ -26,7 +26,7 @@ from gps.sample.sample_list import SampleList
 from gps.utility.general_utils import disable_caffe_logs
 from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
                                     measure_distance_and_success_peg, get_demos
-from gps.utility.visualization import get_comparison_hyperparams, compare_experiments 
+from gps.utility.visualization import get_comparison_hyperparams, compare_experiments
 
 class GPSMain(object):
     """ Main class to run algorithms and experiments. """
@@ -157,7 +157,9 @@ class GPSMain(object):
         Returns: None
         """
         algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr
+        print 'Loading algorithm file.'
         self.algorithm = self.data_logger.unpickle(algorithm_file)
+        print 'Done loading algorithm file.'
         if self.algorithm is None:
             print("Error: cannot find '%s.'" % algorithm_file)
             os._exit(1) # called instead of sys.exit(), since t
@@ -368,8 +370,7 @@ class GPSMain(object):
         if 'no_sample_logging' in self._hyperparams['common']:
             return
 
-        # if itr == self.algorithm._hyperparams['iterations'] - 1 or itr == self.algorithm._hyperparams['ioc_maxent_iter'] - 1: # Just save the last iteration of the algorithm file
-        if ((itr+1) % 5 == 0) or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
+        if ((itr+1) % 1 == 0) or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
             self.algorithm.demo_policy = None
             self.data_logger.pickle(
                 self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
@@ -525,7 +526,7 @@ def main():
     elif compare:
         mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
             success_rates_2_dict = {}, {}, {}, {}
-        seeds = [0, 1, 2] 
+        seeds = [0, 1, 2]
         for itr in seeds:
             random.seed(itr)
             np.random.seed(itr)

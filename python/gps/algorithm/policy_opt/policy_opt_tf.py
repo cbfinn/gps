@@ -1,6 +1,8 @@
 """ This file defines policy optimization for a tensorflow policy. """
 import copy
 import logging
+import os
+import tempfile
 
 import numpy as np
 
@@ -36,20 +38,21 @@ class PolicyOptTf(PolicyOpt):
             self.gpu_device = self._hyperparams['gpu_id']
             self.device_string = "/gpu:" + str(self.gpu_device)
         self.act_op = None  # mu_hat
+        self.feat_op = None # features
         self.loss_scalar = None
         self.obs_tensor = None
         self.precision_tensor = None
         self.action_tensor = None  # mu true
         self.solver = None
-        self.fp = None
-        self.fp_vals = None
+        self.feat_op = None
+        self.feat_vals = None
         self.debug = None
         self.debug_vals = None
         self.init_network()
         self.init_solver()
         self.var = self._hyperparams['init_var'] * np.ones(dU)
         self.sess = tf.Session()
-        self.policy = TfPolicy(dU, self.obs_tensor, self.act_op, np.zeros(dU), self.sess, self.device_string)
+        self.policy = TfPolicy(dU, self.obs_tensor, self.act_op, self.feat_op, np.zeros(dU), self.sess, self.device_string)
         # List of indices for state (vector) data and image (tensor) data in observation.
         self.x_idx, self.img_idx, i = [], [], 0
         if 'obs_image_data' not in self._hyperparams['network_params']:
@@ -75,12 +78,12 @@ class PolicyOptTf(PolicyOpt):
         self.precision_tensor = tf_map.get_precision_tensor()
         self.action_tensor = tf_map.get_target_output_tensor()
         self.act_op = tf_map.get_output_op()
+        self.feat_op = tf_map.get_feature_op()  # TODO - make feature_op method
         self.loss_scalar = tf_map.get_loss_op()
-        self.fp = tf_map.fp
         self.debug = tf_map.debug
         self.fc_vars = fc_vars
         self.last_conv_vars = last_conv_vars
-        
+
         # Setup the gradients
         self.grads = [tf.gradients(self.act_op[:,u], self.obs_tensor)[0]
                 for u in range(self._dU)]
@@ -95,6 +98,7 @@ class PolicyOptTf(PolicyOpt):
                                weight_decay=self._hyperparams['weight_decay'],
                                fc_vars=self.fc_vars,
                                last_conv_vars=self.last_conv_vars)
+        self.saver = tf.train.Saver()
 
     def update(self, obs, tgt_mu, tgt_prc, tgt_wt, iter_count=None):
         """
@@ -183,7 +187,7 @@ class PolicyOptTf(PolicyOpt):
             # Load in data for this batch.
             start_idx = int(i * self.batch_size %
                             (batches_per_epoch * self.batch_size))
-            idx_i = idx[start_idx:start_idx+self.batch_size]    
+            idx_i = idx[start_idx:start_idx+self.batch_size]
             feed_dict = {self.obs_tensor: obs[idx_i],
                          self.action_tensor: tgt_mu[idx_i],
                          self.precision_tensor: tgt_prc[idx_i]}
@@ -198,7 +202,7 @@ class PolicyOptTf(PolicyOpt):
 
         feed_dict = {self.obs_tensor: obs}
         num_values = obs.shape[0]
-        self.fp_vals = self.solver.get_var_values(self.sess, self.fp, feed_dict, num_values, self.batch_size)
+        self.feat_vals = self.solver.get_var_values(self.sess, self.feat_op, feed_dict, num_values, self.batch_size)
         self.debug_vals = self.solver.get_var_values(self.sess, self.debug, feed_dict, num_values, self.batch_size)
         # Keep track of tensorflow iterations for loading solver states.
         self.tf_iter += self._hyperparams['iterations']
@@ -251,6 +255,7 @@ class PolicyOptTf(PolicyOpt):
         Args:
             obs: Numpy array of observations that is T x dO
         """
+        # TODO - modify this in case of image features being in the state.
         T = obs.shape[0]
 
         # Initialize
@@ -282,8 +287,22 @@ class PolicyOptTf(PolicyOpt):
         """ Set the entropy regularization. """
         self._hyperparams['ent_reg'] = ent_reg
 
+    def save_model(self, fname):
+        LOGGER.debug('Saving model to: %s', fname)
+        self.saver.save(self.sess, fname)
+
+    def restore_model(self, fname):
+        self.saver.restore(self.sess, fname)
+        LOGGER.debug('Restoring model from: %s', fname)
+
     # For pickling.
     def __getstate__(self):
+        with tempfile.NamedTemporaryFile('w+b', delete=True) as f:
+            self.save_model(f.name) # TODO - is this implemented.
+            f.seek(0)
+            with open(f.name, 'r') as f2:
+                wts = f2.read()
+            os.remove(f.name+'.meta')
         return {
             'hyperparams': self._hyperparams,
             'dO': self._dO,
@@ -291,6 +310,9 @@ class PolicyOptTf(PolicyOpt):
             'scale': self.policy.scale,
             'bias': self.policy.bias,
             'tf_iter': self.tf_iter,
+            'x_idx': self.policy.x_idx,
+            'chol_pol_covar': self.policy.chol_pol_covar,
+            'wts': wts,
         }
 
     # For unpickling.
@@ -300,8 +322,12 @@ class PolicyOptTf(PolicyOpt):
         self.__init__(state['hyperparams'], state['dO'], state['dU'])
         self.policy.scale = state['scale']
         self.policy.bias = state['bias']
+        self.policy.x_idx = state['x_idx']
+        self.policy.chol_pol_covar = state['chol_pol_covar']
         self.tf_iter = state['tf_iter']
 
-        saver = tf.train.Saver()
-        check_file = self.checkpoint_file
-        saver.restore(self.sess, check_file)
+        with tempfile.NamedTemporaryFile('w+b', delete=True) as f:
+            f.write(state['wts'])
+            f.seek(0)
+            self.restore_model(f.name)
+

@@ -211,11 +211,6 @@ def multi_modal_network_fp(dim_input=27, dim_output=7, batch_size=25, network_co
     first_dense_size = conv_out_size + len(x_idx)
 
     # Store layers weight & bias
-    # weights = {
-    #     'wc1': get_xavier_weights([filter_size, filter_size, num_channels, num_filters[0]], (pool_size, pool_size)), # 5x5 conv, 1 input, 32 outputs
-    #     'wc2': get_xavier_weights([filter_size, filter_size, num_filters[0], num_filters[1]], (pool_size, pool_size)), # 5x5 conv, 32 inputs, 64 outputs
-    #     'wc3': get_xavier_weights([filter_size, filter_size, num_filters[1], num_filters[2]], (pool_size, pool_size)), # 5x5 conv, 32 inputs, 64 outputs
-    # }
     weights = {
         'wc1': init_weights([filter_size, filter_size, num_channels, num_filters[0]]), # 5x5 conv, 1 input, 32 outputs
         'wc2': init_weights([filter_size, filter_size, num_filters[0], num_filters[1]]), # 5x5 conv, 32 inputs, 64 outputs
