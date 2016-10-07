@@ -7,7 +7,7 @@ import os.path
 import numpy as np
 
 from gps import __file__ as gps_filepath
-from gps.agent.mjc import obstacle_pointmass
+from gps.agent.mjc import obstacle_pointmass, weighted_pointmass
 from gps.agent.mjc.agent_mjc import AgentMuJoCo
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
@@ -44,7 +44,8 @@ common = {
     'experiment_dir': EXP_DIR,
     'demo_exp_dir': DEMO_DIR,
     'data_files_dir': os.path.join(EXP_DIR, 'data_files')+'/',
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_14.pkl',
+    # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_14.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_conditions': 5,
@@ -58,7 +59,8 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'models': obstacle_pointmass(target_pos, wall_center=0.5, hole_height=0.3, control_limit=50),
+    # 'models': obstacle_pointmass(target_pos, wall_center=0.5, hole_height=0.3, control_limit=50),
+    'models': weighted_pointmass(target_pos, density=100.0, control_limit=10.0),
     'filename': '',
     #'x0': [np.array([-1., 1., 0., 0.]), np.array([1., 1., 0., 0.]),
     #       np.array([1., -1., 0., 0.]), np.array([-1., -1., 0., 0.])],
@@ -77,14 +79,20 @@ agent = {
 
 demo_agent = {
     'type': AgentMuJoCo,
-    'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3, control_limit=50),
-               obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.3, control_limit=50),
-               obstacle_pointmass(target_pos, wall_center=-0.2, hole_height=0.3, control_limit=50),
-               obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3, control_limit=50),
-               obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3, control_limit=50),
-               ],
+    # 'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3, control_limit=50),
+    #            obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.3, control_limit=50),
+    #            obstacle_pointmass(target_pos, wall_center=-0.2, hole_height=0.3, control_limit=50),
+    #            obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3, control_limit=50),
+    #            obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3, control_limit=50),
+    #            ],
+    'models': [weighted_pointmass(target_pos, density=1., control_limit=10.0),
+       weighted_pointmass(target_pos, density=0.1, control_limit=10.0),
+       weighted_pointmass(target_pos, density=0.01, control_limit=10.0),
+       weighted_pointmass(target_pos, density=0.001, control_limit=10.0),
+       weighted_pointmass(target_pos, density=0.0001, control_limit=10.0),
+       ], # for varying weights of the pointmass
     'filename': '',
-    'exp_name': 'pointmass_wall',
+    # 'exp_name': 'pointmass',
     'x0': np.array([-1., 0., 0., 0.]),
     # 'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
@@ -105,7 +113,7 @@ algorithm = {
     'demo_distr_empest': True,
     'max_ent_traj': 1.0,
     'conditions': common['conditions'],
-    'iterations': 15,
+    'iterations': 10,
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     #'min_step_mult': 1.0,
@@ -129,7 +137,7 @@ algorithm['init_traj_distr'] = {
 algorithm['cost'] = {
     #'type': CostIOCQuadratic,
     'type': CostIOCTF,
-    'wu': np.array([1e-5, 1e-5]),
+    'wu': np.array([1e-2, 1e-2]),
     'dO': 10,
     'T': agent['T'],
     'iterations': 1000,

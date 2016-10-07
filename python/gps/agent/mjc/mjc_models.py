@@ -150,3 +150,35 @@ def obstacle_pointmass(target_position=np.array([1.3, 0.5, 0]), wall_center=0.0,
     actuator.motor(joint="ball_x", ctrlrange=[-control_limit, control_limit], ctrllimited="true")
     actuator.motor(joint="ball_y", ctrlrange=[-control_limit, control_limit], ctrllimited="true")
     return mjcmodel
+
+def weighted_pointmass(target_position=np.array([1.3, 0.5, 0]), density=0.01, control_limit=1.0):
+    """
+    An example usage of MJCModel building the pointmass task
+    Args:
+        target_position: the position of the target.
+        density: the density of the pointmass
+        control_limit: the control range of the pointmass 
+    Returns:
+        An MJCModel
+    """
+    mjcmodel = pointmass_model('pointmass')
+    worldbody = mjcmodel.root.worldbody()
+
+    # Particle
+    body = worldbody.body(name='particle', pos="0 0 0")
+    # body.geom(name="particle_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.05")
+    body.geom(name="particle_geom", type="sphere", density=density, size="0.05")
+    body.site(name="particle_site", pos="0 0 0", size="0.01")
+    body.joint(name="ball_x", type="slide", pos="0 0 0", axis="1 0 0")
+    body.joint(name="ball_y", type="slide", pos="0 0 0", axis="0 1 0")
+
+    # Target
+    body = worldbody.body(name="target", pos=target_position)
+    # body.geom(name="target_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.05", rgba="0 0.9 0.1 1")
+    body.geom(name="target_geom", type="sphere", size="0.05", rgba="0 0.9 0.1 1")
+
+    # Actuators
+    actuator = mjcmodel.root.actuator()
+    actuator.motor(joint="ball_x", ctrlrange=[-control_limit, control_limit], ctrllimited="true")
+    actuator.motor(joint="ball_y", ctrlrange=[-control_limit, control_limit], ctrllimited="true")
+    return mjcmodel

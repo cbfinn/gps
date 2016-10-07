@@ -232,7 +232,7 @@ class GenDemo(object):
                 plt.savefig(self._data_files_dir + 'distribution_of_demo_conditions_MaxEnt_z_0.05.png')
                 plt.close()
             elif agent_config['type']==AgentMuJoCo and \
-                ('reacher' in agent_config.get('filename', []) or 'wall' in agent_config.get('exp_name', [])):
+                ('reacher' in agent_config.get('filename', []) or 'pointmass' in agent_config.get('exp_name', [])):
                 dists = []; failed_indices = []
                 success_thresh = 0.20
                 for m in range(M):
