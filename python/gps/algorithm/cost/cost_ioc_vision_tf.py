@@ -3,11 +3,11 @@ import copy
 import logging
 import numpy as np
 import tempfile
+import uuid
 from itertools import izip
-import os
 
 import tensorflow as tf
-from tf_cost_utils import jacobian, construct_nn_cost_net_tf
+from tf_cost_utils import jacobian, multimodal_nn_cost_net_tf
 
 from gps.utility.general_utils import BatchSampler
 from gps.algorithm.cost.config import COST_IOC_NN
@@ -18,7 +18,7 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES,\
 LOGGER = logging.getLogger(__name__)
 
 
-class CostIOCTF(Cost):
+class CostIOCVisionTF(Cost):
     """ Set up weighted neural network norm loss with learned parameters. """
     def __init__(self, hyperparams):
         config = copy.deepcopy(COST_IOC_NN) # Set this up in the config?
@@ -37,18 +37,17 @@ class CostIOCTF(Cost):
             self._init_solver()
 
     def copy(self):
-        new_cost = CostIOCTF(self._hyperparams)
+        new_cost = CostIOCVisionTF(self._hyperparams)
         with tempfile.NamedTemporaryFile('w+b', suffix='.wts', delete=True) as f:
             self.save_model(f.name)
             f.seek(0)
             new_cost.restore_model(f.name)
-            os.remove(f.name+'.meta')
         return new_cost
 
-    def compute_lx_lxx(self, obs):
+    def compute_lx_lxx(self, obs, dX):
         T, dO = obs.shape
-        lx = np.zeros((T, dO))
-        lxx = np.zeros((T, dO, dO))
+        lx = np.zeros((T, dX))
+        lxx = np.zeros((T, dX, dX))
         for t in range(T):
             lx[t], lxx[t] = self.run([self.dldx, self.dldxx], test_obs_single=obs[t])
         return lx, lxx
@@ -59,7 +58,6 @@ class CostIOCTF(Cost):
         Args:
             sample:  A single sample
         """
-        # TODO - right now, we're going to assume that Obs = X
         T = sample.T
         obs = sample.get_obs()
         sample_u = sample.get_U()
@@ -77,7 +75,7 @@ class CostIOCTF(Cost):
 
         tq_norm = np.sum(self._hyperparams['wu'] * (sample_u ** 2), axis=1, keepdims=True)
         l[:] = np.squeeze(self.run([self.outputs['test_loss']], test_obs=obs, test_torque_norm=tq_norm)[0])
-        lx, lxx = self.compute_lx_lxx(obs)
+        lx, lxx = self.compute_lx_lxx(obs, dX)
 
         if self._hyperparams['learn_wu']:
             raise NotImplementedError()
@@ -87,11 +85,13 @@ class CostIOCTF(Cost):
         luu = wu_mult * np.tile(np.diag(self._hyperparams['wu']), [T, 1, 1])
 
 
-        if self.use_jacobian and END_EFFECTOR_POINT_JACOBIANS in sample._data:
+        if self.use_jacobian and (END_EFFECTOR_POINT_JACOBIANS in sample._data):
             jnt_idx = sample.agent.get_idx_x(JOINT_ANGLES)
             vel_idx = sample.agent.get_idx_x(JOINT_VELOCITIES)
 
             jx = sample.get(END_EFFECTOR_POINT_JACOBIANS)
+            # TODO - support end_effector_points_no_target here.
+            import pdb; pdb.set_trace()
             dl_dee = sample.agent.unpack_data_x(lx, [END_EFFECTOR_POINTS])
             dl_dev = sample.agent.unpack_data_x(lx, [END_EFFECTOR_POINT_VELOCITIES])
 
@@ -134,7 +134,7 @@ class CostIOCTF(Cost):
                                       sample_obs = s_batch[0],
                                       sample_torque_norm = s_batch[1],
                                       sample_iw = s_batch[2])
-            if i%200 == 0:
+            if i % 200 == 0:
                 LOGGER.debug("Iteration %d loss: %f", i, ioc_loss)
 
             if i > self._hyperparams['iterations']:
@@ -160,7 +160,7 @@ class CostIOCTF(Cost):
         network_arch_params['mono_reg_weight'] = self._hyperparams['mono_reg_weight']
         network_arch_params['gp_reg_weight'] = self._hyperparams['gp_reg_weight']
         network_arch_params['learn_wu'] = self._hyperparams['learn_wu']
-        inputs, outputs = construct_nn_cost_net_tf(**network_arch_params)
+        inputs, outputs = multimodal_nn_cost_net_tf(**network_arch_params)
         self.outputs = outputs
 
         self.input_dict = inputs
@@ -173,8 +173,11 @@ class CostIOCTF(Cost):
 
         # Set up gradients
         l_single, obs_single = outputs['test_loss_single'], inputs['test_obs_single']
-        self.dldx =  tf.gradients(l_single, obs_single)[0]
-        self.dldxx = jacobian(self.dldx, obs_single)
+        # NOTE - we are assuming that the features here are the same
+        # as the state X
+        feat_single = outputs['test_feat_single'] # we're assuming
+        self.dldx =  tf.gradients(l_single, feat_single)[0]
+        self.dldxx = jacobian(self.dldx, feat_single)
 
         self.saver = tf.train.Saver()
 
@@ -197,22 +200,18 @@ class CostIOCTF(Cost):
 
     # For pickling.
     def __getstate__(self):
-        with tempfile.NamedTemporaryFile('w+b', delete=True) as f:
-            self.save_model(f.name)
-            f.seek(0)
-            with open(f.name, 'r') as f2:
-                wts = f2.read()
-            os.remove(f.name+'.meta')
+        checkpoint_fname = self._hyperparams['weights_file_prefix']+str(uuid.uuid4())+'.wts'
+        self.save_model(checkpoint_fname)
         return {
             'hyperparams': self._hyperparams,
-            'wts': wts,
+            'dO': self._dO,
+            'T': self._T,
+            'checkpoint_file': checkpoint_fname,
         }
 
     # For unpickling.
     def __setstate__(self, state):
+        # TODO - finalize this once __init__ is finalized (setting dO and T)
         self.__init__(state['hyperparams'])
-        with tempfile.NamedTemporaryFile('w+b', delete=True) as f:
-            f.write(state['wts'])
-            f.seek(0)
-            self.restore_model(f.name)
+        self.restore_model(state['checkpoint_file'])
 

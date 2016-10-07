@@ -73,14 +73,14 @@ def multimodal_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
 
     with tf.variable_scope('cost_ioc_nn'):
         _, _, test_cost  = nn_vis_forward(test_obs, test_torque_norm, num_hidden=num_hidden, learn_wu=learn_wu, dim_hidden=dim_hidden, x_idx=x_idx, img_idx=img_idx)
-        demo_cost_preu, demo_feat, demo_costs = nn_vis_forward(demo_obs, demo_torque_norm, num_hidden=num_hidden, learn_wu=learn_wu, dim_hidden=dim_hidden, x_idx=x_idx, img_idx=img_idx)
-        sample_cost_preu, sample_feat, sample_costs = nn_vis_forward(sample_obs, sample_torque_norm, num_hidden=num_hidden,learn_wu=learn_wu, dim_hidden=dim_hidden, x_idx=x_idx, img_idx=img_idx)
+        demo_cost_preu, _, demo_costs = nn_vis_forward(demo_obs, demo_torque_norm, num_hidden=num_hidden, learn_wu=learn_wu, dim_hidden=dim_hidden, x_idx=x_idx, img_idx=img_idx)
+        sample_cost_preu, _, sample_costs = nn_vis_forward(sample_obs, sample_torque_norm, num_hidden=num_hidden,learn_wu=learn_wu, dim_hidden=dim_hidden, x_idx=x_idx, img_idx=img_idx)
         sup_cost_preu, _, sup_costs = nn_vis_forward(sup_obs, sup_torque_norm, num_hidden=num_hidden,learn_wu=learn_wu, dim_hidden=dim_hidden, x_idx=x_idx, img_idx=img_idx)
 
         # Build a differentiable test cost by feeding each timestep individually
         test_obs_single = tf.expand_dims(test_obs_single, 0)
         test_torque_single = tf.expand_dims(test_torque_single, 0)
-        test_cost_single_preu, _ = nn_forward(test_obs_single, test_torque_single, num_hidden=num_hidden, dim_hidden=dim_hidden, learn_wu=learn_wu)
+        test_cost_single_preu, test_feat_single, _ = nn_vis_forward(test_obs_single, test_torque_single, num_hidden=num_hidden, dim_hidden=dim_hidden, learn_wu=learn_wu)
         test_cost_single = tf.squeeze(test_cost_single_preu)
 
         sup_loss = tf.nn.l2_loss(sup_costs - sup_cost_labels)*multi_obj_supervised_wt
@@ -126,6 +126,7 @@ def multimodal_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
         'ioc_loss': ioc_loss,
         'test_loss': test_cost,
         'test_loss_single': test_cost_single,
+        'test_feat_single': test_feat_single,
     }
     return inputs, outputs
 
@@ -274,18 +275,68 @@ def nn_forward(net_input, u_input, num_hidden=1, dim_hidden=42, wu=1e-3, learn_w
     all_costs = all_costs_preu + u_cost
     return all_costs_preu, all_costs
 
+def compute_image_feats(img_input):
+    filter_size = 5
+    num_filters = [15, 15, 15]
+    num_channels=3
+    # Store layers weight & bias
+    weights = {
+        'wc1': init_weights([filter_size, filter_size, num_channels, num_filters[0]]), # 5x5 conv, 1 input, 32 outputs
+        'wc2': init_weights([filter_size, filter_size, num_filters[0], num_filters[1]]), # 5x5 conv, 32 inputs, 64 outputs
+        'wc3': init_weights([filter_size, filter_size, num_filters[1], num_filters[2]]), # 5x5 conv, 32 inputs, 64 outputs
+    }
+
+    biases = {
+        'bc1': init_bias([num_filters[0]]),
+        'bc2': init_bias([num_filters[1]]),
+        'bc3': init_bias([num_filters[2]]),
+    }
+
+    conv_layer_0 = conv2d(img=img_input, w=weights['wc1'], b=biases['bc1'], strides=[1,2,2,1])
+    conv_layer_1 = conv2d(img=conv_layer_0, w=weights['wc2'], b=biases['bc2'])
+    conv_layer_2 = conv2d(img=conv_layer_1, w=weights['wc3'], b=biases['bc3'])
+
+    _, num_rows, num_cols, num_fp = conv_layer_2.get_shape()
+    num_rows, num_cols, num_fp = [int(x) for x in [num_rows, num_cols, num_fp]]
+    x_map = np.empty([num_rows, num_cols], np.float32)
+    y_map = np.empty([num_rows, num_cols], np.float32)
+
+    for i in range(num_rows):
+        for j in range(num_cols):
+            x_map[i, j] = (i - num_rows / 2.0) / num_rows
+            y_map[i, j] = (j - num_cols / 2.0) / num_cols
+
+    x_map = tf.convert_to_tensor(x_map)
+    y_map = tf.convert_to_tensor(y_map)
+
+    x_map = tf.reshape(x_map, [num_rows * num_cols])
+    y_map = tf.reshape(y_map, [num_rows * num_cols])
+
+    # rearrange features to be [batch_size, num_fp, num_rows, num_cols]
+    features = tf.reshape(tf.transpose(conv_layer_2, [0,3,1,2]),
+                          [-1, num_rows*num_cols])
+    softmax = tf.nn.softmax(features)
+
+    fp_x = tf.reduce_sum(tf.mul(x_map, softmax), [1], keep_dims=True)
+    fp_y = tf.reduce_sum(tf.mul(y_map, softmax), [1], keep_dims=True)
+
+    fp = tf.reshape(tf.concat(1, [fp_x, fp_y]), [-1, num_fp*2])
+    return fp
+
+
 def nn_vis_forward(net_input, u_input, num_hidden=1, dim_hidden=42, wu=1e-3, learn_wu=False, x_idx=None, img_idx=None):
 
     x_input = tf.gather(net_input, x_idx)
     img_input = tf.gather(net_input, img_idx)
 
+    # TODO don't hard code this.
     num_channels=3; im_width = 80; im_height = 64;
     img_input = tf.reshape(img_input, [-1, num_channels, im_width, im_height])
     img_input = tf.transpose(img_input, perm=[0,3,2,1])
-    # TODO - reshape image appropriately.
 
     img_feats = compute_image_feats(img_input)
 
+    # TODO - this assumes that the image features are the last thing in the state.
     all_feat = tf.concat(1, [x_input, img_feats])
 
     # Reshape into 2D matrix for matmuls
@@ -316,7 +367,7 @@ def nn_vis_forward(net_input, u_input, num_hidden=1, dim_hidden=42, wu=1e-3, lea
         u_cost = tf.reshape(u_cost, [-1, 1])
     all_costs_preu = tf.reduce_sum(AxAx, reduction_indices=[-1], keep_dims=True)
     all_costs = all_costs_preu + u_cost
-    return all_costs_preu, img_feats, all_costs
+    return all_costs_preu, all_feat, all_costs
 
 
 
