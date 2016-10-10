@@ -88,7 +88,6 @@ class CostIOCVisionTF(Cost):
         lu = wu_mult * self._hyperparams['wu'] * sample_u
         luu = wu_mult * np.tile(np.diag(self._hyperparams['wu']), [T, 1, 1])
 
-        import pdb; pdb.set_trace()
         if self.use_jacobian and (END_EFFECTOR_POINT_JACOBIANS in sample._data):
             jnt_idx = sample.agent.get_idx_x(JOINT_ANGLES)
             vel_idx = sample.agent.get_idx_x(JOINT_VELOCITIES)
