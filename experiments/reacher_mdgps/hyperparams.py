@@ -38,10 +38,11 @@ EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
 
 np.random.seed(47)
-TRAIN_CONDITIONS = 20 # 4
-TEST_CONDITIONS = 20 # 9
+TRAIN_CONDITIONS = 4 # 4
+TEST_CONDITIONS = 0 # 9
 TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
 pos_body_offset = []
+np.random.seed(13)
 #pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
 #pos_body_offset.append(np.array([0.05, 0.2, 0.0]))
 for _ in range(TOTAL_CONDITIONS):
@@ -55,8 +56,6 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': TOTAL_CONDITIONS,
-    'train_conditions': range(TRAIN_CONDITIONS),
-    'test_conditions': range(TRAIN_CONDITIONS, TOTAL_CONDITIONS),
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -71,8 +70,6 @@ agent = {
     'pos_body_offset': pos_body_offset,
     'pos_body_idx': np.array([4]),
     'conditions': common['conditions'],
-    'train_conditions': common['train_conditions'],
-    'test_conditions': common['test_conditions'],
     'T': 50,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, \
@@ -91,8 +88,6 @@ algorithm = {
     'type': AlgorithmMDGPS,
     'sample_on_policy': True,
     'conditions': common['conditions'],
-    'train_conditions': common['train_conditions'],
-    'test_conditions': common['test_conditions'],
     'iterations': 10,
     'kl_step': 1.0,
     'max_ent_traj': 0.0001,
@@ -207,8 +202,6 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
-    'train_conditions': common['train_conditions'],
-    'test_conditions': common['test_conditions'],
     'random_seed': 1,
 }
 
