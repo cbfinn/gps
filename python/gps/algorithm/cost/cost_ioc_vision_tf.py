@@ -54,7 +54,7 @@ class CostIOCVisionTF(Cost):
     def get_features(self, obs):
         """ Get the image features corresponding to the rgb image.
         """
-        return self.run([self.outputs['test_feat']], test_obs=obs)
+        return self.run([self.outputs['test_feat']], test_obs=obs)[0]
 
     def eval(self, sample):
         """
