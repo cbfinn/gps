@@ -29,7 +29,7 @@ from gps.algorithm.policy_opt.tf_model_example import multi_modal_network, multi
 
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, RGB_IMAGE, RGB_IMAGE_SIZE, ACTION, \
-        END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET
+        END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, IMAGE_FEAT
 from gps.gui.config import generate_experiment_info
 
 IMAGE_WIDTH = 80
@@ -46,6 +46,7 @@ SENSOR_DIMS = {
     ACTION: 2,
     RGB_IMAGE: IMAGE_WIDTH*IMAGE_HEIGHT*IMAGE_CHANNELS,
     RGB_IMAGE_SIZE: 3,
+    IMAGE_FEAT: 30,  # affected by num_filters set below.
 }
 
 PR2_GAINS = np.array([1.0, 1.0])
@@ -54,7 +55,7 @@ BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
 CONDITIONS = 4
-np.random.seed(13)
+np.random.seed(14)
 pos_body_offset = []
 for _ in range(CONDITIONS):
     pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1, 0]))
@@ -88,8 +89,8 @@ agent = {
     'pos_body_idx': np.array([4]),
     'conditions': common['conditions'],
     'T': 50,
-    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-                      END_EFFECTOR_POINT_VELOCITIES],
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET,
+                      END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, IMAGE_FEAT],  # TODO - may want to include fp velocities.
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, RGB_IMAGE],
     'target_idx': np.array(list(range(3,6))),
     'meta_include': [RGB_IMAGE_SIZE],
@@ -104,22 +105,21 @@ agent = {
 
 algorithm = {
     'type': AlgorithmMDGPS,
+    'max_ent_traj': 0.001,
     'conditions': common['conditions'],
     'iterations': 13,
-    'kl_step': 1.0,
-    'min_step_mult': 0.5,
-    'max_step_mult': 3.0,
+    'kl_step': 1.0, # TODO was 1.0
+    'min_step_mult': 0.1, # TODO was 0.5, maybe try 0.1
+    'max_step_mult': 3.0, # TODO was 3.0, maybe try 2.0
     'policy_sample_mode': 'replace',
     'sample_on_policy': True,
     'plot_dir': EXP_DIR,
+    'agent_pos_body_idx': agent['pos_body_idx'],
+    'agent_pos_body_offset': agent['pos_body_offset'],
+    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
+                            for i in xrange(CONDITIONS)],
 }
 
-
-# algorithm['policy_opt'] = {
-#     'type': PolicyOptCaffe,
-#     'iterations': 5000,
-#     'weights_file_prefix': common['data_files_dir'] + 'policy',
-# }
 
 algorithm['policy_opt'] = {
     'type': PolicyOptTf,
@@ -136,33 +136,9 @@ algorithm['policy_opt'] = {
     'network_model': multi_modal_network_fp,
     'fc_only_iterations': 5000,
     'init_iterations': 1000,
-    'iterations': 100,
+    'iterations': 1000,  # was 100
     'weights_file_prefix': EXP_DIR + 'policy',
 }
-
-# algorithm = {
-#     'type': AlgorithmTrajOpt,
-#     'conditions': common['conditions'],
-#     'iterations': 25,
-#     'train_conditions': common['train_conditions'],
-#     'test_conditions': common['test_conditions'],
-#     'num_clusters': 0,
-#     'cluster_method': 'kmeans',
-#     'step_rule': 'classic',
-#     'plot_dir': EXP_DIR,
-# }
-
-# algorithm['policy_opt'] = {}
-
-# algorithm['init_traj_distr'] = {
-#     'type': init_lqr,
-#     'init_gains': 5e-5 / PR2_GAINS,
-#     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-#     'init_var': 0.1,
-#     'stiffness': 0.01,
-#     'dt': agent['dt'],
-#     'T': agent['T'],
-# }
 
 algorithm['init_traj_distr'] = {
     'type': init_lqr,
@@ -208,24 +184,6 @@ algorithm['dynamics'] = {
 algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
 }
-
-
-#algorithm['dynamics'] = {
-#    'type': DynamicsLRPrior,
-#    'regularization': 1e-6,
-#    'prior': {
-#        'type': DynamicsPriorGMM,
-#        'max_clusters': 30,
-#        'min_samples_per_cluster': 40,
-#        'max_samples': len(common['train_conditions']),
-#    },
-#}
-
-#algorithm['traj_opt'] = {
-#    'type': TrajOptLQRPython,
-#    'min_eta': 1e-4,
-#    'max_eta': 1.0,
-#}
 
 
 algorithm['policy_prior'] = {
