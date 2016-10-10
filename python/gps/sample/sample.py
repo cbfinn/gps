@@ -107,7 +107,6 @@ class Sample(object):
 
     def update_features(self, policy):
         """ Update the image features using the policy. """
-        import pdb; pdb.set_trace()
         self.set(IMAGE_FEAT, policy.get_features(self.get_obs()))
 
     # For pickling.
