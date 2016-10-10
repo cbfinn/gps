@@ -100,10 +100,16 @@ class Algorithm(object):
             ]
 
         if self._hyperparams['ioc']:
-            self.gt_cost = [
-                self._hyperparams['gt_cost']['type'](self._hyperparams['gt_cost'])
-                for _ in range(self.M)
-            ]
+            if type(hyperparams['gt_cost']) == list:
+                self.gt_cost = [
+                    self._hyperparams['gt_cost'][i]['type'](self._hyperparams['gt_cost'][i])
+                    for i in range(self.M)
+                ]
+            else:
+                self.gt_cost = [
+                    self._hyperparams['gt_cost']['type'](self._hyperparams['gt_cost'])
+                    for _ in range(self.M)
+                ]
         self.base_kl_step = self._hyperparams['kl_step']
 
     @abc.abstractmethod
@@ -387,6 +393,7 @@ class Algorithm(object):
         """
             Estimate the importance weights for fusion distributions.
         """
+        # TODO - fusion distribution is incorrect if state space is changing (via e2e feature learning)
         itr = self.iteration_count
         M = len(self.prev)
         ix = range(self.dX)

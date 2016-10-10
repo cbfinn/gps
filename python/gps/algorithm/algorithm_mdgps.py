@@ -74,41 +74,45 @@ class AlgorithmMDGPS(Algorithm):
                 dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
                          for i in xrange(len(cur_samples))]
                 self.dists_to_target[itr].append(sum(dists) / len(cur_samples))
-        #if not self._hyperparams['learning_from_prior']:
-        #    for m in range(self.M):
-        #        self._eval_cost(m)
 
         # Comment this when use random policy initialization and add after line 78
         if self.iteration_count == 0 and self._hyperparams['policy_eval']:
             self.policy_opts[self.iteration_count] = self.policy_opt.copy()
+
+        # On the first iteration we need to make sure that the policy somewhat
+        # matches the init controller. Otherwise the LQR backpass starts with
+        # a bad linearization, and things don't work out well.
+        elif self.iteration_count == 0 and not self._hyperparams['init_demo_policy']:
+            self.new_traj_distr = [
+                self.cur[cond].traj_distr for cond in range(self.M)
+            ]
+            # Only update fc layers.
+            self._update_policy(fc_only=True)
 
         # Update dynamics linearizations.
         self._update_dynamics()
 
         # Move this after line 78 if using random initializarion.
         if self._hyperparams['ioc'] and self._hyperparams['init_demo_policy']:
-            if self._hyperparams['ioc_maxent_iter'] == -1 or itr < self._hyperparams['ioc_maxent_iter']:
-                self._update_cost()
+            raise ValueError("haven't supported this with vision and dynamics fit has moved.")
+        if not self._hyperparams['global_cost']:
+            raise NotImplementedError('no support for multiple costs with vision.')
 
-        # On the first iteration we need to make sure that the policy somewhat
-        # matches the init controller. Otherwise the LQR backpass starts with
-        # a bad linearization, and things don't work out well.
-        if self.iteration_count == 0 and not self._hyperparams['init_demo_policy']: # Uncomment this after finishing demo init plus linearized demo exp
-        # if self.iteration_count == 0:
-            self.new_traj_distr = [
-                self.cur[cond].traj_distr for cond in range(self.M)
-            ]
-            self._update_policy()
-        #     # self.policy_opts[self.iteration_count] = self.policy_opt.copy()
-
-        # Update policy fit and then do policy linearization.
-        # for m in range(self.M):
-        #     self._update_policy_fit(m, init=True)
-        #     self.linear_policies[self.iteration_count].append(self.cur[m].pol_info.traj_distr())
         if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
-        # if self._hyperparams['ioc'] and self._hyperparams['init_demo_policy']:
             if self._hyperparams['ioc_maxent_iter'] == -1 or itr < self._hyperparams['ioc_maxent_iter']:
+                # TODO - copy conv layers from policy if itr > 0
                 self._update_cost()
+                for m in range(self.M):
+                    for sample in self.cur[m].sample_list:
+                        sample.update_features(self.cost) # assumes a single cost.
+                if self.cur[0].traj_info.dynamics.prior._max_samples > len(self.cur[0].sample_list):
+                    print logging.WARNING('refitting dynamics -- updating prior with the same set of samples')
+                self._update_dynamics()  # recompute dynamics with new state space.
+
+        # NOTE: FOR IOC WITH VISION:
+        # TODO - need to copy vision weights from cost to policy and the reverse.
+        # TODO - after update_cost and update_policy is called, the state X in the samples is no longer valid. This is fine for most of the algorithm, but it's not
+        # fine for calculating the importance weights (the fusion distribution), AND, we need to recalculate X for the demos, so that it matches the dynamics.
 
         # Update policy linearizations.
         for m in range(self.M):
@@ -124,6 +128,7 @@ class AlgorithmMDGPS(Algorithm):
         self._update_trajectories()
 
         # S-step
+        # TODO - copy conv layers from cost to policy here.
         self._update_policy()
 
         # Computing KL-divergence between sample distribution and demo distribution
@@ -136,8 +141,11 @@ class AlgorithmMDGPS(Algorithm):
         # Prepare for next iteration
         self._advance_iteration_variables()
 
-    def _update_policy(self):
-        """ Compute the new policy. """
+    def _update_policy(self, fc_only=False):
+        """ Compute the new policy
+        Args:
+            fc_only: whether or not to only train the fc layers (no e2e)
+        """
         dU, dO, T = self.dU, self.dO, self.T
         # Compute target mean, cov, and weight for each sample.
         obs_data, tgt_mu = np.zeros((0, T, dO)), np.zeros((0, T, dU))
@@ -163,7 +171,7 @@ class AlgorithmMDGPS(Algorithm):
                 tgt_prc = np.concatenate((tgt_prc, prc))
                 tgt_wt = np.concatenate((tgt_wt, wt))
                 obs_data = np.concatenate((obs_data, samples.get_obs()))
-            self.policy_opt.update(obs_data, tgt_mu, tgt_prc, tgt_wt)
+            self.policy_opt.update(obs_data, tgt_mu, tgt_prc, tgt_wt, fc_only=fc_only)
         else:
             for i in range(self.num_policies):
                 for m in range(self.M / self.num_policies * i, self.M / self.num_policies * (i + 1)):
@@ -186,7 +194,7 @@ class AlgorithmMDGPS(Algorithm):
                     tgt_prc = np.concatenate((tgt_prc, prc))
                     tgt_wt = np.concatenate((tgt_wt, wt))
                     obs_data = np.concatenate((obs_data, samples.get_obs()))
-                    self.policy_opts[i].update(obs_data, tgt_mu, tgt_prc, tgt_wt)
+                    self.policy_opts[i].update(obs_data, tgt_mu, tgt_prc, tgt_wt, fc_only=fc_only)
 
     def _update_policy_fit(self, m):
         """
@@ -318,6 +326,11 @@ class AlgorithmMDGPS(Algorithm):
         """ Update the cost objective in each iteration. """
 
         # Estimate the importance weights for fusion distributions.
+        # For the ICML version of the objective, this uses the dynamics to fit a controller to the demo.
+
+        # TODO - fusion distribution for importance weights is incorrect with changing state space.
+        # Correct thing to do is to get rgb image from the observation, and calculate the corresponding X for each controller.
+        # This is even more important for the demo importance weights, since the dynamics are fitted using the current dynamics.
         demos_logiw, samples_logiw = self.importance_weights()
 
         # Update the learned cost
@@ -325,7 +338,6 @@ class AlgorithmMDGPS(Algorithm):
         M = len(self.prev)
         Md = self._hyperparams['demo_M']
         sampleU_arr = np.vstack((self.sample_list[i].get_U() for i in xrange(M)))
-        sampleX_arr = np.vstack((self.sample_list[i].get_X() for i in xrange(M)))
         sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
         samples_logiw = {i: samples_logiw[i].reshape((-1, 1)) for i in xrange(M)}
         demos_logiw = {i: demos_logiw[i].reshape((-1, 1)) for i in xrange(Md)}
@@ -333,10 +345,10 @@ class AlgorithmMDGPS(Algorithm):
         samples_logiw_arr = np.hstack([samples_logiw[i] for i in xrange(M)]).reshape((-1, 1))
         if not self._hyperparams['global_cost']:
             for i in xrange(M):
-                self.cost[i].update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, self.sample_list[i].get_U(),
-                                self.sample_list[i].get_X(), self.sample_list[i].get_obs(), samples_logiw[i], itr=self.iteration_count)
+                self.cost[i].update(self.demoU, self.demoO, demos_logiw_arr, self.sample_list[i].get_U(),
+                                self.sample_list[i].get_obs(), samples_logiw[i], itr=self.iteration_count)
         else:
-            self.cost.update(self.demoU, self.demoX, self.demoO, demos_logiw_arr, sampleU_arr, sampleX_arr,
+            self.cost.update(self.demoU, self.demoO, demos_logiw_arr, sampleU_arr,
                                                         sampleO_arr, samples_logiw_arr, itr=self.iteration_count)
 
     def compute_costs(self, m, eta):

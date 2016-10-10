@@ -100,7 +100,7 @@ class PolicyOptTf(PolicyOpt):
                                last_conv_vars=self.last_conv_vars)
         self.saver = tf.train.Saver()
 
-    def update(self, obs, tgt_mu, tgt_prc, tgt_wt, iter_count=None):
+    def update(self, obs, tgt_mu, tgt_prc, tgt_wt, iter_count=None, fc_only=False):
         """
         Update policy.
         Args:
@@ -108,6 +108,7 @@ class PolicyOptTf(PolicyOpt):
             tgt_mu: Numpy array of mean controller outputs, N x T x dU.
             tgt_prc: Numpy array of precision matrices, N x T x dU x dU.
             tgt_wt: Numpy array of weights, N x T.
+            fc_only: If true, don't train end-to-end.
         Returns:
             A tensorflow object with updated weights.
         """
@@ -178,7 +179,9 @@ class PolicyOptTf(PolicyOpt):
                     average_loss = 0
             average_loss = 0
 
-        if iter_count != None and iter_count == 0:
+        if fc_only and self._hyperparams['fc_only_iterations'] > 0:
+            TOTAL_ITERS = 0
+        elif iter_count != None and iter_count == 0:
             TOTAL_ITERS = self._hyperparams['init_iterations']
         else:
             TOTAL_ITERS = self._hyperparams['iterations']

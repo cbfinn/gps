@@ -61,8 +61,6 @@ class TfPolicy(Policy):
         Args:
             obs: Observation vector.
         """
-
-        # Normalize obs.
         if len(obs.shape) == 1:
             obs = np.expand_dims(obs, axis=0)
         # Assume that features don't depend on the robot config, so don't normalize by scale and bias.

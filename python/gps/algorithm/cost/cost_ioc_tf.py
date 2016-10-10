@@ -101,16 +101,14 @@ class CostIOCTF(Cost):
 
         return l, lx, lu, lxx, luu, lux
 
-    def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, itr=-1):
+    def update(self, demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=-1):
         """
         Learn cost function with generic function representation.
         Args:
             demoU: the actions of demonstrations.
-            demoX: the states of demonstrations.
             demoO: the observations of demonstrations.
             d_log_iw: log importance weights for demos.
             sampleU: the actions of samples.
-            sampleX: the states of samples.
             sampleO: the observations of samples.
             s_log_iw: log importance weights for samples.
         """

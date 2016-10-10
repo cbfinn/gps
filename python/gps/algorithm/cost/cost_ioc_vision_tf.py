@@ -25,7 +25,6 @@ class CostIOCVisionTF(Cost):
         config.update(hyperparams)
         Cost.__init__(self, config)
 
-        self._dO = self._hyperparams['dO']
         self._T = self._hyperparams['T']
         self.use_jacobian = self._hyperparams['use_jacobian']
 
@@ -51,6 +50,11 @@ class CostIOCVisionTF(Cost):
         for t in range(T):
             lx[t], lxx[t] = self.run([self.dldx, self.dldxx], test_obs_single=obs[t])
         return lx, lxx
+
+    def get_features(self, obs):
+        """ Get the image features corresponding to the rgb image.
+        """
+        return self.run([self.outputs['test_feat']], test_obs=obs)
 
     def eval(self, sample):
         """
@@ -84,7 +88,7 @@ class CostIOCVisionTF(Cost):
         lu = wu_mult * self._hyperparams['wu'] * sample_u
         luu = wu_mult * np.tile(np.diag(self._hyperparams['wu']), [T, 1, 1])
 
-
+        import pdb; pdb.set_trace()
         if self.use_jacobian and (END_EFFECTOR_POINT_JACOBIANS in sample._data):
             jnt_idx = sample.agent.get_idx_x(JOINT_ANGLES)
             vel_idx = sample.agent.get_idx_x(JOINT_VELOCITIES)
@@ -101,19 +105,18 @@ class CostIOCVisionTF(Cost):
 
         return l, lx, lu, lxx, luu, lux
 
-    def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, itr=-1):
+    def update(self, demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=-1):
         """
         Learn cost function with generic function representation.
         Args:
             demoU: the actions of demonstrations.
-            demoX: the states of demonstrations.
             demoO: the observations of demonstrations.
             d_log_iw: log importance weights for demos.
             sampleU: the actions of samples.
-            sampleX: the states of samples.
             sampleO: the observations of samples.
             s_log_iw: log importance weights for samples.
         """
+        print 'Updating cost'
         demo_torque_norm = np.sum(demoU **2, axis=2, keepdims=True)
         sample_torque_norm = np.sum(sampleU **2, axis=2, keepdims=True)
 
@@ -124,6 +127,7 @@ class CostIOCVisionTF(Cost):
 
         demo_batch = self._hyperparams['demo_batch_size']
         samp_batch = self._hyperparams['sample_batch_size']
+        # TODO - make sure this is on GPU.
         for i, (d_batch, s_batch) in enumerate(
                 izip(d_sampler.with_replacement(batch_size=self.demo_batch_size), \
                     s_sampler.with_replacement(batch_size=self.sample_batch_size))):
@@ -147,7 +151,6 @@ class CostIOCVisionTF(Cost):
         # Pass in net parameter by protostring (could add option to input prototxt file).
         network_arch_params = self._hyperparams['network_arch_params']
 
-        network_arch_params['dim_input'] = self._dO
         network_arch_params['demo_batch_size'] = self._hyperparams['demo_batch_size']
         if sample_batch_size is None:
             network_arch_params['sample_batch_size'] = self._hyperparams['sample_batch_size']
@@ -160,6 +163,21 @@ class CostIOCVisionTF(Cost):
         network_arch_params['mono_reg_weight'] = self._hyperparams['mono_reg_weight']
         network_arch_params['gp_reg_weight'] = self._hyperparams['gp_reg_weight']
         network_arch_params['learn_wu'] = self._hyperparams['learn_wu']
+
+
+        x_idx, img_idx, i = [], [], 0
+        for sensor in self._hyperparams['network_params']['obs_include']:
+            dim = self._hyperparams['network_params']['sensor_dims'][sensor]
+            if sensor in self._hyperparams['network_params']['obs_image_data']:
+                img_idx = img_idx + list(range(i, i+dim))
+            else:
+                x_idx = x_idx + list(range(i, i+dim))
+            i += dim
+        network_arch_params['dim_input'] = len(img_idx) + len(x_idx)
+        self._dO = network_arch_params['dim_input']
+
+        network_arch_params['x_idx'] = x_idx
+        network_arch_params['img_idx'] = img_idx
         inputs, outputs = multimodal_nn_cost_net_tf(**network_arch_params)
         self.outputs = outputs
 
@@ -175,7 +193,8 @@ class CostIOCVisionTF(Cost):
         l_single, obs_single = outputs['test_loss_single'], inputs['test_obs_single']
         # NOTE - we are assuming that the features here are the same
         # as the state X
-        feat_single = outputs['test_feat_single'] # we're assuming
+        feat_single = outputs['test_feat_single']
+
         self.dldx =  tf.gradients(l_single, feat_single)[0]
         self.dldxx = jacobian(self.dldx, feat_single)
 

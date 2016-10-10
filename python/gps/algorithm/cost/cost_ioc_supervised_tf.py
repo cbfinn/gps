@@ -37,13 +37,13 @@ class CostIOCSupervised(CostIOCTF):
         self.sup_samples = train_samples
         self.sup_costs = train_costs
 
-    def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, itr=-1):
+    def update(self, demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=-1):
         if self.finetune:
             if self.multiobj:
-                self.update_multiobj(demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, self.sup_samples,
+                self.update_multiobj(demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, self.sup_samples,
                                      self.sup_costs, itr=itr)
             else:
-                return super(CostIOCSupervised, self).update(demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, itr=itr)
+                return super(CostIOCSupervised, self).update(demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=itr)
         else:
             pass
 
@@ -95,17 +95,15 @@ class CostIOCSupervised(CostIOCTF):
                 break
 
 
-    def update_multiobj(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw,
+    def update_multiobj(self, demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw,
                         sup_samples, sup_cost_labels, itr=-1):
         """
         Learn cost function with generic function representation.
         Args:
             demoU: the actions of demonstrations.
-            demoX: the states of demonstrations.
             demoO: the observations of demonstrations.
             d_log_iw: log importance weights for demos.
             sampleU: the actions of samples.
-            sampleX: the states of samples.
             sampleO: the observations of samples.
             s_log_iw: log importance weights for samples.
         """
