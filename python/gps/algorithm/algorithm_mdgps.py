@@ -106,7 +106,8 @@ class AlgorithmMDGPS(Algorithm):
                     for sample in self.cur[m].sample_list:
                         sample.update_features(self.cost) # assumes a single cost.
                 if self.cur[0].traj_info.dynamics.prior._max_samples > len(self.cur[0].sample_list):
-                    print logging.WARNING('refitting dynamics -- updating prior with the same set of samples')
+                    print logging.WARN('refitting dynamics -- updating prior with the same set of samples')
+                logging.INFO('Refitting dynamics.')
                 self._update_dynamics()  # recompute dynamics with new state space.
 
         # NOTE: FOR IOC WITH VISION:
@@ -204,6 +205,7 @@ class AlgorithmMDGPS(Algorithm):
             m: Condition
             init: Whether this is the initial fitting of the policy.
         """
+        logging.INFO('Updating policy fit.')
         dX, dU, T = self.dX, self.dU, self.T
         # Choose samples to use.
         samples = self.cur[m].sample_list
