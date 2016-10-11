@@ -197,6 +197,17 @@ class CostIOCVisionTF(Cost):
         self.dldx =  tf.gradients(l_single, feat_single)[0]
         self.dldxx = jacobian(self.dldx, feat_single)
 
+        # Get all conv weights
+        params = tf.all_variables()
+        vision_params = tf.get_collection(tf.GraphKeys.VARIABLES, scope='conv')
+        self.vision_params = vision_params
+        self.vision_params_assign_placeholders = [tf.placeholder(tf.float32, shape=param.get_shape()) for
+                                                  param in self.vision_params]
+
+        self.vision_params_assign_ops = [tf.assign(self.vision_params[i],
+                                                   self.vision_params_assign_placeholders[i])
+                                         for i in range(len(self.vision_params))]
+
         self.saver = tf.train.Saver()
 
         self.session = tf.Session()
@@ -207,6 +218,16 @@ class CostIOCVisionTF(Cost):
             feed_dict = {self.input_dict[k]:v for (k,v) in feeds.iteritems()}
             result = self.session.run(targets, feed_dict=feed_dict)
         return result
+
+    def get_vision_params(self):
+        param_values = self.run(self.vision_params)
+        return {self.vision_params[i].name:param_values[i] for i in range(len(self.vision_params))}
+
+    def set_vision_params(self, param_values):
+        value_list = [param_values[self.vision_params[i].name] for i in range(len(self.vision_params))]
+        feeds = {self.vision_params_assign_placeholders[i]:value_list[i] for i in range(len(self.vision_params))}
+        with self.graph.as_default():
+            self.session.run(self.vision_params_assign_ops, feeds)
 
     def save_model(self, fname):
         LOGGER.debug('Saving model to: %s', fname)

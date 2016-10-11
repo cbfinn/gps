@@ -101,6 +101,9 @@ class AlgorithmMDGPS(Algorithm):
         if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
             if self._hyperparams['ioc_maxent_iter'] == -1 or itr < self._hyperparams['ioc_maxent_iter']:
                 # TODO - copy conv layers from policy to cost here, at all iterations.
+                conv_params = self.policy_opt.policy.get_copy_params()
+                self.cost.set_vision_params(conv_params)
+
                 self._update_cost()
                 for m in range(self.M):
                     for sample in self.cur[m].sample_list:
@@ -124,6 +127,8 @@ class AlgorithmMDGPS(Algorithm):
 
         # S-step
         # TODO - copy conv layers from cost to policy here.
+        conv_params = self.cost.get_vision_params()
+        self.policy_opt.policy.set_copy_params(conv_params)
         self._update_policy()
 
         # Computing KL-divergence between sample distribution and demo distribution
