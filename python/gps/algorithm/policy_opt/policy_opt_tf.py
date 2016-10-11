@@ -78,7 +78,7 @@ class PolicyOptTf(PolicyOpt):
         self.precision_tensor = tf_map.get_precision_tensor()
         self.action_tensor = tf_map.get_target_output_tensor()
         self.act_op = tf_map.get_output_op()
-        self.feat_op = tf_map.get_feature_op()  # TODO - make feature_op method
+        self.feat_op = tf_map.get_feature_op()
         self.loss_scalar = tf_map.get_loss_op()
         self.debug = tf_map.debug
         self.fc_vars = fc_vars

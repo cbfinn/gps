@@ -100,20 +100,14 @@ class AlgorithmMDGPS(Algorithm):
 
         if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
             if self._hyperparams['ioc_maxent_iter'] == -1 or itr < self._hyperparams['ioc_maxent_iter']:
-                # TODO - copy conv layers from policy if itr > 0
+                # TODO - copy conv layers from policy to cost here, at all iterations.
                 self._update_cost()
                 for m in range(self.M):
                     for sample in self.cur[m].sample_list:
                         sample.update_features(self.cost) # assumes a single cost.
                 if self.cur[0].traj_info.dynamics.prior._max_samples > len(self.cur[0].sample_list):
-                    print logging.WARN('refitting dynamics -- updating prior with the same set of samples')
-                logging.INFO('Refitting dynamics.')
+                    print LOGGER.warn('refitting dynamics -- updating prior with the same set of samples')
                 self._update_dynamics()  # recompute dynamics with new state space.
-
-        # NOTE: FOR IOC WITH VISION:
-        # TODO - need to copy vision weights from cost to policy and the reverse.
-        # TODO - after update_cost and update_policy is called, the state X in the samples is no longer valid. This is fine for most of the algorithm, but it's not
-        # fine for calculating the importance weights (the fusion distribution), AND, we need to recalculate X for the demos, so that it matches the dynamics.
 
         # Update policy linearizations.
         for m in range(self.M):
@@ -147,6 +141,7 @@ class AlgorithmMDGPS(Algorithm):
         Args:
             fc_only: whether or not to only train the fc layers (no e2e)
         """
+        LOGGER.info('Updating policy.')
         dU, dO, T = self.dU, self.dO, self.T
         # Compute target mean, cov, and weight for each sample.
         obs_data, tgt_mu = np.zeros((0, T, dO)), np.zeros((0, T, dU))
@@ -205,7 +200,7 @@ class AlgorithmMDGPS(Algorithm):
             m: Condition
             init: Whether this is the initial fitting of the policy.
         """
-        logging.INFO('Updating policy fit.')
+        LOGGER.info('Updating policy fit.')
         dX, dU, T = self.dX, self.dU, self.T
         # Choose samples to use.
         samples = self.cur[m].sample_list
@@ -251,6 +246,7 @@ class AlgorithmMDGPS(Algorithm):
         Calculate new step sizes. This version uses the same step size
         for all conditions.
         """
+        LOGGER.info('Adjusting step')
         # Compute previous cost and previous expected cost.
         prev_M = len(self.prev) # May be different in future.
         prev_laplace = np.arange(prev_M).astype(np.float32)
@@ -330,9 +326,13 @@ class AlgorithmMDGPS(Algorithm):
         # Estimate the importance weights for fusion distributions.
         # For the ICML version of the objective, this uses the dynamics to fit a controller to the demo.
 
-        # TODO - fusion distribution for importance weights is incorrect with changing state space.
+        # TODO - fusion distribution for importance weights is incorrect with changing state space (IOC w/ vision).
+        # Shouldn't be catastropic, importance weights are still mostly right without fusion distribution.
         # Correct thing to do is to get rgb image from the observation, and calculate the corresponding X for each controller.
-        # This is even more important for the demo importance weights, since the dynamics are fitted using the current dynamics.
+
+        # TODO - What is catastrophic is if an empirical demo controller is fit using dynamics fit to
+        # a different state space. To handle, this the demoX are recalculated every iteration, BUT we need
+        # the policy conv layers to be copied over to the cost.
         demos_logiw, samples_logiw = self.importance_weights()
 
         # Update the learned cost

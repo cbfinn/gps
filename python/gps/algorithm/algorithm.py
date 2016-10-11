@@ -122,6 +122,7 @@ class Algorithm(object):
         Instantiate dynamics objects and update prior. Fit dynamics to
         current samples.
         """
+        LOGGER.info('Fitting dynamics.')
         for m in range(self.M):
             cur_data = self.cur[m].sample_list
             X = cur_data.get_X()
@@ -152,6 +153,7 @@ class Algorithm(object):
         """
         Compute new linear Gaussian controllers.
         """
+        LOGGER.info('Updating trajectories.')
         if not hasattr(self, 'new_traj_distr'):
             self.new_traj_distr = [
                 self.cur[cond].traj_distr for cond in range(self.M)
@@ -406,8 +408,16 @@ class Algorithm(object):
         Md = self._hyperparams['demo_M']
         demos_logiw, samples_logiw = {}, {}
         demoU = {i: self.demoU for i in xrange(M)}
-        demoX = {i: self.demoX for i in xrange(M)}
         demoO = {i: self.demoO for i in xrange(M)}
+        demoX = {i: self.demoX for i in xrange(M)}
+        # Recompute demoX here using self.cost. Assumes that the features are the last
+        # part of the state and that the dynamics are fit to the feature encoder in
+        # the cost.
+        for m in range(M):
+            for samp in range(demoO[m].shape[0]):
+                demoFeat = self.cost.get_features(demoO[m][samp])
+                dF = demoFeat.shape[1]
+                demoX[m][samp, :,-dF:] = demoFeat
         if self._hyperparams['bootstrap']:
             self.demo_traj[itr] = {}
         else:
