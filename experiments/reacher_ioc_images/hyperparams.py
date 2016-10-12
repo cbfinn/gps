@@ -165,8 +165,8 @@ algorithm['policy_opt'] = {
     },
     'network_model': multi_modal_network_fp,
     'fc_only_iterations': 5000,
-    'init_iterations': 1000,
-    'iterations': 1000,
+    'init_iterations': 0, #1000,
+    'iterations': 0, #1000,
     'weights_file_prefix': EXP_DIR + 'policy',
 }
 
@@ -194,7 +194,7 @@ algorithm['init_traj_distr'] = {
 
 torque_cost_1 = [{
     'type': CostAction,
-    'wu': 1000 / PR2_GAINS,
+    'wu': 1.0 / PR2_GAINS,
 } for i in range(common['conditions'])]
 
 
@@ -216,7 +216,7 @@ algorithm['gt_cost'] = [{
 
 algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
     'type': CostIOCVisionTF,
-    'wu': 2 / PR2_GAINS,
+    'wu': 2000 / PR2_GAINS,
     'network_params': {
         'obs_include': agent['obs_include'],
         'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET],

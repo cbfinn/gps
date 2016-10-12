@@ -159,7 +159,8 @@ class PolicyOptTf(PolicyOpt):
         average_loss = 0
         np.random.shuffle(idx)
 
-        if iter_count != None and iter_count > 0:
+        #if iter_count != None and iter_count > 0:
+        if True:
             feed_dict = {self.obs_tensor: obs}
             num_values = obs.shape[0]
             conv_values = self.solver.get_last_conv_values(self.sess, feed_dict, num_values, self.batch_size)
