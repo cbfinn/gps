@@ -227,7 +227,7 @@ algorithm['cost'] = {
         'sensor_dims': SENSOR_DIMS,
     },
     'T': agent['T'],
-    'iterations': 1000,  # TODO - we might want to make fc only training here too.
+    'iterations': 5000,  # TODO - we might want to make fc only training here too.
     'demo_batch_size': 5,  # are we going to run out of memory? # also should we init from policy feat?
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
