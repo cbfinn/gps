@@ -214,7 +214,7 @@ algorithm['gt_cost'] = [{
     'weights': [2.0, 1.0],
 }  for i in range(common['conditions'])]
 
-algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
+algorithm['cost'] = {
     'type': CostIOCVisionTF,
     'wu': 2000 / PR2_GAINS,
     'network_params': {
