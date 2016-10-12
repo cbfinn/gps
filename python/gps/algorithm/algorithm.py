@@ -410,10 +410,12 @@ class Algorithm(object):
         demoU = {i: self.demoU for i in xrange(M)}
         demoO = {i: self.demoO for i in xrange(M)}
         demoX = {i: self.demoX for i in xrange(M)}
-        # Recompute demoX here using self.cost. Assumes that the features are the last
-        # part of the state and that the dynamics are fit to the feature encoder in
-        # the cost.
-        for m in range(M):
+
+        # For IOC+vision, recompute demoX here using self.cost. Assumes
+        # that the features are the last part of the state and that the dynamics
+        # are fit to the feature encoder in the cost.
+        if 'get_features' in dir(self.cost):
+          for m in range(M):
             for samp in range(demoO[m].shape[0]):
                 demoFeat = self.cost.get_features(demoO[m][samp])
                 dF = demoFeat.shape[1]
