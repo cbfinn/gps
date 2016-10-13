@@ -62,10 +62,16 @@ class Algorithm(object):
         self.traj_opt = hyperparams['traj_opt']['type'](
             hyperparams['traj_opt']
         )
-        self.cost = [
-            hyperparams['cost']['type'](hyperparams['cost'])
-            for _ in range(self.M)
-        ]
+        if type(hyperparams['cost']) == list:
+            self.cost = [
+                hyperparams['cost'][i]['type'](hyperparams['cost'][i])
+                for i in range(self.M)
+            ]
+        else:
+            self.cost = [
+                hyperparams['cost']['type'](hyperparams['cost'])
+                for _ in range(self.M)
+            ]
         self.base_kl_step = self._hyperparams['kl_step']
 
     @abc.abstractmethod
