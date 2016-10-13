@@ -150,6 +150,7 @@ algorithm['dynamics'] = {
 algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
 }
+
 if ALGORITHM_NN_LIBRARY == "tf":
     algorithm['policy_opt'] = {
         'type': PolicyOptTf,
@@ -161,11 +162,11 @@ if ALGORITHM_NN_LIBRARY == "tf":
         'iterations': 3000,
         'network_model': example_tf_network
     }
-elif ALGORITHM_NN_LIBRARY = "caffe":
+elif ALGORITHM_NN_LIBRARY == "caffe":
     algorithm['policy_opt'] = {
-    'type': PolicyOptCaffe,
-    'weights_file_prefix': EXP_DIR + 'policy',
-    'iterations': 5000,
+        'type': PolicyOptCaffe,
+        'weights_file_prefix': EXP_DIR + 'policy',
+        'iterations': 5000,
     }
 
 algorithm['policy_prior'] = {
