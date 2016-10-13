@@ -130,7 +130,6 @@ algorithm['policy_opt'] = {
     },
     'network_model': multi_modal_network_fp,
     'fc_only_iterations': 5000,
-    'init_iterations': 1000,
     'iterations': 1000,
     'weights_file_prefix': EXP_DIR + 'policy',
 }

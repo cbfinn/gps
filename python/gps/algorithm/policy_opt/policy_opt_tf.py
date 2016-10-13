@@ -98,7 +98,7 @@ class PolicyOptTf(PolicyOpt):
                                last_conv_vars=self.last_conv_vars)
         self.saver = tf.train.Saver()
 
-    def update(self, obs, tgt_mu, tgt_prc, tgt_wt, iter_count=None, fc_only=False):
+    def update(self, obs, tgt_mu, tgt_prc, tgt_wt):
         """
         Update policy.
         Args:
@@ -106,7 +106,6 @@ class PolicyOptTf(PolicyOpt):
             tgt_mu: Numpy array of mean controller outputs, N x T x dU.
             tgt_prc: Numpy array of precision matrices, N x T x dU x dU.
             tgt_wt: Numpy array of weights, N x T.
-            fc_only: If true, don't train end-to-end.
         Returns:
             A tensorflow object with updated weights.
         """
@@ -156,8 +155,7 @@ class PolicyOptTf(PolicyOpt):
         average_loss = 0
         np.random.shuffle(idx)
 
-        #if iter_count != None and iter_count > 0:
-        if True:
+        if self._hyperparams['fc_only_iterations'] > 0:
             feed_dict = {self.obs_tensor: obs}
             num_values = obs.shape[0]
             conv_values = self.solver.get_last_conv_values(self.sess, feed_dict, num_values, self.batch_size)
@@ -172,20 +170,13 @@ class PolicyOptTf(PolicyOpt):
                 average_loss += train_loss
 
                 if (i+1) % 500 == 0:
-                    LOGGER.debug('tensorflow iteration %d, average loss %f',
+                    LOGGER.info('tensorflow iteration %d, average loss %f',
                                     i, average_loss / 500)
-                    print('supervised fc_only tf loss is ' + str((average_loss)))
                     average_loss = 0
             average_loss = 0
 
-        if fc_only and self._hyperparams['fc_only_iterations'] > 0:
-            TOTAL_ITERS = 0
-        elif iter_count != None and iter_count == 0:
-            TOTAL_ITERS = self._hyperparams['init_iterations']
-        else:
-            TOTAL_ITERS = self._hyperparams['iterations']
         # actual training.
-        for i in range(TOTAL_ITERS):
+        for i in range(self._hyperparams['iterations']):
             # Load in data for this batch.
             start_idx = int(i * self.batch_size %
                             (batches_per_epoch * self.batch_size))
@@ -197,9 +188,8 @@ class PolicyOptTf(PolicyOpt):
 
             average_loss += train_loss
             if (i+1) % 50 == 0:
-                LOGGER.debug('tensorflow iteration %d, average loss %f',
+                LOGGER.info('tensorflow iteration %d, average loss %f',
                              i+1, average_loss / 50)
-                print ('supervised tf loss is ' + str(average_loss))
                 average_loss = 0
 
         feed_dict = {self.obs_tensor: obs}
