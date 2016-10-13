@@ -21,7 +21,9 @@ enum SampleType {
   CONTEXT_IMAGE = 14; //initial image of the agent's environment.
   CONTEXT_IMAGE_SIZE = 15;
   IMAGE_FEAT = 16;
-  TOTAL_DATA_TYPES = 17;
+  END_EFFECTOR_POINTS_NO_TARGET = 17;
+  END_EFFECTOR_POINT_VELOCITIES_NO_TARGET = 18;
+  TOTAL_DATA_TYPES = 19;
 }
 
 // Message containing the data for a single sample.

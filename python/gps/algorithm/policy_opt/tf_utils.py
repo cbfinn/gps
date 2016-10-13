@@ -11,12 +11,13 @@ class TfMap:
     """ a container for inputs, outputs, and loss in a tf graph. This object exists only
     to make well-defined the tf inputs, outputs, and losses used in the policy_opt_tf class."""
 
-    def __init__(self, input_tensor, target_output_tensor, precision_tensor, output_op, loss_op):
+    def __init__(self, input_tensor, target_output_tensor, precision_tensor, output_op, loss_op, fp=None):
         self.input_tensor = input_tensor
         self.target_output_tensor = target_output_tensor
         self.precision_tensor = precision_tensor
         self.output_op = output_op
         self.loss_op = loss_op
+        self.img_feat_op = fp
 
     @classmethod
     def init_from_lists(cls, inputs, outputs, loss):
@@ -47,6 +48,9 @@ class TfMap:
 
     def get_output_op(self):
         return self.output_op
+
+    def get_feature_op(self):
+        return self.img_feat_op
 
     def set_output_op(self, output_op):
         self.output_op = output_op
