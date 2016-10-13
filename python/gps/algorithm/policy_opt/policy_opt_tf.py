@@ -46,8 +46,6 @@ class PolicyOptTf(PolicyOpt):
         self.solver = None
         self.feat_op = None
         self.feat_vals = None
-        self.debug = None
-        self.debug_vals = None
         self.init_network()
         self.init_solver()
         self.var = self._hyperparams['init_var'] * np.ones(dU)
@@ -81,7 +79,6 @@ class PolicyOptTf(PolicyOpt):
         self.act_op = tf_map.get_output_op()
         self.feat_op = tf_map.get_feature_op()
         self.loss_scalar = tf_map.get_loss_op()
-        self.debug = tf_map.debug
         self.fc_vars = fc_vars
         self.last_conv_vars = last_conv_vars
 
@@ -208,7 +205,6 @@ class PolicyOptTf(PolicyOpt):
         feed_dict = {self.obs_tensor: obs}
         num_values = obs.shape[0]
         self.feat_vals = self.solver.get_var_values(self.sess, self.feat_op, feed_dict, num_values, self.batch_size)
-        self.debug_vals = self.solver.get_var_values(self.sess, self.debug, feed_dict, num_values, self.batch_size)
         # Keep track of tensorflow iterations for loading solver states.
         self.tf_iter += self._hyperparams['iterations']
 

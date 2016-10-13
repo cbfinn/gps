@@ -260,7 +260,7 @@ def multi_modal_network_fp(dim_input=27, dim_output=7, batch_size=25, network_co
     fc_vars = weights_FC + biases_FC
 
     loss = euclidean_loss_layer(a=action, b=fc_output, precision=precision, batch_size=batch_size)
-    nnet = TfMap.init_from_lists([nn_input, action, precision], [fc_output], [loss], fp=fp, debug=conv_layer_2)
+    nnet = TfMap.init_from_lists([nn_input, action, precision], [fc_output], [loss], fp=fp)
     last_conv_vars = fc_input
 
     return nnet, fc_vars, last_conv_vars

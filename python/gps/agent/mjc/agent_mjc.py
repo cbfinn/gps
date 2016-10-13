@@ -12,7 +12,7 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
         END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
         CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE, IMAGE_FEAT, \
-        END_EFFECTOR_POINTS_NO_TARGET
+        END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET
 
 from gps.sample.sample import Sample
 
@@ -185,6 +185,11 @@ class AgentMuJoCo(Agent):
         eepts = data['site_xpos'].flatten()
         sample.set(END_EFFECTOR_POINTS, eepts, t=0)
         sample.set(END_EFFECTOR_POINT_VELOCITIES, np.zeros_like(eepts), t=0)
+
+        if (END_EFFECTOR_POINTS_NO_TARGET in self._hyperparams['obs_include']):
+            sample.set(END_EFFECTOR_POINTS_NO_TARGET, np.delete(eepts, self._hyperparams['target_idx']), t=0)
+            sample.set(END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, np.delete(np.zeros_like(eepts), self._hyperparams['target_idx']), t=0)
+
         jac = np.zeros([eepts.shape[0], self._model[condition]['nq']])
         for site in range(eepts.shape[0] // 3):
             idx = site * 3
@@ -235,13 +240,18 @@ class AgentMuJoCo(Agent):
         """
         sample.set(JOINT_ANGLES, np.array(mj_X[self._joint_idx]), t=t+1)
         sample.set(JOINT_VELOCITIES, np.array(mj_X[self._vel_idx]), t=t+1)
-        curr_eepts = self._data['site_xpos'].flatten()
-        sample.set(END_EFFECTOR_POINTS, curr_eepts, t=t+1)
+        cur_eepts = self._data['site_xpos'].flatten()
+        sample.set(END_EFFECTOR_POINTS, cur_eepts, t=t+1)
         prev_eepts = sample.get(END_EFFECTOR_POINTS, t=t)
-        eept_vels = (curr_eepts - prev_eepts) / self._hyperparams['dt']
+        eept_vels = (cur_eepts - prev_eepts) / self._hyperparams['dt']
         sample.set(END_EFFECTOR_POINT_VELOCITIES, eept_vels, t=t+1)
-        jac = np.zeros([curr_eepts.shape[0], self._model[condition]['nq']])
-        for site in range(curr_eepts.shape[0] // 3):
+
+        if (END_EFFECTOR_POINTS_NO_TARGET in self._hyperparams['obs_include']):
+            sample.set(END_EFFECTOR_POINTS_NO_TARGET, np.delete(cur_eepts, self._hyperparams['target_idx']), t=t+1)
+            sample.set(END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, np.delete(eept_vels, self._hyperparams['target_idx']), t=t+1)
+
+        jac = np.zeros([cur_eepts.shape[0], self._model[condition]['nq']])
+        for site in range(cur_eepts.shape[0] // 3):
             idx = site * 3
             jac[idx:(idx+3), :] = self._world[condition].get_jac_site(site)
         sample.set(END_EFFECTOR_POINT_JACOBIANS, jac, t=t+1)

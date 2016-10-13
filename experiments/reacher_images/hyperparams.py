@@ -105,6 +105,7 @@ algorithm = {
     'kl_step': 1.0,
     'min_step_mult': 0.1,
     'max_step_mult': 3.0,
+    'max_ent_traj': 0.001,
     'policy_sample_mode': 'replace',
     'sample_on_policy': True,
     'plot_dir': EXP_DIR,
