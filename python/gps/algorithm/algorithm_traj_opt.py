@@ -101,12 +101,13 @@ class AlgorithmTrajOpt(Algorithm):
     def compute_costs(self, m, eta):
         """ Compute cost estimates used in the LQR backward pass. """
         traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
-        fCm, fcv = traj_info.Cm / eta, traj_info.cv / eta
+        multiplier = self._hyperparams['max_ent_traj']
+        fCm, fcv = traj_info.Cm / (eta + multiplier), traj_info.cv / (eta + multiplier)
         K, ipc, k = traj_distr.K, traj_distr.inv_pol_covar, traj_distr.k
 
         # Add in the trajectory divergence term.
         for t in range(self.T - 1, -1, -1):
-            fCm[t, :, :] += np.vstack([
+            fCm[t, :, :] += eta / (eta + multiplier) * np.vstack([
                 np.hstack([
                     K[t, :, :].T.dot(ipc[t, :, :]).dot(K[t, :, :]),
                     -K[t, :, :].T.dot(ipc[t, :, :])
@@ -115,7 +116,7 @@ class AlgorithmTrajOpt(Algorithm):
                     -ipc[t, :, :].dot(K[t, :, :]), ipc[t, :, :]
                 ])
             ])
-            fcv[t, :] += np.hstack([
+            fcv[t, :] += eta / (eta + multiplier) * np.hstack([
                 K[t, :, :].T.dot(ipc[t, :, :]).dot(k[t, :]),
                 -ipc[t, :, :].dot(k[t, :])
             ])

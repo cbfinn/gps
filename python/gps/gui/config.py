@@ -116,10 +116,18 @@ def generate_experiment_info(config):
     common = config['common']
     algorithm = config['algorithm']
 
-    algorithm_cost_type = algorithm['cost']['type'].__name__
-    if (algorithm_cost_type) == 'CostSum':
-        algorithm_cost_type += '(%s)' % ', '.join(
-                map(lambda cost: cost['type'].__name__, algorithm['cost']['costs']))
+    if type(algorithm['cost']) == list:
+        algorithm_cost_type = algorithm['cost'][0]['type'].__name__
+        if (algorithm_cost_type) == 'CostSum':
+            algorithm_cost_type += '(%s)' % ', '.join(
+                    map(lambda cost: cost['type'].__name__,
+                        algorithm['cost'][0]['costs']))
+    else:
+        algorithm_cost_type = algorithm['cost']['type'].__name__
+        if (algorithm_cost_type) == 'CostSum':
+            algorithm_cost_type += '(%s)' % ', '.join(
+                    map(lambda cost: cost['type'].__name__,
+                        algorithm['cost']['costs']))
     return (
         'exp_name:   ' + str(common['experiment_name'])              + '\n' +
         'alg_type:   ' + str(algorithm['type'].__name__)             + '\n' +

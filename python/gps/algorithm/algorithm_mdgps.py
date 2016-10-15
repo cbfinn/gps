@@ -206,6 +206,7 @@ class AlgorithmMDGPS(Algorithm):
         """ Compute cost estimates used in the LQR backward pass. """
         traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
         pol_info = self.cur[m].pol_info
+        multiplier = self._hyperparams['max_ent_traj']
         T, dU, dX = traj_distr.T, traj_distr.dU, traj_distr.dX
         Cm, cv = np.copy(traj_info.Cm), np.copy(traj_info.cv)
 
@@ -226,7 +227,7 @@ class AlgorithmMDGPS(Algorithm):
             PKLv[t, :] = np.concatenate([
                 KB.T.dot(inv_pol_S).dot(kB), -inv_pol_S.dot(kB)
             ])
-            fCm[t, :, :] = (Cm[t, :, :] + PKLm[t, :, :] * eta) / (eta)
-            fcv[t, :] = (cv[t, :] + PKLv[t, :] * eta) / (eta)
+            fCm[t, :, :] = (Cm[t, :, :] + PKLm[t, :, :] * eta) / (eta + multiplier)
+            fcv[t, :] = (cv[t, :] + PKLv[t, :] * eta) / (eta + multiplier)
 
         return fCm, fcv

@@ -20,17 +20,27 @@ class TfPolicy(Policy):
         sess: tf session.
         device_string: tf device string for running on either gpu or cpu.
     """
-    def __init__(self, dU, obs_tensor, act_op, var, sess, device_string):
+    def __init__(self, dU, obs_tensor, act_op, feat_op, var, sess, device_string, copy_param_scope=None):
         Policy.__init__(self)
         self.dU = dU
         self.obs_tensor = obs_tensor
         self.act_op = act_op
+        self.feat_op = feat_op
         self.sess = sess
         self.device_string = device_string
         self.chol_pol_covar = np.diag(np.sqrt(var))
         self.scale = None  # must be set from elsewhere based on observations
         self.bias = None
         self.x_idx = None
+
+        if copy_param_scope:
+            self.copy_params = tf.get_collection(tf.GraphKeys.VARIABLES, scope=copy_param_scope)
+            self.copy_params_assign_placeholders = [tf.placeholder(tf.float32, shape=param.get_shape()) for
+                                                      param in self.copy_params]
+
+            self.copy_params_assign_ops = [tf.assign(self.copy_params[i],
+                                                     self.copy_params_assign_placeholders[i])
+                                             for i in range(len(self.copy_params))]
 
     def act(self, x, obs, t, noise):
         """
@@ -53,6 +63,29 @@ class TfPolicy(Policy):
         else:
             u = action_mean + self.chol_pol_covar.T.dot(noise)
         return u[0]  # the DAG computations are batched by default, but we use batch size 1.
+
+    def get_features(self, obs):
+        """
+        Return the image features for an observation.
+        Args:
+            obs: Observation vector.
+        """
+        if len(obs.shape) == 1:
+            obs = np.expand_dims(obs, axis=0)
+        # Assume that features don't depend on the robot config, so don't normalize by scale and bias.
+        with tf.device(self.device_string):
+            feat = self.sess.run(self.feat_op, feed_dict={self.obs_tensor: obs})
+        return feat[0]  # the DAG computations are batched by default, but we use batch size 1.
+
+    def get_copy_params(self):
+        param_values = self.sess.run(self.copy_params)
+        return {self.copy_params[i].name:param_values[i] for i in range(len(self.copy_params))}
+
+    def set_copy_params(self, param_values):
+        value_list = [param_values[self.copy_params[i].name] for i in range(len(self.copy_params))]
+        feeds = {self.copy_params_assign_placeholders[i]:value_list[i] for i in range(len(self.copy_params))}
+        self.sess.run(self.copy_params_assign_ops, feed_dict=feeds)
+
 
     def pickle_policy(self, deg_obs, deg_action, checkpoint_path, goal_state=None, should_hash=False):
         """

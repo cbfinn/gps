@@ -470,6 +470,7 @@ class AlgorithmBADMM(Algorithm):
         """ Compute cost estimates used in the LQR backward pass. """
         traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
         pol_info = self.cur[m].pol_info
+        multiplier = self._hyperparams['max_ent_traj']
         T, dU, dX = traj_distr.T, traj_distr.dU, traj_distr.dX
         Cm, cv = np.copy(traj_info.Cm), np.copy(traj_info.cv)
 
@@ -512,8 +513,8 @@ class AlgorithmBADMM(Algorithm):
             ])
             wt = pol_info.pol_wt[t]
             fCm[t, :, :] = (Cm[t, :, :] + TKLm[t, :, :] * eta +
-                            PKLm[t, :, :] * wt) / (eta + wt)
+                            PKLm[t, :, :] * wt) / (eta + wt + multiplier)
             fcv[t, :] = (cv[t, :] + TKLv[t, :] * eta +
-                         PKLv[t, :] * wt) / (eta + wt)
+                         PKLv[t, :] * wt) / (eta + wt + multiplier)
 
         return fCm, fcv

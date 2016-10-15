@@ -14,6 +14,8 @@ ALG = {
                               # objects for each condition.
     # Trajectory optimization.
     'traj_opt': None,
+    # Weight of maximum entropy term in trajectory optimization.
+    'max_ent_traj': 0.0,
     # Dynamics hyperaparams.
     'dynamics': None,
     # Costs.
