@@ -44,7 +44,6 @@ class PolicyOptTf(PolicyOpt):
         self.precision_tensor = None
         self.action_tensor = None  # mu true
         self.solver = None
-        self.feat_op = None
         self.feat_vals = None
         self.init_network()
         self.init_solver()
@@ -63,8 +62,6 @@ class PolicyOptTf(PolicyOpt):
             else:
                 self.x_idx = self.x_idx + list(range(i, i+dim))
             i += dim
-        # self.policy.scale = np.eye(len(self.x_idx))
-        # self.policy.bias = np.zeros(len(self.x_idx))
         init_op = tf.initialize_all_variables()
         self.sess.run(init_op)
 
@@ -171,7 +168,7 @@ class PolicyOptTf(PolicyOpt):
 
                 if (i+1) % 500 == 0:
                     LOGGER.info('tensorflow iteration %d, average loss %f',
-                                    i, average_loss / 500)
+                                    i+1, average_loss / 500)
                     average_loss = 0
             average_loss = 0
 
@@ -239,40 +236,6 @@ class PolicyOptTf(PolicyOpt):
         pol_det_sigma = np.tile(np.prod(self.var), [N, T])
 
         return output, pol_sigma, pol_prec, pol_det_sigma
-
-    def linearize(self, obs):
-        """
-        Linearize policy about observations
-        Args:
-            obs: Numpy array of observations that is T x dO
-        """
-        # TODO - modify this in case of image features being in the state.
-        T = obs.shape[0]
-
-        # Initialize
-        pol_K = np.empty((T, self._dU, self._dO))
-        pol_k = np.empty((T, self._dU))
-
-        # Perform scaling
-        x = obs.copy() # Store pre-scaled
-        if self.policy.scale is not None:
-            obs[:, self.x_idx] = \
-                    obs[:, self.x_idx].dot(self.policy.scale) + \
-                    self.policy.bias
-
-        # Constant bias/gain matrices
-        feed_dict = {self.obs_tensor: obs}
-        pol_k = self.sess.run(self.act_op, feed_dict=feed_dict)
-        for u in range(self._dU):
-            pol_K[:, u, :] = self.sess.run(self.grads[u], feed_dict=feed_dict)
-
-        # Correct bias
-        for t in range(T):
-            if self.policy.scale is not None:
-                pol_K[t, :, :] = pol_K[t, :, :].dot(self.policy.scale)
-            pol_k[t, :] -= pol_K[t, :, :].dot(x[t])
-
-        return pol_K, pol_k
 
     def set_ent_reg(self, ent_reg):
         """ Set the entropy regularization. """
