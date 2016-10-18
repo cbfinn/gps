@@ -52,6 +52,10 @@ class GPSMain(object):
         self._data_files_dir = config['common']['data_files_dir']
 
         self.agent = config['agent']['type'](config['agent'])
+        if 'test_agent' in config:
+            self.test_agent = config['test_agent']['type'](config['test_agent'])
+        else:
+            self.test_agent = self.agent
         self.data_logger = DataLogger()
         self.gui = GPSTrainingGUI(config['common'], gui_on=config['gui_on'])
 
@@ -138,7 +142,7 @@ class GPSMain(object):
 
             if self.algorithm._hyperparams['sample_on_policy']:
             # TODO - need to add these to lines back in when we move to mdgps
-                pol_sample_lists = self._take_policy_samples()
+                pol_sample_lists = self._take_policy_samples(idx=self._train_idx)
                 self._log_data(itr, traj_sample_lists, pol_sample_lists)
             else:
                 self._log_data(itr, traj_sample_lists)
@@ -146,7 +150,7 @@ class GPSMain(object):
         self._end()
         return None
 
-    def test_policy(self, itr, N):
+    def test_policy(self, itr, N, testing=True):
         """
         Take N policy samples of the algorithm state at iteration itr,
         for testing the policy to see how it is behaving.
@@ -154,6 +158,7 @@ class GPSMain(object):
         Args:
             itr: the iteration from which to take policy samples
             N: the number of policy samples to take
+            testing: the flag that marks whether we test the policy for untrained cond
         Returns: None
         """
         algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr
@@ -164,7 +169,7 @@ class GPSMain(object):
         traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
             ('traj_sample_itr_%02d.pkl' % itr))
 
-        pol_sample_lists = self._take_policy_samples(N)
+        pol_sample_lists = self._take_policy_samples(N, testing, self._test_idx)
         self.data_logger.pickle(
             self._data_files_dir + ('pol_sample_itr_%02d.pkl' % itr),
             copy.copy(pol_sample_lists)
@@ -301,11 +306,13 @@ class GPSMain(object):
         if self.gui:
             self.gui.stop_display_calculating()
 
-    def _take_policy_samples(self, N=None):
+    def _take_policy_samples(self, N=None, testing=False, idx=None):
         """
         Take samples from the policy to see how it's doing.
         Args:
             N  : number of policy samples to take per condition
+            testing: the flag that marks whether we test the policy for untrained cond
+            idx: a range of index of conditions to take policy samples.
         Returns: None
         """
         if 'verbose_policy_trials' not in self._hyperparams:
@@ -314,19 +321,24 @@ class GPSMain(object):
         verbose = self._hyperparams['verbose_policy_trials']
         if self.gui:
             self.gui.set_status_text('Taking policy samples.')
-        pol_samples = [[None] for _ in range(len(self._test_idx))]
+        pol_samples = [[None] for _ in idx]
         # Since this isn't noisy, just take one sample.
         # TODO: Make this noisy? Add hyperparam?
         # TODO: Take at all conditions for GUI?
-        for cond in range(len(self._test_idx)):
+        for cond in idx:
             if not self.algorithm._hyperparams['multiple_policy']:
-                pol_samples[cond][0] = self.agent.sample(
-                    self.algorithm.policy_opt.policy, self._test_idx[cond],
-                    verbose=True, save=False, noisy=True)
+                if testing:
+                    pol_samples[cond][0] = self.test_agent.sample(
+                        self.algorithm.policy_opt.policy, idx[cond],
+                        verbose=True, save=False, noisy=True)
+                else:
+                    pol_samples[cond][0] = self.agent.sample(
+                        self.algorithm.policy_opt.policy, idx[cond],
+                        verbose=True, save=False, noisy=True)
             else:
                 pol = self.algorithm.policy_opts[cond / self.algorithm.num_policies].policy
-                pol_samples[cond][0] = self.agent.sample(
-                    pol, self._test_idx[cond],
+                pol_samples[cond][0] = self.test_agent.sample(
+                    pol, idx[cond],
                     verbose=True, save=False, noisy=True)
         return [SampleList(samples) for samples in pol_samples]
 
@@ -517,7 +529,7 @@ def main():
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:
             test_policy = threading.Thread(
-                target=lambda: gps.test_policy(itr=current_itr, N=test_policy_N)
+                target=lambda: gps.test_policy(itr=current_itr, N=test_policy_N, testing=True)
             )
             test_policy.daemon = True
             test_policy.start()
@@ -525,7 +537,7 @@ def main():
             plt.ioff()
             plt.show()
         else:
-            gps.test_policy(itr=current_itr, N=test_policy_N)
+            gps.test_policy(itr=current_itr, N=test_policy_N, testing=True)
     elif compare:
         mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
             success_rates_2_dict = {}, {}, {}, {}

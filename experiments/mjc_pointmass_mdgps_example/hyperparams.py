@@ -18,8 +18,8 @@ from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-# from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
-from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
+from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
+# from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
 from gps.algorithm.policy.lin_gauss_init import init_pd
 from gps.algorithm.policy.policy_prior import PolicyPrior
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
@@ -34,7 +34,7 @@ SENSOR_DIMS = {
     ACTION: 2,
 }
 
-EXP_DIR = os.path.dirname(__file__)
+EXP_DIR = os.path.dirname(__file__) + '/'
 target_pos = np.array([1.3, 0.0, 0.])
 # wall_1_center = np.array([0.5, -0.8, 0.])
 # wall_2_center = np.array([0.5, 0.8, 0.])
@@ -48,8 +48,9 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
+    'train_conditions': range(5),
+    'test_conditions': range(5),
     'conditions': 5,
-    # 'conditions': 1,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -84,11 +85,40 @@ agent = {
     'camera_pos': np.array([1., 0., 8., 0., 0., 0.]),
 }
 
+test_agent = {
+    'type': AgentMuJoCo,
+    # TODO: pass in wall and target position here.
+    # 'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3),
+    #            obstacle_pointmass(target_pos, wall_center=0.20, hole_height=0.3),
+    #            obstacle_pointmass(target_pos, wall_center=-0.20, hole_height=0.3),
+    #            obstacle_pointmass(target_pos, wall_center=0.30, hole_height=0.3),
+    #            ],
+    'models': [weighted_pointmass(target_pos, density=100., control_limit=10.0),
+       weighted_pointmass(target_pos, density=10., control_limit=10.0),
+       weighted_pointmass(target_pos, density=0.01, control_limit=10.0),
+       weighted_pointmass(target_pos, density=0.00001, control_limit=10.0),
+       weighted_pointmass(target_pos, density=0.000001, control_limit=10.0),
+       ], # for varying weights of the pointmass
+    #'x0': [np.array([-1., 1., 0., 0.]), np.array([-0.5, 1.3, 0., 0.]),
+    #       np.array([-0.5, -1.3, 0., 0.]), np.array([-1., -1., 0., 0.])],
+    'x0': [np.array([-1., 0., 0., 0.])]*5,
+    'dt': 0.05,
+    'substeps': 1,
+    'conditions': len(common['test_conditions']),
+    'T': 100,
+    'point_linear': True,
+    'sensor_dims': SENSOR_DIMS,
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'smooth_noise': False,
+    'camera_pos': np.array([1., 0., 8., 0., 0., 0.]),
+}
+
 algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
     'sample_on_policy': True,
-    'iterations': 10,
+    'iterations': 6,
     'kl_step': 1.0,
     'min_step_mult': 0.1,
     'max_step_mult': 4.0,
@@ -151,8 +181,9 @@ algorithm['traj_opt'] = {
 
 
 algorithm['policy_opt'] = {
-    'type': PolicyOptTf,
+    'type': PolicyOptCaffe,
     'iterations': 4000,
+    'weights_file_prefix': EXP_DIR + 'policy',
 }
 
 algorithm['policy_prior'] = {
@@ -169,6 +200,7 @@ config = {
     'verbose_policy_trials': 1,
     'common': common,
     'agent': agent,
+    'test_agent': test_agent,
     'gui_on': True,
     'algorithm': algorithm,
 }
