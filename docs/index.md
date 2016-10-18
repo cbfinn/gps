@@ -51,7 +51,7 @@ Follow the following steps to get set up:
 1. Install necessary dependencies above. To install protobuf and boost:
 
     ```sh
-    sudo apt-get install libprotobuf-dev libprotobuf-compiler libboost-all-dev
+    sudo apt-get install libprotobuf-dev protobuf-compiler libboost-all-dev
     sudo pip install protobuf
     ```
 
@@ -76,12 +76,12 @@ Here are the instructions for setting up [Pybox2D](https://github.com/pybox2d/py
 1. Install Swig and Pygame:
 
     ```sh
-    sudo apt-get install build-essential python-dev swig python-pygame subversion
+    sudo apt-get install build-essential python-dev swig python-pygame git
     ```
-2. Check out the Pybox2d code via SVN
+2. Check out the Pybox2d code via GitHub
 
     ```sh
-    svn checkout http://pybox2d.googlecode.com/svn/trunk/ pybox2d
+    git clone https://github.com/pybox2d/pybox2d
     ```
 
 3. Build and install the library:
