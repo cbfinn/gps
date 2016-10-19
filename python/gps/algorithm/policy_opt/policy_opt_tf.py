@@ -69,8 +69,12 @@ class PolicyOptTf(PolicyOpt):
     def init_network(self):
         """ Helper method to initialize the tf networks used """
         tf_map_generator = self._hyperparams['network_model']
-        tf_map, fc_vars, last_conv_vars = tf_map_generator(dim_input=self._dO, dim_output=self._dU, batch_size=self.batch_size,
-                                  network_config=self._hyperparams['network_params'])
+        if self._hyperparams.get('use_vision', True):
+            tf_map, fc_vars, last_conv_vars = tf_map_generator(dim_input=self._dO, dim_output=self._dU, batch_size=self.batch_size,
+                                      network_config=self._hyperparams['network_params'])
+        else:
+            tf_map = tf_map_generator(dim_input=self._dO, dim_output=self._dU, batch_size=self.batch_size,
+                                      network_config=self._hyperparams['network_params'])
         self.obs_tensor = tf_map.get_input_tensor()
         self.precision_tensor = tf_map.get_precision_tensor()
         self.action_tensor = tf_map.get_target_output_tensor()
@@ -78,8 +82,12 @@ class PolicyOptTf(PolicyOpt):
         self.loss_scalar = tf_map.get_loss_op()
         self.fp = tf_map.fp
         self.debug = tf_map.debug
-        self.fc_vars = fc_vars
-        self.last_conv_vars = last_conv_vars
+        if self._hyperparams.get('use_vision', True):
+            self.fc_vars = fc_vars
+            self.last_conv_vars = last_conv_vars
+        else:
+            self.fc_vars = None
+            self.last_conv_vars = None
         
         # Setup the gradients
         self.grads = [tf.gradients(self.act_op[:,u], self.obs_tensor)[0]
@@ -198,8 +206,9 @@ class PolicyOptTf(PolicyOpt):
 
         feed_dict = {self.obs_tensor: obs}
         num_values = obs.shape[0]
-        self.fp_vals = self.solver.get_var_values(self.sess, self.fp, feed_dict, num_values, self.batch_size)
-        self.debug_vals = self.solver.get_var_values(self.sess, self.debug, feed_dict, num_values, self.batch_size)
+        if self._hyperparams.get('use_vision', True):
+            self.fp_vals = self.solver.get_var_values(self.sess, self.fp, feed_dict, num_values, self.batch_size)
+            self.debug_vals = self.solver.get_var_values(self.sess, self.debug, feed_dict, num_values, self.batch_size)
         # Keep track of tensorflow iterations for loading solver states.
         self.tf_iter += self._hyperparams['iterations']
 

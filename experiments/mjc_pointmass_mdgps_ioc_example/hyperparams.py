@@ -220,6 +220,7 @@ algorithm['policy_opt'] = {
        'sensor_dims': SENSOR_DIMS,
    },
    'network_model': example_tf_network,
+   'use_vision': False,
    # 'fc_only_iterations': 5000,
    # 'init_iterations': 1000,
    'iterations': 1000,

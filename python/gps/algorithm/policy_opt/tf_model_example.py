@@ -25,7 +25,6 @@ def euclidean_loss_layer(a, b, precision, batch_size):
     """ Math:  out = (action - mlp_out)'*precision*(action-mlp_out)
                     = (u-uhat)'*A*(u-uhat)"""
     scale_factor = tf.constant(2*batch_size, dtype='float')
-    import pdb; pdb.set_trace()
     uP = batched_matrix_vector_multiply(a-b, precision)
     uPu = tf.reduce_sum(uP*(a-b))  # this last dot product is then summed, so we just the sum all at once.
     return uPu/scale_factor
@@ -83,8 +82,8 @@ def example_tf_network(dim_input=27, dim_output=7, batch_size=25, network_config
     dim_hidden = (n_layers - 1) * [40]
     dim_hidden.append(dim_output)
     nn_input, action, precision = get_input_layer(dim_input, dim_output)
-    mlp_applied = get_mlp_layers(nn_input, n_layers, dim_hidden)
-    loss_out = get_loss_layer(mlp_out=mlp_applied, action=action, precision=precision, batch_size=batch_size)
+    mlp_applied, _, _ = get_mlp_layers(nn_input, n_layers, dim_hidden)
+    loss_out = get_loss_layer(mlp_out=mlp_applied[0], action=action, precision=precision, batch_size=batch_size)
 
     return TfMap.init_from_lists([nn_input, action, precision], [mlp_applied], [loss_out])
 
@@ -158,7 +157,7 @@ def multi_modal_network(dim_input=27, dim_output=7, batch_size=25, network_confi
 
     fc_input = tf.concat(concat_dim=1, values=[conv_out_flat, state_input])
 
-    fc_output = get_mlp_layers(fc_input, n_layers, dim_hidden)
+    fc_output, _, _ = get_mlp_layers(fc_input, n_layers, dim_hidden)
 
     loss = euclidean_loss_layer(a=action, b=fc_output, precision=precision, batch_size=batch_size)
     return TfMap.init_from_lists([nn_input, action, precision], [fc_output], [loss])
