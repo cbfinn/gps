@@ -386,7 +386,7 @@ class GPSMain(object):
         # if ((itr+1) % 5 == 0) or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
         self.algorithm.demo_policy = None
         copy_alg = copy.copy(self.algorithm)
-        copy.sample_list = {}
+        copy_alg.sample_list = {}
         self.data_logger.pickle(
             self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
             copy_alg

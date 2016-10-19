@@ -14,17 +14,18 @@ from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
-from gps.algorithm.cost.cost_ioc_quad import CostIOCQuadratic
-# from gps.algorithm.cost.cost_ioc_tf import CostIOCTF
-from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
+# from gps.algorithm.cost.cost_ioc_quad import CostIOCQuadratic
+from gps.algorithm.cost.cost_ioc_tf import CostIOCTF
+# from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
-# from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
+# from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
+from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
 from gps.algorithm.policy.lin_gauss_init import init_pd
 from gps.algorithm.policy.policy_prior import PolicyPrior
+from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
 from gps.gui.config import generate_experiment_info
 
@@ -151,12 +152,12 @@ algorithm['init_traj_distr'] = {
 
 algorithm['cost'] = {
     # 'type': CostIOCQuadratic,
-    # 'type': CostIOCTF,
-    'type': CostIOCNN,
+    'type': CostIOCTF,
+    # 'type': CostIOCNN,
     'wu': np.array([1e-5, 1e-5]),
     'dO': 10,
     'T': agent['T'],
-    'iterations': 5000,
+    'iterations': 1000,
     'demo_batch_size': 10,
     'sample_batch_size': 10,
     'ioc_loss': algorithm['ioc'],
@@ -205,10 +206,24 @@ algorithm['traj_opt'] = {
 }
 
 
+# algorithm['policy_opt'] = {
+#     'type': PolicyOptCaffe,
+#     'iterations': 4000,
+#     'weights_file_prefix': common['data_files_dir'] + 'policy',
+# }
+
 algorithm['policy_opt'] = {
-    'type': PolicyOptCaffe,
-    'iterations': 4000,
-    'weights_file_prefix': common['data_files_dir'] + 'policy',
+   'type': PolicyOptTf,
+   'network_params': {
+       'obs_include': agent['obs_include'],
+       'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+       'sensor_dims': SENSOR_DIMS,
+   },
+   'network_model': example_tf_network,
+   # 'fc_only_iterations': 5000,
+   # 'init_iterations': 1000,
+   'iterations': 1000,
+   'weights_file_prefix': common['data_files_dir'] + 'policy',
 }
 
 algorithm['policy_prior'] = {
