@@ -89,4 +89,6 @@ ALG_MDGPS = {
     'policy_sample_mode': 'add',
     # Whether to use 'laplace' or 'mc' cost in step adjusment
     'step_rule': 'laplace',
+    # algorithm file with policy to copy params from to cost.
+    'init_cost_params': None,
 }

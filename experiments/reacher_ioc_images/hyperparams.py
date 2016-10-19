@@ -143,6 +143,7 @@ algorithm = {
     'num_demos': 10,
     'demo_var_mult': 1.0,
     'synthetic_cost_samples': 100,
+    'init_cost_params': common['demo_controller_file'][0], # initialize conv layers of policy
     'plot_dir': EXP_DIR,
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
                             for i in xrange(CONDITIONS)],
@@ -258,7 +259,7 @@ algorithm['policy_prior'] = {
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': NUM_SAMPLES,
-    'verbose_trials': 0,
+    'verbose_trials': 0,  # only show first image.
     'verbose_policy_trials': 0,
     'common': common,
     'agent': agent,

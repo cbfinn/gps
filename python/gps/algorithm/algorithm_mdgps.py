@@ -1,6 +1,7 @@
 """ This file defines the MD-based GPS algorithm. """
 import copy
 import logging
+import pickle
 
 import numpy as np
 import scipy as sp
@@ -44,6 +45,14 @@ class AlgorithmMDGPS(Algorithm):
             self.policy_opts = [self._hyperparams['policy_opt'][i]['type'](
                 self._hyperparams['policy_opt'][i], self.dO, self.dU
             ) for i in xrange(self.num_policies)]
+
+        # initialize cost params
+        if self._hyperparams['init_cost_params']:
+            with open(self._hyperparams['init_cost_params'], 'r') as f:
+                init_algorithm = pickle.load(f)
+            conv_params = init_algorithm.policy_opt.policy.get_copy_params()
+            self.cost.set_vision_params(conv_params)
+
 
     def iteration(self, sample_lists):
         """
