@@ -25,7 +25,7 @@ from gps.sample.sample_list import SampleList
 # from gps.utility.generate_demo import GenDemo
 from gps.utility.general_utils import disable_caffe_logs
 from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
-                                    measure_distance_and_success_peg, get_demos
+                                    measure_distance_and_success_peg, get_demos, extract_samples
 from gps.utility.visualization import get_comparison_hyperparams, compare_experiments
 
 class GPSMain(object):
@@ -196,6 +196,8 @@ class GPSMain(object):
         else:
             algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr_load
             self.algorithm = self.data_logger.unpickle(algorithm_file)
+            if self.algorithm._hyperparams['ioc']:
+                self.algorithm.sample_list = extract_samples(itr_load, self._data_files_dir + 'traj_sample_itr')
             if self.algorithm is None:
                 print("Error: cannot find '%s.'" % algorithm_file)
                 os._exit(1) # called instead of sys.exit(), since this is in a thread
@@ -370,12 +372,14 @@ class GPSMain(object):
         if 'no_sample_logging' in self._hyperparams['common']:
             return
 
-        if ((itr+1) % 4 == 0) or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
-            self.algorithm.demo_policy = None
-            self.data_logger.pickle(
-                self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
-                copy.copy(self.algorithm)
-            )
+        #if ((itr+1) % 4 == 0) or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
+        self.algorithm.demo_policy = None
+        copy_alg = copy.copy(self.algorithm)
+        copy_alg.sample_list = {}
+        self.data_logger.pickle(
+            self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
+            copy_alg
+        )
         self.data_logger.pickle(
             self._data_files_dir + ('traj_sample_itr_%02d.pkl' % itr),
             copy.copy(traj_sample_lists)

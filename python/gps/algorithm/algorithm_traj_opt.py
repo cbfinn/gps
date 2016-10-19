@@ -6,6 +6,7 @@ import numpy as np
 
 from gps.algorithm.algorithm import Algorithm
 from gps.sample.sample_list import SampleList
+from gps.utility.demo_utils import extract_samples
 from gps.algorithm.traj_opt.traj_opt_utils import traj_distr_kl
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
@@ -29,13 +30,15 @@ class AlgorithmTrajOpt(Algorithm):
         Args:
             sample_lists: List of SampleList objects for each condition.
         """
-        self.N = sum(len(self.sample_list[i]) for i in self.sample_list.keys())
+        if self._hyperparams['ioc']:
+            self.N = sum(len(self.sample_list[i]) for i in self.sample_list.keys())
         for m in range(self.M):
             self.cur[m].sample_list = sample_lists[m]
-            prev_samples = self.sample_list[m].get_samples()
-            prev_samples.extend(sample_lists[m].get_samples())
-            self.sample_list[m] = SampleList(prev_samples)
-            self.N += len(sample_lists[m])
+            if self._hyperparams['ioc']:
+                prev_samples = self.sample_list[m].get_samples()
+                prev_samples.extend(sample_lists[m].get_samples())
+                self.sample_list[m] = SampleList(prev_samples)
+                self.N += len(sample_lists[m])
 
         # Update dynamics model using all samples.
         self._update_dynamics()

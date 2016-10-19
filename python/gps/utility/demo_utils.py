@@ -37,6 +37,15 @@ def generate_pos_idx(conditions):
 	""" Generate the indices of states. """
 	return [np.array([1]) for i in xrange(conditions)]
 
+def extract_samples(itr, sample_file):
+    """ Extract samples from iteration 0 up to iteration itr. """
+    sample_list = {}
+    for i in xrange(itr):
+        sample_file_i = sample_file + '_%2d' % itr + '.pkl'
+        samples = DataLogger().unpickle(sample_file_i)
+        sample_list[i] = samples[0]
+    return sample_list
+
 def extract_demos(demo_file):
     demos = DataLogger().unpickle(demo_file)
     return demos['demoX'], demos['demoU'], demos['demoO'], demos.get('demoConditions', None)
@@ -145,7 +154,7 @@ def measure_distance_and_success_peg(gps):
         success_rates.append(float(sum(1 for dist in dists_to_target if dist <= peg_height))/ \
                                 len(dists_to_target))
     return mean_dists, success_rates
-      
+
 def get_demos(gps):
     """
     Gather the demos for IOC algorithm. If there's no demo file available, generate it.
@@ -186,4 +195,4 @@ def get_demos(gps):
         gps.algorithm.demo_policy_opt = demo_algorithm.policy_opt.copy()
         gps.algorithm.demo_policy_opt.var = demo_algorithm.policy_opt.var.copy() * var_mult
         gps.algorithm.demo_policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(gps.algorithm.demo_policy_opt.var))
-    return demos  
+    return demos
