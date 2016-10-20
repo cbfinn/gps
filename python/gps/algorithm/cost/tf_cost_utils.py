@@ -276,8 +276,10 @@ def nn_forward(net_input, u_input, num_hidden=1, dim_hidden=42, wu=1e-3, learn_w
 
 def init_weights(shape, name=None):
     return safe_get(name, initializer=tf.random_normal(shape, stddev=0.01))
+
 def init_bias(shape, name=None):
     return safe_get(name, initializer=tf.zeros(shape, dtype='float'))
+
 def conv2d(img, w, b, strides=[1, 1, 1, 1]):
     return tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(img, w, strides=strides, padding='SAME'), b))
 
