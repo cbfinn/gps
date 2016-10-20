@@ -83,7 +83,7 @@ def example_tf_network(dim_input=27, dim_output=7, batch_size=25, network_config
     dim_hidden.append(dim_output)
     nn_input, action, precision = get_input_layer(dim_input, dim_output)
     mlp_applied, _, _ = get_mlp_layers(nn_input, n_layers, dim_hidden)
-    loss_out = get_loss_layer(mlp_out=mlp_applied[0], action=action, precision=precision, batch_size=batch_size)
+    loss_out = get_loss_layer(mlp_out=mlp_applied, action=action, precision=precision, batch_size=batch_size)
 
     return TfMap.init_from_lists([nn_input, action, precision], [mlp_applied], [loss_out])
 
