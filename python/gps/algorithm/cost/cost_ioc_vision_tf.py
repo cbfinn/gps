@@ -54,6 +54,8 @@ class CostIOCVisionTF(Cost):
     def get_features(self, obs):
         """ Get the image features corresponding to the rgb image.
         """
+        if len(obs.shape) == 1:
+            obs = np.expand_dims(obs, axis=0)
         return self.run([self.outputs['test_feat']], test_obs=obs)[0]
 
     def eval(self, sample):
@@ -104,7 +106,7 @@ class CostIOCVisionTF(Cost):
 
         return l, lx, lu, lxx, luu, lux
 
-    def update(self, demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=-1):
+    def update(self, demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=-1, fc_only=False):
         """
         Learn cost function with generic function representation.
         Args:
@@ -114,6 +116,7 @@ class CostIOCVisionTF(Cost):
             sampleU: the actions of samples.
             sampleO: the observations of samples.
             s_log_iw: log importance weights for samples.
+            fc_only: only train fc layers of cost (not conv layers).
         """
         print 'Updating cost'
         demo_torque_norm = np.sum(demoU **2, axis=2, keepdims=True)
@@ -124,13 +127,17 @@ class CostIOCVisionTF(Cost):
         d_sampler = BatchSampler([demoO, demo_torque_norm, d_log_iw])
         s_sampler = BatchSampler([sampleO, sample_torque_norm, s_log_iw])
 
+        optimize_op = self.ioc_optimizer
+        if fc_only:
+            optimize_op = self.fc_ioc_optimizer
+
         demo_batch = self._hyperparams['demo_batch_size']
         samp_batch = self._hyperparams['sample_batch_size']
         # TODO - make sure this is on GPU.
         for i, (d_batch, s_batch) in enumerate(
                 izip(d_sampler.with_replacement(batch_size=self.demo_batch_size), \
                     s_sampler.with_replacement(batch_size=self.sample_batch_size))):
-            ioc_loss, grad = self.run([self.ioc_loss, self.ioc_optimizer],
+            ioc_loss, grad = self.run([self.ioc_loss, optimize_op],
                                       demo_obs=d_batch[0],
                                       demo_torque_norm=d_batch[1],
                                       demo_iw = d_batch[2],
@@ -199,7 +206,7 @@ class CostIOCVisionTF(Cost):
 
         # Get all conv weights
         params = tf.all_variables()
-        vision_params = tf.get_collection(tf.GraphKeys.VARIABLES, scope='conv')
+        vision_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='conv_params')
         self.vision_params = vision_params
         self.vision_params_assign_placeholders = [tf.placeholder(tf.float32, shape=param.get_shape()) for
                                                   param in self.vision_params]
@@ -207,6 +214,9 @@ class CostIOCVisionTF(Cost):
         self.vision_params_assign_ops = [tf.assign(self.vision_params[i],
                                                    self.vision_params_assign_placeholders[i])
                                          for i in range(len(self.vision_params))]
+
+        fc_vars = [param for param in params if param not in vision_params]
+        self.fc_ioc_optimizer = optimizer.minimize(self.ioc_loss, var_list=fc_vars)
 
         self.saver = tf.train.Saver()
 
