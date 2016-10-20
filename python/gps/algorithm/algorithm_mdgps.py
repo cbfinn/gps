@@ -144,8 +144,8 @@ class AlgorithmMDGPS(Algorithm):
         self._update_trajectories()
 
         # S-step
-        # copy conv layers from cost to policy here.
         if self._hyperparams['ioc']: # TODO and if using vision
+            # copy conv layers from cost to policy here.
             conv_params = self.cost.get_vision_params()
             self.policy_opt.policy.set_copy_params(conv_params)  # TODO- need to do this for policy opt policies too? (okay for TF?)
         self._update_policy()

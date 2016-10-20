@@ -128,11 +128,10 @@ class CostIOCVisionTF(Cost):
         s_sampler = BatchSampler([sampleO, sample_torque_norm, s_log_iw])
 
         optimize_op = self.ioc_optimizer
-        if fc_only:
+        if fc_only or (self._hyperparams['fc_only_iters'] and itr<self._hyperparams['fc_only_iters']):
             optimize_op = self.fc_ioc_optimizer
 
-        demo_batch = self._hyperparams['demo_batch_size']
-        samp_batch = self._hyperparams['sample_batch_size']
+
         # TODO - make sure this is on GPU.
         for i, (d_batch, s_batch) in enumerate(
                 izip(d_sampler.with_replacement(batch_size=self.demo_batch_size), \
@@ -157,9 +156,9 @@ class CostIOCVisionTF(Cost):
         # Pass in net parameter by protostring (could add option to input prototxt file).
         network_arch_params = self._hyperparams['network_arch_params']
 
-        network_arch_params['demo_batch_size'] = self._hyperparams['demo_batch_size']
+        network_arch_params['demo_batch_size'] = self.demo_batch_size
         if sample_batch_size is None:
-            network_arch_params['sample_batch_size'] = self._hyperparams['sample_batch_size']
+            network_arch_params['sample_batch_size'] = self.sample_batch_size
         else:
             network_arch_params['sample_batch_size'] = sample_batch_size
         network_arch_params['T'] = self._T
@@ -205,7 +204,6 @@ class CostIOCVisionTF(Cost):
         self.dldxx = jacobian(self.dldx, feat_single)
 
         # Get all conv weights
-        params = tf.all_variables()
         vision_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='conv_params')
         self.vision_params = vision_params
         self.vision_params_assign_placeholders = [tf.placeholder(tf.float32, shape=param.get_shape()) for
@@ -213,7 +211,12 @@ class CostIOCVisionTF(Cost):
 
         self.vision_params_assign_ops = [tf.assign(self.vision_params[i],
                                                    self.vision_params_assign_placeholders[i])
-                                         for i in range(len(self.vision_params))]
+                                         for i in range(len(self.vision_params))]  # Gather all FC variables
+
+        # Set up fc only training
+        params = tf.all_variables()
+        fc_vars = [param for param in params if param not in vision_params]
+        self.fc_ioc_optimizer = optimizer.minimize(self.ioc_loss, var_list=fc_vars)
 
         fc_vars = [param for param in params if param not in vision_params]
         self.fc_ioc_optimizer = optimizer.minimize(self.ioc_loss, var_list=fc_vars)
@@ -231,6 +234,7 @@ class CostIOCVisionTF(Cost):
 
     def get_vision_params(self):
         param_values = self.run(self.vision_params)
+        print 'get param_values:', {self.vision_params[i].name:param_values[i] for i in range(len(self.vision_params))}
         return {self.vision_params[i].name:param_values[i] for i in range(len(self.vision_params))}
 
     def set_vision_params(self, param_values):

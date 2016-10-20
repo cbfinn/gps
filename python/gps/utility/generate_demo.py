@@ -133,7 +133,7 @@ class GenDemo(object):
                                 verbose=(i < self._hyperparams['verbose_trials']), noisy=True
                                 ) # Add noise seems not working. TODO: figure out why
                             demos.append(demo)
-                            import pdb; pdb.set_trace()
+                            #import pdb; pdb.set_trace()
                             demo_idx_conditions.append(i)
 
             # Filter failed demos

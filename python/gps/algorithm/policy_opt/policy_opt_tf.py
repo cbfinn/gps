@@ -31,6 +31,9 @@ class PolicyOptTf(PolicyOpt):
         tf.set_random_seed(self._hyperparams['random_seed'])
 
         self.tf_iter = 0
+        self.graph = tf.Graph()
+        print 'GRAPH:', self.graph #DEBUG
+        self._sess = tf.Session(graph=self.graph)
         self.checkpoint_file = self._hyperparams['checkpoint_prefix']
         self.batch_size = self._hyperparams['batch_size']
         self.device_string = "/cpu:0"
@@ -50,9 +53,8 @@ class PolicyOptTf(PolicyOpt):
         self.init_network()
         self.init_solver()
         self.var = self._hyperparams['init_var'] * np.ones(dU)
-        self.sess = tf.Session()
         self.policy = TfPolicy(dU, self.obs_tensor, self.act_op, self.feat_op,
-                               np.zeros(dU), self.sess, self.device_string, copy_param_scope=self._hyperparams['copy_param_scope'])
+                               np.zeros(dU), self._sess, self.graph, self.device_string, copy_param_scope=self._hyperparams['copy_param_scope'])
         # List of indices for state (vector) data and image (tensor) data in observation.
         self.x_idx, self.img_idx, i = [], [], 0
         if 'obs_image_data' not in self._hyperparams['network_params']:
@@ -66,31 +68,39 @@ class PolicyOptTf(PolicyOpt):
             i += dim
         # self.policy.scale = np.eye(len(self.x_idx))
         # self.policy.bias = np.zeros(len(self.x_idx))
-        init_op = tf.initialize_all_variables()
-        self.sess.run(init_op)
+        with self.graph.as_default():
+            init_op = tf.initialize_all_variables()
+        self.run(init_op)
 
     def init_network(self):
         """ Helper method to initialize the tf networks used """
         tf_map_generator = self._hyperparams['network_model']
-        tf_map, fc_vars, last_conv_vars = tf_map_generator(dim_input=self._dO, dim_output=self._dU, batch_size=self.batch_size,
-                                  network_config=self._hyperparams['network_params'])
-        self.obs_tensor = tf_map.get_input_tensor()
-        self.precision_tensor = tf_map.get_precision_tensor()
-        self.action_tensor = tf_map.get_target_output_tensor()
-        self.act_op = tf_map.get_output_op()
-        self.feat_op = tf_map.get_feature_op()
-        self.loss_scalar = tf_map.get_loss_op()
-        self.debug = tf_map.debug
-        self.fc_vars = fc_vars
-        self.last_conv_vars = last_conv_vars
+        with self.graph.as_default():
+            tf_map, fc_vars, last_conv_vars = tf_map_generator(dim_input=self._dO, dim_output=self._dU, batch_size=self.batch_size,
+                                      network_config=self._hyperparams['network_params'])
+            self.obs_tensor = tf_map.get_input_tensor()
+            self.precision_tensor = tf_map.get_precision_tensor()
+            self.action_tensor = tf_map.get_target_output_tensor()
+            self.act_op = tf_map.get_output_op()
+            self.feat_op = tf_map.get_feature_op()
+            self.loss_scalar = tf_map.get_loss_op()
+            self.debug = tf_map.debug
+            self.fc_vars = fc_vars
+            self.last_conv_vars = last_conv_vars
 
-        # Setup the gradients
-        self.grads = [tf.gradients(self.act_op[:,u], self.obs_tensor)[0]
-                for u in range(self._dU)]
+            # Setup the gradients
+            self.grads = [tf.gradients(self.act_op[:,u], self.obs_tensor)[0]
+                    for u in range(self._dU)]
+
+    def run(self, op, feed_dict=None):
+        with self.graph.as_default():
+            return self._sess.run(op, feed_dict=feed_dict)
+
 
     def init_solver(self):
         """ Helper method to initialize the solver. """
         self.solver = TfSolver(loss_scalar=self.loss_scalar,
+                               graph=self.graph,
                                solver_name=self._hyperparams['solver_type'],
                                base_lr=self._hyperparams['lr'],
                                lr_policy=self._hyperparams['lr_policy'],
@@ -98,7 +108,8 @@ class PolicyOptTf(PolicyOpt):
                                weight_decay=self._hyperparams['weight_decay'],
                                fc_vars=self.fc_vars,
                                last_conv_vars=self.last_conv_vars)
-        self.saver = tf.train.Saver()
+        with self.graph.as_default():
+            self.saver = tf.train.Saver()
 
     def update(self, obs, tgt_mu, tgt_prc, tgt_wt, iter_count=None, fc_only=False):
         """
@@ -162,7 +173,7 @@ class PolicyOptTf(PolicyOpt):
         if True:
             feed_dict = {self.obs_tensor: obs}
             num_values = obs.shape[0]
-            conv_values = self.solver.get_last_conv_values(self.sess, feed_dict, num_values, self.batch_size)
+            conv_values = self.solver.get_last_conv_values(self._sess, feed_dict, num_values, self.batch_size)
             for i in range(self._hyperparams['fc_only_iterations'] ):
                 start_idx = int(i * self.batch_size %
                                 (batches_per_epoch * self.batch_size))
@@ -170,7 +181,7 @@ class PolicyOptTf(PolicyOpt):
                 feed_dict = {self.last_conv_vars: conv_values[idx_i],
                              self.action_tensor: tgt_mu[idx_i],
                              self.precision_tensor: tgt_prc[idx_i]}
-                train_loss = self.solver(feed_dict, self.sess, device_string=self.device_string, use_fc_solver=True)
+                train_loss = self.solver(feed_dict, self._sess, device_string=self.device_string, use_fc_solver=True)
                 average_loss += train_loss
 
                 if (i+1) % 500 == 0:
@@ -195,7 +206,7 @@ class PolicyOptTf(PolicyOpt):
             feed_dict = {self.obs_tensor: obs[idx_i],
                          self.action_tensor: tgt_mu[idx_i],
                          self.precision_tensor: tgt_prc[idx_i]}
-            train_loss = self.solver(feed_dict, self.sess, device_string=self.device_string)
+            train_loss = self.solver(feed_dict, self._sess, device_string=self.device_string)
 
             average_loss += train_loss
             if (i+1) % 50 == 0:
@@ -206,8 +217,8 @@ class PolicyOptTf(PolicyOpt):
 
         feed_dict = {self.obs_tensor: obs}
         num_values = obs.shape[0]
-        self.feat_vals = self.solver.get_var_values(self.sess, self.feat_op, feed_dict, num_values, self.batch_size)
-        self.debug_vals = self.solver.get_var_values(self.sess, self.debug, feed_dict, num_values, self.batch_size)
+        self.feat_vals = self.solver.get_var_values(self._sess, self.feat_op, feed_dict, num_values, self.batch_size)
+        self.debug_vals = self.solver.get_var_values(self._sess, self.debug, feed_dict, num_values, self.batch_size)
         # Keep track of tensorflow iterations for loading solver states.
         self.tf_iter += self._hyperparams['iterations']
 
@@ -245,7 +256,7 @@ class PolicyOptTf(PolicyOpt):
                 # Feed in data.
                 feed_dict = {self.obs_tensor: np.expand_dims(obs[i, t], axis=0)}
                 with tf.device(self.device_string):
-                    output[i, t, :] = self.sess.run(self.act_op, feed_dict=feed_dict)
+                    output[i, t, :] = self.run(self.act_op, feed_dict=feed_dict)
 
         pol_sigma = np.tile(np.diag(self.var), [N, T, 1, 1])
         pol_prec = np.tile(np.diag(1.0 / self.var), [N, T, 1, 1])
@@ -275,9 +286,9 @@ class PolicyOptTf(PolicyOpt):
 
         # Constant bias/gain matrices
         feed_dict = {self.obs_tensor: obs}
-        pol_k = self.sess.run(self.act_op, feed_dict=feed_dict)
+        pol_k = self.run(self.act_op, feed_dict=feed_dict)
         for u in range(self._dU):
-            pol_K[:, u, :] = self.sess.run(self.grads[u], feed_dict=feed_dict)
+            pol_K[:, u, :] = self.run(self.grads[u], feed_dict=feed_dict)
 
         # Correct bias
         for t in range(T):
@@ -293,10 +304,12 @@ class PolicyOptTf(PolicyOpt):
 
     def save_model(self, fname):
         LOGGER.debug('Saving model to: %s', fname)
-        self.saver.save(self.sess, fname)
+        with self.graph.as_default():
+            self.saver.save(self._sess, fname)
 
     def restore_model(self, fname):
-        self.saver.restore(self.sess, fname)
+        with self.graph.as_default():
+            self.saver.restore(self._sess, fname)
         LOGGER.debug('Restoring model from: %s', fname)
 
     # For pickling.
@@ -322,7 +335,7 @@ class PolicyOptTf(PolicyOpt):
     # For unpickling.
     def __setstate__(self, state):
         from tensorflow.python.framework import ops
-        ops.reset_default_graph()  # we need to destroy the default graph before re_init or checkpoint won't restore.
+        #ops.reset_default_graph()  # we need to destroy the default graph before re_init or checkpoint won't restore.
         self.__init__(state['hyperparams'], state['dO'], state['dU'])
         self.policy.scale = state['scale']
         self.policy.bias = state['bias']

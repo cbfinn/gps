@@ -113,5 +113,12 @@ COST_IOC_TF = {
     # Other hyperparameters.
     'checkpoint_prefix': checkpoint_path
 }
-
 COST_IOC_TF.update(IOC_CONFIG)
+
+
+# CostIOCTF + Visions
+COST_IOC_TF_VISION = {
+    # Other hyperparameters.
+    'fc_only_iters': None,
+}
+COST_IOC_TF.update(COST_IOC_TF)

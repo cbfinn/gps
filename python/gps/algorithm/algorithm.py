@@ -117,6 +117,7 @@ class Algorithm(object):
         """ Run iteration of the algorithm. """
         raise NotImplementedError("Must be implemented in subclass")
 
+
     def _update_dynamics(self):
         """
         Instantiate dynamics objects and update prior. Fit dynamics to
