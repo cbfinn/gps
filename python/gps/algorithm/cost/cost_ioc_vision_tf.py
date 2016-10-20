@@ -223,8 +223,10 @@ class CostIOCVisionTF(Cost):
 
         self.saver = tf.train.Saver()
 
-        self.session = tf.Session()
-        self.session.run(tf.initialize_all_variables())
+        self.session = tf.get_default_session() # TODO make a graph now?
+        if self.session is None:
+            self.session = tf.Session(graph=self.graph)
+            self.session.run(tf.initialize_all_variables()) # TODO - do this later, after policy has been constructed?
 
     def run(self, targets, **feeds):
         with self.graph.as_default():

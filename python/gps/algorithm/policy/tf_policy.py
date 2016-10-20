@@ -77,11 +77,13 @@ class TfPolicy(Policy):
         Args:
             obs: Observation vector.
         """
+        # TODO - there is a bug in this function.
+        # To reproduce, note that get_features(obs)[0] != get_features(obs[0]).
         if len(obs.shape) == 1:
             obs = np.expand_dims(obs, axis=0)
         # Assume that features don't depend on the robot config, so don't normalize by scale and bias.
         feat = self.run(self.feat_op, feed_dict={self.obs_tensor: obs})
-        return feat[0]  # the DAG computations are batched by default, but we use batch size 1.
+        return feat  # This used to be feat[0] because we would only ever call it with a batch size of 1. Now this isn't true.
 
     def get_copy_params(self):
         param_values = self.run(self.copy_params)

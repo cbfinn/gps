@@ -127,7 +127,6 @@ def multimodal_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
         'test_loss_single': test_cost_single,
         'test_feat_single': test_feat_single,
     }
-    #'test_feat_single': tf.reshape(test_feat_single, [-1]),
     return inputs, outputs
 
 
