@@ -44,7 +44,6 @@ class PolicyOptTf(PolicyOpt):
         self.precision_tensor = None
         self.action_tensor = None  # mu true
         self.solver = None
-        self.feat_op = None
         self.feat_vals = None
         self.debug = None
         self.debug_vals = None

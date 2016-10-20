@@ -254,7 +254,7 @@ def multi_modal_network_fp(dim_input=27, dim_output=7, batch_size=25, network_co
 
     fp = tf.reshape(tf.concat(1, [fp_x, fp_y]), [-1, num_fp*2])
 
-    fc_input = tf.concat(concat_dim=1, values=[fp, state_input])
+    fc_input = tf.concat(concat_dim=1, values=[fp, state_input]) # TODO - switch these two?
 
     fc_output, weights_FC, biases_FC = get_mlp_layers(fc_input, n_layers, dim_hidden)
     fc_vars = weights_FC + biases_FC

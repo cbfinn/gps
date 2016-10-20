@@ -34,7 +34,7 @@ class TfPolicy(Policy):
         self.x_idx = None
 
         if copy_param_scope:
-            self.copy_params = tf.get_collection(tf.GraphKeys.VARIABLES, scope=copy_param_scope)
+            self.copy_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=copy_param_scope)
             self.copy_params_assign_placeholders = [tf.placeholder(tf.float32, shape=param.get_shape()) for
                                                       param in self.copy_params]
 
