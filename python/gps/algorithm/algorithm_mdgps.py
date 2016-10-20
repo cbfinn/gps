@@ -53,6 +53,11 @@ class AlgorithmMDGPS(Algorithm):
             conv_params = init_algorithm.policy_opt.policy.get_copy_params()
             self.cost.set_vision_params(conv_params)
 
+        if self._hyperparams['ioc']: # TODO and ioc with vision.
+            # Make cost and policy conv params consistent here.
+            conv_params = self.cost.get_vision_params()
+            self.policy_opt.policy.set_copy_params(conv_params)
+
 
     def iteration(self, sample_lists):
         """
@@ -61,6 +66,8 @@ class AlgorithmMDGPS(Algorithm):
         Args:
             sample_lists: List of SampleList objects for each condition.
         """
+        import pdb; pdb.set_trace() # TODO test that features are the same for cost and policy here.
+
         # Store the samples.
         itr = self.iteration_count
         if self._hyperparams['ioc']:
@@ -137,10 +144,10 @@ class AlgorithmMDGPS(Algorithm):
         self._update_trajectories()
 
         # S-step
-        # TODO - copy conv layers from cost to policy here.
+        # copy conv layers from cost to policy here.
         if self._hyperparams['ioc']: # TODO and if using vision
             conv_params = self.cost.get_vision_params()
-            self.policy_opt.policy.set_copy_params(conv_params)
+            self.policy_opt.policy.set_copy_params(conv_params)  # TODO- need to do this for policy opt policies too? (okay for TF?)
         self._update_policy()
 
         # Computing KL-divergence between sample distribution and demo distribution
