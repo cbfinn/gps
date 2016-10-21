@@ -66,9 +66,14 @@ class AlgorithmMDGPS(Algorithm):
         Args:
             sample_lists: List of SampleList objects for each condition.
         """
+        itr = self.iteration_count
+
+        if itr == 0:
+            for sample_list in samplie_lists:
+                for sample in sample_list:
+                    sample.update_features(self.policy_opt.policy)
 
         # Store the samples.
-        itr = self.iteration_count
         if self._hyperparams['ioc']:
             self.N = sum(len(self.sample_list[i]) for i in self.sample_list.keys())
             self.num_samples = [len(self.sample_list[i]) for i in self.sample_list.keys()]
@@ -124,6 +129,7 @@ class AlgorithmMDGPS(Algorithm):
                 self._update_cost()
                 for m in range(self.M):
                     for sample in self.cur[m].sample_list:
+                        # Need to update features if trained end to end.
                         sample.update_features(self.cost) # assumes a single cost.
                 if self.cur[0].traj_info.dynamics.prior._max_samples > len(self.cur[0].sample_list):
                     print LOGGER.warn('refitting dynamics -- updating prior with the same set of samples')
