@@ -288,8 +288,8 @@ class AgentMuJoCo(Agent):
                     raise ValueError('Image features should not be in observation, just state')
                 # TODO - make sure policy is passed in.
                 if feature_fn is not None:
-                    obs = sample.get_obs()  # Assumes that the rest of the sample has been populated
-                    sample.set(IMAGE_FEAT, feature_fn(obs), t=0)
+                    obs = sample.get_obs(t=0)  # Assumes that the rest of the sample has been populated
+                    sample.set(IMAGE_FEAT, feature_fn(obs)[0], t=0)
                 else:
                     # TODO - need better solution than setting this to 0.
                     sample.set(IMAGE_FEAT, np.zeros((self._hyperparams['sensor_dims'][IMAGE_FEAT],)), t=0)
@@ -330,8 +330,8 @@ class AgentMuJoCo(Agent):
                                                           self._hyperparams['image_height'])
             sample.set(RGB_IMAGE, np.transpose(img["img"], (2, 1, 0)).flatten(), t=t+1)
             if feature_fn is not None:
-                obs = sample.get_obs()  # Assumes that the rest of the observation has been populated
-                sample.set(IMAGE_FEAT, feature_fn(obs), t=t+1)
+                obs = sample.get_obs(t=t+1)  # Assumes that the rest of the observation has been populated
+                sample.set(IMAGE_FEAT, feature_fn(obs)[0], t=t+1)
             else:
                 # TODO - need better solution than setting this to 0.
                 sample.set(IMAGE_FEAT, np.zeros((self._hyperparams['sensor_dims'][IMAGE_FEAT],)), t=t+1)

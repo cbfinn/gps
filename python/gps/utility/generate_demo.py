@@ -249,7 +249,6 @@ class GenDemo(object):
                       if dists[index] >= success_thresh: #agent_config['success_upper_bound']:
                         failed_indices.append(index)
                 good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
-                import pdb; pdb.set_trace()
                 self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
                 filtered_demos = []
                 filtered_demo_conditions = []
