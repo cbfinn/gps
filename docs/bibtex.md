@@ -4,15 +4,26 @@ References
 Relevant papers which have used guided policy search include:
 
 
-Sergey Levine\*, Chelsea Finn\*, Trevor Darrell, Pieter Abbeel. *End-to-End Training of Deep Visuomotor Policies*. 2015. arxiv 1504.00702. [[pdf](http://arxiv.org/pdf/1504.00702.pdf)]
+Sergey Levine\*, Chelsea Finn\*, Trevor Darrell, Pieter Abbeel. *End-to-End Training of Deep Visuomotor Policies*. JMLR 2016. [[pdf](http://arxiv.org/pdf/1504.00702.pdf)]
 ```
 @article{lfda-e2e-15,
   author  = {S. Levine and C. Finn and T. Darrell and P. Abbeel}
   title   = {End-to-End Training of Deep Visuomotor Policies},
-  journal = {arXiv preprint arXiv:1504.00702},
-  year    = {2015},
+  journal = {Journal of Machine Learning Research (JMLR)},
+  year    = {2016},
 }
 ```
+
+William Montgomery and Sergey Levine. *Guided Policy Search as Approximate Mirror Descent*. NIPS 2016. [[pdf](http://arxiv.org/pdf/1607.05614.pdf)]
+```
+@article{ml-mdgps-16,
+  author  = {W. Montgomery and S. Levine}
+  title   = {Guided Policy Search as Approximate Mirror Descent},
+  journal = {Neural Information Processing Systems (NIPS)},
+  year    = {2016},
+}
+```
+
 
 Marvin Zhang, Zoe McCarthy, Chelsea Finn, Sergey Levine, Pieter Abbeel. *Learning Deep Neural Network Policies with Continuous Memory States*. ICRA 2016. [[pdf](http://arxiv.org/pdf/1507.01273.pdf)]
 ```
