@@ -13,14 +13,15 @@ While the core functionality is fully implemented and tested, the codebase is **
 ## Relevant work
 
 Relevant papers which have used guided policy search include:
-* Sergey Levine\*, Chelsea Finn\*, Trevor Darrell, Pieter Abbeel. *End-to-End Training of Deep Visuomotor Policies*. 2015. arxiv 1504.00702. [[pdf](http://arxiv.org/pdf/1504.00702.pdf)]
+* Sergey Levine\*, Chelsea Finn\*, Trevor Darrell, Pieter Abbeel. *End-to-End Training of Deep Visuomotor Policies*. JMLR 2016. [[pdf](http://arxiv.org/pdf/1504.00702.pdf)]
+* William Montgomery, Sergey Levine. *Guided Policy Search as Approximate Mirror Descent*. NIPS 2016. [[pdf](https://arxiv.org/pdf/1607.04614.pdf)]
 * Marvin Zhang, Zoe McCarthy, Chelsea Finn, Sergey Levine, Pieter Abbeel. *Learning Deep Neural Network Policies with Continuous Memory States*. ICRA 2016. [[pdf](http://arxiv.org/pdf/1507.01273.pdf)]
 * Chelsea Finn, Xin Yu Tan, Yan Duan, Trevor Darrell, Sergey Levine, Pieter Abbeel. *Deep Spatial Autoencoders for Visuomotor Learning*. ICRA 2016.  [[pdf](http://arxiv.org/pdf/1509.06113.pdf)]
 * Sergey Levine, Nolan Wagener, Pieter Abbeel. *Learning Contact-Rich Manipulation Skills with Guided Policy Search*. ICRA 2015. [[pdf](http://rll.berkeley.edu/icra2015gps/robotgps.pdf)]
 * Sergey Levine, Pieter Abbeel. *Learning Neural Network Policies with Guided Policy Search under Unknown Dynamics*. NIPS 2014. [[pdf](http://www.eecs.berkeley.edu/~svlevine/papers/mfcgps.pdf)]
 
 If the codebase is helpful for your research, please cite any relevant paper(s) above and the following:
-* Chelsea Finn, Marvin Zhang, Justin Fu, Xin Yu Tan, Zoe McCarthy, Emily Scharff, Bradly Stadie, Sergey Levine. Guided Policy Search Code Implementation. 2016. Software available from rll.berkeley.edu/gps.
+* Chelsea Finn, Marvin Zhang, Justin Fu, William Montgomery, Xin Yu Tan, Zoe McCarthy, Bradly Stadie, Emily Scharff, Sergey Levine. Guided Policy Search Code Implementation. 2016. Software available from rll.berkeley.edu/gps.
 
 For bibtex, see [this page](bibtex.html).
 
