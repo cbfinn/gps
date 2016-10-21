@@ -128,12 +128,8 @@ class TfSolver:
             start = i
             end = min(i+batch_size, num_values)
             for k,v in feed_dict.iteritems():
-                print k, ' -- g -- ', k.graph #DEBUG
                 batch_dict[k] = v[start:end]
-            print 'def_graph', tf.get_default_graph()  #DEBUG
             with self.graph.as_default():
-                print 'CONV_GRAPH:', tf.get_default_graph()  #DEBUG
-                print 'OUT_GRAPH:', self.last_conv_vars.graph #DEBUG
                 batch_vals = sess.run(self.last_conv_vars, batch_dict)
             values.append(batch_vals)
             i = end
