@@ -32,7 +32,6 @@ class PolicyOptTf(PolicyOpt):
 
         self.tf_iter = 0
         self.graph = tf.Graph()
-        print 'GRAPH:', self.graph #DEBUG
         self._sess = tf.Session(graph=self.graph)
         self.checkpoint_file = self._hyperparams['checkpoint_prefix']
         self.batch_size = self._hyperparams['batch_size']

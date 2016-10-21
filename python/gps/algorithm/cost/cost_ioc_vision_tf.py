@@ -236,7 +236,6 @@ class CostIOCVisionTF(Cost):
 
     def get_vision_params(self):
         param_values = self.run(self.vision_params)
-        print 'get param_values:', {self.vision_params[i].name:param_values[i] for i in range(len(self.vision_params))}
         return {self.vision_params[i].name:param_values[i] for i in range(len(self.vision_params))}
 
     def set_vision_params(self, param_values):

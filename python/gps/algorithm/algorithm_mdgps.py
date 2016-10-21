@@ -69,7 +69,7 @@ class AlgorithmMDGPS(Algorithm):
         itr = self.iteration_count
 
         if itr == 0:
-            for sample_list in samplie_lists:
+            for sample_list in sample_lists:
                 for sample in sample_list:
                     sample.update_features(self.policy_opt.policy)
 
@@ -122,18 +122,19 @@ class AlgorithmMDGPS(Algorithm):
 
         if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
             if self._hyperparams['ioc_maxent_iter'] == -1 or itr < self._hyperparams['ioc_maxent_iter']:
-                # TODO - copy conv layers from policy to cost here, at all iterations.
+                # copy conv layers from policy to cost here, at all iterations.
                 conv_params = self.policy_opt.policy.get_copy_params()
                 self.cost.set_vision_params(conv_params)
 
                 self._update_cost()
-                for m in range(self.M):
-                    for sample in self.cur[m].sample_list:
-                        # Need to update features if trained end to end.
-                        sample.update_features(self.cost) # assumes a single cost.
-                if self.cur[0].traj_info.dynamics.prior._max_samples > len(self.cur[0].sample_list):
-                    print LOGGER.warn('refitting dynamics -- updating prior with the same set of samples')
-                self._update_dynamics()  # recompute dynamics with new state space.
+                # Commenting this out because we're not updating the cost end-to-end right now.
+                #for m in range(self.M):
+                #    for sample in self.cur[m].sample_list:
+                #        # Need to update features if trained end to end.
+                #        sample.update_features(self.cost) # assumes a single cost.
+                #if self.cur[0].traj_info.dynamics.prior._max_samples > len(self.cur[0].sample_list):
+                #    print LOGGER.warn('refitting dynamics -- updating prior with the same set of samples')
+                #self._update_dynamics()  # recompute dynamics with new state space.
 
         # Update policy linearizations.
         for m in range(self.M):
@@ -157,13 +158,6 @@ class AlgorithmMDGPS(Algorithm):
             self._update_policy(fc_only=True)
         else:
             self._update_policy(fc_only=False)
-
-        # Computing KL-divergence between sample distribution and demo distribution
-        #if self._hyperparams['ioc'] and not self._hyperparams['learning_from_prior']:
-        #    for i in xrange(self.M):
-        #        mu, sigma = self.traj_opt.forward(self.traj_distr[itr][i], self.traj_info[itr][i])
-        #        # KL divergence between current traj. distribution and gt distribution
-        #        self.kl_div[itr].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][i], self.demo_traj[0])) # Assuming Md == 1
 
         # Prepare for next iteration
         self._advance_iteration_variables()
