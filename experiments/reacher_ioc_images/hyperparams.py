@@ -232,6 +232,7 @@ algorithm['cost'] = {
     'demo_batch_size': 5,  # are we going to run out of memory? # also should we init from policy feat?
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
+    'fc_only_iters': 15,
 }
 
 NUM_SAMPLES = 5
