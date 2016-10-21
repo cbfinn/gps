@@ -67,12 +67,6 @@ class AlgorithmMDGPS(Algorithm):
             sample_lists: List of SampleList objects for each condition.
         """
 
-        # Debugging tensorflow
-        #obs = sample_lists[0].get_obs()
-        #pol_feat = self.policy_opt.policy.get_features(obs[0])
-        #cost_feat = self.cost.get_features(obs[0])
-        #import pdb; pdb.set_trace() # TODO test that features are the same for cost and policy here.
-
         # Store the samples.
         itr = self.iteration_count
         if self._hyperparams['ioc']:
