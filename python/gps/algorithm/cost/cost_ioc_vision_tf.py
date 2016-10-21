@@ -4,6 +4,7 @@ import logging
 import numpy as np
 import tempfile
 import uuid
+import os
 from itertools import izip
 
 import tensorflow as tf
@@ -14,6 +15,7 @@ from gps.algorithm.cost.config import COST_IOC_NN
 from gps.algorithm.cost.cost import Cost
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES,\
     END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, END_EFFECTOR_POINT_JACOBIANS
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -236,7 +238,6 @@ class CostIOCVisionTF(Cost):
 
     def get_vision_params(self):
         param_values = self.run(self.vision_params)
-        print 'get param_values:', {self.vision_params[i].name:param_values[i] for i in range(len(self.vision_params))}
         return {self.vision_params[i].name:param_values[i] for i in range(len(self.vision_params))}
 
     def set_vision_params(self, param_values):
@@ -253,20 +254,23 @@ class CostIOCVisionTF(Cost):
         self.saver.restore(self.session, fname)
         LOGGER.debug('Restoring model from: %s', fname)
 
-    # For pickling.
     def __getstate__(self):
-        checkpoint_fname = self._hyperparams['weights_file_prefix']+str(uuid.uuid4())+'.wts'
-        self.save_model(checkpoint_fname)
+        with tempfile.NamedTemporaryFile('w+b', delete=True) as f:
+            self.save_model(f.name)
+            f.seek(0)
+            with open(f.name, 'r') as f2:
+                wts = f2.read()
+            os.remove(f.name+'.meta')
         return {
             'hyperparams': self._hyperparams,
-            'dO': self._dO,
-            'T': self._T,
-            'checkpoint_file': checkpoint_fname,
+            'wts': wts,
         }
 
     # For unpickling.
     def __setstate__(self, state):
-        # TODO - finalize this once __init__ is finalized (setting dO and T)
         self.__init__(state['hyperparams'])
-        self.restore_model(state['checkpoint_file'])
+        with tempfile.NamedTemporaryFile('w+b', delete=True) as f:
+            f.write(state['wts'])
+            f.seek(0)
+            self.restore_model(f.name)
 

@@ -16,6 +16,8 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
         CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE
 
+from gps.utility.general_utils import Timer
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -110,10 +112,12 @@ class AlgorithmMDGPS(Algorithm):
                 self.cur[cond].traj_distr for cond in range(self.M)
             ]
             # Only update fc layers.
-            self._update_policy(fc_only=True)
+            with Timer('UpdatePolicy'):
+                self._update_policy(fc_only=True)
 
         # Update dynamics linearizations.
-        self._update_dynamics()
+        with Timer('UpdateDynamics'):
+            self._update_dynamics()
 
         # Move this after line 78 if using random initializarion.
         if self._hyperparams['ioc'] and self._hyperparams['init_demo_policy']:
@@ -127,33 +131,40 @@ class AlgorithmMDGPS(Algorithm):
                 conv_params = self.policy_opt.policy.get_copy_params()
                 self.cost.set_vision_params(conv_params)
 
-                self._update_cost()
+                with Timer('UpdateCost'):
+                    self._update_cost()
                 for m in range(self.M):
                     for sample in self.cur[m].sample_list:
                         sample.update_features(self.cost) # assumes a single cost.
                 if self.cur[0].traj_info.dynamics.prior._max_samples > len(self.cur[0].sample_list):
                     print LOGGER.warn('refitting dynamics -- updating prior with the same set of samples')
-                self._update_dynamics()  # recompute dynamics with new state space.
+                with Timer('UpdateDynamics'):
+                    self._update_dynamics()  # recompute dynamics with new state space.
 
         # Update policy linearizations.
         for m in range(self.M):
-            self._eval_cost(m)
-            self._update_policy_fit(m)
+            with Timer('EvalCost'):
+                self._eval_cost(m)
+            with Timer('PolicyFit'):
+                self._update_policy_fit(m)
 
         # C-step
         if self.iteration_count > 0:
             try:
-                self._stepadjust()
+                with Timer('stepadjust'):
+                    self._stepadjust()
             except OverflowError:
                 import pdb; pdb.set_trace()
-        self._update_trajectories()
+        with Timer('UpdateTrajectories'):
+            self._update_trajectories()
 
         # S-step
         if self._hyperparams['ioc']: # TODO and if using vision
             # copy conv layers from cost to policy here.
             conv_params = self.cost.get_vision_params()
             self.policy_opt.policy.set_copy_params(conv_params)  # TODO- need to do this for policy opt policies too? (okay for TF?)
-        self._update_policy()
+        with Timer('UpdatePolicy'):
+            self._update_policy()
 
         # Computing KL-divergence between sample distribution and demo distribution
         #if self._hyperparams['ioc'] and not self._hyperparams['learning_from_prior']:
@@ -163,7 +174,8 @@ class AlgorithmMDGPS(Algorithm):
         #        self.kl_div[itr].append(traj_distr_kl(mu, sigma, self.traj_distr[itr][i], self.demo_traj[0])) # Assuming Md == 1
 
         # Prepare for next iteration
-        self._advance_iteration_variables()
+        with Timer('AdvanceIteration'):
+            self._advance_iteration_variables()
 
     def _update_policy(self, fc_only=False):
         """ Compute the new policy
