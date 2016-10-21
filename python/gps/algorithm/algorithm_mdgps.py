@@ -153,7 +153,10 @@ class AlgorithmMDGPS(Algorithm):
             # copy conv layers from cost to policy here.
             conv_params = self.cost.get_vision_params()
             self.policy_opt.policy.set_copy_params(conv_params)  # TODO- need to do this for policy opt policies too? (okay for TF?)
-        self._update_policy()
+        if self._hyperparams['ioc']:
+            self._update_policy(fc_only=True)
+        else:
+            self._update_policy(fc_only=False)
 
         # Computing KL-divergence between sample distribution and demo distribution
         #if self._hyperparams['ioc'] and not self._hyperparams['learning_from_prior']:
