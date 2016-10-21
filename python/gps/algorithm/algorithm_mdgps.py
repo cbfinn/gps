@@ -68,15 +68,14 @@ class AlgorithmMDGPS(Algorithm):
         Args:
             sample_lists: List of SampleList objects for each condition.
         """
+        itr = self.iteration_count
 
-        # Debugging tensorflow
-        #obs = sample_lists[0].get_obs()
-        #pol_feat = self.policy_opt.policy.get_features(obs[0])
-        #cost_feat = self.cost.get_features(obs[0])
-        #import pdb; pdb.set_trace() # TODO test that features are the same for cost and policy here.
+        if itr == 0:
+            for sample_list in sample_lists:
+                for sample in sample_list:
+                    sample.update_features(self.policy_opt.policy)
 
         # Store the samples.
-        itr = self.iteration_count
         if self._hyperparams['ioc']:
             self.N = sum(len(self.sample_list[i]) for i in self.sample_list.keys())
             self.num_samples = [len(self.sample_list[i]) for i in self.sample_list.keys()]
@@ -127,10 +126,15 @@ class AlgorithmMDGPS(Algorithm):
 
         if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
             if self._hyperparams['ioc_maxent_iter'] == -1 or itr < self._hyperparams['ioc_maxent_iter']:
-                # TODO - copy conv layers from policy to cost here, at all iterations.
+                # copy conv layers from policy to cost here, at all iterations.
                 conv_params = self.policy_opt.policy.get_copy_params()
                 self.cost.set_vision_params(conv_params)
 
+
+                with Timer('UpdateCost'):
+                    self._update_cost()
+                # Commenting this out because we're not updating the cost end-to-end right now.
+                """
                 with Timer('UpdateCost'):
                     self._update_cost()
                 for m in range(self.M):
@@ -140,6 +144,7 @@ class AlgorithmMDGPS(Algorithm):
                     print LOGGER.warn('refitting dynamics -- updating prior with the same set of samples')
                 with Timer('UpdateDynamics'):
                     self._update_dynamics()  # recompute dynamics with new state space.
+                """
 
         # Update policy linearizations.
         for m in range(self.M):
@@ -162,9 +167,14 @@ class AlgorithmMDGPS(Algorithm):
         if self._hyperparams['ioc']: # TODO and if using vision
             # copy conv layers from cost to policy here.
             conv_params = self.cost.get_vision_params()
+
             self.policy_opt.policy.set_copy_params(conv_params)  # TODO- need to do this for policy opt policies too? (okay for TF?)
+
         with Timer('UpdatePolicy'):
-            self._update_policy()
+            if self._hyperparams['ioc']:
+                self._update_policy(fc_only=True)
+            else:
+                self._update_policy(fc_only=False)
 
         # Computing KL-divergence between sample distribution and demo distribution
         #if self._hyperparams['ioc'] and not self._hyperparams['learning_from_prior']:

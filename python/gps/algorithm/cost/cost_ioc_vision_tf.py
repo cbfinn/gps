@@ -11,7 +11,7 @@ import tensorflow as tf
 from tf_cost_utils import jacobian, multimodal_nn_cost_net_tf
 
 from gps.utility.general_utils import BatchSampler
-from gps.algorithm.cost.config import COST_IOC_NN
+from gps.algorithm.cost.config import COST_IOC_VISION_TF
 from gps.algorithm.cost.cost import Cost
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES,\
     END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, END_EFFECTOR_POINT_JACOBIANS
@@ -23,7 +23,7 @@ LOGGER = logging.getLogger(__name__)
 class CostIOCVisionTF(Cost):
     """ Set up weighted neural network norm loss with learned parameters. """
     def __init__(self, hyperparams):
-        config = copy.deepcopy(COST_IOC_NN) # Set this up in the config?
+        config = copy.deepcopy(COST_IOC_VISION_TF) # Set this up in the config?
         config.update(hyperparams)
         Cost.__init__(self, config)
 

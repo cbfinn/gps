@@ -37,8 +37,6 @@ ALG = {
     'demo_var_mult': 1.0,
     # initial policy variance multiplier.
     'init_var_mult': 1.0,
-    # verbose when generating demos.
-    "demo_verbose": True,
     # Demo condition during training.
     'demo_M': 1,
     # Number of synthetic samples used to estimate the cost.

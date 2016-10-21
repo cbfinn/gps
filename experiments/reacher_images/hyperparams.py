@@ -197,8 +197,8 @@ NUM_SAMPLES = 5
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': NUM_SAMPLES,
-    'verbose_trials': NUM_SAMPLES,
-    'verbose_policy_trials': 1,
+    'verbose_trials': 0,  # only show the first image.
+    'verbose_policy_trials': 0,
     'common': common,
     'agent': agent,
     'gui_on': True,

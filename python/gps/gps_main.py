@@ -324,12 +324,12 @@ class GPSMain(object):
             if not self.algorithm._hyperparams['multiple_policy']:
                 pol_samples[cond][0] = self.agent.sample(
                     self.algorithm.policy_opt.policy, self._test_idx[cond],
-                    verbose=True, save=False, noisy=True)
+                    verbose=verbose, save=False, noisy=True)
             else:
                 pol = self.algorithm.policy_opts[cond / self.algorithm.num_policies].policy
                 pol_samples[cond][0] = self.agent.sample(
                     pol, self._test_idx[cond],
-                    verbose=True, save=False, noisy=True)
+                    verbose=verbose, save=False, noisy=True)
         return [SampleList(samples) for samples in pol_samples]
 
     def _log_data(self, itr, traj_sample_lists, pol_sample_lists=None):
