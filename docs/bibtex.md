@@ -68,7 +68,7 @@ Sergey Levine, Pieter Abbeel. *Learning Neural Network Policies with Guided Poli
 If the codebase is helpful for your research, please cite any relevant paper(s) above and the following:
 Chelsea Finn, Marvin Zhang, Justin Fu, William Montgomery, Xin Yu Tan, Zoe McCarthy, Bradly Stadie, Emily Scharff, Sergey Levine. Guided Policy Search Code Implementation. 2016. Software available from rll.berkeley.edu/gps.
 ```
-@misc{fzft-gpsi-16,
+@misc{fzfm-gpsi-16,
     author = {C. Finn and M. Zhang and J. Fu and W. Montgomery and X. Tan and Z. McCarthy and B. Stadie and E. Scharff and S. Levine},
     title  = {Guided Policy Search Code Implementation},
     url    = {http://rll.berkeley.edu/gps},
