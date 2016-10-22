@@ -26,7 +26,9 @@ from gps.sample.sample_list import SampleList
 from gps.utility.general_utils import disable_caffe_logs
 from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
                                     measure_distance_and_success_peg, get_demos, extract_samples
-from gps.utility.visualization import get_comparison_hyperparams, compare_experiments 
+from gps.utility.visualization import get_comparison_hyperparams, compare_experiments, compare_samples 
+
+
 
 class GPSMain(object):
     """ Main class to run algorithms and experiments. """
@@ -435,12 +437,15 @@ def main():
                         help='Condition to dry-run the policy')
     parser.add_argument('-c', '--compare', metavar='N', type=int,
                     help='compare two experiments')
+    parser.add_argument('-m', '--measure', metavar='N', type=int,
+                    help='measure and visualize policy samples')
     args = parser.parse_args()
 
     exp_name = args.experiment
     resume_training_itr = args.resume
     test_policy_N = args.policy
     compare = args.compare
+    measure = args.measure
 
     from gps import __file__ as gps_filepath
     gps_filepath = os.path.abspath(gps_filepath)
@@ -538,6 +543,13 @@ def main():
             plt.show()
         else:
             gps.test_policy(itr=current_itr, N=test_policy_N, testing=True)
+    elif measure:
+        for i in xrange(1):
+            random.seed(i)
+            np.random.seed(i)
+            gps = GPSMain(hyperparams.config)
+            agent_config = gps._hyperparams['agent']
+            compare_samples(gps, measure, agent_config, three_dim=False, experiment='pointmass')
     elif compare:
         mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
             success_rates_2_dict = {}, {}, {}, {}
