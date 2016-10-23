@@ -483,7 +483,10 @@ def main():
                  (exp_name, hyperparams_file))
 
     unset = disable_caffe_logs()
-    import caffe  # Hack to avoid segfault when importing caffe later
+    try:
+        import caffe  # Need to import caffe before tensorflow to avoid segfaults
+    except ImportError:
+        pass
     disable_caffe_logs(unset)
     hyperparams = imp.load_source('hyperparams', hyperparams_file)
 

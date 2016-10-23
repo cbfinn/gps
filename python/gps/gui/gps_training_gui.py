@@ -19,6 +19,7 @@ import threading
 import sys
 
 import numpy as np
+import scipy as sp
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
@@ -30,7 +31,7 @@ from gps.gui.plotter_3d import Plotter3D
 from gps.gui.image_visualizer import ImageVisualizer
 from gps.gui.util import buffered_axis_limits, load_data_from_npz
 
-from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
+from gps.proto.gps_pb2 import END_EFFECTOR_POINTS, RGB_IMAGE, RGB_IMAGE_SIZE, IMAGE_FEAT
 
 from gps.gui.line_plot import LinePlotter, ScatterPlot
 
@@ -100,6 +101,9 @@ class GPSTrainingGUI(object):
         if config['image_on']:
             self._gs_traj_visualizer    = self._gs[11:18, 0:4]
             self._gs_image_visualizer   = self._gs[11:18, 4:8]
+        elif config['fp_on']:
+            self._gs_traj_visualizer = self._gs[8:16, 0:4]
+            self._gs_fp_visualizer = self._gs[8:16, 4:8]
         else:
             self._gs_traj_visualizer    = self._gs[11:18, 0:8]
 
@@ -126,6 +130,8 @@ class GPSTrainingGUI(object):
             self._image_visualizer = ImageVisualizer(self._fig,
                     self._gs_image_visualizer, cropsize=config['image_size'],
                     rostopic=config['image_topic'], show_overlay_buttons=True)
+        if config['fp_on']:
+            self._fp_visualizer = plt.subplot(self._gs_fp_visualizer)
 
         # Setup GUI components.
         self._algthm_output.log_text('\n')
@@ -294,6 +300,27 @@ class GPSTrainingGUI(object):
         if self._first_update:
             self._output_column_titles(algorithm)
             self._first_update = False
+
+        if config['fp_on']:
+            img = []
+            samples = []
+            images = []
+
+            for sample_list in traj_sample_lists:
+                samples = sample_list.get_samples()
+                size = np.array(samples[0].get(RGB_IMAGE_SIZE))
+            for sample in samples:
+                fp = sample.get(IMAGE_FEAT, 0)
+                img = sample.get(RGB_IMAGE, 0)
+                #fp = fp.reshape(15, 2)
+                img = img.reshape(size)
+                self._update_feature_visualization(img, fp)
+                #images = sample.get(RGB_IMAGE)
+            #for image in images:
+               # img.append(image.reshape(size).transpose((2, 1, 0)))
+               # feature_points = algorithm.policy_opt.fp_vals
+               # idx = np.random.randint(len(img))
+
         costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
         if algorithm._hyperparams['ioc']:
             gt_costs = [np.mean(np.sum(algorithm.prev[m].cgt, axis=1)) for m in range(algorithm.M)]
@@ -416,6 +443,19 @@ class GPSTrainingGUI(object):
                 else:
                     itr_data += ' %8s' % ("N/A")
         self.append_output_text(itr_data)
+
+    def _update_feature_visualization(self, image, feature_point):
+        """
+        Update feature point visualization
+        """
+
+        IMAGE_SIZE = 64
+        fp = (feature_point + 1) * IMAGE_SIZE / 2
+        fp_x = fp[0::2]
+        fp_y = IMAGE_SIZE - fp[1::2]
+        image = sp.misc.imresize(image, (IMAGE_SIZE, IMAGE_SIZE, 3))
+        self._fp_visualizer.imshow(image)
+        self._fp_visualizer.scatter(fp_x, fp_y)
 
     def _update_trajectory_visualizations(self, algorithm, agent,
                 traj_sample_lists, pol_sample_lists):

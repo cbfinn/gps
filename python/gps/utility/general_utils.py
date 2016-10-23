@@ -1,6 +1,7 @@
 """ This file defines general utility functions and classes. """
 import numpy as np
 import os
+import time
 
 class BundleType(object):
     """
@@ -16,6 +17,19 @@ class BundleType(object):
         if not hasattr(self, key):
             raise AttributeError("%r has no attribute %s" % (self, key))
         object.__setattr__(self, key, value)
+
+class Timer(object):
+    def __init__(self, message):
+        self.message = message
+
+    def __enter__(self):
+        self.time_start = time.time()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        new_time = time.time() - self.time_start
+        print 'Timer: %s (Elapsed: %fs)' % (self.message, new_time)
+
+
 
 
 def flatten_lists(lists):

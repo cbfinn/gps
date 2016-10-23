@@ -309,9 +309,9 @@ class PolicyOptTf(PolicyOpt):
             self.saver.save(self._sess, fname)
 
     def restore_model(self, fname):
+        LOGGER.debug('Restoring model from: %s', fname)
         with self.graph.as_default():
             self.saver.restore(self._sess, fname)
-        LOGGER.debug('Restoring model from: %s', fname)
 
     # For pickling.
     def __getstate__(self):
@@ -343,7 +343,6 @@ class PolicyOptTf(PolicyOpt):
         self.policy.x_idx = state['x_idx']
         self.policy.chol_pol_covar = state['chol_pol_covar']
         self.tf_iter = state['tf_iter']
-
         with tempfile.NamedTemporaryFile('w+b', delete=True) as f:
             f.write(state['wts'])
             f.seek(0)
