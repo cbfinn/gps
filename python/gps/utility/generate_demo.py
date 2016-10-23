@@ -130,7 +130,7 @@ class GenDemo(object):
                         for j in xrange(N):
                             demo = self.agent.sample(
                                 pol, i, # Should be changed back to controller if using linearization
-                                verbose=(i < self._hyperparams['verbose_trials']), noisy=True
+                                verbose=True or (i < self._hyperparams['verbose_trials']), noisy=True
                                 )
                             demos.append(demo)
                             #import pdb; pdb.set_trace()

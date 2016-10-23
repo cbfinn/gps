@@ -25,7 +25,8 @@ enum SampleType {
   GYM_DATA = 18;
   GYM_REWARD = 19;
   IMAGE_FEAT = 20;
-  TOTAL_DATA_TYPES = 21;
+  CONDITION_DATA = 21; //A constant specific to each condition
+  TOTAL_DATA_TYPES = 22;
 }
 
 // Message containing the data for a single sample.
