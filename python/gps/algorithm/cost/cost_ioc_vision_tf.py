@@ -220,15 +220,12 @@ class CostIOCVisionTF(Cost):
         fc_vars = [param for param in params if param not in vision_params]
         self.fc_ioc_optimizer = optimizer.minimize(self.ioc_loss, var_list=fc_vars)
 
-        fc_vars = [param for param in params if param not in vision_params]
-        self.fc_ioc_optimizer = optimizer.minimize(self.ioc_loss, var_list=fc_vars)
-
         self.saver = tf.train.Saver()
 
-        self.session = tf.get_default_session() # TODO make a graph now?
+        self.session = tf.get_default_session()
         if self.session is None:
             self.session = tf.Session(graph=self.graph)
-            self.session.run(tf.initialize_all_variables()) # TODO - do this later, after policy has been constructed?
+            self.session.run(tf.initialize_all_variables())
 
     def run(self, targets, **feeds):
         with self.graph.as_default():
