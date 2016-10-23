@@ -53,7 +53,7 @@ class AlgorithmMDGPS(Algorithm):
             conv_params = init_algorithm.policy_opt.policy.get_copy_params()
             self.cost.set_vision_params(conv_params)
 
-        if self._hyperparams['ioc']: # TODO and ioc with vision.
+        if self._hyperparams['ioc'] and 'get_vision_params' in dir(self.cost):
             # Make cost and policy conv params consistent here.
             conv_params = self.cost.get_vision_params()
             self.policy_opt.policy.set_copy_params(conv_params)
@@ -68,7 +68,7 @@ class AlgorithmMDGPS(Algorithm):
         """
         itr = self.iteration_count
 
-        if itr == 0:
+        if itr == 0 and RGB_IMAGE in sample_lists[0][0].agent.obs_data_types:
             for sample_list in sample_lists:
                 for sample in sample_list:
                     sample.update_features(self.policy_opt.policy)
@@ -117,14 +117,15 @@ class AlgorithmMDGPS(Algorithm):
         # Move this after line 78 if using random initializarion.
         if self._hyperparams['ioc'] and self._hyperparams['init_demo_policy']:
             raise ValueError("haven't supported this with vision and dynamics fit has moved.")
-        if not self._hyperparams['global_cost']:
-            raise NotImplementedError('no support for multiple costs with vision.')
+        #if not self._hyperparams['global_cost']:
+        #    raise NotImplementedError('no support for multiple costs with vision.')
 
         if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
             if self._hyperparams['ioc_maxent_iter'] == -1 or itr < self._hyperparams['ioc_maxent_iter']:
                 # copy conv layers from policy to cost here, at all iterations.
-                conv_params = self.policy_opt.policy.get_copy_params()
-                self.cost.set_vision_params(conv_params)
+                if 'set_vision_params' in dir(self.cost):
+                    conv_params = self.policy_opt.policy.get_copy_params()
+                    self.cost.set_vision_params(conv_params)
 
                 self._update_cost()
                 # Commenting this out because we're not updating the cost end-to-end right now.
@@ -150,10 +151,11 @@ class AlgorithmMDGPS(Algorithm):
         self._update_trajectories()
 
         # S-step
-        if self._hyperparams['ioc']: # TODO and if using vision
+        if self._hyperparams['ioc'] and 'get_vision_params' in dir(self.cost):
             # copy conv layers from cost to policy here.
             conv_params = self.cost.get_vision_params()
-            self.policy_opt.policy.set_copy_params(conv_params)  # TODO- need to do this for policy opt policies too? (okay for TF?)
+            self.policy_opt.policy.set_copy_params(conv_params)
+
         if self._hyperparams['ioc']:
             self._update_policy(fc_only=True)
         else:

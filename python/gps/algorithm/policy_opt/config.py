@@ -44,6 +44,7 @@ POLICY_OPT_TF = {
     # Other hyperparameters.
     'checkpoint_prefix': checkpoint_path,
     'copy_param_scope': 'conv_params',
+    'fc_only_iterations': 0,
 }
 
 POLICY_OPT_TF.update(GENERIC_CONFIG)
