@@ -22,6 +22,7 @@ import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import matplotlib.cm as cm
 
 from gps.gui.config import config
 from gps.gui.action_panel import Action, ActionPanel
@@ -302,24 +303,31 @@ class GPSTrainingGUI(object):
             self._first_update = False
 
         if config['fp_on']:
-            img = []
-            samples = []
-            images = []
+            if RGB_IMAGE in agent.obs_data_types:
+                img = []
+                samples = []
+                images = []
 
-            for sample_list in traj_sample_lists:
-                samples = sample_list.get_samples()
-                size = np.array(samples[0].get(RGB_IMAGE_SIZE))
-            for sample in samples:
-                fp = sample.get(IMAGE_FEAT, 0)
-                img = sample.get(RGB_IMAGE, 0)
-                #fp = fp.reshape(15, 2)
-                img = img.reshape(size)
-                self._update_feature_visualization(img, fp)
-                #images = sample.get(RGB_IMAGE)
-            #for image in images:
-               # img.append(image.reshape(size).transpose((2, 1, 0)))
-               # feature_points = algorithm.policy_opt.fp_vals
-               # idx = np.random.randint(len(img))
+                for sample_list in traj_sample_lists:
+                    samples.append(sample_list.get_samples()[0])
+                    size = np.array(samples[0].get(RGB_IMAGE_SIZE))
+                    img = samples[0].get(RGB_IMAGE, 0) #fixed image
+                    img = img.reshape(size)
+
+                fps = []
+                for sample in samples:
+                    fp = sample.get(IMAGE_FEAT, 0)
+                    #fp = fp.reshape(-1, 2).T.reshape(-1)
+                    fps.append(fp)
+                    #fp1 = sample.get(IMAGE_FEAT, 1)
+                    #fp2 = sample.get(IMAGE_FEAT, 2)
+                    #img = sample.get(RGB_IMAGE, 0)
+                self._update_feature_visualization(img, fps)
+                    #images = sample.get(RGB_IMAGE)
+                #for image in images:
+                   # img.append(image.reshape(size).transpose((2, 1, 0)))
+                   # feature_points = algorithm.policy_opt.fp_vals
+                   # idx = np.random.randint(len(img))
 
         costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
         if algorithm._hyperparams['ioc']:
@@ -444,18 +452,35 @@ class GPSTrainingGUI(object):
                     itr_data += ' %8s' % ("N/A")
         self.append_output_text(itr_data)
 
-    def _update_feature_visualization(self, image, feature_point):
+    def _update_feature_visualization(self, image, feature_points):
         """
         Update feature point visualization
         """
-
+        self._fp_visualizer.cla()
         IMAGE_SIZE = 64
-        fp = (feature_point + 1) * IMAGE_SIZE / 2
-        fp_x = fp[0::2]
-        fp_y = IMAGE_SIZE - fp[1::2]
         image = sp.misc.imresize(image, (IMAGE_SIZE, IMAGE_SIZE, 3))
         self._fp_visualizer.imshow(image)
-        self._fp_visualizer.scatter(fp_x, fp_y)
+
+        fp_x = []
+        fp_y = []
+        colors = []
+        condition_colors = cm.rainbow(np.linspace(0, 1, len(feature_points)))
+        for i, feature_point in enumerate(feature_points):
+            fp = (feature_point + 1.) * IMAGE_SIZE / 2
+            i_fp_x = fp[0::2]
+            i_fp_y = IMAGE_SIZE - fp[1::2]
+            N = len(i_fp_y)
+            i_colors = np.tile(condition_colors[i], [N, 1])
+            fp_x.append(i_fp_x)
+            fp_y.append(i_fp_y)
+            colors.append(i_colors)
+        fp_x = np.concatenate(fp_x)
+        fp_y = np.concatenate(fp_y)
+        colors = np.concatenate(colors)
+        print 'FP_X:', fp_x
+        print 'FP_Y:', fp_y
+        for i in range(N*len(feature_points)):
+            self._fp_visualizer.scatter(fp_x[i], fp_y[i], color=colors[i])
 
     def _update_trajectory_visualizations(self, algorithm, agent,
                 traj_sample_lists, pol_sample_lists):

@@ -8,11 +8,12 @@ import mjcpy
 from gps.agent.agent import Agent
 from gps.agent.agent_utils import generate_noise, setup
 from gps.agent.config import AGENT_MUJOCO
+from gps.gui.fp_plot import FPPlot
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
         END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
         CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE, GYM_REWARD, END_EFFECTOR_POINTS_NO_TARGET, \
-        END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, IMAGE_FEAT
+        END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, IMAGE_FEAT, CONDITION_DATA
 
 from gps.sample.sample import Sample
 from gps.utility.general_utils import sample_params
@@ -104,6 +105,8 @@ class AgentMuJoCo(Agent):
                 self.x0.append(self._hyperparams['x0'][i])
             if IMAGE_FEAT in self.x_data_types:
                 self.x0[i] = np.concatenate([self.x0[i], np.zeros((self._hyperparams['sensor_dims'][IMAGE_FEAT],))])
+            if CONDITION_DATA in self.x_data_types:
+                self.x0[i] = np.concatenate([self.x0[i], self._hyperparams['condition_data'][i]])
 
         if self._hyperparams['render']:
             cam_pos = self._hyperparams['camera_pos']
@@ -189,6 +192,7 @@ class AgentMuJoCo(Agent):
                 var = self._hyperparams['noisy_body_var'][condition][i]
                 self._model[condition]['body_pos'][idx, :] += \
                         var * np.random.randn(1, 3)
+
         # Take the sample.
         for t in range(self.T):
             X_t = new_sample.get_X(t=t)
@@ -206,6 +210,10 @@ class AgentMuJoCo(Agent):
                 #TODO: Will it? This TODO has been here for awhile
                 self._data = self._world[condition].get_data()
                 self._set_sample(new_sample, mj_X, t, condition, feature_fn=feature_fn)
+
+
+
+
         new_sample.set(ACTION, U)
         if self._hyperparams['record_reward']:
             new_sample.set(GYM_REWARD, R)
@@ -258,6 +266,9 @@ class AgentMuJoCo(Agent):
             idx = site * 3
             jac[idx:(idx+3), :] = self._world[condition].get_jac_site(site)
         sample.set(END_EFFECTOR_POINT_JACOBIANS, jac, t=0)
+
+        if CONDITION_DATA in self.obs_data_types:
+            sample.set(CONDITION_DATA, self._hyperparams['condition_data'][condition], t=0)
 
         # save initial image to meta data
         self._world[condition].plot(self._hyperparams['x0'][condition])
@@ -325,6 +336,9 @@ class AgentMuJoCo(Agent):
             jac[idx:(idx+3), :] = self._world[condition].get_jac_site(site)
         sample.set(END_EFFECTOR_POINT_JACOBIANS, jac, t=t+1)
 
+        if CONDITION_DATA in self.obs_data_types:
+            sample.set(CONDITION_DATA, self._hyperparams['condition_data'][condition], t=t+1)
+
         if RGB_IMAGE in self.obs_data_types:
             img = self._world[condition].get_image_scaled(self._hyperparams['image_width'],
                                                           self._hyperparams['image_height'])
@@ -335,6 +349,7 @@ class AgentMuJoCo(Agent):
             else:
                 # TODO - need better solution than setting this to 0.
                 sample.set(IMAGE_FEAT, np.zeros((self._hyperparams['sensor_dims'][IMAGE_FEAT],)), t=t+1)
+
 
     def _get_image_from_obs(self, obs):
         imstart = 0
