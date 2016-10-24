@@ -193,7 +193,7 @@ class CostIOCQuadratic(Cost):
     # For unpickling.
     def __setstate__(self, state):
         # TODO - finalize this once __init__ is finalized (setting dO and T)
-        self.__init__(state['hyperparams'], state['dO'], state['T'])
+        self.__init__(state['hyperparams'])
         self.caffe_iter = state['caffe_iter']
         self.solver.restore(
             self._hyperparams['weights_file_prefix'] + '_iter_' +

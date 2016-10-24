@@ -81,7 +81,6 @@ def example_tf_network(dim_input=27, dim_output=7, batch_size=25, network_config
     n_layers = 2
     dim_hidden = (n_layers - 1) * [40]
     dim_hidden.append(dim_output)
-
     nn_input, action, precision = get_input_layer(dim_input, dim_output)
     mlp_applied, weights_FC, biases_FC = get_mlp_layers(nn_input, n_layers, dim_hidden)
     fc_vars = weights_FC + biases_FC

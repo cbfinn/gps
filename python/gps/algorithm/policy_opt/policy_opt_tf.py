@@ -84,8 +84,12 @@ class PolicyOptTf(PolicyOpt):
             self.feat_op = tf_map.get_feature_op()
             self.loss_scalar = tf_map.get_loss_op()
             self.debug = tf_map.debug
-            self.fc_vars = fc_vars
-            self.last_conv_vars = last_conv_vars
+            if self._hyperparams.get('use_vision', True):
+                self.fc_vars = fc_vars
+                self.last_conv_vars = last_conv_vars
+            else:
+                self.fc_vars = None
+                self.last_conv_vars = None
 
             # Setup the gradients
             self.grads = [tf.gradients(self.act_op[:,u], self.obs_tensor)[0]
@@ -94,7 +98,6 @@ class PolicyOptTf(PolicyOpt):
     def run(self, op, feed_dict=None):
         with self.graph.as_default():
             return self._sess.run(op, feed_dict=feed_dict)
-
 
     def init_solver(self):
         """ Helper method to initialize the solver. """

@@ -38,11 +38,12 @@ class CostIOCTF(Cost):
 
     def copy(self):
         new_cost = CostIOCTF(self._hyperparams)
-        with tempfile.NamedTemporaryFile('w+b', suffix='.wts', delete=True) as f:
+        with open('tmp.wts', 'w+b') as f:
             self.save_model(f.name)
             f.seek(0)
             new_cost.restore_model(f.name)
             os.remove(f.name+'.meta')
+        os.remove('tmp.wts')
         return new_cost
 
     def compute_lx_lxx(self, obs):

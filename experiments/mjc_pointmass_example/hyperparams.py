@@ -7,7 +7,7 @@ import os.path
 import numpy as np
 
 from gps import __file__ as gps_filepath
-from gps.agent.mjc import obstacle_pointmass
+from gps.agent.mjc import obstacle_pointmass, weighted_pointmass
 from gps.agent.mjc.agent_mjc import AgentMuJoCo
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
@@ -53,19 +53,25 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3, control_limit=50),
-               obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.3, control_limit=50),
-               obstacle_pointmass(target_pos, wall_center=-0.2, hole_height=0.3, control_limit=50),
-               obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3, control_limit=50),
-               obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3, control_limit=50),
-               ],
+    # 'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3, control_limit=50),
+    #            obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.3, control_limit=50),
+    #            obstacle_pointmass(target_pos, wall_center=-0.2, hole_height=0.3, control_limit=50),
+    #            obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3, control_limit=50),
+    #            obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3, control_limit=50),
+    #            ],
+    'models': [weighted_pointmass(target_pos, density=1., control_limit=10.0),
+           weighted_pointmass(target_pos, density=0.1, control_limit=10.0),
+           weighted_pointmass(target_pos, density=0.01, control_limit=10.0),
+           weighted_pointmass(target_pos, density=0.001, control_limit=10.0),
+           weighted_pointmass(target_pos, density=0.0001, control_limit=10.0),
+           ], # for varying weights of the pointmass
     #'filename': './mjc_models/particle2d.xml',
     'x0': np.array([-1., 0., 0., 0.]),
     # 'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
-    'T': 200,
+    'T': 100,
     'point_linear': True,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
@@ -77,11 +83,13 @@ agent = {
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
-    'iterations': 15,
+    # 'iterations': 15,
+    'iterations': 10,
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
     'max_ent_traj': 1.0,
+    'target_end_effector': target_pos,
 }
 
 algorithm['init_traj_distr'] = {
@@ -115,7 +123,8 @@ action_cost = {
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [state_cost, action_cost],
-    'weights': [0.1, 0.1], # used 10,1 for T=3
+    # 'weights': [0.1, 0.1], # used 10,1 for T=3
+    'weights': [1., 1.], # for no wall experiment
 }
 
 algorithm['dynamics'] = {

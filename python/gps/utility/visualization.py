@@ -21,12 +21,14 @@ def compare_samples(gps, N, agent_config, three_dim=True, experiment='peg'):
         N: number of samples taken from the policy for comparison
         config: Configuration of the agent to sample.
         three_dim: whether the plot is 3D or 2D.
-        experiment: whether the experiment is peg or reacher.
+        experiment: whether the experiment is peg or reacher or pointmass.
     """
-    pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
+    # pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
+    pol_iter = 11
     algorithm_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
-    algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_maxent_9cond_z_train_demo_1/algorithm_itr_11.pkl') # Assuming not using 4 policies
-    pos_body_offset = gps._hyperparams['agent']['pos_body_offset']
+    algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files/algorithm_itr_05.pkl') # Assuming not using 4 policies
+    if experiment != 'pointmass':
+        pos_body_offset = gps._hyperparams['agent']['pos_body_offset']
     M = agent_config['conditions']
     if experiment == 'reacher': #reset body offsets
         np.random.seed(101)
@@ -39,7 +41,13 @@ def compare_samples(gps, N, agent_config, three_dim=True, experiment='peg'):
     policies = [pol_ioc, pol_demo]
     samples = {i: [] for i in xrange(len(policies))}
     agent = agent_config['type'](agent_config)
-    ioc_conditions = agent_config['pos_body_offset']
+    if experiment != 'pointmass':
+        ioc_conditions = agent_config['pos_body_offset']
+    else:
+        ioc_conditions = [np.array([np.log10(agent_config['density_range'][i]), 0.]) \
+                            for i in xrange(M)]
+        print M
+        print len(agent_config['density_range'])
     for i in xrange(M):
         # Gather demos.
         for j in xrange(N):
@@ -52,7 +60,9 @@ def compare_samples(gps, N, agent_config, three_dim=True, experiment='peg'):
     target_position = agent_config['target_end_effector'][:3]
     dists_to_target = [np.zeros((M*N)) for i in xrange(len(samples))]
     dists_diff = []
-    all_success_conditions, only_ioc_conditions, only_demo_conditions, all_failed_conditions, \
+    # all_success_conditions, only_ioc_conditions, only_demo_conditions, all_failed_conditions, \
+    #     percentages = [], [], [], [], []
+    ioc_success_conditions, demo_success_conditions, ioc_failed_conditions, demo_failed_conditions, \
         percentages = [], [], [], [], []
     for i in xrange(len(samples[0])):
         if experiment == 'reacher':
@@ -64,30 +74,47 @@ def compare_samples(gps, N, agent_config, three_dim=True, experiment='peg'):
             # Just choose the last time step since it may become unstable after achieving the minimum point.
             # import pdb; pdb.set_trace()
             # dists_to_target[j][i] = np.sqrt(np.sum((sample_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
-        if dists_to_target[0][i] <= 0.1 and dists_to_target[1][i] <= 0.1:
-            all_success_conditions.append(ioc_conditions[i])
-        elif dists_to_target[0][i] <= 0.1:
-            only_ioc_conditions.append(ioc_conditions[i])
-        elif dists_to_target[1][i] <= 0.1:
-            only_demo_conditions.append(ioc_conditions[i])
+        if dists_to_target[0][i] <= 0.15 and dists_to_target[1][i] <= 0.15:
+            # all_success_conditions.append(ioc_conditions[i])
+            ioc_success_conditions.append(ioc_conditions[i])
+            demo_success_conditions.append(ioc_conditions[i])
+        elif dists_to_target[0][i] <= 0.15:
+            # only_ioc_conditions.append(ioc_conditions[i])
+            ioc_success_conditions.append(ioc_conditions[i])
+            demo_failed_conditions.append(ioc_conditions[i])
+        elif dists_to_target[1][i] <= 0.15:
+            # only_demo_conditions.append(ioc_conditions[i])
+            ioc_failed_conditions.append(ioc_conditions[i])
+            demo_success_conditions.append(ioc_conditions[i])
         else:
-            all_failed_conditions.append(ioc_conditions[i])
+            # all_failed_conditions.append(ioc_conditions[i])
+            ioc_failed_conditions.append(ioc_conditions[i])
+            demo_failed_conditions.append(ioc_conditions[i])
         dists_diff.append(np.around(dists_to_target[0][i] - dists_to_target[1][i], decimals=2))
-    percentages.append(round(float(len(all_success_conditions))/len(ioc_conditions), 2))
-    percentages.append(round(float(len(all_failed_conditions))/len(ioc_conditions), 2))
-    percentages.append(round(float(len(only_ioc_conditions))/len(ioc_conditions), 2))
-    percentages.append(round(float(len(only_demo_conditions))/len(ioc_conditions), 2))
+    # percentages.append(round(float(len(all_success_conditions))/len(ioc_conditions), 2))
+    # percentages.append(round(float(len(all_failed_conditions))/len(ioc_conditions), 2))
+    # percentages.append(round(float(len(only_ioc_conditions))/len(ioc_conditions), 2))
+    # percentages.append(round(float(len(only_demo_conditions))/len(ioc_conditions), 2))
+    percentages.append(round(float(len(ioc_success_conditions))/len(ioc_conditions), 2))
+    percentages.append(round(float(len(ioc_failed_conditions))/len(ioc_conditions), 2))
+    percentages.append(round(float(len(demo_success_conditions))/len(ioc_conditions), 2))
+    percentages.append(round(float(len(demo_failed_conditions))/len(ioc_conditions), 2))
 
     from matplotlib.patches import Rectangle
 
     plt.close('all')
     fig = plt.figure()
     ax = Axes3D(fig)
+    # ioc_conditions_zip = zip(*ioc_conditions)
+    # all_success_zip = zip(*all_success_conditions)
+    # all_failed_zip = zip(*all_failed_conditions)
+    # only_ioc_zip = zip(*only_ioc_conditions)
+    # only_demo_zip = zip(*only_demo_conditions)
     ioc_conditions_zip = zip(*ioc_conditions)
-    all_success_zip = zip(*all_success_conditions)
-    all_failed_zip = zip(*all_failed_conditions)
-    only_ioc_zip = zip(*only_ioc_conditions)
-    only_demo_zip = zip(*only_demo_conditions)
+    ioc_success_zip = zip(*ioc_success_conditions)
+    ioc_failed_zip = zip(*ioc_failed_conditions)
+    demo_success_zip = zip(*demo_success_conditions)
+    demo_failed_zip = zip(*demo_failed_conditions)
 
     if three_dim:
         ax.scatter(all_success_zip[0], all_success_zip[1], all_success_zip[2], c='y', marker='o')
@@ -99,22 +126,45 @@ def compare_samples(gps, N, agent_config, three_dim=True, experiment='peg'):
         box = ax.get_position()
     else:
         subplt = plt.subplot()
-        subplot.plot(all_success_zip[0], all_success_zip[1], all_success_zip, c='y', marker='o')
-        subplot.plot(all_failed_zip[0], all_failed_zip[1], all_failed_zip, c='r', marker='x')
-        subplot.plot(only_ioc_zip[0], only_ioc_zip[1], only_ioc_zip, c='g', marker='^')
-        subplot.plot(only_demo_zip[0], only_demo_zip[1], only_demo_zip, c='r', marker='v')
-        for i, txt in enumerate(dists_diff):
-            subplt.annotate(txt, (ioc_conditions_zip[0], ioc_conditions_zip[1]))
+        # subplt.plot(all_success_zip[0], [x + 0.5 for x in all_success_zip[1]], c='y', marker='o')
+        # if len(all_failed_zip) > 0:
+        #     subplt.plot(all_failed_zip[0], [x + 0.5 for x in all_failed_zip[1]], c='r', marker='x')
+        # else:
+        #     subplt.plot([], [], c='r', marker='x')
+        # subplt.plot(only_ioc_zip[0], [x + 0.5 for x in only_ioc_zip[1]], c='g', marker='^')
+        # if len(only_demo_zip) > 0:
+        #     subplt.plot(only_demo_zip[0], [x-0.5 for x in only_demo_zip[1]], c='r', marker='v')
+        # else:
+        #     subplt.plot([], [], c='r', marker='v')
+        subplt.plot(ioc_success_zip[0], [0.5 for i in xrange(len(ioc_success_zip[1]))], c='g', marker='o')
+        subplt.plot(ioc_failed_zip[0], [0.5 for i in xrange(len(ioc_failed_zip[1]))], c='r', marker='x')
+        subplt.plot(demo_success_zip[0], [-0.5 for i in xrange(len(demo_success_zip[1]))], c='y', marker='^')
+        subplt.plot(demo_failed_zip[0], [-0.5 for i in xrange(len(demo_failed_zip[1]))], c='r', marker='v')
+        # for i, txt in enumerate(dists_diff):
+        #     subplt.annotate(repr(round(txt,2)), (ioc_conditions_zip[0][i], ioc_conditions_zip[1][i]))
+        for i, txt in enumerate(dists_to_target[0]):
+            subplt.annotate(repr(round(txt,2)), (ioc_conditions_zip[0][i], 0.5))
+        for i, txt in enumerate(dists_to_target[1]):
+            subplt.annotate(repr(round(txt,2)), (ioc_conditions_zip[0][i], -0.5)) 
         ax = plt.gca()
         if experiment == 'peg':
             ax.add_patch(Rectangle((-0.1, -0.1), 0.2, 0.2, fill = False, edgecolor = 'blue')) # peg
-        else:
+        elif experiment == 'reacher':
             ax.add_patch(Rectangle((-0.3, -0.3), 0.6, 0.6, fill = False, edgecolor = 'blue')) # reacher
         box = subplt.get_position()
     ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
-    ax.legend(['all_success: ' + repr(percentages[0]), 'all_failed: ' + repr(percentages[1]), 'only_ioc: ' + repr(percentages[2]), \
-                    'only_demo: ' + repr(percentages[3])], loc='upper center', bbox_to_anchor=(0.5, 0.05), \
+    # ax.legend(['all_success: ' + repr(percentages[0]), 'all_failed: ' + repr(percentages[1]), 'only_ioc: ' + repr(percentages[2]), \
+    #                 'only_demo: ' + repr(percentages[3])], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
+    #                 shadow=True, ncol=2)
+    ax.legend(['ioc_success: ' + repr(percentages[0]), 'ioc_failed: ' + repr(percentages[1]), 'demo_success: ' + repr(percentages[2]), \
+                    'demo_failed: ' + repr(percentages[3])], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
                     shadow=True, ncol=2)
+    # subplt.plot(all_success_zip[0], [x - 0.5 for x in all_success_zip[1]], c='y', marker='o')
+    # if len(all_failed_zip) > 0:
+    #     subplt.plot(all_failed_zip[0], [x - 0.5 for x in all_failed_zip[1]], c='r', marker='x')
+    # else:
+    #     subplt.plot([], [], c='r', marker='x')
+    plt.xlabel('log of density')
     plt.title("Distribution of samples drawn from demo policy and IOC policy")
     plt.savefig(gps._data_files_dir + 'distribution_of_sample_conditions.png')
     plt.close('all')
