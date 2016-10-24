@@ -216,9 +216,9 @@ class PolicyOptTf(PolicyOpt):
 
         feed_dict = {self.obs_tensor: obs}
         num_values = obs.shape[0]
-        if self.feat_op:
+        if self.feat_op is not None:
             self.feat_vals = self.solver.get_var_values(self._sess, self.feat_op, feed_dict, num_values, self.batch_size)
-        if self.debug:
+        if self.debug is not None:
             self.debug_vals = self.solver.get_var_values(self._sess, self.debug, feed_dict, num_values, self.batch_size)
         # Keep track of tensorflow iterations for loading solver states.
         self.tf_iter += self._hyperparams['iterations']
