@@ -58,25 +58,23 @@ class CostIOCSupervised(CostIOCNN):
         return self.eval(self.test_sample_list[0])[0]
 
 
-    def update(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, itr=-1):
+    def update(self, demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=-1):
         """
         Learn cost function with generic function representation.
         Args:
             demoU: the actions of demonstrations.
-            demoX: the states of demonstrations.
             demoO: the observations of demonstrations.
             d_log_iw: log importance weights for demos.
             sampleU: the actions of samples.
-            sampleX: the states of samples.
             sampleO: the observations of samples.
             s_log_iw: log importance weights for samples.
         """
         if self.finetune:
             if itr >= self.update_after:
                 if self.multi_objective_wt:
-                    self.update_multiobjective(demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, itr=itr)
+                    self.update_multiobjective(demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=itr)
                 else:
-                    super(CostIOCSupervised, self).update(demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, itr=itr)
+                    super(CostIOCSupervised, self).update(demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=itr)
         else:
             return
 
@@ -246,7 +244,7 @@ class CostIOCSupervised(CostIOCNN):
         return self.solver
 
 
-    def update_multiobjective(self, demoU, demoX, demoO, d_log_iw, sampleU, sampleX, sampleO, s_log_iw, itr=-1):
+    def update_multiobjective(self, demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=-1):
         Nd = demoO.shape[0]
         Ns = sampleO.shape[0]
 

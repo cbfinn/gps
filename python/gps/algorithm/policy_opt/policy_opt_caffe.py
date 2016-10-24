@@ -5,8 +5,11 @@ import tempfile
 
 import numpy as np
 
-import caffe
-from caffe.proto.caffe_pb2 import SolverParameter, TRAIN, TEST
+try:
+    import caffe
+    from caffe.proto.caffe_pb2 import SolverParameter, TRAIN, TEST
+except ImportError:
+    print 'No Caffe Detected'
 from google.protobuf.text_format import MessageToString
 
 from gps.algorithm.policy.caffe_policy import CaffePolicy

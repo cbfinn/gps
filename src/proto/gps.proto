@@ -24,7 +24,9 @@ enum SampleType {
   CONTEXT_IMAGE_SIZE = 17;
   GYM_DATA = 18;
   GYM_REWARD = 19;
-  TOTAL_DATA_TYPES = 20;
+  IMAGE_FEAT = 20;
+  CONDITION_DATA = 21; //A constant specific to each condition
+  TOTAL_DATA_TYPES = 22;
 }
 
 // Message containing the data for a single sample.

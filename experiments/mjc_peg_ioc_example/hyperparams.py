@@ -48,6 +48,7 @@ common = {
     #'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'demo_controller_file': DEMO_DIR + 'data_files_nn_ICML_random_cond_0/algorithm_itr_09.pkl',
     'demo_exp_dir': DEMO_DIR,
+    'LG_demo_file': EXP_DIR + 'data_files/demos_LG.pkl',
     #'demo_controller_file': [DEMO_DIR + '%d/' % i + 'data_files/algorithm_itr_11.pkl' for i in xrange(4)],
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
@@ -185,33 +186,24 @@ algorithm['cost'] = {
     'mono_reg_weight': 100.0,
 }
 
-algorithm['cost'] = {
-    'type': CostIOCSupervised,
-    'weight_dir': common['data_files_dir'],
-    'agent': demo_agent,
-    'demo_file': os.path.join(common['data_files_dir'], 'demos_LG.pkl'),
-    'gt_cost': algorithm['gt_cost'],
-
-    'wu': 100*5e-5 / PR2_GAINS,
-    'T': 100,
-    'dO': 26,
-    'iterations': 5000,
-    'demo_batch_size': 5,
-    'sample_batch_size': 5,
-    'ioc_loss': algorithm['ioc'],
-    'learn_wu': False,  # set to true to learn torque penalty
-    'smooth_reg_weight': 0.1,
-    'mono_reg_weight': 100.0,
-}
-
-# algorithm['gt_cost'] = {
-#     'type': CostFK,
-#     'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
-#     'wp': np.array([1, 1, 1, 1, 1, 1]),
-#     'l1': 0.1,
-#     'l2': 10.0,
-#     'alpha': 1e-5,
-# }
+#algorithm['cost'] = {
+#    'type': CostIOCSupervised,
+#    'weight_dir': common['data_files_dir'],
+#    'agent': demo_agent,
+#    'demo_file': os.path.join(common['data_files_dir'], 'demos_LG.pkl'),
+#    'gt_cost': algorithm['gt_cost'],
+#
+#    'wu': 100*5e-5 / PR2_GAINS,
+#    'T': 100,
+#    'dO': 26,
+#    'iterations': 5000,
+#    'demo_batch_size': 5,
+#    'sample_batch_size': 5,
+#    'ioc_loss': algorithm['ioc'],
+#    'learn_wu': False,  # set to true to learn torque penalty
+#    'smooth_reg_weight': 0.1,
+#    'mono_reg_weight': 100.0,
+#}
 
 algorithm['dynamics'] = {
     'type': DynamicsLRPrior,

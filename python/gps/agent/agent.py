@@ -217,8 +217,8 @@ class Agent(object):
                                  self.dX)
             insert_shape[axes[i]] = len(self._x_data_idx[data_types[i]])
         if tuple(insert_shape) != data_to_insert.shape:
-            raise ValueError('Data has shape %s. Expected %s',
-                             data_to_insert.shape, tuple(insert_shape))
+            raise ValueError('Data %s has shape %s. Expected %s',
+                             data_types, data_to_insert.shape, tuple(insert_shape))
 
         # Actually perform the slice.
         index = [slice(None) for _ in range(len(existing_mat.shape))]

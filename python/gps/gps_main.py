@@ -29,7 +29,6 @@ from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, co
 from gps.utility.visualization import get_comparison_hyperparams, compare_experiments, compare_samples 
 
 
-
 class GPSMain(object):
     """ Main class to run algorithms and experiments. """
     def __init__(self, config, quit_on_end=False):
@@ -164,7 +163,9 @@ class GPSMain(object):
         Returns: None
         """
         algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr
+        print 'Loading algorithm file.'
         self.algorithm = self.data_logger.unpickle(algorithm_file)
+        print 'Done loading algorithm file.'
         if self.algorithm is None:
             print("Error: cannot find '%s.'" % algorithm_file)
             os._exit(1) # called instead of sys.exit(), since t
@@ -394,12 +395,12 @@ class GPSMain(object):
             copy_alg
         )
         self.data_logger.pickle(
-            self._data_files_dir + ('traj_sample_itr_%02d.pkl' % itr),
+            self._data_files_dir + ('traj_sample_itr_%02d.pkl.gz' % itr),
             copy.copy(traj_sample_lists)
         )
         if pol_sample_lists:
             self.data_logger.pickle(
-                self._data_files_dir + ('pol_sample_itr_%02d.pkl' % itr),
+                self._data_files_dir + ('pol_sample_itr_%02d.pkl.gz' % itr),
                 copy.copy(pol_sample_lists)
             )
 
@@ -500,7 +501,10 @@ def main():
                  (exp_name, hyperparams_file))
 
     unset = disable_caffe_logs()
-    import caffe  # Hack to avoid segfault when importing caffe later
+    try:
+        import caffe  # Need to import caffe before tensorflow to avoid segfaults
+    except ImportError:
+        pass
     disable_caffe_logs(unset)
     hyperparams = imp.load_source('hyperparams', hyperparams_file)
 
@@ -553,7 +557,7 @@ def main():
     elif compare:
         mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
             success_rates_2_dict = {}, {}, {}, {}
-        seeds = [0, 1, 2] 
+        seeds = [0, 1, 2]
         for itr in seeds:
             random.seed(itr)
             np.random.seed(itr)

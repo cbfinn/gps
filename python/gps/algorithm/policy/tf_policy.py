@@ -20,17 +20,29 @@ class TfPolicy(Policy):
         sess: tf session.
         device_string: tf device string for running on either gpu or cpu.
     """
-    def __init__(self, dU, obs_tensor, act_op, var, sess, device_string):
+    def __init__(self, dU, obs_tensor, act_op, feat_op, var, sess, graph, device_string, copy_param_scope=None):
         Policy.__init__(self)
         self.dU = dU
         self.obs_tensor = obs_tensor
         self.act_op = act_op
-        self.sess = sess
+        self.feat_op = feat_op
+        self._sess = sess
+        self.graph = graph
         self.device_string = device_string
         self.chol_pol_covar = np.diag(np.sqrt(var))
         self.scale = None  # must be set from elsewhere based on observations
         self.bias = None
         self.x_idx = None
+
+        if copy_param_scope:
+            with self.graph.as_default():
+                self.copy_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=copy_param_scope)
+                self.copy_params_assign_placeholders = [tf.placeholder(tf.float32, shape=param.get_shape()) for
+                                                          param in self.copy_params]
+
+                self.copy_params_assign_ops = [tf.assign(self.copy_params[i],
+                                                         self.copy_params_assign_placeholders[i])
+                                                 for i in range(len(self.copy_params))]
 
     def act(self, x, obs, t, noise):
         """
@@ -46,13 +58,42 @@ class TfPolicy(Policy):
         if len(obs.shape) == 1:
             obs = np.expand_dims(obs, axis=0)
         obs[:, self.x_idx] = obs[:, self.x_idx].dot(self.scale) + self.bias
-        with tf.device(self.device_string):
-            action_mean = self.sess.run(self.act_op, feed_dict={self.obs_tensor: obs})
+        action_mean = self.run(self.act_op, feed_dict={self.obs_tensor: obs})
         if noise is None:
             u = action_mean
         else:
             u = action_mean + self.chol_pol_covar.T.dot(noise)
         return u[0]  # the DAG computations are batched by default, but we use batch size 1.
+
+    def run(self, op, feed_dict=None):
+        with tf.device(self.device_string):
+            with self.graph.as_default():
+                result = self._sess.run(op, feed_dict=feed_dict)
+        return result
+
+    def get_features(self, obs):
+        """
+        Return the image features for an observation.
+        Args:
+            obs: Observation vector.
+        """
+        # TODO - there is a bug in this function.
+        # To reproduce, note that get_features(obs)[0] != get_features(obs[0]).
+        if len(obs.shape) == 1:
+            obs = np.expand_dims(obs, axis=0)
+        # Assume that features don't depend on the robot config, so don't normalize by scale and bias.
+        feat = self.run(self.feat_op, feed_dict={self.obs_tensor: obs})
+        return feat  # This used to be feat[0] because we would only ever call it with a batch size of 1. Now this isn't true.
+
+    def get_copy_params(self):
+        param_values = self.run(self.copy_params)
+        return {self.copy_params[i].name:param_values[i] for i in range(len(self.copy_params))}
+
+    def set_copy_params(self, param_values):
+        value_list = [param_values[self.copy_params[i].name] for i in range(len(self.copy_params))]
+        feeds = {self.copy_params_assign_placeholders[i]:value_list[i] for i in range(len(self.copy_params))}
+        self.run(self.copy_params_assign_ops, feed_dict=feeds)
+
 
     def pickle_policy(self, deg_obs, deg_action, checkpoint_path, goal_state=None, should_hash=False):
         """
@@ -68,8 +109,9 @@ class TfPolicy(Policy):
                        'checkpoint_path_tf': checkpoint_path + '_tf_data', 'scale': self.scale, 'bias': self.bias,
                        'device_string': self.device_string, 'goal_state': goal_state, 'x_idx': self.x_idx}
         pickle.dump(pickled_pol, open(checkpoint_path, "wb"))
-        saver = tf.train.Saver()
-        saver.save(self.sess, checkpoint_path + '_tf_data')
+        with self.graph.as_default():
+            saver = tf.train.Saver()
+            saver.save(self._sess, checkpoint_path + '_tf_data')
 
     @classmethod
     def load_policy(cls, policy_dict_path, tf_generator, network_config=None):
@@ -78,25 +120,29 @@ class TfPolicy(Policy):
         a checkpointed policy.
         """
         from tensorflow.python.framework import ops
-        ops.reset_default_graph()  # we need to destroy the default graph before re_init or checkpoint won't restore.
+        #ops.reset_default_graph()  # we need to destroy the default graph before re_init or checkpoint won't restore.
         pol_dict = pickle.load(open(policy_dict_path, "rb"))
-        tf_map = tf_generator(dim_input=pol_dict['deg_obs'], dim_output=pol_dict['deg_action'],
-                              batch_size=1, network_config=network_config)
 
-        sess = tf.Session()
-        init_op = tf.initialize_all_variables()
-        sess.run(init_op)
-        saver = tf.train.Saver()
-        check_file = pol_dict['checkpoint_path_tf']
-        saver.restore(sess, check_file)
 
-        device_string = pol_dict['device_string']
+        graph = tf.Graph()
+        sess = tf.Session(graph=graph)
 
-        cls_init = cls(pol_dict['deg_action'], tf_map.get_input_tensor(), tf_map.get_output_op(), np.zeros((1,)),
-                       sess, device_string)
-        cls_init.chol_pol_covar = pol_dict['chol_pol_covar']
-        cls_init.scale = pol_dict['scale']
-        cls_init.bias = pol_dict['bias']
-        cls_init.x_idx = pol_dict['x_idx']
-        return cls_init
+        with graph.as_default():
+            init_op = tf.initialize_all_variables()
+            tf_map = tf_generator(dim_input=pol_dict['deg_obs'], dim_output=pol_dict['deg_action'],
+                                  batch_size=1, network_config=network_config)
+            sess.run(init_op)
+            saver = tf.train.Saver()
+            check_file = pol_dict['checkpoint_path_tf']
+            saver.restore(sess, check_file)
+
+            device_string = pol_dict['device_string']
+
+            cls_init = cls(pol_dict['deg_action'], tf_map.get_input_tensor(), tf_map.get_output_op(), np.zeros((1,)),
+                           sess, graph, device_string)
+            cls_init.chol_pol_covar = pol_dict['chol_pol_covar']
+            cls_init.scale = pol_dict['scale']
+            cls_init.bias = pol_dict['bias']
+            cls_init.x_idx = pol_dict['x_idx']
+            return cls_init
 

@@ -80,11 +80,11 @@ IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
     'wu': np.array([]), # Torque penalties, must be 1 x dU numpy array.
     'weights_file_prefix': '',
     'use_jacobian': False,
+    'network_arch_params': {},  # includes info to construct model
 }
 
 #CostIOCQuadratic
 COST_IOC_QUADRATIC = {
-    'network_arch_params': {},  # includes info to construct model
     'network_model': construct_quad_cost_net,
 }
 
@@ -92,19 +92,10 @@ COST_IOC_QUADRATIC.update(IOC_CONFIG)
 
 #CostIOCNN
 COST_IOC_NN = {
-    'network_arch_params': {},  # includes info to construct model
     'network_model': construct_nn_cost_net,
 }
 
 COST_IOC_NN.update(IOC_CONFIG)
-
-#CostIOCVision
-COST_IOC_VISION = {
-    'network_arch_params': {},  # includes info to construct model
-    'network_model': construct_fp_cost_net,
-}
-
-COST_IOC_VISION.update(IOC_CONFIG)
 
 checkpoint_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                '..', 'cost/tf_checkpoint/cost_checkpoint.ckpt'))
@@ -113,5 +104,12 @@ COST_IOC_TF = {
     # Other hyperparameters.
     'checkpoint_prefix': checkpoint_path
 }
-
 COST_IOC_TF.update(IOC_CONFIG)
+
+
+# CostIOCTF + Vision
+COST_IOC_VISION_TF = {
+    # Other hyperparameters.
+    'fc_only_iters': None,
+}
+COST_IOC_VISION_TF.update(COST_IOC_TF)

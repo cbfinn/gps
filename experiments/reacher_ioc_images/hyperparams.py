@@ -10,12 +10,10 @@ from gps.agent.mjc.agent_mjc import AgentMuJoCo
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
-from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
+from gps.algorithm.cost.cost_ioc_vision_tf import CostIOCVisionTF
 from gps.algorithm.cost.cost_fk import CostFK
-#from gps.algorithm.cost.cost_fk_blocktouch import CostFKBlock
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
-#from gps.algorithm.cost.cost_gym import CostGym
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
@@ -31,7 +29,7 @@ from gps.algorithm.policy_opt.tf_model_example import multi_modal_network, multi
 
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, RGB_IMAGE, RGB_IMAGE_SIZE, ACTION, \
-        END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET
+        END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, IMAGE_FEAT
 from gps.gui.config import generate_experiment_info
 
 IMAGE_WIDTH = 80
@@ -48,16 +46,17 @@ SENSOR_DIMS = {
     ACTION: 2,
     RGB_IMAGE: IMAGE_WIDTH*IMAGE_HEIGHT*IMAGE_CHANNELS,
     RGB_IMAGE_SIZE: 3,
+    IMAGE_FEAT: 30,  # affected by num_filters
 }
 
 PR2_GAINS = np.array([1.0, 1.0])
 
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
-DEMO_DIR = BASE_DIR + '/../experiments/reacher_'
+DEMO_DIR = BASE_DIR + '/../experiments/reacher_images/'
 
-CONDITIONS = 1
-np.random.seed(13)
+CONDITIONS = 4
+np.random.seed(14)
 pos_body_offset = []
 for _ in range(CONDITIONS):
     pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1, 0]))
@@ -70,10 +69,11 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_exp_dir': DEMO_DIR,
-    'demo_controller_file': [DEMO_DIR + 'data_files/algorithm_itr_9.pkl'],
-    'demo_conditions': 9,
+    'demo_controller_file': [DEMO_DIR + 'data_files/algorithm_itr_12.pkl'],
+    'demo_conditions': 4,
     'conditions': CONDITIONS,
-    'nn_demo': False,
+    'nn_demo': True,
+    'NN_demo_file': EXP_DIR + 'data_files/pol_demos.pkl',
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -85,12 +85,12 @@ agent = {
     'x0': np.zeros(4),
     'dt': 0.05,
     'substeps': 5,
-    'pos_body_offset': None,
+    'pos_body_offset': pos_body_offset,
     'pos_body_idx': np.array([4]),
     'conditions': common['conditions'],
     'T': 50,
-    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-                      END_EFFECTOR_POINT_VELOCITIES],
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET,
+                      END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, IMAGE_FEAT],  # TODO - may want to include fp velocities.
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, RGB_IMAGE],
     'target_idx': np.array(list(range(3,6))),
     'meta_include': [RGB_IMAGE_SIZE],
@@ -99,6 +99,8 @@ agent = {
     'image_channels': IMAGE_CHANNELS,
     'sensor_dims': SENSOR_DIMS,
     'camera_pos': np.array([0., 0., 1.5, 0., 0., 0.]),
+    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01]) +pos_body_offset[i], np.array([0., 0., 0.])])
+                            for i in xrange(CONDITIONS)],
 }
 
 demo_agent = {
@@ -110,9 +112,9 @@ demo_agent = {
     'pos_body_offset': pos_body_offset,
     'pos_body_idx': np.array([4]),
     'conditions': common['demo_conditions'],
-    'T': 50,
-    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
-                      END_EFFECTOR_POINT_VELOCITIES],
+    'T': agent['T'],
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET,
+                      END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, IMAGE_FEAT],  # TODO - may want to include fp velocities.
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, RGB_IMAGE],
     'target_idx': np.array(list(range(3,6))),
     'meta_include': [RGB_IMAGE_SIZE],
@@ -121,65 +123,81 @@ demo_agent = {
     'image_channels': IMAGE_CHANNELS,
     'sensor_dims': SENSOR_DIMS,
     'camera_pos': np.array([0., 0., 1.5, 0., 0., 0.]),
+    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
+                            for i in xrange(CONDITIONS)],
 }
+
 
 algorithm = {
-    'type': AlgorithmTrajOpt,
-    'ioc' : 'MPF',
+    'type': AlgorithmMDGPS,
+    'ioc' : 'ICML',
     'max_ent_traj': 1.0,
     'conditions': common['conditions'],
-    'iterations': 12,
+    'iterations': 13,
     'kl_step': 0.5,
-    'min_step_mult': 0.05,
+    'min_step_mult': 0.1,
     'max_step_mult': 4.0,
-    'demo_cond': 9,
     'policy_sample_mode': 'replace',
+    'sample_on_policy': True,
+    'demo_cond': demo_agent['conditions'],
+    'num_demos': 10,
+    'demo_var_mult': 1.0,
+    'synthetic_cost_samples': 100,
+    'init_cost_params': common['demo_controller_file'][0], # initialize conv layers of policy
     'plot_dir': EXP_DIR,
+    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
+                            for i in xrange(CONDITIONS)],
 }
 
 
-# algorithm['policy_opt'] = {
-#     'type': PolicyOptCaffe,
-#     'iterations': 5000,
-#     'weights_file_prefix': common['data_files_dir'] + 'policy',
-# }
 
-#algorithm['policy_opt'] = {
-#    'type': PolicyOptTf,
-#    'network_params': {
-#        'num_filters': [15, 15, 15],
-#        'obs_include': agent['obs_include'],
-#        'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET],
-#        'obs_image_data': [RGB_IMAGE],
-#        'image_width': IMAGE_WIDTH,
-#        'image_height': IMAGE_HEIGHT,
-#        'image_channels': IMAGE_CHANNELS,
-#        'sensor_dims': SENSOR_DIMS,
-#    },
-#    'network_model': multi_modal_network_fp,
-#    'fc_only_iterations': 5000,
-#    'init_iterations': 1000,
-#    'iterations': 100,
-#    'weights_file_prefix': EXP_DIR + 'policy',
-#}
 
+algorithm['policy_opt'] = {
+    'type': PolicyOptTf,
+    'network_params': {
+        'num_filters': [15, 15, 15],
+        'obs_include': agent['obs_include'],
+        'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET],
+        'obs_image_data': [RGB_IMAGE],
+        'image_width': IMAGE_WIDTH,
+        'image_height': IMAGE_HEIGHT,
+        'image_channels': IMAGE_CHANNELS,
+        'sensor_dims': SENSOR_DIMS,
+    },
+    'network_model': multi_modal_network_fp,
+    'fc_only_iterations': 5000,
+    'init_iterations': 0, #1000,
+    'iterations': 0, #1000,
+    'weights_file_prefix': EXP_DIR + 'policy',
+}
 
 algorithm['init_traj_distr'] = {
-    'type': init_demo,
-    'init_gains':  1.0 / PR2_GAINS,
+    'type': init_lqr,
+    'init_gains':  100.0 / PR2_GAINS,
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-    'init_var': 5.0,
-    'stiffness': 1.0,
-    'stiffness_vel': 0.5,
-    'final_weight': 50.0,
+    'init_var': 1.0,
     'dt': agent['dt'],
     'T': agent['T'],
 }
 
+# This doesn't work unless features are initialized properly.
+#algorithm['init_traj_distr'] = {
+#    'type': init_demo,
+#    'init_gains':  1.0 / PR2_GAINS,
+#    'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
+#    'init_var': 5.0,
+#    'stiffness': 1.0,
+#    'stiffness_vel': 0.5,
+#    'final_weight': 50.0,
+#    'dt': agent['dt'],
+#    'T': agent['T'],
+#}
+
 torque_cost_1 = [{
     'type': CostAction,
-    'wu': 1 / PR2_GAINS,
+    'wu': 1.0 / PR2_GAINS,
 } for i in range(common['conditions'])]
+
 
 fk_cost_1 = [{
     'type': CostFK,
@@ -197,17 +215,27 @@ algorithm['gt_cost'] = [{
     'weights': [2.0, 1.0],
 }  for i in range(common['conditions'])]
 
-algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
-    'type': CostIOCNN,
-    'wu': 2 / PR2_GAINS,
-    'T': 100,
-    'dO': 26,
-    'iterations': 5000,
-    'demo_batch_size': 5,
+algorithm['cost'] = {
+    'type': CostIOCVisionTF,
+    'wu': 2000 / PR2_GAINS,
+    'network_params': {
+        'obs_include': agent['obs_include'],
+        'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET],
+        'obs_image_data': [RGB_IMAGE],
+        'image_width': IMAGE_WIDTH,
+        'image_height': IMAGE_HEIGHT,
+        'image_channels': IMAGE_CHANNELS,
+        'sensor_dims': SENSOR_DIMS,
+    },
+    'T': agent['T'],
+    'iterations': 1000,  # TODO - we might want to make fc only training here too.
+    'demo_batch_size': 5,  # are we going to run out of memory? # also should we init from policy feat?
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
+    'fc_only_iters': 15,
 }
 
+NUM_SAMPLES = 5
 algorithm['dynamics'] = {
     'type': DynamicsLRPrior,
     'regularization': 1e-6,
@@ -215,7 +243,7 @@ algorithm['dynamics'] = {
         'type': DynamicsPriorGMM,
         'max_clusters': 20,
         'min_samples_per_cluster': 40,
-        'max_samples': 10,
+        'max_samples': NUM_SAMPLES,  # was 10 before. we want it to be the same as the number of samples.
     },
 }
 
@@ -223,20 +251,24 @@ algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
 }
 
+algorithm['policy_prior'] = {
+    'type': PolicyPriorGMM,
+    'max_clusters': 20,
+    'min_samples_per_cluster': 40,
+}
 
-
-NUM_SAMPLES = 5
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': NUM_SAMPLES,
-    'verbose_trials': NUM_SAMPLES,
-    'verbose_policy_trials': 1,
+    'verbose_trials': 0,  # only show first image.
+    'verbose_policy_trials': 0,
     'common': common,
     'agent': agent,
     'demo_agent': demo_agent,
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
+    'random_seed': 1,
 }
 
 common['info'] = generate_experiment_info(config)
