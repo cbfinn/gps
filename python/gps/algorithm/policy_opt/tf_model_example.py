@@ -159,7 +159,7 @@ def multi_modal_network(dim_input=27, dim_output=7, batch_size=25, network_confi
 
     fc_input = tf.concat(concat_dim=1, values=[conv_out_flat, state_input])
 
-    fc_output = get_mlp_layers(fc_input, n_layers, dim_hidden)
+    fc_output, _, _ = get_mlp_layers(fc_input, n_layers, dim_hidden)
 
     loss = euclidean_loss_layer(a=action, b=fc_output, precision=precision, batch_size=batch_size)
     return TfMap.init_from_lists([nn_input, action, precision], [fc_output], [loss])
