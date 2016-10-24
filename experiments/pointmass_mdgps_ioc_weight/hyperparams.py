@@ -14,18 +14,18 @@ from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
-from gps.algorithm.cost.cost_ioc_quad import CostIOCQuadratic
-# from gps.algorithm.cost.cost_ioc_tf import CostIOCTF
+# from gps.algorithm.cost.cost_ioc_quad import CostIOCQuadratic
+from gps.algorithm.cost.cost_ioc_tf import CostIOCTF
 # from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
-# from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
+# from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
+from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
 from gps.algorithm.policy.lin_gauss_init import init_pd
 from gps.algorithm.policy.policy_prior import PolicyPrior
-# from gps.algorithm.policy_opt.tf_model_example import example_tf_network
+from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
 from gps.gui.config import generate_experiment_info
 
@@ -40,7 +40,7 @@ SENSOR_DIMS = {
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = os.path.dirname(__file__) + '/'
-DEMO_DIR = BASE_DIR + '/../experiments/mjc_pointmass_mdgps_example/'
+DEMO_DIR = BASE_DIR + '/../experiments/pointmass_mdgps_weight/'
 target_pos = np.array([1.3, 0.0, 0.])
 density_range = 10**(np.array([-7, -6.5, -6, -5, -4, -3, -2, -1, 0, 1, 1.5, 2]))
 # wall_1_center = np.array([0.5, -0.8, 0.])
@@ -58,7 +58,8 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_conditions': 5,
-    'conditions': 12,
+    # 'conditions': 12,
+    'conditions': 5,
     'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
     'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
     'nn_demo': True,
@@ -70,30 +71,30 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentMuJoCo,
     # 'models': obstacle_pointmass(target_pos, wall_center=0.5, hole_height=0.3, control_limit=50),
-    # 'models': [weighted_pointmass(target_pos, density=10., control_limit=10.0),
-    #    weighted_pointmass(target_pos, density=5., control_limit=10.0),
-    #    weighted_pointmass(target_pos, density=0.1, control_limit=10.0),
-    #    weighted_pointmass(target_pos, density=0.00001, control_limit=10.0),
-    #    weighted_pointmass(target_pos, density=0.000001, control_limit=10.0),
-    #    ],
-    'models': [weighted_pointmass(target_pos, density=density_range[0], control_limit=10.0),
-       weighted_pointmass(target_pos, density=density_range[1], control_limit=10.0),
-       weighted_pointmass(target_pos, density=density_range[2], control_limit=10.0),
-       weighted_pointmass(target_pos, density=density_range[3], control_limit=10.0),
-       weighted_pointmass(target_pos, density=density_range[4], control_limit=10.0),
-       weighted_pointmass(target_pos, density=density_range[5], control_limit=10.0),
-       weighted_pointmass(target_pos, density=density_range[6], control_limit=10.0),
-       weighted_pointmass(target_pos, density=density_range[7], control_limit=10.0),
-       weighted_pointmass(target_pos, density=density_range[8], control_limit=10.0),
-       weighted_pointmass(target_pos, density=density_range[9], control_limit=10.0),
-       weighted_pointmass(target_pos, density=density_range[10], control_limit=10.0),
-       weighted_pointmass(target_pos, density=density_range[11], control_limit=10.0)
+    'models': [weighted_pointmass(target_pos, density=10., control_limit=10.0),
+       weighted_pointmass(target_pos, density=5., control_limit=10.0),
+       weighted_pointmass(target_pos, density=0.1, control_limit=10.0),
+       weighted_pointmass(target_pos, density=0.00001, control_limit=10.0),
+       weighted_pointmass(target_pos, density=0.000001, control_limit=10.0),
        ],
+    # 'models': [weighted_pointmass(target_pos, density=density_range[0], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[1], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[2], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[3], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[4], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[5], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[6], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[7], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[8], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[9], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[10], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[11], control_limit=10.0)
+    #    ],
     'density_range': density_range,
     'filename': '',
     #'x0': [np.array([-1., 1., 0., 0.]), np.array([1., 1., 0., 0.]),
     #       np.array([1., -1., 0., 0.]), np.array([-1., -1., 0., 0.])],
-    'x0': [np.array([-1., 0., 0., 0.])]*12,
+    'x0': [np.array([-1., 0., 0., 0.])]*5,
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
@@ -167,8 +168,8 @@ algorithm['init_traj_distr'] = {
 }
 
 algorithm['cost'] = {
-    'type': CostIOCQuadratic,
-    # 'type': CostIOCTF,
+    # 'type': CostIOCQuadratic,
+    'type': CostIOCTF,
     # 'type': CostIOCNN,
     'wu': np.array([1e-5, 1e-5]),
     'dO': 10,
@@ -222,26 +223,26 @@ algorithm['traj_opt'] = {
 }
 
 
-algorithm['policy_opt'] = {
-    'type': PolicyOptCaffe,
-    'iterations': 4000,
-    'weights_file_prefix': common['data_files_dir'] + 'policy',
-}
-
 # algorithm['policy_opt'] = {
-#    'type': PolicyOptTf,
-#    'network_params': {
-#        'obs_include': agent['obs_include'],
-#        'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
-#        'sensor_dims': SENSOR_DIMS,
-#    },
-#    'network_model': example_tf_network,
-#    'use_vision': False,
-#    # 'fc_only_iterations': 5000,
-#    # 'init_iterations': 1000,
-#    'iterations': 1000,
-#    'weights_file_prefix': common['data_files_dir'] + 'policy',
+#     'type': PolicyOptCaffe,
+#     'iterations': 4000,
+#     'weights_file_prefix': common['data_files_dir'] + 'policy',
 # }
+
+algorithm['policy_opt'] = {
+   'type': PolicyOptTf,
+   'network_params': {
+       'obs_include': agent['obs_include'],
+       'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+       'sensor_dims': SENSOR_DIMS,
+   },
+   'network_model': example_tf_network,
+   'use_vision': False,
+   # 'fc_only_iterations': 5000,
+   # 'init_iterations': 1000,
+   'iterations': 1000,
+   'weights_file_prefix': common['data_files_dir'] + 'policy',
+}
 
 algorithm['policy_prior'] = {
     'type': PolicyPriorGMM,

@@ -116,7 +116,7 @@ algorithm = {
     'iterations': 10,
     'kl_step': 1.0,
     'min_step_mult': 0.01,
-    #'min_step_mult': 1.0,
+    # 'min_step_mult': 1.0,
     'max_step_mult': 10.0,
     'demo_cond': 1,
     'num_demos': 10,
