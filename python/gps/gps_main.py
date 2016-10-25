@@ -388,7 +388,7 @@ class GPSMain(object):
                 self.algorithm.demo_policy = None
                 copy_alg = copy.copy(self.algorithm)
                 copy_alg.sample_list = {}
-                    self.data_logger.pickle(
+                self.data_logger.pickle(
                         self._data_files_dir + ('algorithm_itr_%02d.pkl.gz' % itr),
                         copy_alg
                     )
