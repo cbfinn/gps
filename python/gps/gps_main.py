@@ -348,52 +348,60 @@ class GPSMain(object):
         Returns: None
         """
 
-        if False: #self.using_ioc():
-            # Produce time vs cost plots
-            sample_losses = self.algorithm.cur[6].cs
-            if sample_losses is None:
-                sample_losses = self.algorithm.prev[6].cs
-            if sample_losses.shape[0] < NUM_DEMO_PLOTS:
-                sample_losses = np.tile(sample_losses, [NUM_DEMO_PLOTS, 1])[:Fset__NUM_DEMO_PLOTS]
-            demo_losses = eval_demos_xu(self.agent, self.algorithm.demoX, self.algorithm.demoU, self.algorithm.cost, n=NUM_DEMO_PLOTS)
+        with Timer('GPSMain._log_data: Updating GUI'):
+            if False: #self.using_ioc():
+                # Produce time vs cost plots
+                sample_losses = self.algorithm.cur[6].cs
+                if sample_losses is None:
+                    sample_losses = self.algorithm.prev[6].cs
+                if sample_losses.shape[0] < NUM_DEMO_PLOTS:
+                    sample_losses = np.tile(sample_losses, [NUM_DEMO_PLOTS, 1])[:Fset__NUM_DEMO_PLOTS]
+                demo_losses = eval_demos_xu(self.agent, self.algorithm.demoX, self.algorithm.demoU, self.algorithm.cost, n=NUM_DEMO_PLOTS)
 
-            # Produce distance vs cost plots
-            dists_vs_costs = compute_distance_cost_plot(self.algorithm, self.agent, traj_sample_lists[6])
-            demo_dists_vs_costs = compute_distance_cost_plot_xu(self.algorithm, self.agent, self.algorithm.demoX, self.algorithm.demoU)
+                # Produce distance vs cost plots
+                dists_vs_costs = compute_distance_cost_plot(self.algorithm, self.agent, traj_sample_lists[6])
+                demo_dists_vs_costs = compute_distance_cost_plot_xu(self.algorithm, self.agent, self.algorithm.demoX, self.algorithm.demoU)
 
-        else:
-            demo_losses = None
-            sample_losses = None
-            dists_vs_costs = None
-            demo_dists_vs_costs = None
+            else:
+                demo_losses = None
+                sample_losses = None
+                dists_vs_costs = None
+                demo_dists_vs_costs = None
 
-        if self.gui:
-            self.gui.set_status_text('Logging data and updating GUI.')
-            self.gui.update(itr, self.algorithm, self.agent,
-                traj_sample_lists, pol_sample_lists, ioc_demo_losses=demo_losses, ioc_sample_losses=sample_losses,
-                            ioc_dist_cost=dists_vs_costs, ioc_demo_dist_cost=demo_dists_vs_costs)
-            self.gui.save_figure(
-                self._data_files_dir + ('figure_itr_%02d.pdf' % itr)
-            )
-        if 'no_sample_logging' in self._hyperparams['common']:
-            return
+            if self.gui:
+                self.gui.set_status_text('Logging data and updating GUI.')
+                self.gui.update(itr, self.algorithm, self.agent,
+                    traj_sample_lists, pol_sample_lists, ioc_demo_losses=demo_losses, ioc_sample_losses=sample_losses,
+                                ioc_dist_cost=dists_vs_costs, ioc_demo_dist_cost=demo_dists_vs_costs)
+                self.gui.save_figure(
+                    self._data_files_dir + ('figure_itr_%02d.pdf' % itr)
+                )
+            if 'no_sample_logging' in self._hyperparams['common']:
+                return
 
-        self.algorithm.demo_policy = None
-        copy_alg = copy.copy(self.algorithm)
-        copy_alg.sample_list = {}
-        self.data_logger.pickle(
-            self._data_files_dir + ('algorithm_itr_%02d.pkl.gz' % itr),
-            copy_alg
-        )
-        self.data_logger.pickle(
-            self._data_files_dir + ('traj_sample_itr_%02d.pkl.gz' % itr),
-            copy.copy(traj_sample_lists)
-        )
-        if pol_sample_lists:
-            self.data_logger.pickle(
-                self._data_files_dir + ('pol_sample_itr_%02d.pkl.gz' % itr),
-                copy.copy(pol_sample_lists)
-            )
+
+        log_data = itr>0 and (itr%5 == 0) or (itr==self._hyperparams['iterations'])
+
+
+        if log_data:
+            with Timer('GPSMain._log_data: saving algorithm file'):
+                self.algorithm.demo_policy = None
+                copy_alg = copy.copy(self.algorithm)
+                copy_alg.sample_list = {}
+                    self.data_logger.pickle(
+                        self._data_files_dir + ('algorithm_itr_%02d.pkl.gz' % itr),
+                        copy_alg
+                    )
+            with Timer('GPSMain._log_data: saving samples'):
+                self.data_logger.pickle(
+                    self._data_files_dir + ('traj_sample_itr_%02d.pkl.gz' % itr),
+                    copy.copy(traj_sample_lists)
+                )
+                if pol_sample_lists:
+                    self.data_logger.pickle(
+                        self._data_files_dir + ('pol_sample_itr_%02d.pkl.gz' % itr),
+                        copy.copy(pol_sample_lists)
+                    )
 
     def _end(self):
         """ Finish running and exit. """
