@@ -41,7 +41,7 @@ def extract_samples(itr, sample_file):
     """ Extract samples from iteration 0 up to iteration itr. """
     sample_list = {}
     for i in xrange(itr):
-        sample_file_i = sample_file + '_%2d' % itr + '.pkl'
+        sample_file_i = sample_file + '_%2d' % itr + '.pkl.gz'
         samples = DataLogger().unpickle(sample_file_i)
         sample_list[i] = samples[0]
     return sample_list
@@ -134,7 +134,7 @@ def measure_distance_and_success_peg(gps):
         #     gps._hyperparams['algorithm']['sample_on_policy']:
         #     pol_samples_file = gps._data_files_dir + 'pol_sample_itr_%02d.pkl' % i
         # else:
-        pol_samples_file = gps._data_files_dir + 'traj_sample_itr_%02d.pkl' % i
+        pol_samples_file = gps._data_files_dir + 'traj_sample_itr_%02d.pkl.gz' % i
         pol_sample_lists = gps.data_logger.unpickle(pol_samples_file)
         if pol_sample_lists is None:
             print("Error: cannot find '%s.'" % pol_samples_file)

@@ -9,7 +9,7 @@ from numpy.linalg import LinAlgError
 
 from gps.algorithm.config import ALG
 from gps.algorithm.algorithm_utils import IterationData, TrajectoryInfo
-from gps.utility.general_utils import extract_condition, disable_caffe_logs
+from gps.utility.general_utils import extract_condition, disable_caffe_logs, Timer
 from gps.sample.sample import Sample
 from gps.sample.sample_list import SampleList
 from gps.utility.general_utils import logsum
@@ -273,7 +273,8 @@ class Algorithm(object):
         if not self._hyperparams['policy_eval']:
             self.traj_distr[self.iteration_count] = []
         else:
-            new_policy_opt = self.policy_opt.copy()
+            with Timer('Algorithm._advance_iteration_variables policy_opt_copy'):
+                new_policy_opt = self.policy_opt.copy()
             self.policy_opts[self.iteration_count] = new_policy_opt
             # self.linear_policies[self.iteration_count] = []
         if self._hyperparams['bootstrap']:
@@ -282,7 +283,8 @@ class Algorithm(object):
         self.kl_div[self.iteration_count] = []
         self.dists_to_target[self.iteration_count] = []
         if self._hyperparams['global_cost'] and self._hyperparams['ioc']:
-            self.previous_cost = self.cost.copy()
+            with Timer('Algorithm._advance_iteration_variables cost_copy'):
+                self.previous_cost = self.cost.copy()
         else:
             self.previous_cost = []
         for m in range(self.M):
@@ -297,7 +299,8 @@ class Algorithm(object):
             if self._hyperparams['ioc']:
               self.cur[m].prevcost_traj_info = TrajectoryInfo()
               if not self._hyperparams['global_cost'] and self._hyperparams['ioc']:
-                self.previous_cost.append(self.cost[m].copy())
+                with Timer('Algorithm._advance_iteration_variables cost_copy'):
+                    self.previous_cost.append(self.cost[m].copy())
         delattr(self, 'new_traj_distr')
 
     def _set_new_mult(self, predicted_impr, actual_impr, m):

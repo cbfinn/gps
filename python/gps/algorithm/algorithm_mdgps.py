@@ -70,38 +70,42 @@ class AlgorithmMDGPS(Algorithm):
         """
         itr = self.iteration_count
 
-        if itr == 0 and RGB_IMAGE in sample_lists[0][0].agent.obs_data_types:
-            for sample_list in sample_lists:
-                for sample in sample_list:
-                    sample.update_features(self.policy_opt.policy)
 
-        # Store the samples.
-        if self._hyperparams['ioc']:
-            self.N = sum(len(self.sample_list[i]) for i in self.sample_list.keys())
-            self.num_samples = [len(self.sample_list[i]) for i in self.sample_list.keys()]
-        for m in range(self.M):
-            self.cur[m].sample_list = sample_lists[m]
+        with Timer('AlgorithmMDGPS.iteration: update_features'):
+            if itr == 0 and RGB_IMAGE in sample_lists[0][0].agent.obs_data_types:
+                for sample_list in sample_lists:
+                    for sample in sample_list:
+                        sample.update_features(self.policy_opt.policy)
+
+        with Timer('AlgorithmMDGPS.iteration: compute_dist_to_target'):
+            # Store the samples.
             if self._hyperparams['ioc']:
-                prev_samples = self.sample_list[m].get_samples()
-                prev_samples.extend(sample_lists[m].get_samples())
-                self.sample_list[m] = SampleList(prev_samples)
-                self.N += len(sample_lists[m])
-            # Compute mean distance to target. For peg experiment only.
-            if 'target_end_effector' in self._hyperparams:
-                if type(self._hyperparams['target_end_effector']) is list:
-                    target_position = self._hyperparams['target_end_effector'][m][:3]
-                else:
-                    target_position = self._hyperparams['target_end_effector'][:3]
-                cur_samples = sample_lists[m].get_samples()
+                self.N = sum(len(self.sample_list[i]) for i in self.sample_list.keys())
+                self.num_samples = [len(self.sample_list[i]) for i in self.sample_list.keys()]
+            for m in range(self.M):
+                self.cur[m].sample_list = sample_lists[m]
+                if self._hyperparams['ioc']:
+                    prev_samples = self.sample_list[m].get_samples()
+                    prev_samples.extend(sample_lists[m].get_samples())
+                    self.sample_list[m] = SampleList(prev_samples)
+                    self.N += len(sample_lists[m])
+                # Compute mean distance to target. For peg experiment only.
+                if 'target_end_effector' in self._hyperparams:
+                    if type(self._hyperparams['target_end_effector']) is list:
+                        target_position = self._hyperparams['target_end_effector'][m][:3]
+                    else:
+                        target_position = self._hyperparams['target_end_effector'][:3]
+                    cur_samples = sample_lists[m].get_samples()
 
-                sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
-                dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
-                         for i in xrange(len(cur_samples))]
-                self.dists_to_target[itr].append(sum(dists) / len(cur_samples))
+                    sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
+                    dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
+                             for i in xrange(len(cur_samples))]
+                    self.dists_to_target[itr].append(sum(dists) / len(cur_samples))
 
         # Comment this when use random policy initialization and add after line 78
         if self.iteration_count == 0 and self._hyperparams['policy_eval']:
-            self.policy_opts[self.iteration_count] = self.policy_opt.copy()
+            with Timer('AlgorithmMDGPS.iteration: copy_policy'):
+                self.policy_opts[self.iteration_count] = self.policy_opt.copy()
 
         # On the first iteration we need to make sure that the policy somewhat
         # matches the init controller. Otherwise the LQR backpass starts with
@@ -111,11 +115,11 @@ class AlgorithmMDGPS(Algorithm):
                 self.cur[cond].traj_distr for cond in range(self.M)
             ]
             # Only update fc layers.
-            with Timer('UpdatePolicy'):
+            with Timer('AlgorithmMDGPS.iteration: copy_policy - UpdatePolicy'):
                 self._update_policy(fc_only=True)
 
         # Update dynamics linearizations.
-        with Timer('UpdateDynamics'):
+        with Timer('AlgorithmMDGPS.iteration: UpdateDynamics'):
             self._update_dynamics()
 
         # Move this after line 78 if using random initializarion.
@@ -132,7 +136,7 @@ class AlgorithmMDGPS(Algorithm):
                     self.cost.set_vision_params(conv_params)
 
 
-                with Timer('UpdateCost'):
+                with Timer('AlgorithmMDGPS.iteration: UpdateCost'):
                     self._update_cost()
                 # Commenting this out because we're not updating the cost end-to-end right now.
                 """
@@ -149,19 +153,19 @@ class AlgorithmMDGPS(Algorithm):
 
         # Update policy linearizations.
         for m in range(self.M):
-            with Timer('EvalCost'):
+            with Timer('AlgorithmMDGPS.iteration: EvalCost'):
                 self._eval_cost(m)
-            with Timer('PolicyFit'):
+            with Timer('AlgorithmMDGPS.iteration: PolicyFit'):
                 self._update_policy_fit(m)
 
         # C-step
         if self.iteration_count > 0:
             try:
-                with Timer('stepadjust'):
+                with Timer('AlgorithmMDGPS.iteration: stepadjust'):
                     self._stepadjust()
             except OverflowError:
                 import pdb; pdb.set_trace()
-        with Timer('UpdateTrajectories'):
+        with Timer('AlgorithmMDGPS.iteration: UpdateTrajectories'):
             self._update_trajectories()
 
         # S-step
@@ -170,7 +174,7 @@ class AlgorithmMDGPS(Algorithm):
             conv_params = self.cost.get_vision_params()
             self.policy_opt.policy.set_copy_params(conv_params)
 
-        with Timer('UpdatePolicy'):
+        with Timer('AlgorithmMDGPS.iteration: UpdatePolicy'):
             if self._hyperparams['ioc']:
                 self._update_policy(fc_only=True)
             else:
@@ -178,7 +182,7 @@ class AlgorithmMDGPS(Algorithm):
 
 
         # Prepare for next iteration
-        with Timer('AdvanceIteration'):
+        with Timer('AlgorithmMDGPS.iteration: AdvanceIteration'):
             self._advance_iteration_variables()
 
     def _update_policy(self, fc_only=False):

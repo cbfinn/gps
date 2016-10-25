@@ -23,7 +23,7 @@ from gps.gui.gps_training_gui import GPSTrainingGUI, NUM_DEMO_PLOTS
 from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
 # from gps.utility.generate_demo import GenDemo
-from gps.utility.general_utils import disable_caffe_logs
+from gps.utility.general_utils import disable_caffe_logs, Timer
 from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
                                     measure_distance_and_success_peg, get_demos, extract_samples
 from gps.utility.visualization import get_comparison_hyperparams, compare_experiments
@@ -114,34 +114,40 @@ class GPSMain(object):
 
         itr_start = self._initialize(itr_load)
         for itr in range(itr_start, self._hyperparams['iterations']):
-            if self.agent._hyperparams.get('randomly_sample_x0', False):
+            with Timer('GPSMain.run: _reset'):
+                if self.agent._hyperparams.get('randomly_sample_x0', False):
+                        for cond in self._train_idx:
+                            self.agent.reset_initial_x0(cond)
+
+                if self.agent._hyperparams.get('randomly_sample_bodypos', False):
                     for cond in self._train_idx:
-                        self.agent.reset_initial_x0(cond)
+                        self.agent.reset_initial_body_offset(cond)
 
-            if self.agent._hyperparams.get('randomly_sample_bodypos', False):
+            with Timer('GPSMain.run: _take_sample'):
                 for cond in self._train_idx:
-                    self.agent.reset_initial_body_offset(cond)
-            for cond in self._train_idx:
-                if itr == 0:
-                    for i in range(self.algorithm._hyperparams['init_samples']):
-                        self._take_sample(itr, cond, i)
+                    if itr == 0:
+                        for i in range(self.algorithm._hyperparams['init_samples']):
+                            self._take_sample(itr, cond, i)
+                    else:
+                        for i in range(self._hyperparams['num_samples']):
+                            self._take_sample(itr, cond, i)
+
+            with Timer('GPSMain.run: get_samples'):
+                traj_sample_lists = [
+                    self.agent.get_samples(cond, -self._hyperparams['num_samples'])
+                    for cond in self._train_idx
+                ]
+
+            with Timer('GPSMain.run: _take_iteration'):
+                self._take_iteration(itr, traj_sample_lists)
+
+            with Timer('GPSMain.run: _log_data'):
+                if self.algorithm._hyperparams['sample_on_policy']:
+                # TODO - need to add these to lines back in when we move to mdgps
+                    pol_sample_lists = self._take_policy_samples()
+                    self._log_data(itr, traj_sample_lists, pol_sample_lists)
                 else:
-                    for i in range(self._hyperparams['num_samples']):
-                        self._take_sample(itr, cond, i)
-
-            traj_sample_lists = [
-                self.agent.get_samples(cond, -self._hyperparams['num_samples'])
-                for cond in self._train_idx
-            ]
-
-            self._take_iteration(itr, traj_sample_lists)
-
-            if self.algorithm._hyperparams['sample_on_policy']:
-            # TODO - need to add these to lines back in when we move to mdgps
-                pol_sample_lists = self._take_policy_samples()
-                self._log_data(itr, traj_sample_lists, pol_sample_lists)
-            else:
-                self._log_data(itr, traj_sample_lists)
+                    self._log_data(itr, traj_sample_lists)
 
         self._end()
         return None
@@ -156,7 +162,7 @@ class GPSMain(object):
             N: the number of policy samples to take
         Returns: None
         """
-        algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr
+        algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl.gz' % itr
         print 'Loading algorithm file.'
         self.algorithm = self.data_logger.unpickle(algorithm_file)
         print 'Done loading algorithm file.'
@@ -164,11 +170,11 @@ class GPSMain(object):
             print("Error: cannot find '%s.'" % algorithm_file)
             os._exit(1) # called instead of sys.exit(), since t
         traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
-            ('traj_sample_itr_%02d.pkl' % itr))
+            ('traj_sample_itr_%02d.pkl.gz' % itr))
 
         pol_sample_lists = self._take_policy_samples(N)
         self.data_logger.pickle(
-            self._data_files_dir + ('pol_sample_itr_%02d.pkl' % itr),
+            self._data_files_dir + ('pol_sample_itr_%02d.pkl.gz' % itr),
             copy.copy(pol_sample_lists)
         )
 
@@ -194,7 +200,7 @@ class GPSMain(object):
                 self.gui.set_status_text('Press \'go\' to begin.')
             return 0
         else:
-            algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr_load
+            algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl.gz' % itr_load
             self.algorithm = self.data_logger.unpickle(algorithm_file)
             if self.algorithm._hyperparams['ioc']:
                 self.algorithm.sample_list = extract_samples(itr_load, self._data_files_dir + 'traj_sample_itr')
@@ -204,10 +210,10 @@ class GPSMain(object):
 
             if self.gui:
                 traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
-                    ('traj_sample_itr_%02d.pkl' % itr_load))
+                    ('traj_sample_itr_%02d.pkl.gz' % itr_load))
                 if self.algorithm.cur[0].pol_info:
                     pol_sample_lists = self.data_logger.unpickle(self._data_files_dir +
-                        ('pol_sample_itr_%02d.pkl' % itr_load))
+                        ('pol_sample_itr_%02d.pkl.gz' % itr_load))
                 else:
                     pol_sample_lists = None
                 #self.gui.update(itr_load, self.algorithm, self.agent,
@@ -376,7 +382,7 @@ class GPSMain(object):
         copy_alg = copy.copy(self.algorithm)
         copy_alg.sample_list = {}
         self.data_logger.pickle(
-            self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
+            self._data_files_dir + ('algorithm_itr_%02d.pkl.gz' % itr),
             copy_alg
         )
         self.data_logger.pickle(
