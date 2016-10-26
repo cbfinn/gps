@@ -18,10 +18,10 @@ from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-# from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
-from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
+from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
+# from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
 from gps.algorithm.policy.lin_gauss_init import init_pd
-from gps.algorithm.policy_opt.tf_model_example import example_tf_network
+# from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 from gps.algorithm.policy.policy_prior import PolicyPrior
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
 from gps.gui.config import generate_experiment_info
@@ -46,7 +46,7 @@ common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
-    'data_files_dir': EXP_DIR + 'data_files/',
+    'data_files_dir': EXP_DIR + 'data_files_oracle/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'train_conditions': range(5),
@@ -65,12 +65,18 @@ agent = {
     #            obstacle_pointmass(target_pos, wall_center=-0.20, hole_height=0.3),
     #            obstacle_pointmass(target_pos, wall_center=0.30, hole_height=0.3),
     #            ],
-    'models': [weighted_pointmass(target_pos, density=1., control_limit=10.0),
+    # 'models': [weighted_pointmass(target_pos, density=1., control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=0.1, control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=0.01, control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=0.001, control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=0.0001, control_limit=10.0),
+    #    ], # for varying weights of the pointmass
+    'models': [weighted_pointmass(target_pos, density=10., control_limit=10.0),
+       weighted_pointmass(target_pos, density=5., control_limit=10.0),
        weighted_pointmass(target_pos, density=0.1, control_limit=10.0),
-       weighted_pointmass(target_pos, density=0.01, control_limit=10.0),
-       weighted_pointmass(target_pos, density=0.001, control_limit=10.0),
-       weighted_pointmass(target_pos, density=0.0001, control_limit=10.0),
-       ], # for varying weights of the pointmass
+       weighted_pointmass(target_pos, density=0.00001, control_limit=10.0),
+       weighted_pointmass(target_pos, density=0.000001, control_limit=10.0),
+       ],
     #'x0': [np.array([-1., 1., 0., 0.]), np.array([-0.5, 1.3, 0., 0.]),
     #       np.array([-0.5, -1.3, 0., 0.]), np.array([-1., -1., 0., 0.])],
     'x0': [np.array([-1., 0., 0., 0.])]*5,
@@ -119,11 +125,11 @@ algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
     'sample_on_policy': True,
-    'iterations': 10,
+    'iterations': 15,
     'kl_step': 1.0,
     'min_step_mult': 0.1,
     'max_step_mult': 4.0,
-    'max_ent_traj': 1.0,
+    'max_ent_traj': 0.001,
     'step_rule': 'laplace',
     'target_end_effector': target_pos,
 }
@@ -181,26 +187,26 @@ algorithm['traj_opt'] = {
 }
 
 
-# algorithm['policy_opt'] = {
-#     'type': PolicyOptCaffe,
-#     'iterations': 4000,
-#     'weights_file_prefix': EXP_DIR + 'policy',
-# }
-
 algorithm['policy_opt'] = {
-   'type': PolicyOptTf,
-   'network_params': {
-       'obs_include': agent['obs_include'],
-       'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
-       'sensor_dims': SENSOR_DIMS,
-   },
-   'network_model': example_tf_network,
-   'use_vision': False,
-   # 'fc_only_iterations': 5000,
-   # 'init_iterations': 1000,
-   'iterations': 1000,
-   'weights_file_prefix': common['data_files_dir'] + 'policy',
+    'type': PolicyOptCaffe,
+    'iterations': 4000,
+    'weights_file_prefix': common['data_files_dir'] + 'policy',
 }
+
+# algorithm['policy_opt'] = {
+#    'type': PolicyOptTf,
+#    'network_params': {
+#        'obs_include': agent['obs_include'],
+#        'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+#        'sensor_dims': SENSOR_DIMS,
+#    },
+#    'network_model': example_tf_network,
+#    'use_vision': False,
+#    # 'fc_only_iterations': 5000,
+#    # 'init_iterations': 1000,
+#    'iterations': 1000,
+#    'weights_file_prefix': common['data_files_dir'] + 'policy',
+# }
 
 algorithm['policy_prior'] = {
     'type': PolicyPriorGMM,

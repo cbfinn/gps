@@ -81,6 +81,9 @@ def eval_demos_xu(agent, demoX, demoU, costfn, n=-1):
     else:
         return losses
 
+def eval_policy_gt():
+    # TODO: evaluate the ground truth cost of the final policy
+    pass
 
 def get_target_end_effector(algorithm, condition=0):
     target_dict = algorithm._hyperparams['target_end_effector']

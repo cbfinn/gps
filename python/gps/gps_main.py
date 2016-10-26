@@ -20,7 +20,7 @@ import numpy as np
 # Add gps/python to path so that imports work.
 sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
 from gps.gui.gps_training_gui import GPSTrainingGUI, NUM_DEMO_PLOTS
-from gps.utility.data_logger import DataLogger
+from gps.utility.data_logger import DataLogger, open_zip
 from gps.sample.sample_list import SampleList
 # from gps.utility.generate_demo import GenDemo
 from gps.utility.general_utils import disable_caffe_logs
@@ -169,12 +169,11 @@ class GPSMain(object):
         if self.algorithm is None:
             print("Error: cannot find '%s.'" % algorithm_file)
             os._exit(1) # called instead of sys.exit(), since t
-        traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
-            ('traj_sample_itr_%02d.pkl' % itr))
+        traj_sample_lists = self.data_logger.unpickle(self._data_files_dir + ('traj_sample_itr_%02d.pkl.gz' % itr))
 
         pol_sample_lists = self._take_policy_samples(N, testing, self._test_idx)
         self.data_logger.pickle(
-            self._data_files_dir + ('pol_sample_itr_%02d.pkl' % itr),
+            self._data_files_dir + ('pol_sample_itr_%02d.pkl.gz' % itr),
             copy.copy(pol_sample_lists)
         )
 
@@ -183,7 +182,7 @@ class GPSMain(object):
                 traj_sample_lists, pol_sample_lists)
             self.gui.set_status_text(('Took %d policy sample(s) from ' +
                 'algorithm state at iteration %d.\n' +
-                'Saved to: data_files/pol_sample_itr_%02d.pkl.\n') % (N, itr, itr))
+                'Saved to: data_files/pol_sample_itr_%02d.pkl.gz.\n') % (N, itr, itr))
 
 
     def _initialize(self, itr_load):
@@ -210,10 +209,10 @@ class GPSMain(object):
 
             if self.gui:
                 traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
-                    ('traj_sample_itr_%02d.pkl' % itr_load))
+                    ('traj_sample_itr_%02d.pkl.gz' % itr_load))
                 if self.algorithm.cur[0].pol_info:
                     pol_sample_lists = self.data_logger.unpickle(self._data_files_dir +
-                        ('pol_sample_itr_%02d.pkl' % itr_load))
+                        ('pol_sample_itr_%02d.pkl.gz' % itr_load))
                 else:
                     pol_sample_lists = None
                 #self.gui.update(itr_load, self.algorithm, self.agent,

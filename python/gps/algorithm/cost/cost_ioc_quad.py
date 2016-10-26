@@ -88,7 +88,7 @@ class CostIOCQuadratic(Cost):
     # TODO - we might want to make the demos and samples input as SampleList objects, rather than arrays.
     # TODO - also we might want to exclude demoU/sampleU since we generally don't use them
     # TODO - change name of dlogis/slogis to d_log_iw and s_log_iw.
-    def update(self, demoU, demoO, dlogis, sampleU, sampleO, slogis):
+    def update(self, demoU, demoO, dlogis, sampleU, sampleO, slogis, itr=None):
         """
         Learn cost function with generic function representation.
         Args:

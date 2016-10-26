@@ -48,7 +48,7 @@ DEMO_DIR = BASE_DIR + '/../experiments/reacher_mdgps_weight/'
 TRAIN_CONDITIONS = 4
 
 np.random.seed(47)
-DEMO_CONDITIONS = 10 #20
+DEMO_CONDITIONS = 4 #20
 TEST_CONDITIONS = 0 # 4
 TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
 
@@ -90,11 +90,15 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'filename': './mjc_models/reacher_img.xml',
+    'models': [weighted_reacher(density=5e7),
+        weighted_reacher(density=1e8),
+        weighted_reacher(density=5e8),
+        weighted_reacher(density=1e9),
+        ],
     'x0': np.zeros(4),
     'dt': 0.05,
     'substeps': 5,
-    'randomly_sample_bodypos': True,
+    'randomly_sample_bodypos': False,
     'sampling_range_bodypos': [np.array([-0.3,-0.1, 0.0]), np.array([0.1, 0.3, 0.0])], # Format is [lower_lim, upper_lim]
     'prohibited_ranges_bodypos':[ [None, None, None, None] ],
     'pos_body_offset': pos_body_offset,
@@ -115,8 +119,13 @@ agent = {
 
 demo_agent = {
     'type': AgentMuJoCo,
-    'filename': './mjc_models/reacher_img.xml',
-    'x0': np.zeros(4),
+    'models': [weighted_reacher(density=1e-8),
+        weighted_reacher(density=1e-7),
+        weighted_reacher(density=1e7),
+        weighted_reacher(density=1e8),
+        ],
+    'exp_name': 'reacher',
+    'x0': np.zeros(4)*4,
     'dt': 0.05,
     'substeps': 5,
     'pos_body_offset': demo_pos_body_offset,

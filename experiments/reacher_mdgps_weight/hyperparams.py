@@ -92,6 +92,32 @@ agent = {
     'render':True,
 }
 
+test_agent = {
+    'type': AgentMuJoCo,
+    # 'filename': './mjc_models/reacher_img.xml',
+    'models': [weighted_reacher(density=1e-51),
+        weighted_reacher(density=1e-50),
+        weighted_reacher(density=1e10),
+        weighted_reacher(density=1e11),
+        ],
+    'x0': np.zeros(4),
+    'dt': 0.05,
+    'substeps': 5,
+    'pos_body_offset': pos_body_offset,
+    'pos_body_idx': np.array([4]),
+    'conditions': common['conditions'],
+    'T': 50,
+    'sensor_dims': SENSOR_DIMS,
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, \
+            END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, \
+            END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'meta_include': [],
+    'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[i], np.array([0., 0., 0.])])
+        for i in range(TOTAL_CONDITIONS)],
+    'render':True,
+}
 
 algorithm = {
     'type': AlgorithmMDGPS,
@@ -222,6 +248,7 @@ config = {
     'verbose_policy_trials': 1,
     'common': common,
     'agent': agent,
+    'test_agent': test_agent,
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
