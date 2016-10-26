@@ -461,6 +461,8 @@ class GPSTrainingGUI(object):
         image = sp.misc.imresize(image, (IMAGE_SIZE, IMAGE_SIZE, 3))
         self._fp_visualizer.imshow(image)
 
+        print 'Feature Points:', feature_points
+
         fp_x = []
         fp_y = []
         colors = []

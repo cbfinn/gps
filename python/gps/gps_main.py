@@ -51,54 +51,27 @@ class GPSMain(object):
 
         self._data_files_dir = config['common']['data_files_dir']
 
-        self.agent = config['agent']['type'](config['agent'])
+        with Timer('init agent'):
+            self.agent = config['agent']['type'](config['agent'])
         self.data_logger = DataLogger()
-        self.gui = GPSTrainingGUI(config['common'], gui_on=config['gui_on'])
+        with Timer('init GUI'):
+            self.gui = GPSTrainingGUI(config['common'], gui_on=config['gui_on'])
 
         config['algorithm']['agent'] = self.agent
 
         if self.using_ioc():
-            demos = get_demos(self)
-            self.agent = config['agent']['type'](config['agent'])
-            self.algorithm.demoX = demos['demoX']
-            self.algorithm.demoU = demos['demoU']
-            self.algorithm.demoO = demos['demoO']
-            if 'demo_conditions' in demos.keys() and 'failed_conditions' in demos.keys():
-                self.algorithm.demo_conditions = demos['demo_conditions']
-                self.algorithm.failed_conditions = demos['failed_conditions']
-
-            # get samples and reward values
-            if self._hyperparams['algorithm']['ioc'] == 'SUPERVISED':
-                import glob
-                from gps.proto.gps_pb2 import GYM_REWARD
-                sample_files = glob.glob(config['common']['gt_cost_samples'])
-                T = self._hyperparams['algorithm']['cost']['T']
-                _, _, dX = self.algorithm.demoX.shape
-                _, _, dO = self.algorithm.demoO.shape
-                _, T, dU = self.algorithm.demoU.shape
-                gt_cost_X = np.zeros((0, T, dX))
-                gt_cost_U = np.zeros((0, T, dU))
-                gt_cost_O = np.zeros((0, T, dO))
-                gt_cost = np.zeros((0, T))
-                import pdb; pdb.set_trace()
-                for sample_file in sample_files:
-                    traj_sample_lists = self.data_logger.unpickle(sample_file)
-                    for sample_list in traj_sample_lists:
-                        for sample in sample_list:
-                            sample.agent = self.agent # need obs_datatypes to be set.
-                        gt_cost_O = np.r_[gt_cost_O, sample_list.get_obs()]
-                        gt_cost_X = np.r_[gt_cost_X, sample_list.get_X()]
-                        gt_cost_U = np.r_[gt_cost_U, sample_list.get_U()]
-                        gt_cost = np.r_[gt_cost, -sample_list.get(GYM_REWARD)]
-                gt_cost = np.expand_dims(gt_cost, -1)
-                import pdb; pdb.set_trace()
-                gt_cost -= np.min(gt_cost)
-                self.algorithm.cost._hyperparams['iterations'] = 10000
-                self.algorithm.cost.update_supervised(gt_cost_U, gt_cost_X, gt_cost_O, gt_cost)
-                import pdb; pdb.set_trace()
-
+            with Timer('loading demos'):
+                demos = get_demos(self)
+                self.agent = config['agent']['type'](config['agent'])
+                self.algorithm.demoX = demos['demoX']
+                self.algorithm.demoU = demos['demoU']
+                self.algorithm.demoO = demos['demoO']
+                if 'demo_conditions' in demos.keys() and 'failed_conditions' in demos.keys():
+                    self.algorithm.demo_conditions = demos['demo_conditions']
+                    self.algorithm.failed_conditions = demos['failed_conditions']
         else:
-            self.algorithm = config['algorithm']['type'](config['algorithm'])
+            with Timer('init algorithm'):
+                self.algorithm = config['algorithm']['type'](config['algorithm'])
 
 
     def run(self, itr_load=None):
@@ -114,7 +87,7 @@ class GPSMain(object):
 
         itr_start = self._initialize(itr_load)
         for itr in range(itr_start, self._hyperparams['iterations']):
-            with Timer('GPSMain.run: _reset'):
+            with Timer('_reset'):
                 if self.agent._hyperparams.get('randomly_sample_x0', False):
                         for cond in self._train_idx:
                             self.agent.reset_initial_x0(cond)
@@ -123,7 +96,7 @@ class GPSMain(object):
                     for cond in self._train_idx:
                         self.agent.reset_initial_body_offset(cond)
 
-            with Timer('GPSMain.run: _take_sample'):
+            with Timer('_take_sample'):
                 for cond in self._train_idx:
                     if itr == 0:
                         for i in range(self.algorithm._hyperparams['init_samples']):
@@ -132,19 +105,20 @@ class GPSMain(object):
                         for i in range(self._hyperparams['num_samples']):
                             self._take_sample(itr, cond, i)
 
-            with Timer('GPSMain.run: get_samples'):
+            with Timer('_get_samples'):
                 traj_sample_lists = [
                     self.agent.get_samples(cond, -self._hyperparams['num_samples'])
                     for cond in self._train_idx
                 ]
 
-            with Timer('GPSMain.run: _take_iteration'):
+            with Timer('_take_iteration'):
                 self._take_iteration(itr, traj_sample_lists)
 
-            with Timer('GPSMain.run: _log_data'):
+            with Timer('_log_data'):
                 if self.algorithm._hyperparams['sample_on_policy']:
                 # TODO - need to add these to lines back in when we move to mdgps
-                    pol_sample_lists = self._take_policy_samples()
+                    with Timer('_log_data, take_policy_samples'):
+                        pol_sample_lists = self._take_policy_samples()
                     self._log_data(itr, traj_sample_lists, pol_sample_lists)
                 else:
                     self._log_data(itr, traj_sample_lists)
@@ -348,7 +322,7 @@ class GPSMain(object):
         Returns: None
         """
 
-        with Timer('GPSMain._log_data: Updating GUI'):
+        with Timer('Updating GUI'):
             if False: #self.using_ioc():
                 # Produce time vs cost plots
                 sample_losses = self.algorithm.cur[6].cs
@@ -384,7 +358,7 @@ class GPSMain(object):
 
 
         if log_data:
-            with Timer('GPSMain._log_data: saving algorithm file'):
+            with Timer('saving algorithm file'):
                 self.algorithm.demo_policy = None
                 copy_alg = copy.copy(self.algorithm)
                 copy_alg.sample_list = {}
@@ -392,7 +366,7 @@ class GPSMain(object):
                         self._data_files_dir + ('algorithm_itr_%02d.pkl.gz' % itr),
                         copy_alg
                     )
-            with Timer('GPSMain._log_data: saving samples'):
+            with Timer('saving samples'):
                 self.data_logger.pickle(
                     self._data_files_dir + ('traj_sample_itr_%02d.pkl.gz' % itr),
                     copy.copy(traj_sample_lists)

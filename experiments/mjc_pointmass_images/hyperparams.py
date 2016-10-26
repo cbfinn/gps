@@ -41,8 +41,8 @@ IMAGE_CHANNELS = 3
 SENSOR_DIMS = {
     JOINT_ANGLES: 2,
     JOINT_VELOCITIES: 2,
-    END_EFFECTOR_POINTS: 6,
-    END_EFFECTOR_POINT_VELOCITIES: 6,
+    END_EFFECTOR_POINTS: 3,
+    END_EFFECTOR_POINT_VELOCITIES: 3,
     END_EFFECTOR_POINTS_NO_TARGET: 3,
     END_EFFECTOR_POINT_VELOCITIES_NO_TARGET: 3,
     ACTION: 2,
@@ -56,7 +56,7 @@ PR2_GAINS = np.array([1.0, 1.0])
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
-CONDITIONS = 7
+CONDITIONS = 3
 np.random.seed(14)
 target_pos = np.array([1.3, 0.0, 0.])
 
@@ -77,22 +77,22 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3, control_limit=10),
-               obstacle_pointmass(target_pos, wall_center=0.1, hole_height=0.3, control_limit=10),
-               obstacle_pointmass(target_pos, wall_center=-0.1, hole_height=0.3, control_limit=10),
-               obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.3, control_limit=10),
-               obstacle_pointmass(target_pos, wall_center=-0.2, hole_height=0.3, control_limit=10),
-               obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3, control_limit=10),
-               obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3, control_limit=10)],
+    'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.2, control_limit=10, add_hole_indicator=True),
+               obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.2, control_limit=10, add_hole_indicator=True),
+               obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.2, control_limit=10, add_hole_indicator=True),
+               #obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.3, control_limit=10),
+               #obstacle_pointmass(target_pos, wall_center=-0.2, hole_height=0.3, control_limit=10),
+               #obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3, control_limit=10),
+               #obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3, control_limit=10)
+               ],
     'x0': np.array([-1., 0., 0., 0.]),
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
     'T': 200,
-    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET,
-                      END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, IMAGE_FEAT],  # TODO - may want to include fp velocities.
-    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, RGB_IMAGE],
-    'target_idx': np.array(list(range(3,6))),
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, IMAGE_FEAT],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, RGB_IMAGE],
+    'target_idx': np.array(list(range(4,6))),
     'meta_include': [RGB_IMAGE_SIZE],
     'image_width': IMAGE_WIDTH,
     'image_height': IMAGE_HEIGHT,
@@ -123,9 +123,9 @@ algorithm = {
 algorithm['policy_opt'] = {
     'type': PolicyOptTf,
     'network_params': {
-        'num_filters': [15, 15, 5],
+        'num_filters': [10, 5, 5],
         'obs_include': agent['obs_include'],
-        'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET],
+        'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
         'obs_image_data': [RGB_IMAGE],
         'image_width': IMAGE_WIDTH,
         'image_height': IMAGE_HEIGHT,
@@ -139,11 +139,23 @@ algorithm['policy_opt'] = {
     'weights_file_prefix': EXP_DIR + 'policy',
 }
 
+"""
 algorithm['init_traj_distr'] = {
     'type': init_lqr,
     'init_gains':  100.0 / PR2_GAINS,
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
     'init_var': 1.0,
+    'dt': agent['dt'],
+    'T': agent['T'],
+}
+"""
+
+algorithm['init_traj_distr'] = {
+    'type': init_pd,
+    'init_var': 10.0,
+    'pos_gains': 10.0,
+    'vel_gains_mult': 0.0,
+    'dQ': SENSOR_DIMS[ACTION],
     'dt': agent['dt'],
     'T': agent['T'],
 }

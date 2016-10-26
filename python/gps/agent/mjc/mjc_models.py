@@ -101,7 +101,8 @@ def colored_reacher(ncubes=6, target_color="red", cube_size=0.015):
     actuator.motor(ctrllimited="true",ctrlrange="-1.0 1.0",gear="200.0",joint="joint1")
     return mjcmodel
 
-def obstacle_pointmass(target_position=np.array([1.3, 0.5, 0]), wall_center=0.0, hole_height=1.0, control_limit=100):
+def obstacle_pointmass(target_position=np.array([1.3, 0.5, 0]), wall_center=0.0, hole_height=1.0, control_limit=100,
+                       add_hole_indicator=False):
     """
     An example usage of MJCModel building the pointmass task
     Args:
@@ -120,7 +121,7 @@ def obstacle_pointmass(target_position=np.array([1.3, 0.5, 0]), wall_center=0.0,
     # Particle
     body = worldbody.body(name='particle', pos="0 0 0")
     # body.geom(name="particle_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.05")
-    body.geom(name="particle_geom", type="sphere", size="0.05")
+    body.geom(name="particle_geom", type="sphere", size="0.1")
     body.site(name="particle_site", pos="0 0 0", size="0.01")
     body.joint(name="ball_x", type="slide", pos="0 0 0", axis="1 0 0")
     body.joint(name="ball_y", type="slide", pos="0 0 0", axis="0 1 0")
@@ -128,7 +129,7 @@ def obstacle_pointmass(target_position=np.array([1.3, 0.5, 0]), wall_center=0.0,
     # Target
     body = worldbody.body(name="target", pos=target_position)
     # body.geom(name="target_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.05", rgba="0 0.9 0.1 1")
-    body.geom(name="target_geom", type="sphere", size="0.05", rgba="0 0.9 0.1 1")
+    body.geom(name="target_geom", type="sphere", size="0.1", rgba="0 0.9 0.1 1")
 
     # Walls
     wall_x = 0.5
@@ -146,6 +147,10 @@ def obstacle_pointmass(target_position=np.array([1.3, 0.5, 0]), wall_center=0.0,
     # body = worldbody.body(name="wall2", pos=np.array([0.15, -0.3, 0.]))
     body.geom(name="wall2_geom", type="capsule", fromto=np.array([0., y2, 0., 0., y2+10, 0.]), size="0.1", contype="1", rgba="0.9 0 0.1 1")
     # body.geom(name="wall2_geom", type="capsule", fromto=np.array([0., 0., 0., -1., 0., 0.]), size="0.1", contype="1", rgba="0.9 0 0.1 1")
+    if add_hole_indicator:
+        body = worldbody.body(name="hole_indicator", pos=[wall_x, wall_center, wall_z])
+        body.geom(name="hole_indicator", type="capsule", fromto=np.array([0., y2-0.2, 0., 0., y2+0.2, 0.]), size="0.1", contype="2", rgba="0.0 0.9 0.9 1")
+
 
     # Actuators
     actuator = mjcmodel.root.actuator()

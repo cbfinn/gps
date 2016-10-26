@@ -71,13 +71,13 @@ class AlgorithmMDGPS(Algorithm):
         itr = self.iteration_count
 
 
-        with Timer('AlgorithmMDGPS.iteration: update_features'):
+        with Timer('update_features'):
             if itr == 0 and RGB_IMAGE in sample_lists[0][0].agent.obs_data_types:
                 for sample_list in sample_lists:
                     for sample in sample_list:
                         sample.update_features(self.policy_opt.policy)
 
-        with Timer('AlgorithmMDGPS.iteration: compute_dist_to_target'):
+        with Timer('compute_dist_to_target'):
             # Store the samples.
             if self._hyperparams['ioc']:
                 self.N = sum(len(self.sample_list[i]) for i in self.sample_list.keys())
@@ -104,7 +104,7 @@ class AlgorithmMDGPS(Algorithm):
 
         # Comment this when use random policy initialization and add after line 78
         if self.iteration_count == 0 and self._hyperparams['policy_eval']:
-            with Timer('AlgorithmMDGPS.iteration: copy_policy'):
+            with Timer('copy_policy'):
                 self.policy_opts[self.iteration_count] = self.policy_opt.copy()
 
         # On the first iteration we need to make sure that the policy somewhat
@@ -115,11 +115,11 @@ class AlgorithmMDGPS(Algorithm):
                 self.cur[cond].traj_distr for cond in range(self.M)
             ]
             # Only update fc layers.
-            with Timer('AlgorithmMDGPS.iteration: copy_policy - UpdatePolicy'):
+            with Timer('copy_policy - UpdatePolicy'):
                 self._update_policy(fc_only=True)
 
         # Update dynamics linearizations.
-        with Timer('AlgorithmMDGPS.iteration: UpdateDynamics'):
+        with Timer('UpdateDynamics'):
             self._update_dynamics()
 
         # Move this after line 78 if using random initializarion.
@@ -136,7 +136,7 @@ class AlgorithmMDGPS(Algorithm):
                     self.cost.set_vision_params(conv_params)
 
 
-                with Timer('AlgorithmMDGPS.iteration: UpdateCost'):
+                with Timer('UpdateCost'):
                     self._update_cost()
                 # Commenting this out because we're not updating the cost end-to-end right now.
                 """
@@ -153,19 +153,19 @@ class AlgorithmMDGPS(Algorithm):
 
         # Update policy linearizations.
         for m in range(self.M):
-            with Timer('AlgorithmMDGPS.iteration: EvalCost'):
+            with Timer('EvalCost'):
                 self._eval_cost(m)
-            with Timer('AlgorithmMDGPS.iteration: PolicyFit'):
+            with Timer('PolicyFit'):
                 self._update_policy_fit(m)
 
         # C-step
         if self.iteration_count > 0:
             try:
-                with Timer('AlgorithmMDGPS.iteration: stepadjust'):
+                with Timer('stepadjust'):
                     self._stepadjust()
             except OverflowError:
                 import pdb; pdb.set_trace()
-        with Timer('AlgorithmMDGPS.iteration: UpdateTrajectories'):
+        with Timer('UpdateTrajectories'):
             self._update_trajectories()
 
         # S-step
@@ -174,7 +174,7 @@ class AlgorithmMDGPS(Algorithm):
             conv_params = self.cost.get_vision_params()
             self.policy_opt.policy.set_copy_params(conv_params)
 
-        with Timer('AlgorithmMDGPS.iteration: UpdatePolicy'):
+        with Timer('UpdatePolicy'):
             if self._hyperparams['ioc']:
                 self._update_policy(fc_only=True)
             else:
@@ -182,7 +182,7 @@ class AlgorithmMDGPS(Algorithm):
 
 
         # Prepare for next iteration
-        with Timer('AlgorithmMDGPS.iteration: AdvanceIteration'):
+        with Timer('AdvanceIteration'):
             self._advance_iteration_variables()
 
     def _update_policy(self, fc_only=False):
