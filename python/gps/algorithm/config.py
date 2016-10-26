@@ -22,6 +22,8 @@ ALG = {
     'cost': None,  # A list of Cost objects for each condition.
     # Whether or not to sample with neural net policy (only for badmm/mdgps).
     'sample_on_policy': False,
+    # Number of clusters to use if clustering samples.
+    'num_clusters': 0,
 }
 
 
@@ -45,7 +47,12 @@ ALG_BADMM = {
 ALG_MDGPS = {
     # TODO: remove need for init_pol_wt in MDGPS
     'init_pol_wt': 0.01,
-    'policy_sample_mode': 'add',
-    # Whether to use 'laplace' or 'mc' cost in step adjusment
+    'policy_sample_mode': 'replace',
     'step_rule': 'laplace',
+    # How to cluster samples, 'random', 'kmeans', 'traj_em'.
+    'cluster_method': None,
+    # Horizon for trajectory aware EM.
+    'traj_em_horizon': None,
+    # How many iterations trajectory aware EM runs.
+    'traj_em_iters': 3,
 }

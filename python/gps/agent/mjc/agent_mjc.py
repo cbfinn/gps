@@ -8,14 +8,10 @@ import mjcpy
 from gps.agent.agent import Agent
 from gps.agent.agent_utils import generate_noise, setup
 from gps.agent.config import AGENT_MUJOCO
-from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
-        END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
-        END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
-        CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE, IMAGE_FEAT, \
-        END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET
+from gps.proto.gps_pb2 import *
 
 from gps.sample.sample import Sample
-
+from gps.utility.general_utils import sample_params
 
 class AgentMuJoCo(Agent):
     """
@@ -74,7 +70,6 @@ class AgentMuJoCo(Agent):
         self.x0 = []
         for i in range(self._hyperparams['conditions']):
             if END_EFFECTOR_POINTS in self.x_data_types:
-                # TODO: this assumes END_EFFECTOR_VELOCITIES is also in datapoints right?
                 self._init(i)
                 eepts = self._world[i].get_data()['site_xpos'].flatten()
                 self.x0.append(
@@ -98,6 +93,44 @@ class AgentMuJoCo(Agent):
                                        AGENT_MUJOCO['image_height'],
                                        cam_pos[0], cam_pos[1], cam_pos[2],
                                        cam_pos[3], cam_pos[4], cam_pos[5])
+
+    def reset_initial_x0(self, condition):
+        """
+        Reset initial x0 randomly based on sampling_range_x0
+        and prohibited_ranges_x0
+        Args:
+            condition: Which condition setup to run.
+        """
+        self._hyperparams['x0'][condition] = sample_params(
+                self._hyperparams['sampling_range_x0'],
+                self._hyperparams['prohibited_ranges_x0'])
+
+    def reset_initial_body_offset(self, condition):
+        """
+        Reset initial body offset randomly based on sampling_range_bodypos
+        and prohibited_ranges_bodypos
+        Args:
+            condition: Which condition setup to run.
+        """
+        tmp_body_pos_offset = self._hyperparams['pos_body_offset'][condition][:]
+        self._hyperparams['pos_body_offset'][condition] = sample_params(
+                self._hyperparams['sampling_range_bodypos'],
+                self._hyperparams['prohibited_ranges_bodypos'])
+        # TODO: handle the i/j stuff as above
+        for j in range(len(self._hyperparams['pos_body_idx'][condition])):
+            idx = self._hyperparams['pos_body_idx'][condition][j]
+            self._model[condition]['body_pos'][idx, :] -= tmp_body_pos_offset
+            self._model[condition]['body_pos'][idx, :] += self._hyperparams['pos_body_offset'][condition]
+
+        if END_EFFECTOR_POINTS in self.x_data_types:
+            x0 = self._hyperparams['x0'][condition]
+            eepts = self._world[condition].get_data()['site_xpos'].flatten()
+            self.x0[condition] = np.concatenate([x0, eepts, np.zeros_like(eepts)])
+        elif END_EFFECTOR_POINTS_NO_TARGET in self.x_data_types:
+            x0 = self._hyperparams['x0'][condition]
+            eepts = self._world[i].get_data()['site_xpos'].flatten()
+            eepts_notgt = np.delete(eepts, self._hyperparams['target_idx'])
+            self.x0[condition] = np.concatenate([x0, eepts_notgt, np.zeros_like(eepts_notgt)])
 
     def sample(self, policy, condition, verbose=True, save=True, noisy=True):
         """
@@ -188,6 +221,7 @@ class AgentMuJoCo(Agent):
 
         if (END_EFFECTOR_POINTS_NO_TARGET in self._hyperparams['obs_include']):
             sample.set(END_EFFECTOR_POINTS_NO_TARGET, np.delete(eepts, self._hyperparams['target_idx']), t=0)
+        if (END_EFFECTOR_POINT_VELOCITIES_NO_TARGET in self._hyperparams['obs_include']):
             sample.set(END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, np.delete(np.zeros_like(eepts), self._hyperparams['target_idx']), t=0)
 
         jac = np.zeros([eepts.shape[0], self._model[condition]['nq']])
@@ -248,6 +282,7 @@ class AgentMuJoCo(Agent):
 
         if (END_EFFECTOR_POINTS_NO_TARGET in self._hyperparams['obs_include']):
             sample.set(END_EFFECTOR_POINTS_NO_TARGET, np.delete(cur_eepts, self._hyperparams['target_idx']), t=t+1)
+        if (END_EFFECTOR_POINT_VELOCITIES_NO_TARGET in self._hyperparams['obs_include']):
             sample.set(END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, np.delete(eept_vels, self._hyperparams['target_idx']), t=t+1)
 
         jac = np.zeros([cur_eepts.shape[0], self._model[condition]['nq']])

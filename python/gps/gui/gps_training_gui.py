@@ -353,7 +353,9 @@ class GPSTrainingGUI(object):
             self._traj_visualizer.set_lim(i=m, xlim=xlim, ylim=ylim, zlim=zlim)
             self._update_linear_gaussian_controller_plots(algorithm, agent, m)
             self._update_samples_plots(traj_sample_lists, m, 'green', 'Trajectory Samples')
-            if pol_sample_lists:
+
+            config = algorithm._hyperparams
+            if pol_sample_lists and config['train_conditions'] == config['test_conditions']:
                 self._update_samples_plots(pol_sample_lists,  m, 'blue',  'Policy Samples')
         self._traj_visualizer.draw()    # this must be called explicitly
 

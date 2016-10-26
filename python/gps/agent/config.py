@@ -69,7 +69,11 @@ AGENT_MUJOCO = {
     'image_width': 640,
     'image_height': 480,
     'image_channels': 3,
-    'meta_include': []
+    'meta_include': [],
+    'randomly_sample_x0': False,
+    'prohibited_ranges_x0': [],
+    'randomly_sample_bodypos': False,
+    'prohibited_ranges_bodypos': [],
 }
 
 AGENT_BOX2D = {

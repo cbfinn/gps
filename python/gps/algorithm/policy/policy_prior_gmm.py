@@ -109,8 +109,6 @@ class PolicyPriorGMM(object):
         """
         N, T, dX = X.shape
         dU = pol_mu.shape[2]
-        if N == 1:
-            raise ValueError("Cannot fit dynamics on 1 sample")
 
         # Collapse policy covariances. (This is only correct because
         # the policy doesn't depend on state).

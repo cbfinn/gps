@@ -31,9 +31,6 @@ class DynamicsLRPrior(Dynamics):
         N, T, dX = X.shape
         dU = U.shape[2]
 
-        if N == 1:
-            raise ValueError("Cannot fit dynamics on 1 sample")
-
         self.Fm = np.zeros([T, dX, dX+dU])
         self.fv = np.zeros([T, dX])
         self.dyn_covar = np.zeros([T, dX, dX])

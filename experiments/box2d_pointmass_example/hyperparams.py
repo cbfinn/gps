@@ -80,12 +80,9 @@ action_cost = {
 
 state_cost = {
     'type': CostState,
-    'data_types' : {
-        END_EFFECTOR_POINTS: {
-            'wp': np.ones(SENSOR_DIMS[END_EFFECTOR_POINTS]),
-            'target_state': agent["target_state"],
-        },
-    },
+    'data_type': END_EFFECTOR_POINTS,
+    'wp': np.ones(SENSOR_DIMS[END_EFFECTOR_POINTS]),
+    'target_state': agent["target_state"],
 }
 
 algorithm['cost'] = {

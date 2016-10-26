@@ -1,7 +1,7 @@
 """ This file defines the main object that runs experiments. """
 
 import matplotlib as mpl
-mpl.use('Qt4Agg')
+mpl.use('Qt5Agg')
 
 import logging
 import imp
@@ -61,6 +61,14 @@ class GPSMain(object):
         itr_start = self._initialize(itr_load)
 
         for itr in range(itr_start, self._hyperparams['iterations']):
+            if self.agent._hyperparams['randomly_sample_x0']:
+                for cond in self._train_idx:
+                    self.agent.reset_initial_x0(cond)
+
+            if self.agent._hyperparams['randomly_sample_bodypos']:
+                for cond in self._train_idx:
+                    self.agent.reset_initial_body_offset(cond)
+
             for cond in self._train_idx:
                 for i in range(self._hyperparams['num_samples']):
                     self._take_sample(itr, cond, i)

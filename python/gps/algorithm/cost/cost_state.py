@@ -21,6 +21,7 @@ class CostState(Cost):
         Args:
             sample:  A single sample
         """
+        # Allocate space for derivatives (full state).
         T = sample.T
         Du = sample.dU
         Dx = sample.dX
@@ -32,32 +33,45 @@ class CostState(Cost):
         final_lxx = np.zeros((T, Dx, Dx))
         final_lux = np.zeros((T, Du, Dx))
 
-        for data_type in self._hyperparams['data_types']:
-            config = self._hyperparams['data_types'][data_type]
-            wp = config['wp']
-            tgt = config['target_state']
-            x = sample.get(data_type)
-            _, dim_sensor = x.shape
+        # Compute state penalty for data_type.
+        data_type = self._hyperparams['data_type']
+        x = sample.get(data_type)
+        _, Ds = x.shape
 
-            wpm = get_ramp_multiplier(
-                self._hyperparams['ramp_option'], T,
-                wp_final_multiplier=self._hyperparams['wp_final_multiplier']
-            )
-            wp = wp * np.expand_dims(wpm, axis=-1)
-            # Compute state penalty.
-            dist = x - tgt
+        # Weighted distance is wp*(A.dot(x) - tgt).
+        A = self._hyperparams['A']
+        if A is None:
+            A = np.eye(Ds)
+        D = A.shape[0]
 
-            # Evaluate penalty term.
-            l, ls, lss = evall1l2term(
-                wp, dist, np.tile(np.eye(dim_sensor), [T, 1, 1]),
-                np.zeros((T, dim_sensor, dim_sensor, dim_sensor)),
-                self._hyperparams['l1'], self._hyperparams['l2'],
-                self._hyperparams['alpha']
-            )
+        wp = self._hyperparams['wp']
+        if wp is None:
+            wp = np.ones(D)
 
-            final_l += l
+        # Compute state penalty.
+        # x.shape == (T, Ds)
+        # A.shape == (D, Ds)
+        # x.dot(A.T).shape == (T, D)
+        # tgt.shape == (D,) or scalar
+        tgt = self._hyperparams['target']
+        dist = x.dot(A.T) - tgt
 
-            sample.agent.pack_data_x(final_lx, ls, data_types=[data_type])
-            sample.agent.pack_data_x(final_lxx, lss,
-                                     data_types=[data_type, data_type])
+        ramp = get_ramp_multiplier(
+            self._hyperparams['ramp_option'], T,
+            wp_final_multiplier=self._hyperparams['wp_final_multiplier']
+        )
+        wp = wp*np.expand_dims(ramp, axis=-1)
+
+        # Evaluate penalty term.
+        l, ls, lss = evall1l2term(
+            wp, dist, np.tile(A, [T, 1, 1]), np.zeros((T, D, Ds, Ds)),
+            self._hyperparams['l1'], self._hyperparams['l2'],
+            self._hyperparams['alpha']
+        )
+
+        # Pack into final cost.
+        final_l += l
+        sample.agent.pack_data_x(final_lx, ls, data_types=[data_type])
+        sample.agent.pack_data_x(final_lxx, lss,
+                                 data_types=[data_type, data_type])
         return final_l, final_lx, final_lu, final_lxx, final_luu, final_lux

@@ -9,6 +9,7 @@ import numpy as np
 from gps.algorithm.config import ALG
 from gps.algorithm.algorithm_utils import IterationData, TrajectoryInfo
 from gps.utility.general_utils import extract_condition
+from gps.sample.sample_list import SampleList
 
 
 LOGGER = logging.getLogger(__name__)
@@ -51,6 +52,8 @@ class Algorithm(object):
         self.prev = [IterationData() for _ in range(self.M)]
 
         dynamics = self._hyperparams['dynamics']
+
+        # Store traj_info per condition.
         for m in range(self.M):
             self.cur[m].traj_info = TrajectoryInfo()
             self.cur[m].traj_info.dynamics = dynamics['type'](dynamics)
@@ -59,18 +62,27 @@ class Algorithm(object):
             )
             self.cur[m].traj_distr = init_traj_distr['type'](init_traj_distr)
 
+        # If clustering, store traj_info per cluster and single dynamics GMM.
+        if self._hyperparams['num_clusters']:
+            self.dynamics = dynamics['type'](dynamics)
+            self.cluster_traj_info = []
+            for k in range(self._hyperparams['num_clusters']):
+                self.cluster_traj_info.append(TrajectoryInfo())
+                self.cluster_traj_info[k].dynamics = \
+                        dynamics['type'](dynamics)
+
         self.traj_opt = hyperparams['traj_opt']['type'](
             hyperparams['traj_opt']
         )
         if type(hyperparams['cost']) == list:
             self.cost = [
                 hyperparams['cost'][i]['type'](hyperparams['cost'][i])
-                for i in range(self.M)
+                for i in range(hyperparams['conditions'])
             ]
         else:
             self.cost = [
                 hyperparams['cost']['type'](hyperparams['cost'])
-                for _ in range(self.M)
+                for _ in range(hyperparams['conditions'])
             ]
         self.base_kl_step = self._hyperparams['kl_step']
 
@@ -79,36 +91,94 @@ class Algorithm(object):
         """ Run iteration of the algorithm. """
         raise NotImplementedError("Must be implemented in subclass")
 
-    def _update_dynamics(self):
+    def _get_samples(self, idxs=None):
         """
-        Instantiate dynamics objects and update prior. Fit dynamics to
-        current samples.
+        Helper function for extracting from 'self.cur'.
         """
-        for m in range(self.M):
-            cur_data = self.cur[m].sample_list
-            X = cur_data.get_X()
-            U = cur_data.get_U()
+        if idxs is None:
+            idxs = range(self.M)
+        samples = [self.cur[i].sample_list.get_samples() for i in idxs]
+        return SampleList(sum(samples, []))
 
-            # Update prior and fit dynamics.
-            self.cur[m].traj_info.dynamics.update_prior(cur_data)
-            self.cur[m].traj_info.dynamics.fit(X, U)
+    def _update_dynamics(self, update_prior=True):
+        """
+        Update dynamics linearizations (dispatch for conditions/clusters).
+        """
+        if self._hyperparams['num_clusters']:
+            K = self._hyperparams['num_clusters']
+            if update_prior:
+                all_samples = self._get_samples()
+                self.dynamics.update_prior(all_samples)
+            for k in range(K):
+                self._update_cluster_dynamics(k)
+        else:
+            for m in range(self.M):
+                self._update_condition_dynamics(m, update_prior)
 
-            # Fit x0mu/x0sigma.
-            x0 = X[:, 0, :]
-            x0mu = np.mean(x0, axis=0)
-            self.cur[m].traj_info.x0mu = x0mu
-            self.cur[m].traj_info.x0sigma = np.diag(
-                np.maximum(np.var(x0, axis=0),
-                           self._hyperparams['initial_state_var'])
-            )
+    def _update_condition_dynamics(self, m, update_prior):
+        """
+        Update dynamics linearizations for condition m.
+        """
+        samples = self.cur[m].sample_list
+        X = samples.get_X()
+        U = samples.get_U()
 
-            prior = self.cur[m].traj_info.dynamics.get_prior()
-            if prior:
-                mu0, Phi, priorm, n0 = prior.initial_state()
-                N = len(cur_data)
-                self.cur[m].traj_info.x0sigma += \
-                        Phi + (N*priorm) / (N+priorm) * \
-                        np.outer(x0mu-mu0, x0mu-mu0) / (N+n0)
+        traj_info = self.cur[m].traj_info
+        if update_prior:
+            traj_info.dynamics.update_prior(samples)
+        traj_info.dynamics.fit(X, U) # Stores Fm/fv/dyn_covar.
+
+        # Fit x0mu/x0sigma and store.
+        x0 = X[:, 0, :]
+        x0mu = np.mean(x0, axis=0)
+        x0sigma = np.diag(
+            np.maximum(np.var(x0, axis=0),
+                       self._hyperparams['initial_state_var'])
+        )
+        prior = self.cur[m].traj_info.dynamics.get_prior()
+        if prior:
+            mu0, Phi, priorm, n0 = prior.initial_state()
+            N = len(samples)
+            x0sigma += \
+                    Phi + (N*priorm) / (N+priorm) * \
+                    np.outer(x0mu-mu0, x0mu-mu0) / (N+n0)
+        traj_info.x0mu = x0mu
+        traj_info.x0sigma = x0sigma
+
+    def _update_cluster_dynamics(self, k):
+        """
+        Update dynamics linearizations for cluster k.
+        """
+        idxs = np.where(self.cluster_idx == k)[0]
+        LOGGER.debug("Updating dynamics for cluster %d, idxs %s", k, idxs)
+        if idxs.size == 0:
+            return
+
+        samples = self._get_samples(idxs)
+        X = samples.get_X()
+        U = samples.get_U()
+
+        # Fit x0mu/x0sigma/dynamics and store cluster-level info.
+        traj_info = self.cluster_traj_info[k]
+        x0 = X[:, 0, :]
+        traj_info.x0mu = np.mean(x0, axis=0)
+        traj_info.x0sigma = np.diag(
+            np.maximum(np.var(x0, axis=0),
+                       self._hyperparams['initial_state_var'])
+        )
+
+        Fm, fv, dyn_covar = self.dynamics.fit(X, U)
+        traj_info.dynamics.Fm = Fm
+        traj_info.dynamics.fv = fv
+        traj_info.dynamics.dyn_covar = dyn_covar
+
+        # Copy to trajectory-level info.
+        for i in idxs:
+            self.cur[i].traj_info.x0mu = traj_info.x0mu
+            self.cur[i].traj_info.x0sigma = traj_info.x0sigma
+            self.cur[i].traj_info.dynamics.Fm = Fm
+            self.cur[i].traj_info.dynamics.fv = fv
+            self.cur[i].traj_info.dynamics.dyn_covar = dyn_covar
 
     def _update_trajectories(self):
         """

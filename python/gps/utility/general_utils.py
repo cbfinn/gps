@@ -1,7 +1,6 @@
 """ This file defines general utility functions and classes. """
 import numpy as np
 
-
 class BundleType(object):
     """
     This class bundles many fields, similar to a record or a mutable
@@ -92,3 +91,46 @@ def get_ee_points(offsets, ee_pos, ee_rot):
         3 x N array of end effector points.
     """
     return ee_rot.dot(offsets.T) + ee_pos.T
+
+def sample_params(sampling_range, prohibited_ranges):
+    """
+    Samples parameters from sampling_range ensuring that the sampled_point
+    doesn't lie in any of the prohibited_ranges.
+
+    Args:
+        sampling_range: A list of form [lower_lim, upper_lim] where lower_lim
+            and upper_lim are two numpy arrays with size N x 1 where N is the
+            dimension of the sample.
+        prohibited_ranges: A list of ranges which describes the region from which
+            the point can't be sampled. A range is a list of form [[l_0, u_0], ..,
+            [l_N, u_N]] where l_i and u_i are the upper and lower limits of the
+            i-th dimension. Can contain replace a [l_i, u_i] with None.
+    Returns:
+        sampled_point: A sampled vector within sampling range and lying outside
+        prohibited ranges.
+    """
+    lower_lim, upper_lim = sampling_range
+    N = len(lower_lim)
+    assert N == len(upper_lim)
+
+    valid = False
+    while not valid:
+        # Sample point from within lower/upper limits.
+        sampled_point = np.random.rand(N)*(upper_lim - lower_lim) + lower_lim
+
+        # Make sure it is valid.
+        valid = True
+        for prohibited_range in prohibited_ranges:
+            for i in range(N):
+                if prohibited_range[i] is None:
+                    continue
+
+                lower, upper = prohibited_range[i]
+                if (lower <= sampled_point[i] <= upper):
+                    valid = False
+                    break
+
+            if not valid:
+                break
+
+    return sampled_point

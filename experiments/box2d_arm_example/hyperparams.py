@@ -82,12 +82,9 @@ action_cost = {
 
 state_cost = {
     'type': CostState,
-    'data_types' : {
-        JOINT_ANGLES: {
-            'wp': np.array([1, 1]),
-            'target_state': agent["target_state"],
-        },
-    },
+    'data_type': JOINT_ANGLES,
+    'wp': np.array([1, 1]),
+    'target_state': agent["target_state"],
 }
 
 algorithm['cost'] = {
