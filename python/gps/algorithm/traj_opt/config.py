@@ -9,3 +9,10 @@ TRAJ_OPT_LQR = {
     'min_eta': 1e-4,
     'max_eta': 1e16,
 }
+
+# TrajOptPi2
+TRAJ_OPT_PI2 = {  
+    'kl_threshold': 1.0,    
+    'covariance_damping': 2.0,
+    'min_temperature': 0.001,
+}
