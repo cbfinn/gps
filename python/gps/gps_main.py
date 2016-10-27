@@ -151,7 +151,7 @@ class GPSMain(object):
         self._end()
         return None
 
-    def test_policy(self, itr, N, testing=True):
+    def test_policy(self, itr, N, testing=False, eval_pol_gt=False):
         """
         Take N policy samples of the algorithm state at iteration itr,
         for testing the policy to see how it is behaving.
@@ -179,7 +179,7 @@ class GPSMain(object):
 
         if self.gui:
             self.gui.update(itr, self.algorithm, self.agent,
-                traj_sample_lists, pol_sample_lists)
+                traj_sample_lists, pol_sample_lists, eval_pol_gt)
             self.gui.set_status_text(('Took %d policy sample(s) from ' +
                 'algorithm state at iteration %d.\n' +
                 'Saved to: data_files/pol_sample_itr_%02d.pkl.gz.\n') % (N, itr, itr))
@@ -439,6 +439,12 @@ def main():
                     help='compare two experiments')
     parser.add_argument('-m', '--measure', metavar='N', type=int,
                     help='measure and visualize policy samples')
+    parser.add_argument('-e', '--eval', metavar='N', type=int,
+                    help='evaluate the ground truth cost of the last policy')
+    parser.add_argument('-x', '--extendtesting', metavar='N', type=int,
+                    help='testing the policy performance on a larger domain')
+    # TODO: make these subparsers
+
     args = parser.parse_args()
 
     exp_name = args.experiment
@@ -526,26 +532,35 @@ def main():
             plt.show()
         except ImportError:
             sys.exit('ROS required for target setup.')
-    elif test_policy_N:
+    elif test_policy_N or args.eval or args.extendtesting:
         data_files_dir = exp_dir + 'data_files/'
         data_filenames = os.listdir(data_files_dir)
         algorithm_prefix = 'algorithm_itr_'
         algorithm_filenames = [f for f in data_filenames if f.startswith(algorithm_prefix)]
         current_algorithm = sorted(algorithm_filenames, reverse=True)[0]
         current_itr = int(current_algorithm[len(algorithm_prefix):len(algorithm_prefix)+2])
-
+        # current_itr = 9
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:
-            test_policy = threading.Thread(
-                target=lambda: gps.test_policy(itr=current_itr, N=test_policy_N, testing=True)
-            )
+            if test_policy_N:
+                test_policy = threading.Thread(
+                    target=lambda: gps.test_policy(itr=current_itr, N=test_policy_N)
+                )
+            elif args.eval:
+                test_policy = threading.Thread(
+                    target=lambda: gps.test_policy(itr=current_itr, N=args.eval, eval_pol_gt=True)
+                )
+            else:
+                test_policy = threading.Thread(
+                    target=lambda: gps.test_policy(itr=current_itr, N=args.extendtesting, testing=True)
+                )
             test_policy.daemon = True
             test_policy.start()
 
             plt.ioff()
             plt.show()
         else:
-            gps.test_policy(itr=current_itr, N=test_policy_N, testing=True)
+            gps.test_policy(itr=current_itr, N=test_policy_N, testing=args.extendtesting, eval_pol_gt=args.eval)
     elif measure:
         for i in xrange(1):
             random.seed(i)

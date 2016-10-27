@@ -292,7 +292,7 @@ class GPSTrainingGUI(object):
                 alpha=config['image_overlay_alpha'])
 
     # Iteration update functions
-    def update(self, itr, algorithm, agent, traj_sample_lists, pol_sample_lists,
+    def update(self, itr, algorithm, agent, traj_sample_lists, pol_sample_lists, eval_pol_gt = False,
                ioc_demo_losses=None, ioc_sample_losses=None, ioc_dist_cost=None, ioc_demo_dist_cost=None):
         """
         After each iteration, update the iteration data output, the cost plot,
@@ -332,7 +332,7 @@ class GPSTrainingGUI(object):
         costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
         if algorithm._hyperparams['ioc']:
             gt_costs = [np.mean(np.sum(algorithm.prev[m].cgt, axis=1)) for m in range(algorithm.M)]
-            self._update_iteration_data(itr, algorithm, gt_costs, pol_sample_lists)
+            self._update_iteration_data(itr, algorithm, gt_costs, pol_sample_lists, eval_pol_gt)
             self._gt_cost_plotter.update(gt_costs, t=itr)
         else:
             self._update_iteration_data(itr, algorithm, costs, pol_sample_lists)
@@ -383,7 +383,7 @@ class GPSTrainingGUI(object):
         self.append_output_text(condition_titles)
         self.append_output_text(itr_data_fields)
 
-    def _update_iteration_data(self, itr, algorithm, costs, pol_sample_lists):
+    def _update_iteration_data(self, itr, algorithm, costs, pol_sample_lists, eval_pol_gt=False):
         """
         Update iteration data information: iteration, average cost, and for
         each condition the mean cost over samples, step size, linear Guassian
@@ -394,20 +394,17 @@ class GPSTrainingGUI(object):
             test_idx = algorithm._hyperparams['test_conditions']
             # pol_sample_lists is a list of singletons
             samples = [sl[0] for sl in pol_sample_lists]
-            if 'global_cost' in algorithm._hyperparams and algorithm._hyperparams['global_cost'] and \
-                    type(algorithm.cost) != list:
-                #if algorithm._hyperparams['ioc']:
-                #    pol_costs = [np.sum(algorithm.gt_cost.eval(s)[0])
-                #            for s in samples]
-                #else:
-                pol_costs = [np.sum(algorithm.cost.eval(s)[0])
-                        for s in samples]
+            if not eval_pol_gt:
+                if 'global_cost' in algorithm._hyperparams and algorithm._hyperparams['global_cost'] and \
+                        type(algorithm.cost) != list:
+                    pol_costs = [np.sum(algorithm.cost.eval(s)[0])
+                            for s in samples]
+                else:
+                    pol_costs = [np.sum(algorithm.cost[idx].eval(s)[0])
+                            for s, idx in zip(samples, test_idx)]
             else:
-                #if algorithm._hyperparams['ioc']:
-                #    pol_costs = [np.sum(algorithm.gt_cost.eval(s)[0])
-                #            for s in samples]
-                #else:
-                pol_costs = [np.sum(algorithm.cost[idx].eval(s)[0])
+                assert algorithm._hyperparams['ioc']
+                pol_costs = [np.sum(algorithm.gt_cost[idx].eval(s)[0])
                         for s, idx in zip(samples, test_idx)]
             itr_data = '%3d | %8.2f %12.2f' % (itr, avg_cost, np.mean(pol_costs))
         else:

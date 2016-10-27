@@ -37,10 +37,10 @@ def generate_pos_idx(conditions):
 	""" Generate the indices of states. """
 	return [np.array([1]) for i in xrange(conditions)]
 
-def extract_samples(itr, sample_file):
+def extract_samples(end_itr, sample_file, start_itr=0):
     """ Extract samples from iteration 0 up to iteration itr. """
     sample_list = {}
-    for i in xrange(itr):
+    for i in xrange(start_itr, end_itr):
         sample_file_i = sample_file + '_%2d' % itr + '.pkl'
         samples = DataLogger().unpickle(sample_file_i)
         sample_list[i] = samples[0]
@@ -80,10 +80,6 @@ def eval_demos_xu(agent, demoX, demoU, costfn, n=-1):
         return random.sample(losses, n)
     else:
         return losses
-
-def eval_policy_gt():
-    # TODO: evaluate the ground truth cost of the final policy
-    pass
 
 def get_target_end_effector(algorithm, condition=0):
     target_dict = algorithm._hyperparams['target_end_effector']
