@@ -13,7 +13,7 @@ import threading
 import time
 import scipy.io
 
-def compare_samples(gps, N, agent_config, three_dim=True, experiment='peg'):
+def compare_samples(gps, N, agent_config, three_dim=True, weight_varying=False, experiment='peg'):
     """
     Compare samples between IOC and demo policies and visualize them in a plot.
     Args:
@@ -21,17 +21,18 @@ def compare_samples(gps, N, agent_config, three_dim=True, experiment='peg'):
         N: number of samples taken from the policy for comparison
         config: Configuration of the agent to sample.
         three_dim: whether the plot is 3D or 2D.
-        experiment: whether the experiment is peg or reacher or pointmass.
+        weight_varying: whether the experiment is weight-varying or not.
+        experiment: whether the experiment is peg, reacher or pointmass.
     """
-    # pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
-    pol_iter = 9
+    pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
+    # pol_iter = 9
     algorithm_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
-    algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files/algorithm_itr_05.pkl') # Assuming not using 4 policies
-    algorithm_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_oracle/algorithm_itr_13.pkl')
-    if experiment != 'pointmass':
+    algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files/algorithm_itr_09.pkl') # Assuming not using 4 policies
+    algorithm_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_oracle/algorithm_itr_09.pkl')
+    if not weight_varying:
         pos_body_offset = gps._hyperparams['agent']['pos_body_offset']
     M = agent_config['conditions']
-    if experiment == 'reacher': #reset body offsets
+    if experiment == 'reacher' and not weight_varying: #reset body offsets
         np.random.seed(101)
         for m in range(M):
             self.agent.reset_initial_body_offset(m)
@@ -43,7 +44,7 @@ def compare_samples(gps, N, agent_config, three_dim=True, experiment='peg'):
     policies = [pol_ioc, pol_demo, pol_oracle]
     samples = {i: [] for i in xrange(len(policies))}
     agent = agent_config['type'](agent_config)
-    if experiment != 'pointmass':
+    if not weight_varying:
         ioc_conditions = agent_config['pos_body_offset']
     else:
         ioc_conditions = [np.array([np.log10(agent_config['density_range'][i]), 0.]) \
@@ -92,15 +93,15 @@ def compare_samples(gps, N, agent_config, three_dim=True, experiment='peg'):
         #     # all_failed_conditions.append(ioc_conditions[i])
         #     ioc_failed_conditions.append(ioc_conditions[i])
         #     demo_failed_conditions.append(ioc_conditions[i])
-        if dists_to_target[0][i] <= 0.15:
+        if dists_to_target[0][i] <= 0.05:
             ioc_success_conditions.append(ioc_conditions[i])
         else:
             ioc_failed_conditions.append(ioc_conditions[i])
-        if dists_to_target[1][i] <= 0.15:
+        if dists_to_target[1][i] <= 0.05:
             demo_success_conditions.append(ioc_conditions[i])
         else:
             demo_failed_conditions.append(ioc_conditions[i])
-        if dists_to_target[2][i] <= 0.15:
+        if dists_to_target[2][i] <= 0.05:
             oracle_success_conditions.append(ioc_conditions[i])
         else:
             oracle_failed_conditions.append(ioc_conditions[i])
@@ -170,8 +171,8 @@ def compare_samples(gps, N, agent_config, three_dim=True, experiment='peg'):
         ax = plt.gca()
         if experiment == 'peg':
             ax.add_patch(Rectangle((-0.1, -0.1), 0.2, 0.2, fill = False, edgecolor = 'blue')) # peg
-        elif experiment == 'reacher':
-            ax.add_patch(Rectangle((-0.3, -0.3), 0.6, 0.6, fill = False, edgecolor = 'blue')) # reacher
+        # elif experiment == 'reacher':
+        #     ax.add_patch(Rectangle((-0.3, -0.3), 0.6, 0.6, fill = False, edgecolor = 'blue')) # reacher
         box = subplt.get_position()
     ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
     # ax.legend(['all_success: ' + repr(percentages[0]), 'all_failed: ' + repr(percentages[1]), 'only_ioc: ' + repr(percentages[2]), \
@@ -187,7 +188,7 @@ def compare_samples(gps, N, agent_config, three_dim=True, experiment='peg'):
     #     subplt.plot([], [], c='r', marker='x')
     plt.xlabel('log of density')
     plt.title("Distribution of samples drawn from demo policy, IOC policy and oracle policy")
-    plt.savefig(gps._data_files_dir + 'distribution_of_sample_conditions.png')
+    plt.savefig(gps._data_files_dir + 'distribution_of_sample_conditions_2.png')
     plt.close('all')
 
 

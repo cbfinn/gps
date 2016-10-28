@@ -41,7 +41,7 @@ class DynamicsLR(Dynamics):
             xux_mean = np.mean(xux, axis=0)
             empsig = (xux - xux_mean).T.dot(xux - xux_mean) / N
             sigma = 0.5 * (empsig + empsig.T)
-            sigma[it, it] += self._hyperparams['regularization']
+            sigma[it, it] += np.eye(dX+dU)*self._hyperparams['regularization']
 
             Fm = np.linalg.solve(sigma[it, it], sigma[it, ip]).T
             fv = xux_mean[ip] - Fm.dot(xux_mean[it])

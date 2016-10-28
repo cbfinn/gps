@@ -563,12 +563,12 @@ def main():
         else:
             gps.test_policy(itr=current_itr, N=test_policy_N, testing=args.extendtesting, eval_pol_gt=args.eval)
     elif measure:
-        for i in xrange(1):
+        for i in xrange(2, 3):
             random.seed(i)
             np.random.seed(i)
             gps = GPSMain(hyperparams.config)
             agent_config = gps._hyperparams['agent']
-            compare_samples(gps, measure, agent_config, three_dim=False, experiment='pointmass')
+            compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
     elif compare:
         mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
             success_rates_2_dict = {}, {}, {}, {}
