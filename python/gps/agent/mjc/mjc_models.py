@@ -118,10 +118,14 @@ def obstacle_pointmass(target_position=np.array([1.3, 0.5, 0]), wall_center=0.0,
     mjcmodel = pointmass_model('pointmass')
     worldbody = mjcmodel.root.worldbody()
 
+    background = worldbody.body(name='background_body', pos=[0,0,-1], axisangle=[0,1,0,0.05])
+    background_color = [0,0,0,1] #[0.2,0.2,0.2,1]
+    background.geom(name='background_box', type='box', rgba=background_color, size=[100,100,.1], contype=3, conaffinity=3)
+
     # Particle
     body = worldbody.body(name='particle', pos="0 0 0")
     # body.geom(name="particle_geom", type="capsule", fromto="-0.01 0 0 0.01 0 0", size="0.05")
-    body.geom(name="particle_geom", type="sphere", size="0.07")
+    body.geom(name="particle_geom", type="sphere", rgba=[.4,.4,1,1], size="0.07")
     body.site(name="particle_site", pos="0 0 0", size="0.01")
     body.joint(name="ball_x", type="slide", pos="0 0 0", axis="1 0 0")
     body.joint(name="ball_y", type="slide", pos="0 0 0", axis="0 1 0")
