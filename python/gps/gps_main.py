@@ -23,7 +23,7 @@ from gps.gui.gps_training_gui import GPSTrainingGUI, NUM_DEMO_PLOTS
 from gps.utility.data_logger import DataLogger, open_zip
 from gps.sample.sample_list import SampleList
 # from gps.utility.generate_demo import GenDemo
-from gps.utility.general_utils import disable_caffe_logs
+from gps.utility.general_utils import disable_caffe_logs, Timer
 from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
                                     measure_distance_and_success_peg, get_demos, extract_samples
 from gps.utility.visualization import get_comparison_hyperparams, compare_experiments, compare_samples 
@@ -52,58 +52,32 @@ class GPSMain(object):
 
         self._data_files_dir = config['common']['data_files_dir']
 
-        self.agent = config['agent']['type'](config['agent'])
+        with Timer('init agent'):
+            self.agent = config['agent']['type'](config['agent'])
         if 'test_agent' in config:
             self.test_agent = config['test_agent']['type'](config['test_agent'])
         else:
             self.test_agent = self.agent
+
         self.data_logger = DataLogger()
-        self.gui = GPSTrainingGUI(config['common'], gui_on=config['gui_on'])
+        with Timer('init GUI'):
+            self.gui = GPSTrainingGUI(config['common'], gui_on=config['gui_on'])
 
         config['algorithm']['agent'] = self.agent
 
         if self.using_ioc():
-            demos = get_demos(self)
-            self.agent = config['agent']['type'](config['agent'])
-            self.algorithm.demoX = demos['demoX']
-            self.algorithm.demoU = demos['demoU']
-            self.algorithm.demoO = demos['demoO']
-            if 'demo_conditions' in demos.keys() and 'failed_conditions' in demos.keys():
-                self.algorithm.demo_conditions = demos['demo_conditions']
-                self.algorithm.failed_conditions = demos['failed_conditions']
-
-            # get samples and reward values
-            if self._hyperparams['algorithm']['ioc'] == 'SUPERVISED':
-                import glob
-                from gps.proto.gps_pb2 import GYM_REWARD
-                sample_files = glob.glob(config['common']['gt_cost_samples'])
-                T = self._hyperparams['algorithm']['cost']['T']
-                _, _, dX = self.algorithm.demoX.shape
-                _, _, dO = self.algorithm.demoO.shape
-                _, T, dU = self.algorithm.demoU.shape
-                gt_cost_X = np.zeros((0, T, dX))
-                gt_cost_U = np.zeros((0, T, dU))
-                gt_cost_O = np.zeros((0, T, dO))
-                gt_cost = np.zeros((0, T))
-                import pdb; pdb.set_trace()
-                for sample_file in sample_files:
-                    traj_sample_lists = self.data_logger.unpickle(sample_file)
-                    for sample_list in traj_sample_lists:
-                        for sample in sample_list:
-                            sample.agent = self.agent # need obs_datatypes to be set.
-                        gt_cost_O = np.r_[gt_cost_O, sample_list.get_obs()]
-                        gt_cost_X = np.r_[gt_cost_X, sample_list.get_X()]
-                        gt_cost_U = np.r_[gt_cost_U, sample_list.get_U()]
-                        gt_cost = np.r_[gt_cost, -sample_list.get(GYM_REWARD)]
-                gt_cost = np.expand_dims(gt_cost, -1)
-                import pdb; pdb.set_trace()
-                gt_cost -= np.min(gt_cost)
-                self.algorithm.cost._hyperparams['iterations'] = 10000
-                self.algorithm.cost.update_supervised(gt_cost_U, gt_cost_X, gt_cost_O, gt_cost)
-                import pdb; pdb.set_trace()
-
+            with Timer('loading demos'):
+                demos = get_demos(self)
+                self.agent = config['agent']['type'](config['agent'])
+                self.algorithm.demoX = demos['demoX']
+                self.algorithm.demoU = demos['demoU']
+                self.algorithm.demoO = demos['demoO']
+                if 'demo_conditions' in demos.keys() and 'failed_conditions' in demos.keys():
+                    self.algorithm.demo_conditions = demos['demo_conditions']
+                    self.algorithm.failed_conditions = demos['failed_conditions']
         else:
-            self.algorithm = config['algorithm']['type'](config['algorithm'])
+            with Timer('init algorithm'):
+                self.algorithm = config['algorithm']['type'](config['algorithm'])
 
 
     def run(self, itr_load=None):
@@ -119,35 +93,56 @@ class GPSMain(object):
 
         itr_start = self._initialize(itr_load)
         for itr in range(itr_start, self._hyperparams['iterations']):
-            if self.agent._hyperparams.get('randomly_sample_x0', False):
-                    for cond in self._train_idx:
-                        self.agent.reset_initial_x0(cond)
+            with Timer('_reset'):
+                if self.agent._hyperparams.get('randomly_sample_x0', False):
+                        for cond in self._train_idx:
+                            self.agent.reset_initial_x0(cond)
 
-            if self.agent._hyperparams.get('randomly_sample_bodypos', False):
+                if self.agent._hyperparams.get('randomly_sample_bodypos', False):
+                    for cond in self._train_idx:
+                        self.agent.reset_initial_body_offset(cond)
+
+            with Timer('_take_sample'):
                 for cond in self._train_idx:
-                    self.agent.reset_initial_body_offset(cond)
-            for cond in self._train_idx:
-                if itr == 0:
-                    for i in range(self.algorithm._hyperparams['init_samples']):
-                        self._take_sample(itr, cond, i)
+                    if itr == 0:
+                        for i in range(self.algorithm._hyperparams['init_samples']):
+                            self._take_sample(itr, cond, i)
+                    else:
+                        for i in range(self._hyperparams['num_samples']):
+                            self._take_sample(itr, cond, i)
+
+            with Timer('_get_samples'):
+                traj_sample_lists = [
+                    self.agent.get_samples(cond, -self._hyperparams['num_samples'])
+                    for cond in self._train_idx
+                ]
+
+            with Timer('_take_iteration'):
+                self._take_iteration(itr, traj_sample_lists)
+
+            with Timer('_log_data'):
+                if self.algorithm._hyperparams['sample_on_policy']:
+                # TODO - need to add these to lines back in when we move to mdgps
+                    with Timer('_log_data, take_policy_samples'):
+                        pol_sample_lists = self._take_policy_samples()
+                    self._log_data(itr, traj_sample_lists, pol_sample_lists)
                 else:
                     for i in range(self._hyperparams['num_samples']):
                         self._take_sample(itr, cond, i)
 
-            traj_sample_lists = [
-                self.agent.get_samples(cond, -self._hyperparams['num_samples'])
-                for cond in self._train_idx
-            ]
+                traj_sample_lists = [
+                    self.agent.get_samples(cond, -self._hyperparams['num_samples'])
+                    for cond in self._train_idx
+                ]
 
-            self._take_iteration(itr, traj_sample_lists)
+                self._take_iteration(itr, traj_sample_lists)
 
-            if self.algorithm._hyperparams['sample_on_policy']:
-            # TODO - need to add these to lines back in when we move to mdgps
-                pol_sample_lists = self._take_policy_samples(idx=self._train_idx)
-                self._log_data(itr, traj_sample_lists, pol_sample_lists)
-            else:
-                self._log_data(itr, traj_sample_lists)
-
+                if self.algorithm._hyperparams['sample_on_policy']:
+                # TODO - need to add these to lines back in when we move to mdgps
+                    pol_sample_lists = self._take_policy_samples(idx=self._train_idx)
+                    self._log_data(itr, traj_sample_lists, pol_sample_lists)
+                else:
+                    self._log_data(itr, traj_sample_lists)
         self._end()
         return None
 
@@ -162,7 +157,7 @@ class GPSMain(object):
             testing: the flag that marks whether we test the policy for untrained cond
         Returns: None
         """
-        algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr
+        algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl.gz' % itr
         print 'Loading algorithm file.'
         self.algorithm = self.data_logger.unpickle(algorithm_file)
         print 'Done loading algorithm file.'
@@ -199,7 +194,7 @@ class GPSMain(object):
                 self.gui.set_status_text('Press \'go\' to begin.')
             return 0
         else:
-            algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr_load
+            algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl.gz' % itr_load
             self.algorithm = self.data_logger.unpickle(algorithm_file)
             if self.algorithm._hyperparams['ioc']:
                 self.algorithm.sample_list = extract_samples(itr_load, self._data_files_dir + 'traj_sample_itr')
@@ -355,54 +350,49 @@ class GPSMain(object):
         Returns: None
         """
 
-        if False: #self.using_ioc():
-            # Produce time vs cost plots
-            sample_losses = self.algorithm.cur[6].cs
-            if sample_losses is None:
-                sample_losses = self.algorithm.prev[6].cs
-            if sample_losses.shape[0] < NUM_DEMO_PLOTS:
-                sample_losses = np.tile(sample_losses, [NUM_DEMO_PLOTS, 1])[:Fset__NUM_DEMO_PLOTS]
-            demo_losses = eval_demos_xu(self.agent, self.algorithm.demoX, self.algorithm.demoU, self.algorithm.cost, n=NUM_DEMO_PLOTS)
+        with Timer('Updating GUI'):
+            if False: #self.using_ioc():
+                # Produce time vs cost plots
+                sample_losses = self.algorithm.cur[6].cs
+                if sample_losses is None:
+                    sample_losses = self.algorithm.prev[6].cs
+                if sample_losses.shape[0] < NUM_DEMO_PLOTS:
+                    sample_losses = np.tile(sample_losses, [NUM_DEMO_PLOTS, 1])[:Fset__NUM_DEMO_PLOTS]
+                demo_losses = eval_demos_xu(self.agent, self.algorithm.demoX, self.algorithm.demoU, self.algorithm.cost, n=NUM_DEMO_PLOTS)
 
-            # Produce distance vs cost plots
-            dists_vs_costs = compute_distance_cost_plot(self.algorithm, self.agent, traj_sample_lists[6])
-            demo_dists_vs_costs = compute_distance_cost_plot_xu(self.algorithm, self.agent, self.algorithm.demoX, self.algorithm.demoU)
+                # Produce distance vs cost plots
+                dists_vs_costs = compute_distance_cost_plot(self.algorithm, self.agent, traj_sample_lists[6])
+                demo_dists_vs_costs = compute_distance_cost_plot_xu(self.algorithm, self.agent, self.algorithm.demoX, self.algorithm.demoU)
 
-        else:
-            demo_losses = None
-            sample_losses = None
-            dists_vs_costs = None
-            demo_dists_vs_costs = None
-
-        if self.gui:
-            self.gui.set_status_text('Logging data and updating GUI.')
-            self.gui.update(itr, self.algorithm, self.agent,
-                traj_sample_lists, pol_sample_lists, ioc_demo_losses=demo_losses, ioc_sample_losses=sample_losses,
-                            ioc_dist_cost=dists_vs_costs, ioc_demo_dist_cost=demo_dists_vs_costs)
-            self.gui.save_figure(
-                self._data_files_dir + ('figure_itr_%02d.pdf' % itr)
-            )
-        if 'no_sample_logging' in self._hyperparams['common']:
-            return
+            else:
+                demo_losses = None
+                sample_losses = None
+                dists_vs_costs = None
+                demo_dists_vs_costs = None
 
         # if itr == self.algorithm._hyperparams['iterations'] - 1 or itr == self.algorithm._hyperparams['ioc_maxent_iter'] - 1: # Just save the last iteration of the algorithm file
         # if ((itr+1) % 5 == 0) or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
-        self.algorithm.demo_policy = None
-        copy_alg = copy.copy(self.algorithm)
-        copy_alg.sample_list = {}
-        self.data_logger.pickle(
-            self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
-            copy_alg
-        )
-        self.data_logger.pickle(
-            self._data_files_dir + ('traj_sample_itr_%02d.pkl.gz' % itr),
-            copy.copy(traj_sample_lists)
-        )
-        if pol_sample_lists:
-            self.data_logger.pickle(
-                self._data_files_dir + ('pol_sample_itr_%02d.pkl.gz' % itr),
-                copy.copy(pol_sample_lists)
-            )
+        log_data = itr>0 and (itr%5 == 0) or (itr==self._hyperparams['iterations'])
+        if log_data:
+            with Timer('saving algorithm file'):
+                self.algorithm.demo_policy = None
+                copy_alg = copy.copy(self.algorithm)
+                copy_alg.sample_list = {}
+                self.data_logger.pickle(
+                    self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
+                    copy_alg
+                )
+            with Timer('saving traj samples'):
+                self.data_logger.pickle(
+                    self._data_files_dir + ('traj_sample_itr_%02d.pkl.gz' % itr),
+                    copy.copy(traj_sample_lists)
+                )
+            with Timer('saving policy samples'):
+                if pol_sample_lists:
+                    self.data_logger.pickle(
+                        self._data_files_dir + ('pol_sample_itr_%02d.pkl.gz' % itr),
+                        copy.copy(pol_sample_lists)
+                    )
 
     def _end(self):
         """ Finish running and exit. """

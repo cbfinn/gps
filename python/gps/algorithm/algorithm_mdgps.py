@@ -70,38 +70,42 @@ class AlgorithmMDGPS(Algorithm):
         """
         itr = self.iteration_count
 
-        if itr == 0 and RGB_IMAGE in sample_lists[0][0].agent.obs_data_types:
-            for sample_list in sample_lists:
-                for sample in sample_list:
-                    sample.update_features(self.policy_opt.policy)
 
-        # Store the samples.
-        if self._hyperparams['ioc']:
-            self.N = sum(len(self.sample_list[i]) for i in self.sample_list.keys())
-            self.num_samples = [len(self.sample_list[i]) for i in self.sample_list.keys()]
-        for m in range(self.M):
-            self.cur[m].sample_list = sample_lists[m]
+        with Timer('update_features'):
+            if itr == 0 and RGB_IMAGE in sample_lists[0][0].agent.obs_data_types:
+                for sample_list in sample_lists:
+                    for sample in sample_list:
+                        sample.update_features(self.policy_opt.policy)
+
+        with Timer('compute_dist_to_target'):
+            # Store the samples.
             if self._hyperparams['ioc']:
-                prev_samples = self.sample_list[m].get_samples()
-                prev_samples.extend(sample_lists[m].get_samples())
-                self.sample_list[m] = SampleList(prev_samples)
-                self.N += len(sample_lists[m])
-            # Compute mean distance to target. For peg experiment only.
-            if 'target_end_effector' in self._hyperparams:
-                if type(self._hyperparams['target_end_effector']) is list:
-                    target_position = self._hyperparams['target_end_effector'][m][:3]
-                else:
-                    target_position = self._hyperparams['target_end_effector'][:3]
-                cur_samples = sample_lists[m].get_samples()
+                self.N = sum(len(self.sample_list[i]) for i in self.sample_list.keys())
+                self.num_samples = [len(self.sample_list[i]) for i in self.sample_list.keys()]
+            for m in range(self.M):
+                self.cur[m].sample_list = sample_lists[m]
+                if self._hyperparams['ioc']:
+                    prev_samples = self.sample_list[m].get_samples()
+                    prev_samples.extend(sample_lists[m].get_samples())
+                    self.sample_list[m] = SampleList(prev_samples)
+                    self.N += len(sample_lists[m])
+                # Compute mean distance to target. For peg experiment only.
+                if 'target_end_effector' in self._hyperparams:
+                    if type(self._hyperparams['target_end_effector']) is list:
+                        target_position = self._hyperparams['target_end_effector'][m][:3]
+                    else:
+                        target_position = self._hyperparams['target_end_effector'][:3]
+                    cur_samples = sample_lists[m].get_samples()
 
-                sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
-                dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
-                         for i in xrange(len(cur_samples))]
-                self.dists_to_target[itr].append(sum(dists) / len(cur_samples))
+                    sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
+                    dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
+                             for i in xrange(len(cur_samples))]
+                    self.dists_to_target[itr].append(sum(dists) / len(cur_samples))
 
         # Comment this when use random policy initialization and add after line 78
         if self.iteration_count == 0 and self._hyperparams['policy_eval']:
-            self.policy_opts[self.iteration_count] = self.policy_opt.copy()
+            with Timer('copy_policy'):
+                self.policy_opts[self.iteration_count] = self.policy_opt.copy()
 
         # On the first iteration we need to make sure that the policy somewhat
         # matches the init controller. Otherwise the LQR backpass starts with
@@ -111,7 +115,7 @@ class AlgorithmMDGPS(Algorithm):
                 self.cur[cond].traj_distr for cond in range(self.M)
             ]
             # Only update fc layers.
-            with Timer('UpdatePolicy'):
+            with Timer('copy_policy - UpdatePolicy'):
                 self._update_policy(fc_only=True)
 
         # Update dynamics linearizations.

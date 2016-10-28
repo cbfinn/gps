@@ -2,6 +2,7 @@
 import numpy as np
 import os
 import time
+import traceback as tb
 
 class BundleType(object):
     """
@@ -18,6 +19,7 @@ class BundleType(object):
             raise AttributeError("%r has no attribute %s" % (self, key))
         object.__setattr__(self, key, value)
 
+
 class Timer(object):
     def __init__(self, message):
         self.message = message
@@ -27,9 +29,10 @@ class Timer(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         new_time = time.time() - self.time_start
-        print 'Timer: %s (Elapsed: %fs)' % (self.message, new_time)
-
-
+        fname, lineno, method, _ = tb.extract_stack()[-2]  # Get caller
+        _, fname = os.path.split(fname)
+        id_str = '%s:%s' % (fname, method)
+        print 'TIMER:%s: %s (Elapsed: %fs)' % (id_str, self.message, new_time)
 
 
 def flatten_lists(lists):

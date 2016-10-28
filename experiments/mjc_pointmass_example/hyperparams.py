@@ -14,12 +14,15 @@ from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
+from gps.algorithm.dynamics.dynamics_lr import DynamicsLR
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
+from gps.algorithm.dynamics.dynamics_prior_only import DynamicsPriorOnly
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_pd
 from gps.algorithm.policy.policy_prior import PolicyPrior
+from gps.algorithm.traj_opt.traj_opt_lqr_python_state_dynamics import TrajOptLQRPythonStateDynamics
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
 from gps.gui.config import generate_experiment_info
 
@@ -44,7 +47,7 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 5,
+    'conditions': 3,
     # 'conditions': 1,
 }
 
@@ -79,6 +82,9 @@ agent = {
     'smooth_noise': False,
     'camera_pos': np.array([1., 0., 8., 0., 0., 0.]),
 }
+
+
+
 
 algorithm = {
     'type': AlgorithmTrajOpt,
@@ -128,18 +134,18 @@ algorithm['cost'] = {
 }
 
 algorithm['dynamics'] = {
-    'type': DynamicsLRPrior,
-    'regularization': 1e-6,
+    'type': DynamicsLR, #PriorOnly,
+    'regularization': 1e-5,
     'prior': {
         'type': DynamicsPriorGMM,
-        'max_clusters': 5,
-        'min_samples_per_cluster': 20,
-        'max_samples': 20,
+        'max_clusters': 20,
+        'min_samples_per_cluster': 40,
+        'max_samples': 40,
     }
 }
 
 algorithm['traj_opt'] = {
-    'type': TrajOptLQRPython,
+    'type': TrajOptLQRPython, #StateDynamics,
 }
 
 # algorithm['policy_opt'] = {

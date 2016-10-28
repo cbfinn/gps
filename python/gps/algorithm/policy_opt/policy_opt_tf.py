@@ -95,6 +95,10 @@ class PolicyOptTf(PolicyOpt):
             self.grads = [tf.gradients(self.act_op[:,u], self.obs_tensor)[0]
                     for u in range(self._dU)]
 
+    @property
+    def uses_vision(self):
+        return len(self.last_conv_vars)>0
+
     def run(self, op, feed_dict=None):
         with self.graph.as_default():
             return self._sess.run(op, feed_dict=feed_dict)
@@ -175,14 +179,19 @@ class PolicyOptTf(PolicyOpt):
         if True:
             feed_dict = {self.obs_tensor: obs}
             num_values = obs.shape[0]
-            conv_values = self.solver.get_last_conv_values(self._sess, feed_dict, num_values, self.batch_size)
+
+            if self.uses_vision:
+                conv_values = self.solver.get_last_conv_values(self._sess, feed_dict, num_values, self.batch_size)
             for i in range(self._hyperparams['fc_only_iterations'] ):
                 start_idx = int(i * self.batch_size %
                                 (batches_per_epoch * self.batch_size))
                 idx_i = idx[start_idx:start_idx+self.batch_size]
-                feed_dict = {self.last_conv_vars: conv_values[idx_i],
-                             self.action_tensor: tgt_mu[idx_i],
+                feed_dict = {self.action_tensor: tgt_mu[idx_i],
                              self.precision_tensor: tgt_prc[idx_i]}
+                if self.uses_vision:
+                    feed_dict[self.last_conv_vars] = conv_values[idx_i]
+                else:
+                    feed_dict[self.obs_tensor] = obs[idx_i]
                 train_loss = self.solver(feed_dict, self._sess, device_string=self.device_string, use_fc_solver=True)
                 average_loss += train_loss
 
