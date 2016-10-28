@@ -113,7 +113,7 @@ class TrajOptPi2(TrajOpt):
                 max_cost_to_go - min_cost_to_go + 0.00001)
 
             # Perform REPS-like optimization of the temperature eta.
-            res = minimize(self.KL_dual, 1.0, bounds=((self._min_temperature, 
+            res = minimize(self.kl_dual, 1.0, bounds=((self._min_temperature, 
                 None),), args=(self._kl_threshold, cost_to_go))
             eta = res.x
 
@@ -147,7 +147,7 @@ class TrajOptPi2(TrajOpt):
 
         return mean_new, cov_new, inv_cov_new, chol_cov_new
 
-    def KL_dual(self, eta, kl_threshold, costs):
+    def kl_dual(self, eta, kl_threshold, costs):
         """
         Dual function for optimizing the temperature eta according to the given
         KL-divergence constraint.

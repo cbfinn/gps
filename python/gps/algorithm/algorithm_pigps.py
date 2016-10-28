@@ -1,4 +1,9 @@
-""" This file defines the PIGPS algorithm. """
+""" This file defines the PIGPS algorithm. 
+
+Reference:
+Y. Chebotar, M. Kalakrishnan, A. Yahya, A. Li, S. Schaal, S. Levine. 
+Path Integral Guided Policy Search. 2016. https://arxiv.org/abs/1610.00529.
+"""
 import copy
 import logging
 
@@ -23,7 +28,7 @@ class AlgorithmPIGPS(AlgorithmMDGPS):
 
     def iteration(self, sample_lists):
         """
-        Run iteration of PIGPS-based guided policy search.
+        Run iteration of PI-based guided policy search.
 
         Args:
             sample_lists: List of SampleList objects for each condition.
