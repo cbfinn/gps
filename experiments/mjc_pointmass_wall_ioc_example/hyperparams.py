@@ -10,8 +10,6 @@ from gps import __file__ as gps_filepath
 from gps.agent.mjc import AgentMuJoCo, obstacle_pointmass
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
-from gps.algorithm.cost.cost_ioc_quad import CostIOCQuadratic
-from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.cost.cost_ioc_tf import CostIOCTF
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_action import CostAction
@@ -55,9 +53,9 @@ common = {
     'LG_demo_file': EXP_DIR + 'data_files/demo_LG.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 4,
+    'conditions': 2,
+    'demo_conditions': 4,
     'nn_demo': False,
-    # 'conditions': 1,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -84,22 +82,25 @@ agent = {
 
 demo_agent = {
     'type': AgentMuJoCo,
-    'exp_name': 'pointmass_wall',
-    'models': obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3),
-    'x0': [np.array([-0.75, 0., 0., 0.]), np.array([-0.75, -0.25, 0., 0.]),
-          np.array([-0.75, -0.5, 0., 0.]), np.array([-0.75, -0.75, 0., 0.])],
+    'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=-0.2, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3, control_limit=50),
+               obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3, control_limit=50),
+               ],
+    'filename': '',
+    'x0': np.array([-1., 0., 0., 0.]),
     # 'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
     'substeps': 1,
-    'conditions': common['conditions'],
-    'T': 200,
+    'conditions': common['demo_conditions'],
+    'T': agent['T'],
     'point_linear': True,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'smooth_noise': False,
-    'camera_pos': np.array([2., 0., 10., 0., 0., 0.]),
-    'target_end_effector': target_pos,
+    'camera_pos': np.array([1., 0., 8., 0., 0., 0.]),
 }
 
 

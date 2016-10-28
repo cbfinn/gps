@@ -56,9 +56,18 @@ PR2_GAINS = np.array([1.0, 1.0])
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
-CONDITIONS = 3
 np.random.seed(14)
 target_pos = np.array([1.3, 0.0, 0.])
+
+models= [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3, control_limit=20, add_hole_indicator=True),
+           obstacle_pointmass(target_pos, wall_center=0.1, hole_height=0.3, control_limit=20, add_hole_indicator=True),
+           obstacle_pointmass(target_pos, wall_center=-0.1, hole_height=0.3, control_limit=20, add_hole_indicator=True),
+           obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.3, control_limit=20, add_hole_indicator=True),
+           obstacle_pointmass(target_pos, wall_center=-0.2, hole_height=0.3, control_limit=20, add_hole_indicator=True),
+           obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3, control_limit=20, add_hole_indicator=True),
+           obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3, control_limit=20, add_hole_indicator=True)
+           ]
+CONDITIONS = len(models)
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -77,21 +86,16 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.2, control_limit=10, add_hole_indicator=True),
-               obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.2, control_limit=10, add_hole_indicator=True),
-               obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.2, control_limit=10, add_hole_indicator=True),
-               #obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.3, control_limit=10),
-               #obstacle_pointmass(target_pos, wall_center=-0.2, hole_height=0.3, control_limit=10),
-               #obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3, control_limit=10),
-               #obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3, control_limit=10)
-               ],
-    'x0': np.array([-1., 0., 0., 0.]),
+    'models': models,
+    'x0': np.array([-0.8, 0., 0., 0.]),
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
-    'T': 200,
+    'T': 100,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, IMAGE_FEAT],
+    #'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, RGB_IMAGE],
+    #'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'target_idx': np.array(list(range(4,6))),
     'meta_include': [RGB_IMAGE_SIZE],
     'image_width': IMAGE_WIDTH,
@@ -99,14 +103,16 @@ agent = {
     'image_channels': IMAGE_CHANNELS,
     'sensor_dims': SENSOR_DIMS,
     'record_reward': True,
-    'camera_pos': np.array([1., 0., 8., 0., 0., 0.]),
+    'camera_pos': np.array([1., 0., 6., 0., 0., 0.]),
     'point_linear': True,
 }
 
 
+"""
 algorithm = {
     'type': AlgorithmMDGPS,
-    'max_ent_traj': 0.001,
+    #'type': AlgorithmTrajOpt,
+    'max_ent_traj': 1.0,
     'conditions': common['conditions'],
     'iterations': 13,
     'kl_step': 1.0, # TODO was 1.0
@@ -117,6 +123,32 @@ algorithm = {
     'plot_dir': EXP_DIR,
     'step_rule': 'laplace',
     'target_end_effector': target_pos,
+}
+"""
+
+algorithm = {
+    'type': AlgorithmBADMM,
+    'conditions': common['conditions'],
+    'plot_dir': EXP_DIR,
+    'max_ent_traj': 1.0,
+    'target_end_effector': target_pos,
+    'iterations': 15,
+    'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-1]),
+    'policy_dual_rate': 0.1,
+    'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
+    'fixed_lg_step': 3,
+    'kl_step': 1.0,
+    'init_pol_wt': 0.01,
+    'min_step_mult': 0.1,
+    'max_step_mult': 3.0,
+    'sample_decrease_var': 0.05,
+    'sample_increase_var': 0.1,
+    'exp_step_increase': 2.0,
+    'exp_step_decrease': 0.5,
+    'exp_step_upper': 0.5,
+    'exp_step_lower': 1.0,
+    'max_policy_samples': 6,
+    'policy_sample_mode': 'add',
 }
 
 
@@ -175,13 +207,13 @@ state_cost = {
 
 action_cost = {
     'type': CostAction,
-    'wu': np.array([1., 1.])*1e-2
+    'wu': np.array([1., 1.])*1e-4
 }
 
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [state_cost, action_cost],
-    'weights': [0.1, 0.1], # used 10,1 for T=3
+    'weights': [1., 1.], # used 10,1 for T=3
 }
 
 
