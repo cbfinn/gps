@@ -22,6 +22,8 @@ ALG = {
     'cost': None,  # A list of Cost objects for each condition.
     # Whether or not to sample with neural net policy (only for badmm/mdgps).
     'sample_on_policy': False,
+    # Inidicates if the algorithm requires fitting of the dynamics.
+    'fit_dynamics': True,    
 }
 
 
@@ -48,4 +50,18 @@ ALG_MDGPS = {
     'policy_sample_mode': 'add',
     # Whether to use 'laplace' or 'mc' cost in step adjusment
     'step_rule': 'laplace',
+}
+
+# AlgorithmTrajOptPi2
+ALG_PI2 = {
+    # Dynamics fitting is not required for PI2.
+    'fit_dynamics': False,
+}
+
+# AlgorithmPIGPS
+ALG_PIGPS = {    
+    'init_pol_wt': 0.01,
+    'policy_sample_mode': 'add',    
+    # Dynamics fitting is not required for PIGPS.
+    'fit_dynamics': False,
 }

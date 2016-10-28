@@ -50,10 +50,13 @@ class Algorithm(object):
         self.cur = [IterationData() for _ in range(self.M)]
         self.prev = [IterationData() for _ in range(self.M)]
 
-        dynamics = self._hyperparams['dynamics']
+        if self._hyperparams['fit_dynamics']:
+            dynamics = self._hyperparams['dynamics']
+
         for m in range(self.M):
             self.cur[m].traj_info = TrajectoryInfo()
-            self.cur[m].traj_info.dynamics = dynamics['type'](dynamics)
+            if self._hyperparams['fit_dynamics']:
+                self.cur[m].traj_info.dynamics = dynamics['type'](dynamics)
             init_traj_distr = extract_condition(
                 self._hyperparams['init_traj_distr'], self._cond_idx[m]
             )

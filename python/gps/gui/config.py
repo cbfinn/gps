@@ -128,10 +128,16 @@ def generate_experiment_info(config):
             algorithm_cost_type += '(%s)' % ', '.join(
                     map(lambda cost: cost['type'].__name__,
                         algorithm['cost']['costs']))
+
+    if 'dynamics' in algorithm:        
+        alg_dyn = str(algorithm['dynamics']['type'].__name__)
+    else:
+        alg_dyn = 'None'       
+
     return (
         'exp_name:   ' + str(common['experiment_name'])              + '\n' +
         'alg_type:   ' + str(algorithm['type'].__name__)             + '\n' +
-        'alg_dyn:    ' + str(algorithm['dynamics']['type'].__name__) + '\n' +
+        'alg_dyn:    ' + alg_dyn + '\n' +
         'alg_cost:   ' + str(algorithm_cost_type)                    + '\n' +
         'iterations: ' + str(config['iterations'])                   + '\n' +
         'conditions: ' + str(algorithm['conditions'])                + '\n' +
