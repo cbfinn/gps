@@ -258,7 +258,7 @@ class Algorithm(object):
             self.cur[cond].cgt = cgt[synN:]
 
 
-    def _advance_iteration_variables(self):
+    def _advance_iteration_variables(self, store_prev=False):
         """
         Move all 'cur' variables to 'prev', and advance iteration
         counter.
@@ -268,7 +268,10 @@ class Algorithm(object):
         # TODO: change IterationData to reflect new stuff better
         for m in range(self.M):
             self.prev[m].new_traj_distr = self.new_traj_distr[m]
-            self.prev[m].sample_list = True # don't pickle this.
+            if store_prev:
+                self.prev[m].sample_list = self.cur[m].sample_list
+            else:
+                self.prev[m].sample_list = True # don't pickle this.
         self.cur = [IterationData() for _ in range(self.M)]
         if not self._hyperparams['policy_eval']:
             self.traj_distr[self.iteration_count] = []

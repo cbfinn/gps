@@ -390,6 +390,7 @@ class GPSTrainingGUI(object):
         controller entropies, and initial/final KL divergences for BADMM.
         """
         avg_cost = np.mean(costs)
+        pol_costs = [-123 for _ in range(algorithm.M)]
         if pol_sample_lists is not None:
             test_idx = algorithm._hyperparams['test_conditions']
             # pol_sample_lists is a list of singletons
