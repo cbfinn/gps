@@ -17,6 +17,8 @@ from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
+from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
+from gps.algorithm.policy_opt.tf_model_example import multi_modal_network_fp, example_tf_network
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_pd
@@ -55,13 +57,13 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3, control_limit=50),
-               obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.3, control_limit=50),
-               obstacle_pointmass(target_pos, wall_center=-0.2, hole_height=0.3, control_limit=50),
-               obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.3, control_limit=50),
-               obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3, control_limit=50),
+    'models': [obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.3, control_limit=20),
+               obstacle_pointmass(target_pos, wall_center=0.15, hole_height=0.3, control_limit=20),
+               obstacle_pointmass(target_pos, wall_center=-0.15, hole_height=0.3, control_limit=20),
+               obstacle_pointmass(target_pos, wall_center=0.25, hole_height=0.3, control_limit=20),
+               obstacle_pointmass(target_pos, wall_center=-0.25, hole_height=0.3, control_limit=20),
                ],
-    'condition_data': np.array([[0], [0.2], [-0.2], [0.3], [-0.3]]),
+    'condition_data': np.array([[0], [0.15], [-0.15], [0.25], [-0.25]]),
     #'filename': './mjc_models/particle2d.xml',
     'x0': np.array([-1., 0., 0., 0.]),
     # 'x0': [np.array([-1., 1., 0., 0.])],
@@ -77,6 +79,7 @@ agent = {
     'camera_pos': np.array([1., 0., 8., 0., 0., 0.]),
 }
 
+#"""
 algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
@@ -85,7 +88,39 @@ algorithm = {
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
     'max_ent_traj': 1.0,
+    'step_rule': 'laplace',
+    'sample_on_policy': True,
+    'plot_dir': EXP_DIR,
+    'target_end_effector': target_pos,
 }
+#"""
+
+"""
+algorithm = {
+    'type': AlgorithmBADMM,
+    'conditions': common['conditions'],
+    'plot_dir': EXP_DIR,
+    'max_ent_traj': 1.0,
+    'target_end_effector': target_pos,
+    'iterations': 15,
+    'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-1]),
+    'policy_dual_rate': 0.1,
+    'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
+    'fixed_lg_step': 3,
+    'kl_step': 1.0,
+    'init_pol_wt': 0.01,
+    'min_step_mult': 0.1,
+    'max_step_mult': 3.0,
+    'sample_decrease_var': 0.05,
+    'sample_increase_var': 0.1,
+    'exp_step_increase': 2.0,
+    'exp_step_decrease': 0.5,
+    'exp_step_upper': 0.5,
+    'exp_step_lower': 1.0,
+    'max_policy_samples': 6,
+    'policy_sample_mode': 'add',
+}
+"""
 
 algorithm['init_traj_distr'] = {
     'type': init_pd,
@@ -112,13 +147,13 @@ state_cost = {
 
 action_cost = {
     'type': CostAction,
-    'wu': np.array([1., 1.])*1e-2
+    'wu': np.array([1., 1.])*1e-4
 }
 
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [state_cost, action_cost],
-    'weights': [0.1, 0.1], # used 10,1 for T=3
+    'weights': [1., 1.], # used 10,1 for T=3
 }
 
 algorithm['dynamics'] = {
@@ -146,6 +181,20 @@ algorithm['traj_opt'] = {
 #     },
 # }
 
+algorithm['policy_opt'] = {
+    'type': PolicyOptTf,
+    'network_params': {
+        'obs_include': agent['obs_include'],
+        'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, CONDITION_DATA, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+        'sensor_dims': SENSOR_DIMS,
+    },
+    'network_model': example_tf_network,
+    'fc_only_iterations': 5000,
+    'init_iterations': 1000,
+    'iterations': 1000,  # was 100
+    'weights_file_prefix': EXP_DIR + 'policy',
+}
+
 algorithm['policy_prior'] = {
     'type': PolicyPrior,
 }
@@ -154,7 +203,7 @@ config = {
     'iterations': algorithm['iterations'],
     'num_samples': 10,
     'verbose_trials': 1,
-    'verbose_policy_trials': 1,
+    #'verbose_policy_trials': 1,
     'common': common,
     'agent': agent,
     'gui_on': True,
