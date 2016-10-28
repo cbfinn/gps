@@ -392,6 +392,7 @@ class GPSTrainingGUI(object):
         avg_cost = np.mean(costs)
         if pol_sample_lists is not None:
             test_idx = algorithm._hyperparams['test_conditions']
+            # import pdb; pdb.set_trace()
             # pol_sample_lists is a list of singletons
             samples = [sl[0] for sl in pol_sample_lists]
             if not eval_pol_gt:

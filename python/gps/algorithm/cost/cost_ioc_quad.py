@@ -39,8 +39,16 @@ class CostIOCQuadratic(Cost):
 
     def copy(self):
       new_cost = CostIOCQuadratic(self._hyperparams)
-      self.solver.test_nets[0].share_with(new_cost.solver.net)
-      self.solver.test_nets[0].share_with(new_cost.solver.test_nets[0])
+      self.solver.snapshot()
+      new_cost.caffe_iter = self.caffe_iter
+      new_cost.solver.restore(
+              self._hyperparams['weights_file_prefix'] + '_iter_' +
+              str(self.caffe_iter) + '.solverstate'
+      )
+      new_cost.solver.test_nets[0].copy_from(
+              self._hyperparams['weights_file_prefix'] + '_iter_' +
+              str(self.caffe_iter) + '.caffemodel'
+      )
       return new_cost
 
 

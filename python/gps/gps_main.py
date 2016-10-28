@@ -327,6 +327,7 @@ class GPSMain(object):
         # Since this isn't noisy, just take one sample.
         # TODO: Make this noisy? Add hyperparam?
         # TODO: Take at all conditions for GUI?
+        # TODO: Take N samples per condition rather than just one
         for cond in idx:
             if not self.algorithm._hyperparams['multiple_policy']:
                 if testing:
@@ -532,17 +533,17 @@ def main():
             plt.show()
         except ImportError:
             sys.exit('ROS required for target setup.')
-    elif test_policy_N or args.eval or args.extendtesting:
+    elif type(test_policy_N) is int or args.eval or args.extendtesting:
         data_files_dir = exp_dir + 'data_files/'
         data_filenames = os.listdir(data_files_dir)
         algorithm_prefix = 'algorithm_itr_'
         algorithm_filenames = [f for f in data_filenames if f.startswith(algorithm_prefix)]
         current_algorithm = sorted(algorithm_filenames, reverse=True)[0]
         current_itr = int(current_algorithm[len(algorithm_prefix):len(algorithm_prefix)+2])
-        # current_itr = 9
+
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:
-            if test_policy_N:
+            if test_policy_N+1:
                 test_policy = threading.Thread(
                     target=lambda: gps.test_policy(itr=current_itr, N=test_policy_N)
                 )
