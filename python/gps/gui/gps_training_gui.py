@@ -390,6 +390,7 @@ class GPSTrainingGUI(object):
         controller entropies, and initial/final KL divergences for BADMM.
         """
         avg_cost = np.mean(costs)
+        pol_costs = [-123 for _ in range(algorithm.M)]
         if pol_sample_lists is not None:
             test_idx = algorithm._hyperparams['test_conditions']
             # import pdb; pdb.set_trace()
@@ -458,6 +459,8 @@ class GPSTrainingGUI(object):
         IMAGE_SIZE = 64
         image = sp.misc.imresize(image, (IMAGE_SIZE, IMAGE_SIZE, 3))
         self._fp_visualizer.imshow(image)
+
+        print 'Feature Points:', feature_points
 
         fp_x = []
         fp_y = []

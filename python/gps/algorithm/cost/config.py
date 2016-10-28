@@ -102,7 +102,8 @@ checkpoint_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
 # CostIOCTF
 COST_IOC_TF = {
     # Other hyperparameters.
-    'checkpoint_prefix': checkpoint_path
+    'checkpoint_prefix': checkpoint_path,
+    'approximate_lxx': True,
 }
 COST_IOC_TF.update(IOC_CONFIG)
 

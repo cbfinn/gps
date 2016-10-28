@@ -3,6 +3,7 @@ import copy
 
 import numpy as np
 
+from gps.algorithm.algorithm_utils import gauss_fit_joint_prior
 from gps.algorithm.policy.config import POLICY_PRIOR
 
 

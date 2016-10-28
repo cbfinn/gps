@@ -261,7 +261,7 @@ class AlgorithmBADMM(Algorithm):
         Move all 'cur' variables to 'prev', reinitialize 'cur'
         variables, and advance iteration counter.
         """
-        Algorithm._advance_iteration_variables(self)
+        Algorithm._advance_iteration_variables(self, store_prev=True)
         for m in range(self.M):
             self.cur[m].traj_info.last_kl_step = \
                     self.prev[m].traj_info.last_kl_step
