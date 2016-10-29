@@ -97,7 +97,7 @@ class PolicyOptTf(PolicyOpt):
 
     @property
     def uses_vision(self):
-        return len(self.last_conv_vars)>0
+        return self.last_conv_vars is not None
 
     def run(self, op, feed_dict=None):
         with self.graph.as_default():

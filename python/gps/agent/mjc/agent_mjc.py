@@ -51,6 +51,24 @@ class AgentMuJoCo(Agent):
                       'noisy_body_idx', 'noisy_body_var', 'filename'):
             self._hyperparams[field] = setup(self._hyperparams[field], conds)
 
+    def randomize_world(self, condition):
+        if self._hyperparams['randomize_world']:
+            assert 'models' in self._hyperparams
+
+            #Re-invoke model building.
+            self._hyperparams['models'][condition].regenerate()
+            with self._hyperparams['models'][condition].asfile() as model_file:
+                world = mjcpy.MJCWorld(model_file.name)
+                self._world[condition] = world
+
+            if self._hyperparams['render']:
+                cam_pos = self._hyperparams['camera_pos']
+                self._world[condition].init_viewer(AGENT_MUJOCO['image_width'],
+                                           AGENT_MUJOCO['image_height'],
+                                           cam_pos[0], cam_pos[1], cam_pos[2],
+                                           cam_pos[3], cam_pos[4], cam_pos[5])
+
+
     def _setup_world(self, filename):
         """
         Helper method for handling setup of the MuJoCo world.
@@ -163,6 +181,7 @@ class AgentMuJoCo(Agent):
             save: Whether or not to store the trial into the samples.
             noisy: Whether or not to use noise during sampling.
         """
+        self.randomize_world(condition)
         # Create new sample, populate first time step.
         feature_fn = None
         # TODO - make this less hacky, just pass in policy.

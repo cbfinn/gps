@@ -9,11 +9,11 @@ import tempfile
 import numpy as np
 
 
-def default_model(name):
+def default_model(name, regen_fn=None):
     """
     Get a model with basic settings such as gravity and RK4 integration enabled
     """
-    model = MJCModel(name)
+    model = MJCModelRegen(name, regen_fn)
     root = model.root
 
     # Setup
@@ -39,6 +39,7 @@ def pointmass_model(name):
     root.option(timestep=0.01, gravity="0 0 0", iterations="20", integrator="Euler")
     return model
 
+
 class MJCModel(object):
     def __init__(self, name):
         self.name = name
@@ -54,19 +55,29 @@ class MJCModel(object):
             print f.read()  # prints a dump of the model
 
         """
-        with tempfile.NamedTemporaryFile(mode='w+b', suffix='.xml') as f:
+        with tempfile.NamedTemporaryFile(mode='w+b', suffix='.xml', delete=True) as f:
             self.root.write(f)
             f.seek(0)
             yield f
 
     def open(self):
-        self.file = tempfile.NamedTemporaryFile(mode='w+b', suffix='.xml')
+        self.file = tempfile.NamedTemporaryFile(mode='w+b', suffix='.xml', delete=True)
         self.root.write(self.file)
         self.file.seek(0)
         return self.file
 
     def close(self):
         self.file.close()
+
+
+class MJCModelRegen(MJCModel):
+    def __init__(self, name, regen_fn):
+        super(MJCModelRegen, self).__init__(name)
+        self.regen_fn = regen_fn
+
+    def regenerate(self):
+        self.root = self.regen_fn().root
+
 
 
 class MJCTreeNode(object):
