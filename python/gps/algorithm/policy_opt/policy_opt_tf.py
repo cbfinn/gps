@@ -15,7 +15,7 @@ import tensorflow as tf
 from gps.algorithm.policy.tf_policy import TfPolicy
 from gps.algorithm.policy_opt.policy_opt import PolicyOpt
 from gps.algorithm.policy_opt.tf_utils import TfSolver
-
+from gps.utility.general_utils import Timer
 
 LOGGER = logging.getLogger(__name__)
 
@@ -75,8 +75,9 @@ class PolicyOptTf(PolicyOpt):
         """ Helper method to initialize the tf networks used """
         tf_map_generator = self._hyperparams['network_model']
         with self.graph.as_default():
-            tf_map, fc_vars, last_conv_vars = tf_map_generator(dim_input=self._dO, dim_output=self._dU, batch_size=self.batch_size,
-                                      network_config=self._hyperparams['network_params'])
+            with Timer('building TF network'):
+                tf_map, fc_vars, last_conv_vars = tf_map_generator(dim_input=self._dO, dim_output=self._dU, batch_size=self.batch_size,
+                                          network_config=self._hyperparams['network_params'])
             self.obs_tensor = tf_map.get_input_tensor()
             self.precision_tensor = tf_map.get_precision_tensor()
             self.action_tensor = tf_map.get_target_output_tensor()
@@ -97,7 +98,7 @@ class PolicyOptTf(PolicyOpt):
 
     @property
     def uses_vision(self):
-        return self.last_conv_vars is not None
+        return self.last_conv_vars is not None and len(self.last_conv_vars)>0
 
     def run(self, op, feed_dict=None):
         with self.graph.as_default():

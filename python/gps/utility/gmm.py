@@ -113,7 +113,7 @@ class GMM(object):
         logwts = logsum(logwts, axis=0) - np.log(data.shape[0])
         return logwts.T
 
-    def update(self, data, K, max_iterations=100):
+    def update(self, data, K, max_iterations=10):
         """
         Run EM to update clusters.
         Args:
@@ -150,7 +150,7 @@ class GMM(object):
                 diff = (data[cluster_idx, :] - mu).T
                 sigma = (1.0 / K) * (diff.dot(diff.T))
                 self.mu[i, :] = mu
-                self.sigma[i, :, :] = sigma + np.eye(Do) * 2e-6
+                self.sigma[i, :, :] = sigma + np.eye(Do) * 1e-5
 
         prevll = -float('inf')
         for itr in range(max_iterations):
@@ -207,4 +207,4 @@ class GMM(object):
                 else:  # Use quick and dirty regularization.
                     sigma = self.sigma[i, :, :]
                     self.sigma[i, :, :] = 0.5 * (sigma + sigma.T) + \
-                            1e-6 * np.eye(Do)
+                            1e-5 * np.eye(Do)

@@ -29,9 +29,9 @@ class DynamicsLR(Dynamics):
         if N == 1:
             raise ValueError("Cannot fit dynamics on 1 sample")
 
-        self.Fm = np.zeros([T, dX, dX+dU])
-        self.fv = np.zeros([T, dX])
-        self.dyn_covar = np.zeros([T, dX, dX])
+        self.Fm = np.zeros([T, dX, dX+dU]).astype(np.float32)
+        self.fv = np.zeros([T, dX]).astype(np.float32)
+        self.dyn_covar = np.zeros([T, dX, dX]).astype(np.float32)
 
         it = slice(dX+dU)
         ip = slice(dX+dU, dX+dU+dX)
