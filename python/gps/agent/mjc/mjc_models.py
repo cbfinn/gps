@@ -247,7 +247,7 @@ def weighted_pointmass(target_position=np.array([1.3, 0.5, 0]), density=0.01, co
     return mjcmodel
 
 
-def block_push():
+def block_push(object_pos=(0,0,0), goal_pos=(0,0,0)):
     mjcmodel = MJCModel('block_push')
     mjcmodel.root.compiler(inertiafromgeom="true",angle="radian",coordinate="local")
     mjcmodel.root.option(timestep="0.01",gravity="0 0 0",iterations="20",integrator="Euler")
@@ -276,14 +276,14 @@ def block_push():
     distal4.geom(type="capsule",fromto="0 0 -0.2 0.2 0 -0.2",size="0.04",contype="1",conaffinity="1")
     distal4.geom(type="capsule",fromto="0 0 0.2 0.2 0 0.2",size="0.04",contype="1",conaffinity="1")
 
-    object = worldbody.body(name='object', pos=[0,0,0])
+    object = worldbody.body(name='object', pos=object_pos)
     object.geom(rgba="1. 1. 1. 1",type="box",size="0.05 0.05 0.05",density='0.00001',contype="1",conaffinity="1")
     object.joint(name="obj_slidez",type="slide",pos="0.025 0.025 0.025",axis="0 0 1",range="-10.3213 10.3",damping="0.5")
     object.joint(name="obj_slidex",type="slide",pos="0.025 0.025 0.025",axis="1 0 0",range="-10.3213 10.3",damping="0.5")
     distal10 = object.body(name='distal_10', pos=[0,0,0])
     distal10.site(name='obj_pos', pos=[0.025,0.025,0.025], size=0.01)
 
-    goal = worldbody.body(name='goal', pos=[0,0,0])
+    goal = worldbody.body(name='goal', pos=goal_pos)
     goal.geom(rgba="1. 0. 0. 1",type="box",size="0.1 0.1 0.1",density='0.00001',contype="0",conaffinity="0")
     distal11 = goal.body(name='distal_11', pos=[0,0,0])
     distal11.site(name='goal_pos', pos=[0.05,0.05,0.05], size=0.01)

@@ -54,9 +54,9 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 8,
-    'train_conditions': [0,1,2,3],
-    'test_conditions': [4,5,6,7],
+    'conditions': 4,
+    #'train_conditions': [0,1,2,3],
+    #'test_conditions': [4,5,6,7],
     'num_robots':1,
     # 'policy_opt': {
     #     'type': PolicyOptTf,
@@ -87,39 +87,41 @@ common = {
 if not os.path.exists(common['data_files_dir']):
     os.makedirs(common['data_files_dir'])
 
+
+OBJECT_POS = [np.array([1.1, 0.0, -0.45]),np.array([0.9, 0.0, -0.65]),np.array([1., 0.0, 0.45]),
+              np.array([0.9, 0.0, 0.65]),np.array([-0.3, 0.0, 0.6]),np.array([-0.4, 0.0, -0.5]),
+              np.array([-0.3, 0.0, 0.6]),np.array([-0.4, 0.0, -0.6])][0:4:1]
+GOAL_POS =  [np.array([1.25, 0.0, 0.0]), np.array([1.25, 0.0, 0.0]), np.array([1.25, 0.0, 0.0]),
+ np.array([1.25, 0.0, 0.0]),
+ np.array([0.5, 0.0, 0.9]),
+ np.array([0.5, 0.0, -0.75]),
+ np.array([0.6, 0.0, 0.85]),
+ np.array([0.45, 0.0, -0.95])][0:4:1]
+
 agent = {
     'type': AgentMuJoCo,
     #'filename': './mjc_models/3link_gripper_push_2step.xml',
-    'models': [block_push() for _ in range(8)],
+    'models': [block_push(object_pos=OBJECT_POS[i], goal_pos=GOAL_POS[i]) for i in range(common['conditions'])],
     'x0': np.concatenate([np.array([np.pi/2, 0.0, 0.0, 0.0, 0., 0.]), np.zeros((6,))]),
     'dt': 0.05,
     'substeps': 5,
     # [np.array([1.2, 0.0, 0.4]),np.array([1.2, 0.0, 0.9])]
-    'pos_body_offset': [
-                        np.array([1.1, 0.0, -0.45]),
-                        np.array([0.9, 0.0, -0.65]),
-                        np.array([1., 0.0, 0.45]),
-                        np.array([0.9, 0.0, 0.65]),
-                        np.array([-0.3, 0.0, 0.6]),
-                        np.array([-0.4, 0.0, -0.5]),
-                        np.array([-0.3, 0.0, 0.6]),
-                        np.array([-0.4, 0.0, -0.6]),
-                        ],
+    'pos_body_offset': np.array([0,0,0]),
     'pos_body_idx': np.array([6,8]),
-    'conditions': 8,
-    'train_conditions': [0, 1,2,3],
-    'test_conditions': [4,5,6,7],
+    'conditions': common['conditions'],
+    #'train_conditions': [0, 1,2,3],
+    #'test_conditions': [4,5,6,7],
     'image_width': IMAGE_WIDTH,
     'image_height': IMAGE_HEIGHT,
     'image_channels': IMAGE_CHANNELS,
-    'T': 100,
+    'T': 200,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
                       #include the camera images appropriately here
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
-    'camera_pos': np.array([0, 5., 0., 0.3, 0., 0.3]),
+    'camera_pos': np.array([0, 8., 0., 0.3, 0., 0.3]),
 
          }
 
@@ -145,8 +147,8 @@ agent = {
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': agent['conditions'],
-    'train_conditions': agent['train_conditions'],
-    'test_conditions': agent['test_conditions'],
+    #'train_conditions': agent['train_conditions'],
+    #'test_conditions': agent['test_conditions'],
     'num_robots': common['num_robots'],
     'iterations': 25,
 }
@@ -170,7 +172,7 @@ torque_cost_1 = [{
 fk_cost_1 = [{
     'type': CostFK,
     'target_end_effector': np.concatenate([np.array([0,0,0]), np.array([0,0,0]),
-                                           np.array([0.05, 0.05, 0.05]) + agent['pos_body_offset'][i][1],
+                                           np.array([0.05, 0.05, 0.05]) + GOAL_POS[i],
                                            np.array([0,0,0])]),
     'wp': np.array([0, 0, 0, 0, 0, 0, 1, 1, 1,0,0,0]),
     'l1': 0.1,
@@ -229,7 +231,7 @@ fk_cost_blocktouch = [{
 algorithm['cost'] = [{
     'type': CostSum,
     'costs': [fk_cost_1[i], fk_cost_blocktouch[i], state_cost[i]],
-    'weights': [2.0, 1.0, 1.0],
+    'weights': [2.0, 1.0, 0.0],
 } for i in range(agent['conditions'])]
 
 
@@ -272,8 +274,8 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
-    'train_conditions': common['train_conditions'],
-    'test_conditions': common['test_conditions'],
+    #'train_conditions': common['train_conditions'],
+    #'test_conditions': common['test_conditions'],
     'inner_iterations': 4,
     'to_log': [],
     'robot_iters': [range(25), range(0,25,2)],
