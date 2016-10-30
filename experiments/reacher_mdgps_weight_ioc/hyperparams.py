@@ -50,7 +50,8 @@ TRAIN_CONDITIONS = 4
 np.random.seed(47)
 DEMO_CONDITIONS = 4 #20
 TEST_CONDITIONS = 0 # 4
-TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
+# TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
+TOTAL_CONDITIONS = 15
 
 demo_pos_body_offset = []
 for _ in range(DEMO_CONDITIONS):
@@ -65,7 +66,7 @@ for _ in range(TOTAL_CONDITIONS):
 #pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
 #pos_body_offset.append(np.array([0.05, 0.2, 0.0]))
 #demo_pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
-
+density_range = 10**(np.array([0, 1, 2, 3, 4, 5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]))
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -90,11 +91,28 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'models': [weighted_reacher(density=5e7),
-        weighted_reacher(density=1e8),
-        weighted_reacher(density=5e8),
-        weighted_reacher(density=1e9),
+    # 'models': [weighted_reacher(finger_density=1e-10),
+    #     weighted_reacher(finger_density=1e-9),
+    #     weighted_reacher(finger_density=1e8),
+    #     weighted_reacher(finger_density=1e9),
+    #     ],
+    'models': [weighted_reacher(finger_density=density_range[0]),
+        weighted_reacher(finger_density=density_range[1]),
+        weighted_reacher(finger_density=density_range[2]),
+        weighted_reacher(finger_density=density_range[3]),
+        weighted_reacher(finger_density=density_range[4]),
+        weighted_reacher(finger_density=density_range[5]),
+        weighted_reacher(finger_density=density_range[6]),
+        weighted_reacher(finger_density=density_range[7]),
+        weighted_reacher(finger_density=density_range[8]),
+        weighted_reacher(finger_density=density_range[9]),
+        weighted_reacher(finger_density=density_range[10]),
+        weighted_reacher(finger_density=density_range[11]),
+        weighted_reacher(finger_density=density_range[12]),
+        weighted_reacher(finger_density=density_range[13]),
+        weighted_reacher(finger_density=density_range[14]),
         ],
+    'density_range': density_range,
     'x0': np.zeros(4),
     'dt': 0.05,
     'substeps': 5,
@@ -232,7 +250,7 @@ algorithm['gt_cost'] = [{
 
 algorithm['cost'] = {
     'type': CostIOCTF,
-    'wu': 2000.0 / PR2_GAINS,
+    'wu': 200.0 / PR2_GAINS,
     'network_params': {
         'obs_include': agent['obs_include'],
         'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],

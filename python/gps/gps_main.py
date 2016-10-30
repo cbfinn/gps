@@ -369,17 +369,27 @@ class GPSMain(object):
                 sample_losses = None
                 dists_vs_costs = None
                 demo_dists_vs_costs = None
+            if self.gui:
+                self.gui.set_status_text('Logging data and updating GUI.')
+                self.gui.update(itr, self.algorithm, self.agent,
+                    traj_sample_lists, pol_sample_lists, ioc_demo_losses=demo_losses, ioc_sample_losses=sample_losses,
+                                ioc_dist_cost=dists_vs_costs, ioc_demo_dist_cost=demo_dists_vs_costs)
+                self.gui.save_figure(
+                    self._data_files_dir + ('figure_itr_%02d.pdf' % itr)
+                )
+            if 'no_sample_logging' in self._hyperparams['common']:
+                return
 
         # if itr == self.algorithm._hyperparams['iterations'] - 1 or itr == self.algorithm._hyperparams['ioc_maxent_iter'] - 1: # Just save the last iteration of the algorithm file
         # if ((itr+1) % 5 == 0) or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
-        log_data = itr>0 and (itr%5 == 0) or (itr==self._hyperparams['iterations'])
+        log_data = itr>0 and (itr%5 == 0) or (itr==self._hyperparams['iterations']-1)
         if log_data:
             with Timer('saving algorithm file'):
                 self.algorithm.demo_policy = None
                 copy_alg = copy.copy(self.algorithm)
                 copy_alg.sample_list = {}
                 self.data_logger.pickle(
-                    self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
+                    self._data_files_dir + ('algorithm_itr_%02d.pkl.gz' % itr),
                     copy_alg
                 )
             with Timer('saving traj samples'):
@@ -533,7 +543,7 @@ def main():
 
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:
-            if test_policy_N+1:
+            if type(test_policy_N) is int:
                 test_policy = threading.Thread(
                     target=lambda: gps.test_policy(itr=current_itr, N=test_policy_N)
                 )
@@ -553,12 +563,12 @@ def main():
         else:
             gps.test_policy(itr=current_itr, N=test_policy_N, testing=args.extendtesting, eval_pol_gt=args.eval)
     elif measure:
-        for i in xrange(1):
+        for i in xrange(2, 3):
             random.seed(i)
             np.random.seed(i)
             gps = GPSMain(hyperparams.config)
             agent_config = gps._hyperparams['agent']
-            compare_samples(gps, measure, agent_config, three_dim=False, experiment='pointmass')
+            compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
     elif compare:
         mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
             success_rates_2_dict = {}, {}, {}, {}

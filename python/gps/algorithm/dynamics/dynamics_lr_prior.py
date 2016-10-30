@@ -47,7 +47,7 @@ class DynamicsLRPrior(Dynamics):
             # Obtain Normal-inverse-Wishart prior.
             mu0, Phi, mm, n0 = self.prior.eval(dX, dU, Ys)
             sig_reg = np.zeros((dX+dU+dX, dX+dU+dX))
-            sig_reg[it, it] = np.diag(dX+dU)*self._hyperparams['regularization']
+            sig_reg[it, it] = np.eye(dX+dU)*self._hyperparams['regularization']
             Fm, fv, dyn_covar = gauss_fit_joint_prior(Ys,
                         mu0, Phi, mm, n0, dwts, dX+dU, dX, sig_reg)
             self.Fm[t, :, :] = Fm
