@@ -305,6 +305,7 @@ class Algorithm(object):
                 with Timer('Algorithm._advance_iteration_variables cost_copy'):
                     self.previous_cost.append(self.cost[m].copy())
         delattr(self, 'new_traj_distr')
+        del self.traj_info[self.iteration_count-1]
 
     def _set_new_mult(self, predicted_impr, actual_impr, m):
         """

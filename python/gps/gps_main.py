@@ -120,13 +120,20 @@ class GPSMain(object):
             with Timer('_take_iteration'):
                 self._take_iteration(itr, traj_sample_lists)
 
+            traj_sample_lists = [
+                self.agent.get_samples(cond, -self._hyperparams['num_samples'])
+                for cond in self._train_idx
+            ]
+
             with Timer('_log_data'):
                 if self.algorithm._hyperparams['sample_on_policy']:
-                # TODO - need to add these to lines back in when we move to mdgps
-                    with Timer('_log_data, take_policy_samples'):
+                    # TODO - need to add these to lines back in when we move to mdgps
+                    with Timer('take_policy_samples'):
                         pol_sample_lists = self._take_policy_samples(idx=self._train_idx)
                     self._log_data(itr, traj_sample_lists, pol_sample_lists)
                 else:
+                    #for i in range(self._hyperparams['num_samples']):
+                    #    self._take_sample(itr, cond, i)
                     self._log_data(itr, traj_sample_lists)
         self._end()
         return None
