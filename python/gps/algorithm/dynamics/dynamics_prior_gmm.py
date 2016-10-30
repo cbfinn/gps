@@ -76,8 +76,8 @@ class DynamicsPriorGMM(object):
 
         # Remove excess samples from dataset.
         start = max(0, self.X.shape[0] - self._max_samples + 1)
-        self.X = self.X[start:, :].astype(np.float32)
-        self.U = self.U[start:, :].astype(np.float32)
+        self.X = self.X[start:, :]
+        self.U = self.U[start:, :]
 
         # Compute cluster dimensionality.
         Do = X.shape[2] + U.shape[2] + X.shape[2]  #TODO: Use Xtgt.

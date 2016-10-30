@@ -23,11 +23,11 @@ class LinearGaussianPolicy(Policy):
         check_shape(chol_pol_covar, (self.T, self.dU, self.dU))
         check_shape(inv_pol_covar, (self.T, self.dU, self.dU))
 
-        self.K = K.astype(np.float32)
-        self.k = k.astype(np.float32)
-        self.pol_covar = pol_covar.astype(np.float32)
-        self.chol_pol_covar = chol_pol_covar.astype(np.float32)
-        self.inv_pol_covar = inv_pol_covar.astype(np.float32)
+        self.K = K
+        self.k = k
+        self.pol_covar = pol_covar
+        self.chol_pol_covar = chol_pol_covar
+        self.inv_pol_covar = inv_pol_covar
 
     def act(self, x, obs, t, noise=None):
         """

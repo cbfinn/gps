@@ -150,7 +150,7 @@ class GMM(object):
                 diff = (data[cluster_idx, :] - mu).T
                 sigma = (1.0 / K) * (diff.dot(diff.T))
                 self.mu[i, :] = mu
-                self.sigma[i, :, :] = sigma + np.eye(Do) * 1e-5
+                self.sigma[i, :, :] = sigma + np.eye(Do) * 2e-6
 
         prevll = -float('inf')
         for itr in range(max_iterations):
@@ -207,4 +207,4 @@ class GMM(object):
                 else:  # Use quick and dirty regularization.
                     sigma = self.sigma[i, :, :]
                     self.sigma[i, :, :] = 0.5 * (sigma + sigma.T) + \
-                            1e-5 * np.eye(Do)
+                            1e-6 * np.eye(Do)

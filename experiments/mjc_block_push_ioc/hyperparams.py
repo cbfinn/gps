@@ -11,6 +11,7 @@ from gps.agent.mjc.agent_mjc import AgentMuJoCo
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.cost.cost_fk import CostFK
+from gps.algorithm.cost.cost_ioc_tf import CostIOCTF
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_fk_blocktouch import CostFKBlock
 from gps.algorithm.cost.cost_action import CostAction
@@ -44,6 +45,7 @@ PR2_GAINS = np.array([ 1.0, 1.0, 1.0, 1.0])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = os.path.dirname(__file__)+'/'
+DEMO_DIR = BASE_DIR + '/../experiments/mjc_block_push/'
 
 OBS_INCLUDE =  [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES]
 
@@ -51,37 +53,15 @@ common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
+    'demo_exp_dir': DEMO_DIR,
     'data_files_dir': EXP_DIR + 'data_files/',
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_10.pkl.gz',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 4,
-    #'train_conditions': [0,1,2,3],
-    #'test_conditions': [4,5,6,7],
-    'num_robots':1,
-    # 'policy_opt': {
-    #     'type': PolicyOptTf,
-    #     'network_model': example_tf_network_multi,
-    #     'network_model_feat': invariant_subspace_test,
-    #     'run_feats': True,
-    #     'load_weights': '/home/abhigupta/gps/subspace_newweights.pkl',
-    #     'network_params': [{
-    #         'dim_hidden': [10],
-    #         'num_filters': [10, 20],
-    #         'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
-    #         'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
-    #         'obs_image_data':[],
-    #         'image_width': IMAGE_WIDTH,
-    #         'image_height': IMAGE_HEIGHT,
-    #         'image_channels': IMAGE_CHANNELS,
-    #         'sensor_dims': SENSOR_DIMS[0],
-    #         'batch_size': 25,
-    #         # 'dim_input': reduce(operator.mul, [SENSOR_DIMS[0][s] for s in OBS_INCLUDE]),
-    #     }],
-    #     'iterations': 4000,
-    #     'fc_only_iterations': 5000,
-    #     'checkpoint_prefix': EXP_DIR + 'data_files/policy',
-    #     # 'restore_all_wts':'/home/abhigupta/gps/allweights_push_4link.npy'
-    # }
+    'conditions': 1,
+    'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
+    'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
+    'nn_demo': False,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -90,13 +70,13 @@ if not os.path.exists(common['data_files_dir']):
 
 OBJECT_POS = [np.array([1.1, 0.0, -0.45]),np.array([0.9, 0.0, -0.65]),np.array([1., 0.0, 0.45]),
               np.array([0.9, 0.0, 0.65]),np.array([-0.3, 0.0, 0.6]),np.array([-0.4, 0.0, -0.5]),
-              np.array([-0.3, 0.0, 0.6]),np.array([-0.4, 0.0, -0.6])][0:4:1]
+              np.array([-0.3, 0.0, 0.6]),np.array([-0.4, 0.0, -0.6])][0:4]
 GOAL_POS =  [np.array([1.25, 0.0, 0.0]), np.array([1.25, 0.0, 0.0]), np.array([1.25, 0.0, 0.0]),
  np.array([1.25, 0.0, 0.0]),
  np.array([0.5, 0.0, 0.9]),
  np.array([0.5, 0.0, -0.75]),
  np.array([0.6, 0.0, 0.85]),
- np.array([0.45, 0.0, -0.95])][0:4:1]
+ np.array([0.45, 0.0, -0.95])][0:4]
 
 agent = {
     'type': AgentMuJoCo,
@@ -124,6 +104,32 @@ agent = {
     'camera_pos': np.array([0, 8., 0., 0.3, 0., 0.3]),
  }
 
+demo_agent = {
+    'type': AgentMuJoCo,
+    #'filename': './mjc_models/3link_gripper_push_2step.xml',
+    'models': [block_push(object_pos=OBJECT_POS[i], goal_pos=GOAL_POS[i]) for i in range(4)],
+    'x0': np.concatenate([np.array([np.pi/2, 0.0, 0.0, 0.0, 0., 0.]), np.zeros((6,))]),
+    'dt': 0.05,
+    'substeps': 5,
+    # [np.array([1.2, 0.0, 0.4]),np.array([1.2, 0.0, 0.9])]
+    'pos_body_offset': np.array([0,0,0]),
+    'pos_body_idx': np.array([6,8]),
+    'conditions': 4,
+    #'train_conditions': [0, 1,2,3],
+    #'test_conditions': [4,5,6,7],
+    'image_width': IMAGE_WIDTH,
+    'image_height': IMAGE_HEIGHT,
+    'image_channels': IMAGE_CHANNELS,
+    'T': 200,
+    'sensor_dims': SENSOR_DIMS,
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
+                      END_EFFECTOR_POINT_VELOCITIES],
+    #include the camera images appropriately here
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'meta_include': [],
+    'camera_pos': np.array([0, 8., 0., 0.3, 0., 0.3]),
+}
+
 
 # algorithm = [{
 #     'type': AlgorithmBADMM,
@@ -149,6 +155,12 @@ algorithm = {
     #'train_conditions': agent['train_conditions'],
     #'test_conditions': agent['test_conditions'],
     'iterations': 25,
+    'ioc' : 'ICML',
+    'num_demos': 10,
+    'kl_step': 1.0,
+    'min_step_mult': 0.1,
+    'max_step_mult': 4.0,
+    'max_ent_traj': 1.0,
 }
 
 
@@ -226,11 +238,23 @@ fk_cost_blocktouch = [{
 #     'alpha': 1e-5,
 # } for i in common['train_conditions']]
 
-algorithm['cost'] = [{
+algorithm['gt_cost'] = [{
     'type': CostSum,
     'costs': [fk_cost_1[i], fk_cost_blocktouch[i], state_cost[i]],
     'weights': [2.0, 1.0, 1.0],
 } for i in range(agent['conditions'])]
+
+algorithm['cost'] = {
+    #'type': CostIOCQuadratic,
+    'type': CostIOCTF,
+    'wu': np.array([1,1,1,1])*1e-4,
+    'dO': np.sum([SENSOR_DIMS[dtype] for dtype in agent['obs_include']]),
+    'T': agent['T'],
+    'iterations': 1000,
+    'demo_batch_size': 10,
+    'sample_batch_size': 10,
+    'ioc_loss': algorithm['ioc'],
+}
 
 
 algorithm['dynamics'] = {
@@ -263,13 +287,10 @@ config = {
     'save_wts': True,
     'common': common,
     'agent': agent,
+    'demo_agent': demo_agent,
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
-    #'train_conditions': common['train_conditions'],
-    #'test_conditions': common['test_conditions'],
-    'inner_iterations': 4,
-    'to_log': [],
 }
 
 common['info'] = generate_experiment_info(config)
