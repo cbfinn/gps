@@ -54,11 +54,12 @@ def reacher():
 
     return mjcmodel
 
-def weighted_reacher(density=1.0):
+def weighted_reacher(finger_density=1.0, arm_density=None):
     """
     An example usage of MJCModel building the weighted reacher task
     Args:
-        density: the density of the fingertip
+        finger_density: the density of the fingertip
+        arm_density: the density of the arm links
     Returns:
         An MJCModel
     """
@@ -74,15 +75,21 @@ def weighted_reacher(density=1.0):
     # Arm
     worldbody.geom(conaffinity="0",contype="0",fromto="0 0 0 0 0 0.02",name="root",rgba="0.9 0.4 0.6 1",size=".011",type="cylinder")
     body = worldbody.body(name="body0", pos="0 0 .01")
-    body.geom(fromto="0 0 0 0.1 0 0",name="link0",rgba="0.0 0.4 0.6 1",size=".01",type="capsule")
+    if arm_density == None:
+        body.geom(fromto="0 0 0 0.1 0 0",name="link0",rgba="0.0 0.4 0.6 1",size=".01",type="capsule")
+    else:
+        body.geom(fromto="0 0 0 0.1 0 0",name="link0",rgba="0.0 0.4 0.6 1",size=".01",type="capsule", density=arm_density)
     # body.joint(axis="0 0 1",limited="false",name="joint0",pos="0 0 0",type="hinge")
     body.joint(axis="0 0 1",limited="true",name="joint0",pos="0 0 0",range="-3.14 3.14",type="hinge")
     body = body.body(name="body1",pos="0.1 0 0")
     body.joint(axis="0 0 1",limited="true",name="joint1",pos="0 0 0",range="-3.0 3.0",type="hinge")
-    body.geom(fromto="0 0 0 0.1 0 0",name="link1",rgba="0.0 0.4 0.6 1",size=".01",type="capsule")
+    if arm_density == None:
+        body.geom(fromto="0 0 0 0.1 0 0",name="link1",rgba="0.0 0.4 0.6 1",size=".01",type="capsule")
+    else:
+        body.geom(fromto="0 0 0 0.1 0 0",name="link1",rgba="0.0 0.4 0.6 1",size=".01",type="capsule", density=arm_density)
     body = body.body(name="fingertip",pos="0.11 0 0")
     body.site(name="fingertip",pos="0 0 0",size="0.01")
-    body.geom(contype="0",name="fingertip",pos="0 0 0",rgba="0.0 0.8 0.6 1",size=".01",type="sphere", density=density)
+    body.geom(contype="0",name="fingertip",pos="0 0 0",rgba="0.0 0.8 0.6 1",size=".01",type="sphere", density=finger_density)
 
     # Target
     body = worldbody.body(name="target",pos=".1 -.1 .01")

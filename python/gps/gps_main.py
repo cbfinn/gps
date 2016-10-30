@@ -124,22 +124,7 @@ class GPSMain(object):
                 if self.algorithm._hyperparams['sample_on_policy']:
                 # TODO - need to add these to lines back in when we move to mdgps
                     with Timer('_log_data, take_policy_samples'):
-                        pol_sample_lists = self._take_policy_samples()
-                    self._log_data(itr, traj_sample_lists, pol_sample_lists)
-                else:
-                    for i in range(self._hyperparams['num_samples']):
-                        self._take_sample(itr, cond, i)
-
-                traj_sample_lists = [
-                    self.agent.get_samples(cond, -self._hyperparams['num_samples'])
-                    for cond in self._train_idx
-                ]
-
-                self._take_iteration(itr, traj_sample_lists)
-
-                if self.algorithm._hyperparams['sample_on_policy']:
-                # TODO - need to add these to lines back in when we move to mdgps
-                    pol_sample_lists = self._take_policy_samples(idx=self._train_idx)
+                        pol_sample_lists = self._take_policy_samples(idx=self._train_idx)
                     self._log_data(itr, traj_sample_lists, pol_sample_lists)
                 else:
                     self._log_data(itr, traj_sample_lists)
@@ -369,17 +354,27 @@ class GPSMain(object):
                 sample_losses = None
                 dists_vs_costs = None
                 demo_dists_vs_costs = None
+            if self.gui:
+                self.gui.set_status_text('Logging data and updating GUI.')
+                self.gui.update(itr, self.algorithm, self.agent,
+                    traj_sample_lists, pol_sample_lists, ioc_demo_losses=demo_losses, ioc_sample_losses=sample_losses,
+                                ioc_dist_cost=dists_vs_costs, ioc_demo_dist_cost=demo_dists_vs_costs)
+                self.gui.save_figure(
+                    self._data_files_dir + ('figure_itr_%02d.pdf' % itr)
+                )
+            if 'no_sample_logging' in self._hyperparams['common']:
+                return
 
         # if itr == self.algorithm._hyperparams['iterations'] - 1 or itr == self.algorithm._hyperparams['ioc_maxent_iter'] - 1: # Just save the last iteration of the algorithm file
         # if ((itr+1) % 5 == 0) or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
-        log_data = itr>0 and (itr%5 == 0) or (itr==self._hyperparams['iterations'])
+        log_data = itr>0 and (itr%5 == 0) or (itr==self._hyperparams['iterations']-1)
         if log_data:
             with Timer('saving algorithm file'):
                 self.algorithm.demo_policy = None
                 copy_alg = copy.copy(self.algorithm)
                 copy_alg.sample_list = {}
                 self.data_logger.pickle(
-                    self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
+                    self._data_files_dir + ('algorithm_itr_%02d.pkl.gz' % itr),
                     copy_alg
                 )
             with Timer('saving traj samples'):
@@ -533,7 +528,7 @@ def main():
 
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:
-            if test_policy_N+1:
+            if type(test_policy_N) is int:
                 test_policy = threading.Thread(
                     target=lambda: gps.test_policy(itr=current_itr, N=test_policy_N)
                 )
