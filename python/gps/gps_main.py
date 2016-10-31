@@ -152,6 +152,7 @@ class GPSMain(object):
             testing: the flag that marks whether we test the policy for untrained cond
         Returns: None
         """
+        target_positions = self.algorithm._hyperparams['target_end_effector']
         algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr
         print 'Loading algorithm file.'
         self.algorithm = self.data_logger.unpickle(algorithm_file)
@@ -179,6 +180,17 @@ class GPSMain(object):
         # demo_policy = demo_controller.policy_opt.policy
         # sample = self.agent.sample(demo_policy, 0)
         # self.agent.visualize_sample(sample, 0)
+
+        all_dists = []
+        from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
+        for cond in range(len(self._train_idx)):
+            target_position = target_positions[cond][:3]
+            cur_samples = traj_sample_lists[cond]
+            sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
+            dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2,
+                     axis = 1)), axis = 0) for i in xrange(len(cur_samples))]
+            all_dists.append(dists)
+        import pdb; pdb.set_trace()
 
         pol_sample_lists = self._take_policy_samples(N, testing, self._test_idx)
         self.data_logger.pickle(
