@@ -302,7 +302,5 @@ def block_push(object_pos=(0,0,0), goal_pos=(0,0,0)):
     actuator.motor(joint="distal_j_2",ctrlrange="-2 2",ctrllimited="true")
     actuator.motor(joint="distal_j_3",ctrlrange="-2 2",ctrllimited="true")
 
-    import sys; mjcmodel.root.write(sys.stdout)
-
     return mjcmodel
 
