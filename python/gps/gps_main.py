@@ -171,6 +171,8 @@ class GPSMain(object):
         import pdb; pdb.set_trace()
         for cond in range(len(self._train_idx)):
             self.agent.visualize_sample(traj_sample_lists[cond][0], cond)
+        import pdb; pdb.set_trace()
+
 
         # Code for looking at demo policy.
         # demo_controller = self.data_logger.unpickle(self._hyperparams['common']['demo_controller_file'][0])
