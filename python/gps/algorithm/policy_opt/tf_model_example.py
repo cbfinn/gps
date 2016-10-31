@@ -121,7 +121,7 @@ def multi_modal_network(dim_input=27, dim_output=7, batch_size=25, network_confi
     nn_input, action, precision = get_input_layer(dim_input, dim_output)
 
     state_input = nn_input[:, 0:x_idx[-1]+1]
-    image_input = nn_input[:, x_idx[-1]+1:img_idx[-1]+1]
+    flat_image_input = nn_input[:, x_idx[-1]+1:img_idx[-1]+1]
 
     # image goes through 2 convnet layers
     num_filters = network_config['num_filters']
@@ -129,7 +129,7 @@ def multi_modal_network(dim_input=27, dim_output=7, batch_size=25, network_confi
     im_height = network_config['image_height']
     im_width = network_config['image_width']
     num_channels = network_config['image_channels']
-    image_input = tf.reshape(image_input, [-1, im_width, im_height, num_channels])
+    image_input = tf.reshape(flat_image_input, [-1, im_width, im_height, num_channels])
 
     # we pool twice, each time reducing the image size by a factor of 2.
     conv_out_size = int(im_width/(2.0*pool_size)*im_height/(2.0*pool_size)*num_filters[1])
@@ -161,7 +161,7 @@ def multi_modal_network(dim_input=27, dim_output=7, batch_size=25, network_confi
     fc_output, _, _ = get_mlp_layers(fc_input, n_layers, dim_hidden)
 
     loss = euclidean_loss_layer(a=action, b=fc_output, precision=precision, batch_size=batch_size)
-    return TfMap.init_from_lists([nn_input, action, precision], [fc_output], [loss])
+    return TfMap.init_from_lists([nn_input, action, precision], [fc_output], [loss], image=flat_image_input)
 
 def multi_modal_network_fp(dim_input=27, dim_output=7, batch_size=25, network_config=None):
     """
@@ -195,7 +195,7 @@ def multi_modal_network_fp(dim_input=27, dim_output=7, batch_size=25, network_co
     nn_input, action, precision = get_input_layer(dim_input, dim_output)
 
     state_input = nn_input[:, 0:x_idx[-1]+1]
-    image_input = nn_input[:, x_idx[-1]+1:img_idx[-1]+1]
+    flat_image_input = nn_input[:, x_idx[-1]+1:img_idx[-1]+1]
 
     # image goes through 3 convnet layers
     num_filters = network_config['num_filters']
@@ -203,7 +203,7 @@ def multi_modal_network_fp(dim_input=27, dim_output=7, batch_size=25, network_co
     im_height = network_config['image_height']
     im_width = network_config['image_width']
     num_channels = network_config['image_channels']
-    image_input = tf.reshape(image_input, [-1, num_channels, im_width, im_height])
+    image_input = tf.reshape(flat_image_input, [-1, num_channels, im_width, im_height])
     image_input = tf.transpose(image_input, perm=[0,3,2,1])
 
     # we pool twice, each time reducing the image size by a factor of 2.
@@ -260,7 +260,7 @@ def multi_modal_network_fp(dim_input=27, dim_output=7, batch_size=25, network_co
     fc_vars = weights_FC + biases_FC
 
     loss = euclidean_loss_layer(a=action, b=fc_output, precision=precision, batch_size=batch_size)
-    nnet = TfMap.init_from_lists([nn_input, action, precision], [fc_output], [loss], fp=fp, debug=conv_layer_2)
+    nnet = TfMap.init_from_lists([nn_input, action, precision], [fc_output], [loss], fp=fp, image=flat_image_input, debug=conv_layer_2)
     last_conv_vars = fc_input
 
     return nnet, fc_vars, last_conv_vars

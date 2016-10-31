@@ -7,8 +7,6 @@ import operator
 
 from gps import __file__ as gps_filepath
 from gps.agent.mjc.agent_mjc import AgentMuJoCo
-from gps.algorithm.algorithm_badmm import AlgorithmBADMM
-from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_ioc_vision_tf import CostIOCVisionTF
 from gps.algorithm.cost.cost_fk import CostFK
@@ -232,7 +230,7 @@ algorithm['cost'] = {
     'demo_batch_size': 5,  # are we going to run out of memory? # also should we init from policy feat?
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
-    'fc_only_iters': 15,
+    'fc_only_iters': 15,  # Train fc only.
 }
 
 NUM_SAMPLES = 5

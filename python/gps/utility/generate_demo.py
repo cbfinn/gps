@@ -60,9 +60,12 @@ class GenDemo(object):
                         algorithms.append(pickle.load(f))
             return algorithms
 
-        def generate(self, demo_file):
+        def generate(self, demo_file, ioc_agent):
             """
              Generate demos and save them in a file for experiment.
+             Args:
+                 demo_file - place to store the demos
+                 ioc_agent - ioc agent, for grabbing the observation using the ioc agent's observation data types
              Returns: None.
             """
             # Load the algorithm
@@ -130,7 +133,7 @@ class GenDemo(object):
                         for j in xrange(N):
                             demo = self.agent.sample(
                                 pol, i, # Should be changed back to controller if using linearization
-                                verbose=True or (i < self._hyperparams['verbose_trials']), noisy=True
+                                verbose=(i < self._hyperparams['verbose_trials']), noisy=True
                                 )
                             demos.append(demo)
                             #import pdb; pdb.set_trace()
@@ -152,6 +155,8 @@ class GenDemo(object):
                 demo_idx_conditions = [cond for (i, cond) in enumerate(demo_idx_conditions) if i not in failed_idx]
                 demos = demos_filtered
                 shuffle(demos)
+
+                for demo in demos: demo.reset_agent(ioc_agent)
                 demo_list = SampleList(demos)
                 demo_store = {'demoX': demo_list.get_X(),
                               'demoU': demo_list.get_U(),
@@ -200,6 +205,7 @@ class GenDemo(object):
                     if i not in good_indices:
                         failed_conditions.append(all_pos_body_offsets[i])
                 shuffle(filtered_demos)
+                for demo in filtered_demos: demo.reset_agent(ioc_agent)
                 demo_list =  SampleList(filtered_demos)
                 demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs(), \
                                     'demo_conditions': demo_conditions, 'failed_conditions': failed_conditions}
@@ -250,6 +256,7 @@ class GenDemo(object):
                       if dists[index] >= success_thresh: #agent_config['success_upper_bound']:
                         failed_indices.append(index)
                 good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
+                #import pdb; pdb.set_trace()
                 self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
                 filtered_demos = []
                 filtered_demo_conditions = []
@@ -258,12 +265,14 @@ class GenDemo(object):
                     filtered_demo_conditions.append(demo_idx_conditions[i])
 
                 print 'Num demos:', len(filtered_demos)
-                #shuffle(filtered_demos)
+                shuffle(filtered_demos)
+                for demo in filtered_demos: demo.reset_agent(ioc_agent)
                 demo_list =  SampleList(filtered_demos)
                 demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs(),
                               'demoConditions': filtered_demo_conditions} #, \
             else:
                 shuffle(demos)
+                for demo in demos: demo.reset_agent(ioc_agent)
                 demo_list = SampleList(demos)
                 demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs()}
             # Save the demos.

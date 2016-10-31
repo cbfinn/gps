@@ -163,7 +163,6 @@ def get_demos(gps):
     """
     from gps.utility.generate_demo import GenDemo
 
-    # demo_file = gps._data_files_dir + 'demos.pkl'
     if gps._hyperparams['common'].get('nn_demo', False):
         demo_file = gps._hyperparams['common']['NN_demo_file'] # using neural network demos
     else:
@@ -171,7 +170,7 @@ def get_demos(gps):
     demos = gps.data_logger.unpickle(demo_file)
     if demos is None:
       gps.demo_gen = GenDemo(gps._hyperparams)
-      gps.demo_gen.generate(demo_file)
+      gps.demo_gen.generate(demo_file, gps.agent)
       demos = gps.data_logger.unpickle(demo_file)
     print 'Num demos:', demos['demoX'].shape[0]
     gps._hyperparams['algorithm']['init_traj_distr']['init_demo_x'] = np.mean(demos['demoX'], 0)

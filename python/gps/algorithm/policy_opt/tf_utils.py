@@ -11,7 +11,7 @@ class TfMap:
     """ a container for inputs, outputs, and loss in a tf graph. This object exists only
     to make well-defined the tf inputs, outputs, and losses used in the policy_opt_tf class."""
 
-    def __init__(self, input_tensor, target_output_tensor, precision_tensor, output_op, loss_op, fp=None, debug=None):
+    def __init__(self, input_tensor, target_output_tensor, precision_tensor, output_op, loss_op, fp=None, image=None, debug=None):
         self.input_tensor = input_tensor
         self.target_output_tensor = target_output_tensor
         self.precision_tensor = precision_tensor
@@ -19,15 +19,16 @@ class TfMap:
         self.loss_op = loss_op
         self.debug = debug
         self.img_feat_op = fp
+        self.img_op = image
 
     @classmethod
-    def init_from_lists(cls, inputs, outputs, loss, fp=None, debug=None):
+    def init_from_lists(cls, inputs, outputs, loss, fp=None, image=None, debug=None):
         inputs = check_list_and_convert(inputs)
         outputs = check_list_and_convert(outputs)
         loss = check_list_and_convert(loss)
         if len(inputs) < 3:  # pad for the constructor if needed.
             inputs += [None]*(3 - len(inputs))
-        return cls(inputs[0], inputs[1], inputs[2], outputs[0], loss[0], fp=fp, debug=debug)
+        return cls(inputs[0], inputs[1], inputs[2], outputs[0], loss[0], fp=fp, image=image, debug=debug)
 
     def get_input_tensor(self):
         return self.input_tensor
@@ -52,6 +53,9 @@ class TfMap:
 
     def get_feature_op(self):
         return self.img_feat_op
+
+    def get_image_op(self):
+        return self.img_op
 
     def set_output_op(self, output_op):
         self.output_op = output_op
