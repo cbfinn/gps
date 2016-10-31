@@ -214,7 +214,7 @@ class AgentMuJoCo(Agent):
         feature_fn = None
         if self.feature_encoder:
             feature_fn = self.feature_encoder.get_image_features
-        if 'get_image_features' in dir(policy):
+        elif 'get_image_features' in dir(policy):
             feature_fn = policy.get_image_features
         new_sample = self._init_sample(condition, feature_fn=feature_fn)
 
