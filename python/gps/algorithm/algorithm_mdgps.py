@@ -15,10 +15,11 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
         END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
         CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE
+from gps.utility import ColorLogger
 
 from gps.utility.general_utils import Timer
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = ColorLogger(__name__)
 
 
 class AlgorithmMDGPS(Algorithm):
@@ -31,34 +32,37 @@ class AlgorithmMDGPS(Algorithm):
         config.update(hyperparams)
         Algorithm.__init__(self, config)
 
-        policy_prior = self._hyperparams['policy_prior']
-        for m in range(self.M):
-            self.cur[m].pol_info = PolicyInfo(self._hyperparams)
-            self.cur[m].pol_info.policy_prior = \
-                    policy_prior['type'](policy_prior)
+        with Timer('build policy prior'):
+            policy_prior = self._hyperparams['policy_prior']
+            for m in range(self.M):
+                self.cur[m].pol_info = PolicyInfo(self._hyperparams)
+                self.cur[m].pol_info.policy_prior = \
+                        policy_prior['type'](policy_prior)
 
-        self.num_policies = self._hyperparams['num_policies']
-        if not self._hyperparams['multiple_policy']:
-            self.policy_opt = self._hyperparams['policy_opt']['type'](
-                self._hyperparams['policy_opt'], self.dO, self.dU
-            )
-            self.num_policies = 1
-        else:
-            self.policy_opts = [self._hyperparams['policy_opt'][i]['type'](
-                self._hyperparams['policy_opt'][i], self.dO, self.dU
-            ) for i in xrange(self.num_policies)]
+        with Timer('build policy opt'):
+            self.num_policies = self._hyperparams['num_policies']
+            if not self._hyperparams['multiple_policy']:
+                self.policy_opt = self._hyperparams['policy_opt']['type'](
+                    self._hyperparams['policy_opt'], self.dO, self.dU
+                )
+                self.num_policies = 1
+            else:
+                self.policy_opts = [self._hyperparams['policy_opt'][i]['type'](
+                    self._hyperparams['policy_opt'][i], self.dO, self.dU
+                ) for i in xrange(self.num_policies)]
 
-        # initialize cost params
-        if self._hyperparams['init_cost_params']:
-            with open(self._hyperparams['init_cost_params'], 'r') as f:
-                init_algorithm = pickle.load(f)
-            conv_params = init_algorithm.policy_opt.policy.get_copy_params()
-            self.cost.set_vision_params(conv_params)
+        with Timer('init cost params'):
+            # initialize cost params
+            if self._hyperparams['init_cost_params']:
+                with open(self._hyperparams['init_cost_params'], 'r') as f:
+                    init_algorithm = pickle.load(f)
+                conv_params = init_algorithm.policy_opt.policy.get_copy_params()
+                self.cost.set_vision_params(conv_params)
 
-        if self._hyperparams['ioc'] and 'get_vision_params' in dir(self.cost):
-            # Make cost and policy conv params consistent here.
-            conv_params = self.cost.get_vision_params()
-            self.policy_opt.policy.set_copy_params(conv_params)
+            if self._hyperparams['ioc'] and 'get_vision_params' in dir(self.cost):
+                # Make cost and policy conv params consistent here.
+                conv_params = self.cost.get_vision_params()
+                self.policy_opt.policy.set_copy_params(conv_params)
 
 
     def iteration(self, sample_lists):
@@ -257,27 +261,30 @@ class AlgorithmMDGPS(Algorithm):
         pol_info = self.cur[m].pol_info
         X = samples.get_X()
         obs = samples.get_obs().copy()
-        if not self._hyperparams['multiple_policy']:
-            pol_mu, pol_sig = self.policy_opt.prob(obs)[:2]
-        else:
-            pol_mu, pol_sig = self.policy_opts[m/self.num_policies].prob(obs)[:2]
-        pol_info.pol_mu, pol_info.pol_sig = pol_mu, pol_sig
+        with Timer('compute probs'):
+            if not self._hyperparams['multiple_policy']:
+                pol_mu, pol_sig = self.policy_opt.prob(obs)[:2]
+            else:
+                pol_mu, pol_sig = self.policy_opts[m/self.num_policies].prob(obs)[:2]
+            pol_info.pol_mu, pol_info.pol_sig = pol_mu, pol_sig
 
         # Update policy prior.
-        policy_prior = pol_info.policy_prior
-        samples = SampleList(self.cur[m].sample_list)
-        mode = self._hyperparams['policy_sample_mode']
-        if not self._hyperparams['multiple_policy']:
-            policy_prior.update(samples, self.policy_opt, mode)
-        else:
-            policy_prior.update(samples, self.policy_opts[m/self.num_policies], mode)
+        with Timer('update prior'):
+            policy_prior = pol_info.policy_prior
+            samples = SampleList(self.cur[m].sample_list)
+            mode = self._hyperparams['policy_sample_mode']
+            if not self._hyperparams['multiple_policy']:
+                policy_prior.update(samples, self.policy_opt, mode)
+            else:
+                policy_prior.update(samples, self.policy_opts[m/self.num_policies], mode)
 
-        # Fit linearization and store in pol_info.
-        pol_info.pol_K, pol_info.pol_k, pol_info.pol_S = \
-                policy_prior.fit(X, pol_mu, pol_sig)
-        for t in range(T):
-            pol_info.chol_pol_S[t, :, :] = \
-                    sp.linalg.cholesky(pol_info.pol_S[t, :, :])
+        with Timer('compute posterior'):
+            # Fit linearization and store in pol_info.
+            pol_info.pol_K, pol_info.pol_k, pol_info.pol_S = \
+                    policy_prior.fit(X, pol_mu, pol_sig)
+            for t in range(T):
+                pol_info.chol_pol_S[t, :, :] = \
+                        sp.linalg.cholesky(pol_info.pol_S[t, :, :])
 
     def _advance_iteration_variables(self):
         """

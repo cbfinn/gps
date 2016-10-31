@@ -2,13 +2,13 @@
 
 import abc
 import copy
-import logging
 
 import numpy as np
 from numpy.linalg import LinAlgError
 
 from gps.algorithm.config import ALG
 from gps.algorithm.algorithm_utils import IterationData, TrajectoryInfo
+from gps.utility import ColorLogger
 from gps.utility.general_utils import extract_condition, disable_caffe_logs, Timer
 from gps.sample.sample import Sample
 from gps.sample.sample_list import SampleList
@@ -16,7 +16,7 @@ from gps.utility.general_utils import logsum
 from gps.algorithm.algorithm_utils import fit_emp_controller
 
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = ColorLogger(__name__)
 
 
 class Algorithm(object):
