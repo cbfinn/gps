@@ -515,7 +515,6 @@ class GPSTrainingGUI(object):
                 for i in range(ee_pt.shape[1]/3):
                     ee_pt_i = ee_pt[:, 3*i+0:3*i+3]
                     all_eept = np.r_[all_eept, ee_pt_i]
-        import pdb; pdb.set_trace()
         min_xyz = np.amin(all_eept, axis=0)
         max_xyz = np.amax(all_eept, axis=0)
         xlim = buffered_axis_limits(min_xyz[0], max_xyz[0], buffer_factor=1.25)
