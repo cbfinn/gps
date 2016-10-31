@@ -133,8 +133,8 @@ class TrajOptLQRPython(TrajOpt):
         idx_x = slice(dX)
 
         # Allocate space.
-        sigma = np.zeros((T, dX+dU, dX+dU)).astype(np.float32)
-        mu = np.zeros((T, dX+dU)).astype(np.float32)
+        sigma = np.zeros((T, dX+dU, dX+dU))
+        mu = np.zeros((T, dX+dU))
 
         # Pull out dynamics.
         Fm = traj_info.dynamics.Fm
