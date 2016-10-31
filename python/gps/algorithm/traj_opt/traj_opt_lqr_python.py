@@ -13,8 +13,9 @@ from gps.algorithm.traj_opt.traj_opt_utils import \
 
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
+from gps.utility import ColorLogger
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = ColorLogger(__name__)
 
 class TrajOptLQRPython(TrajOpt):
     """ LQR trajectory optimization, Python implementation. """
@@ -132,8 +133,8 @@ class TrajOptLQRPython(TrajOpt):
         idx_x = slice(dX)
 
         # Allocate space.
-        sigma = np.zeros((T, dX+dU, dX+dU))
-        mu = np.zeros((T, dX+dU))
+        sigma = np.zeros((T, dX+dU, dX+dU)).astype(np.float32)
+        mu = np.zeros((T, dX+dU)).astype(np.float32)
 
         # Pull out dynamics.
         Fm = traj_info.dynamics.Fm

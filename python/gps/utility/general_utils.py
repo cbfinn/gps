@@ -4,6 +4,9 @@ import os
 import time
 import traceback as tb
 
+from gps.utility import color_string
+
+
 class BundleType(object):
     """
     This class bundles many fields, similar to a record or a mutable
@@ -32,7 +35,7 @@ class Timer(object):
         fname, lineno, method, _ = tb.extract_stack()[-2]  # Get caller
         _, fname = os.path.split(fname)
         id_str = '%s:%s' % (fname, method)
-        print 'TIMER:%s: %s (Elapsed: %fs)' % (id_str, self.message, new_time)
+        print 'TIMER:'+color_string('%s: %s (Elapsed: %fs)' % (id_str, self.message, new_time), color='gray')
 
 
 def flatten_lists(lists):

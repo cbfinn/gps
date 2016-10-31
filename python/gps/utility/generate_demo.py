@@ -24,7 +24,7 @@ from random import shuffle
 # Add gps/python to path so that imports work.
 sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
 from gps.agent.mjc.agent_mjc import AgentMuJoCo
-from gps.utility.data_logger import DataLogger
+from gps.utility.data_logger import DataLogger, open_zip
 from gps.utility.demo_utils import compute_distance
 from gps.sample.sample_list import SampleList
 from gps.algorithm.algorithm_utils import gauss_fit_joint_prior
@@ -51,12 +51,12 @@ class GenDemo(object):
         def load_algorithms(self):
             algorithm_files = self._algorithm_files_dir
             if isinstance(algorithm_files, basestring):
-                with open(algorithm_files, 'r') as f:
+                with open_zip(algorithm_files, 'r') as f:
                     algorithms = [pickle.load(f)]
             else:
                 algorithms = []
                 for filename in algorithm_files:
-                    with open(filename, 'r') as f:
+                    with open_zip(filename, 'r') as f:
                         algorithms.append(pickle.load(f))
             return algorithms
 
