@@ -76,6 +76,8 @@ AGENT_MUJOCO = {
     'record_reward': False,
     'render': True, # for EC2
     'filename': None,
+    'hardcoded_linear_dynamics': False,
+    'randomize_world': False, # re-generate world on every sample
 }
 
 AGENT_BOX2D = {

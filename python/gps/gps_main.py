@@ -26,17 +26,18 @@ from gps.sample.sample_list import SampleList
 from gps.utility.general_utils import disable_caffe_logs, Timer
 from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
                                     measure_distance_and_success_peg, get_demos, extract_samples
-from gps.utility.visualization import get_comparison_hyperparams, compare_experiments, compare_samples 
+from gps.utility.visualization import get_comparison_hyperparams, compare_experiments, compare_samples
 
 
 class GPSMain(object):
     """ Main class to run algorithms and experiments. """
-    def __init__(self, config, quit_on_end=False):
+    def __init__(self, config, quit_on_end=False, test_pol=False):
         """
         Initialize GPSMain
         Args:
             config: Hyperparameters for experiment
             quit_on_end: When true, quit automatically on completion
+            test_pol: whether or not we are testing the policy. (Don't load demos if so)
         """
         self._quit_on_end = quit_on_end
         self._hyperparams = config
@@ -65,10 +66,9 @@ class GPSMain(object):
 
         config['algorithm']['agent'] = self.agent
 
-        if self.using_ioc():
+        if self.using_ioc() and not test_pol:
             with Timer('loading demos'):
                 demos = get_demos(self)
-                self.agent = config['agent']['type'](config['agent'])
                 self.algorithm.demoX = demos['demoX']
                 self.algorithm.demoU = demos['demoU']
                 self.algorithm.demoO = demos['demoO']
@@ -117,16 +117,26 @@ class GPSMain(object):
                     for cond in self._train_idx
                 ]
 
+            # clear samples
+            self.agent.clear_samples()
+
             with Timer('_take_iteration'):
                 self._take_iteration(itr, traj_sample_lists)
 
+            traj_sample_lists = [
+                self.agent.get_samples(cond, -self._hyperparams['num_samples'])
+                for cond in self._train_idx
+            ]
+
             with Timer('_log_data'):
                 if self.algorithm._hyperparams['sample_on_policy']:
-                # TODO - need to add these to lines back in when we move to mdgps
-                    with Timer('_log_data, take_policy_samples'):
+                    # TODO - need to add these to lines back in when we move to mdgps
+                    with Timer('take_policy_samples'):
                         pol_sample_lists = self._take_policy_samples(idx=self._train_idx)
                     self._log_data(itr, traj_sample_lists, pol_sample_lists)
                 else:
+                    #for i in range(self._hyperparams['num_samples']):
+                    #    self._take_sample(itr, cond, i)
                     self._log_data(itr, traj_sample_lists)
         self._end()
         return None
@@ -142,27 +152,46 @@ class GPSMain(object):
             testing: the flag that marks whether we test the policy for untrained cond
         Returns: None
         """
-        algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl.gz' % itr
+        algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr
         print 'Loading algorithm file.'
         self.algorithm = self.data_logger.unpickle(algorithm_file)
         print 'Done loading algorithm file.'
         if self.algorithm is None:
             print("Error: cannot find '%s.'" % algorithm_file)
             os._exit(1) # called instead of sys.exit(), since t
-        traj_sample_lists = self.data_logger.unpickle(self._data_files_dir + ('traj_sample_itr_%02d.pkl.gz' % itr))
+
+        for cond in range(len(self._train_idx)):
+            for i in range(N):
+                self._take_sample(itr, cond, i)
+
+        traj_sample_lists = [
+            self.agent.get_samples(cond, -self._hyperparams['num_samples'])
+            for cond in self._train_idx
+        ]
+        import pdb; pdb.set_trace()
+        for cond in range(len(self._train_idx)):
+            self.agent.visualize_sample(traj_sample_lists[cond][0], cond)
+
+        # Code for looking at demo policy.
+        # demo_controller = self.data_logger.unpickle(self._hyperparams['common']['demo_controller_file'][0])
+        # demo_policy = demo_controller.policy_opt.policy
+        # sample = self.agent.sample(demo_policy, 0)
+        # self.agent.visualize_sample(sample, 0)
 
         pol_sample_lists = self._take_policy_samples(N, testing, self._test_idx)
         self.data_logger.pickle(
-            self._data_files_dir + ('pol_sample_itr_%02d.pkl.gz' % itr),
+            self._data_files_dir + ('pol_sample_itr_%02d.pkl' % itr),
             copy.copy(pol_sample_lists)
         )
 
         if self.gui:
+            # Note - this update doesn't use the cost of the samples. It uses
+            # the cost stored in the algorithm object.
             self.gui.update(itr, self.algorithm, self.agent,
                 traj_sample_lists, pol_sample_lists, eval_pol_gt)
             self.gui.set_status_text(('Took %d policy sample(s) from ' +
                 'algorithm state at iteration %d.\n' +
-                'Saved to: data_files/pol_sample_itr_%02d.pkl.gz.\n') % (N, itr, itr))
+                'Saved to: data_files/pol_sample_itr_%02d.pkl.\n') % (N, itr, itr))
 
 
     def _initialize(self, itr_load):
@@ -179,7 +208,7 @@ class GPSMain(object):
                 self.gui.set_status_text('Press \'go\' to begin.')
             return 0
         else:
-            algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl.gz' % itr_load
+            algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr_load
             self.algorithm = self.data_logger.unpickle(algorithm_file)
             if self.algorithm._hyperparams['ioc']:
                 self.algorithm.sample_list = extract_samples(itr_load, self._data_files_dir + 'traj_sample_itr')
@@ -189,10 +218,10 @@ class GPSMain(object):
 
             if self.gui:
                 traj_sample_lists = self.data_logger.unpickle(self._data_files_dir +
-                    ('traj_sample_itr_%02d.pkl.gz' % itr_load))
+                    ('traj_sample_itr_%02d.pkl' % itr_load))
                 if self.algorithm.cur[0].pol_info:
                     pol_sample_lists = self.data_logger.unpickle(self._data_files_dir +
-                        ('pol_sample_itr_%02d.pkl.gz' % itr_load))
+                        ('pol_sample_itr_%02d.pkl' % itr_load))
                 else:
                     pol_sample_lists = None
                 #self.gui.update(itr_load, self.algorithm, self.agent,
@@ -374,18 +403,18 @@ class GPSMain(object):
                 copy_alg = copy.copy(self.algorithm)
                 copy_alg.sample_list = {}
                 self.data_logger.pickle(
-                    self._data_files_dir + ('algorithm_itr_%02d.pkl.gz' % itr),
+                    self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
                     copy_alg
                 )
             with Timer('saving traj samples'):
                 self.data_logger.pickle(
-                    self._data_files_dir + ('traj_sample_itr_%02d.pkl.gz' % itr),
+                    self._data_files_dir + ('traj_sample_itr_%02d.pkl' % itr),
                     copy.copy(traj_sample_lists)
                 )
             with Timer('saving policy samples'):
                 if pol_sample_lists:
                     self.data_logger.pickle(
-                        self._data_files_dir + ('pol_sample_itr_%02d.pkl.gz' % itr),
+                        self._data_files_dir + ('pol_sample_itr_%02d.pkl' % itr),
                         copy.copy(pol_sample_lists)
                     )
 
@@ -503,8 +532,8 @@ def main():
     import random
     import numpy as np
 
-    random.seed(0)
-    np.random.seed(0)
+    random.seed(1)
+    np.random.seed(1)
 
     if args.targetsetup:
         try:
@@ -526,7 +555,7 @@ def main():
         current_algorithm = sorted(algorithm_filenames, reverse=True)[0]
         current_itr = int(current_algorithm[len(algorithm_prefix):len(algorithm_prefix)+2])
 
-        gps = GPSMain(hyperparams.config)
+        gps = GPSMain(hyperparams.config, test_pol=True)
         if hyperparams.config['gui_on']:
             if type(test_policy_N) is int:
                 test_policy = threading.Thread(

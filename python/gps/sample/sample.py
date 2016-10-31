@@ -11,6 +11,14 @@ class Sample(object):
     Note: must be serializable for easy saving, no C++ references!
     """
     def __init__(self, agent):
+        # Dictionary containing the sample data from various sensors.
+        self._data = {}
+
+        self._feat_stale = True
+        self.reset_agent(agent)
+
+
+    def reset_agent(self, agent):
         self.agent = agent
 
         self.T = agent.T
@@ -19,16 +27,13 @@ class Sample(object):
         self.dO = agent.dO
         self.dM = agent.dM
 
-        # Dictionary containing the sample data from various sensors.
-        self._data = {}
-
         self._X = np.empty((self.T, self.dX))
         self._X.fill(np.nan)
         self._obs = np.empty((self.T, self.dO))
         self._obs.fill(np.nan)
         self._meta = np.empty(self.dM)
         self._meta.fill(np.nan)
-        self._feat_stale = True
+
 
     def set(self, sensor_name, sensor_data, t=None):
         """ Set trajectory data for a particular sensor. """

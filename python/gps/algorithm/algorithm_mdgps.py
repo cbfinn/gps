@@ -369,39 +369,6 @@ class AlgorithmMDGPS(Algorithm):
         for m in range(self.M):
             self._set_new_mult(predicted_impr, actual_impr, m)
 
-    def _update_cost(self):
-        """ Update the cost objective in each iteration. """
-
-        # Estimate the importance weights for fusion distributions.
-        # For the ICML version of the objective, this uses the dynamics to fit a controller to the demo.
-
-        # TODO - fusion distribution for importance weights is incorrect with changing state space (IOC w/ vision).
-        # Shouldn't be catastropic, importance weights are still mostly right without fusion distribution.
-        # Correct thing to do is to get rgb image from the observation, and calculate the corresponding X for each controller.
-
-        # TODO - What is catastrophic is if an empirical demo controller is fit using dynamics fit to
-        # a different state space. To handle, this the demoX are recalculated every iteration, BUT we need
-        # the policy conv layers to be copied over to the cost.
-        demos_logiw, samples_logiw = self.importance_weights()
-
-        # Update the learned cost
-        # Transform all the dictionaries to arrays
-        M = len(self.prev)
-        Md = self._hyperparams['demo_M']
-        sampleU_arr = np.vstack((self.sample_list[i].get_U() for i in xrange(M)))
-        sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
-        samples_logiw = {i: samples_logiw[i].reshape((-1, 1)) for i in xrange(M)}
-        demos_logiw = {i: demos_logiw[i].reshape((-1, 1)) for i in xrange(Md)}
-        demos_logiw_arr = np.hstack([demos_logiw[i] for i in xrange(Md)]).reshape((-1, 1))
-        samples_logiw_arr = np.hstack([samples_logiw[i] for i in xrange(M)]).reshape((-1, 1))
-        if not self._hyperparams['global_cost']:
-            for i in xrange(M):
-                self.cost[i].update(self.demoU, self.demoO, demos_logiw_arr, self.sample_list[i].get_U(),
-                                self.sample_list[i].get_obs(), samples_logiw[i], itr=self.iteration_count)
-        else:
-            self.cost.update(self.demoU, self.demoO, demos_logiw_arr, sampleU_arr,
-                                                        sampleO_arr, samples_logiw_arr, itr=self.iteration_count)
-
     def compute_costs(self, m, eta):
         """ Compute cost estimates used in the LQR backward pass. """
         traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr

@@ -20,12 +20,13 @@ class TfPolicy(Policy):
         sess: tf session.
         device_string: tf device string for running on either gpu or cpu.
     """
-    def __init__(self, dU, obs_tensor, act_op, feat_op, var, sess, graph, device_string, copy_param_scope=None):
+    def __init__(self, dU, obs_tensor, act_op, feat_op, image_op, var, sess, graph, device_string, copy_param_scope=None):
         Policy.__init__(self)
         self.dU = dU
         self.obs_tensor = obs_tensor
         self.act_op = act_op
         self.feat_op = feat_op
+        self.image_op = image_op
         self._sess = sess
         self.graph = graph
         self.device_string = device_string
@@ -77,13 +78,23 @@ class TfPolicy(Policy):
         Args:
             obs: Observation vector.
         """
-        # TODO - there is a bug in this function.
-        # To reproduce, note that get_features(obs)[0] != get_features(obs[0]).
         if len(obs.shape) == 1:
             obs = np.expand_dims(obs, axis=0)
         # Assume that features don't depend on the robot config, so don't normalize by scale and bias.
         feat = self.run(self.feat_op, feed_dict={self.obs_tensor: obs})
         return feat  # This used to be feat[0] because we would only ever call it with a batch size of 1. Now this isn't true.
+
+    def get_image_features(self, image):
+        """
+        Return the image features for an image (not including other obs data).
+        Args:
+            image: Image vector.
+        """
+        if len(image.shape) == 1:
+            image = np.expand_dims(image, axis=0)
+        feat = self.run(self.feat_op, feed_dict={self.image_op: image})
+        return feat  # This used to be feat[0] because we would only ever call it with a batch size of 1. Now this isn't true.
+
 
     def get_copy_params(self):
         param_values = self.run(self.copy_params)

@@ -15,7 +15,7 @@ import tensorflow as tf
 from gps.algorithm.policy.tf_policy import TfPolicy
 from gps.algorithm.policy_opt.policy_opt import PolicyOpt
 from gps.algorithm.policy_opt.tf_utils import TfSolver
-
+from gps.utility.general_utils import Timer
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,6 +41,7 @@ class PolicyOptTf(PolicyOpt):
             self.device_string = "/gpu:" + str(self.gpu_device)
         self.act_op = None  # mu_hat
         self.feat_op = None # features
+        self.image_op = None # image
         self.loss_scalar = None
         self.obs_tensor = None
         self.precision_tensor = None
@@ -52,7 +53,7 @@ class PolicyOptTf(PolicyOpt):
         self.init_network()
         self.init_solver()
         self.var = self._hyperparams['init_var'] * np.ones(dU)
-        self.policy = TfPolicy(dU, self.obs_tensor, self.act_op, self.feat_op,
+        self.policy = TfPolicy(dU, self.obs_tensor, self.act_op, self.feat_op, self.image_op,
                                np.zeros(dU), self._sess, self.graph, self.device_string, copy_param_scope=self._hyperparams['copy_param_scope'])
         # List of indices for state (vector) data and image (tensor) data in observation.
         self.x_idx, self.img_idx, i = [], [], 0
@@ -75,13 +76,15 @@ class PolicyOptTf(PolicyOpt):
         """ Helper method to initialize the tf networks used """
         tf_map_generator = self._hyperparams['network_model']
         with self.graph.as_default():
-            tf_map, fc_vars, last_conv_vars = tf_map_generator(dim_input=self._dO, dim_output=self._dU, batch_size=self.batch_size,
-                                      network_config=self._hyperparams['network_params'])
+            with Timer('building TF network'):
+                tf_map, fc_vars, last_conv_vars = tf_map_generator(dim_input=self._dO, dim_output=self._dU, batch_size=self.batch_size,
+                                          network_config=self._hyperparams['network_params'])
             self.obs_tensor = tf_map.get_input_tensor()
             self.precision_tensor = tf_map.get_precision_tensor()
             self.action_tensor = tf_map.get_target_output_tensor()
             self.act_op = tf_map.get_output_op()
             self.feat_op = tf_map.get_feature_op()
+            self.image_op = tf_map.get_image_op()  # TODO - make this.
             self.loss_scalar = tf_map.get_loss_op()
             self.debug = tf_map.debug
             if self._hyperparams.get('use_vision', True):
@@ -97,7 +100,7 @@ class PolicyOptTf(PolicyOpt):
 
     @property
     def uses_vision(self):
-        return len(self.last_conv_vars)>0
+        return self.image_op is not None
 
     def run(self, op, feed_dict=None):
         with self.graph.as_default():

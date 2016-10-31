@@ -4,6 +4,7 @@ import copy
 import numpy as np
 
 import mjcpy
+import pickle
 
 from gps.agent.agent import Agent
 from gps.agent.agent_utils import generate_noise, setup
@@ -41,6 +42,19 @@ class AgentMuJoCo(Agent):
         else:
             self._setup_world(hyperparams['filename'])
 
+        self.feature_encoder = None
+        if 'feature_encoder' in hyperparams:
+            with open(hyperparams['feature_encoder'],'r') as f:
+                alg = pickle.load(f)
+            self.feature_encoder = alg.policy_opt.policy
+
+        if self._hyperparams['hardcoded_linear_dynamics']:
+            dt = self._hyperparams['dt']
+            F = np.array([[ 1, 0, dt, 0, dt**2., 0], [0, 1, 0, dt, 0, dt**2.],
+                          [0, 0, 1, 0, dt, 0], [0, 0, 0, 1, 0, dt]])
+            self.F = F
+
+
     def _setup_conditions(self):
         """
         Helper method for setting some hyperparameters that may vary by
@@ -50,6 +64,24 @@ class AgentMuJoCo(Agent):
         for field in ('x0', 'x0var', 'pos_body_idx', 'pos_body_offset',
                       'noisy_body_idx', 'noisy_body_var', 'filename'):
             self._hyperparams[field] = setup(self._hyperparams[field], conds)
+
+    def randomize_world(self, condition):
+        if self._hyperparams['randomize_world']:
+            assert 'models' in self._hyperparams
+
+            #Re-invoke model building.
+            self._hyperparams['models'][condition].regenerate()
+            with self._hyperparams['models'][condition].asfile() as model_file:
+                world = mjcpy.MJCWorld(model_file.name)
+                self._world[condition] = world
+
+            if self._hyperparams['render']:
+                cam_pos = self._hyperparams['camera_pos']
+                self._world[condition].init_viewer(AGENT_MUJOCO['image_width'],
+                                           AGENT_MUJOCO['image_height'],
+                                           cam_pos[0], cam_pos[1], cam_pos[2],
+                                           cam_pos[3], cam_pos[4], cam_pos[5])
+
 
     def _setup_world(self, filename):
         """
@@ -152,6 +184,19 @@ class AgentMuJoCo(Agent):
         if IMAGE_FEAT in self.x_data_types:
             import pdb; pdb.set_trace()  # TODO
 
+    def visualize_sample(self, sample, condition):
+        # replays a sample, with verbose
+        self._init(condition)
+        mj_X = self._hyperparams['x0'][condition]
+        for t in range(self.T):
+            mj_U = sample.get_U(t=t)
+            self._world[condition].plot(mj_X)
+            if (t + 1) < self.T:
+                for _ in range(self._hyperparams['substeps']):
+                    mj_X, _ = self._world[condition].step(mj_X, mj_U)
+
+
+
     def sample(self, policy, condition, verbose=True, save=True, noisy=True):
         """
         Runs a trial and constructs a new sample containing information
@@ -162,12 +207,15 @@ class AgentMuJoCo(Agent):
             verbose: Whether or not to plot the trial.
             save: Whether or not to store the trial into the samples.
             noisy: Whether or not to use noise during sampling.
+            feature_encoder: Function to get image features from.
         """
+        self.randomize_world(condition)
         # Create new sample, populate first time step.
         feature_fn = None
-        # TODO - make this less hacky, just pass in policy.
-        if 'get_features' in dir(policy):
-            feature_fn = policy.get_features
+        if self.feature_encoder:
+            feature_fn = self.feature_encoder.get_image_features
+        if 'get_image_features' in dir(policy):
+            feature_fn = policy.get_image_features
         new_sample = self._init_sample(condition, feature_fn=feature_fn)
 
         mj_X = self._hyperparams['x0'][condition]
@@ -205,7 +253,10 @@ class AgentMuJoCo(Agent):
                 self._world[condition].plot(mj_X)
             if (t + 1) < self.T:
                 for _ in range(self._hyperparams['substeps']):
-                    mj_X, _ = self._world[condition].step(mj_X, mj_U)
+                    if 'hardcoded_linear_dynamics' in self._hyperparams and self._hyperparams['hardcoded_linear_dynamics']:
+                        mj_X = self.F.dot(np.r_[mj_X, mj_U])
+                    else:
+                        mj_X, _ = self._world[condition].step(mj_X, mj_U)
                 #TODO: Some hidden state stuff will go here.
                 #TODO: Will it? This TODO has been here for awhile
                 self._data = self._world[condition].get_data()
@@ -252,7 +303,10 @@ class AgentMuJoCo(Agent):
         data = self._world[condition].get_data()
         sample.set(JOINT_ANGLES, data['qpos'].flatten(), t=0)
         sample.set(JOINT_VELOCITIES, data['qvel'].flatten(), t=0)
-        eepts = data['site_xpos'].flatten()
+        if self._hyperparams['hardcoded_linear_dynamics']:
+            eepts = np.r_[data['qpos'].flatten(), [0.]]
+        else:
+            eepts = data['site_xpos'].flatten()
         sample.set(END_EFFECTOR_POINTS, eepts, t=0)
         if (END_EFFECTOR_POINTS_NO_TARGET in self._hyperparams['obs_include']):
             sample.set(END_EFFECTOR_POINTS_NO_TARGET, np.delete(eepts, self._hyperparams['target_idx']), t=0)
@@ -289,18 +343,16 @@ class AgentMuJoCo(Agent):
                                                     self._hyperparams['image_width'],
                                                     self._hyperparams['image_height']]), t=None)
             # only save subsequent images if image is part of observation
-            if RGB_IMAGE in self.obs_data_types:
+            if RGB_IMAGE in self.obs_data_types or IMAGE_FEAT in self.x_data_types or IMAGE_FEAT in self.obs_data_types:
                 sample.set(RGB_IMAGE, img_data, t=0)
                 sample.set(RGB_IMAGE_SIZE, [self._hyperparams['image_channels'],
                                             self._hyperparams['image_width'],
                                             self._hyperparams['image_height']], t=None)
-                assert IMAGE_FEAT not in self.obs_data_types
-                if IMAGE_FEAT in self.obs_data_types:
-                    raise ValueError('Image features should not be in observation, just state')
-                # TODO - make sure policy is passed in.
+
                 if feature_fn is not None:
-                    obs = sample.get_obs(t=0)  # Assumes that the rest of the sample has been populated
-                    sample.set(IMAGE_FEAT, feature_fn(obs)[0], t=0)
+                    sample.set(IMAGE_FEAT, feature_fn(sample.get(RGB_IMAGE, t=0))[0], t=0)
+                    if RGB_IMAGE not in self.obs_data_types:
+                        sample.set(RGB_IMAGE, None, t=0)  # Remove image from sample for memory reasons.
                 else:
                     # TODO - need better solution than setting this to 0.
                     sample.set(IMAGE_FEAT, np.zeros((self._hyperparams['sensor_dims'][IMAGE_FEAT],)), t=0)
@@ -316,10 +368,14 @@ class AgentMuJoCo(Agent):
             condition: Which condition to set.
             feature_fn: function to compute image features from the observation (e.g. image).
         """
-        data = self._world[condition].get_data()
-        sample.set(JOINT_ANGLES, data['qpos'].flatten(), t=t+1)
-        sample.set(JOINT_VELOCITIES, data['qvel'].flatten(), t=t+1)
-        cur_eepts = data['site_xpos'].flatten()
+        if self._hyperparams['hardcoded_linear_dynamics']:
+            sample.set(JOINT_ANGLES, mj_X[self._joint_idx], t=t+1)
+            sample.set(JOINT_VELOCITIES, mj_X[self._vel_idx], t=t+1)
+            cur_eepts = np.r_[mj_X[self._joint_idx], [0.]]
+        else:
+            sample.set(JOINT_ANGLES, self._data['qpos'].flatten(), t=t+1)
+            sample.set(JOINT_VELOCITIES, self._data['qvel'].flatten(), t=t+1)
+            cur_eepts = self._data['site_xpos'].flatten()
         sample.set(END_EFFECTOR_POINTS, cur_eepts, t=t+1)
         if (END_EFFECTOR_POINTS_NO_TARGET in self._hyperparams['obs_include']):
             sample.set(END_EFFECTOR_POINTS_NO_TARGET, np.delete(cur_eepts, self._hyperparams['target_idx']), t=t+1)
@@ -339,17 +395,18 @@ class AgentMuJoCo(Agent):
         if CONDITION_DATA in self.obs_data_types:
             sample.set(CONDITION_DATA, self._hyperparams['condition_data'][condition], t=t+1)
 
-        if RGB_IMAGE in self.obs_data_types:
+        if RGB_IMAGE in self.obs_data_types or IMAGE_FEAT in self.x_data_types or IMAGE_FEAT in self.obs_data_types:
             img = self._world[condition].get_image_scaled(self._hyperparams['image_width'],
                                                           self._hyperparams['image_height'])
             sample.set(RGB_IMAGE, np.transpose(img["img"], (2, 1, 0)).flatten(), t=t+1)
+
             if feature_fn is not None:
-                obs = sample.get_obs(t=t+1)  # Assumes that the rest of the observation has been populated
-                sample.set(IMAGE_FEAT, feature_fn(obs)[0], t=t+1)
+                sample.set(IMAGE_FEAT, feature_fn(sample.get(RGB_IMAGE, t=t+1))[0], t=t+1)
+                if RGB_IMAGE not in self.obs_data_types:
+                    sample.set(RGB_IMAGE, None, t=t+1)  # Remove image from sample for memory reasons.
             else:
                 # TODO - need better solution than setting this to 0.
                 sample.set(IMAGE_FEAT, np.zeros((self._hyperparams['sensor_dims'][IMAGE_FEAT],)), t=t+1)
-
 
     def _get_image_from_obs(self, obs):
         imstart = 0
