@@ -87,7 +87,7 @@ class TrajOptLQRPython(TrajOpt):
             eta = new_eta
 
         if kl_div > kl_step and abs(kl_div - kl_step) > 0.1*kl_step:
-            LOGGER.warning(
+            LOGGER.warn(
                 "Final KL divergence after DGD convergence is too high."
             )
 

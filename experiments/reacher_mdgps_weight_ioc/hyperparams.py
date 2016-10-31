@@ -263,7 +263,7 @@ algorithm['gt_cost'] = [{
 
 algorithm['cost'] = {
     'type': CostIOCTF,
-    'wu': 200.0 / PR2_GAINS,
+    'wu': 100.0 / PR2_GAINS,
     'network_params': {
         'obs_include': agent['obs_include'],
         'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
