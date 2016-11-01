@@ -23,8 +23,7 @@ enum SampleType {
   IMAGE_FEAT = 16;
   END_EFFECTOR_POINTS_NO_TARGET = 17;
   END_EFFECTOR_POINT_VELOCITIES_NO_TARGET = 18;
-  INDICATOR = 19;
-  TOTAL_DATA_TYPES = 20;
+  TOTAL_DATA_TYPES = 19;
 }
 
 // Message containing the data for a single sample.
