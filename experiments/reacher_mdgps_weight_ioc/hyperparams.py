@@ -50,8 +50,8 @@ TRAIN_CONDITIONS = 4
 np.random.seed(47)
 DEMO_CONDITIONS = 4 #20
 TEST_CONDITIONS = 0 # 4
-# TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
-TOTAL_CONDITIONS = 15
+TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
+# TOTAL_CONDITIONS = 15
 
 demo_pos_body_offset = []
 for _ in range(DEMO_CONDITIONS):
@@ -72,15 +72,18 @@ common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
-    'data_files_dir': EXP_DIR + 'data_files/',
+    # 'data_files_dir': EXP_DIR + 'data_files/',
+    'data_files_dir': EXP_DIR + 'data_files_arm/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_exp_dir': DEMO_DIR,
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
-    #'demo_controller_file': DEMO_DIR + 'data_files_maxent_9cond_z_0.05_1/algorithm_itr_09.pkl',
+    # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files_arm/algorithm_itr_09.pkl',
     'nn_demo': True, # Use neural network demonstrations. For experiment only
-    'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
-    'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
+    # 'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
+    # 'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
+    'LG_demo_file': os.path.join(EXP_DIR, 'data_files_arm', 'demos_LG.pkl'),
+    'NN_demo_file': os.path.join(EXP_DIR, 'data_files_arm', 'demos_NN.pkl'),
     'conditions': TOTAL_CONDITIONS,
     # 'train_conditions': range(TRAIN_CONDITIONS),
     # 'test_conditions': range(TRAIN_CONDITIONS, TOTAL_CONDITIONS),
@@ -96,21 +99,26 @@ agent = {
     #     weighted_reacher(finger_density=1e8),
     #     weighted_reacher(finger_density=1e9),
     #     ],
-    'models': [weighted_reacher(finger_density=density_range[0]),
-        weighted_reacher(finger_density=density_range[1]),
-        weighted_reacher(finger_density=density_range[2]),
-        weighted_reacher(finger_density=density_range[3]),
-        weighted_reacher(finger_density=density_range[4]),
-        weighted_reacher(finger_density=density_range[5]),
-        weighted_reacher(finger_density=density_range[6]),
-        weighted_reacher(finger_density=density_range[7]),
-        weighted_reacher(finger_density=density_range[8]),
-        weighted_reacher(finger_density=density_range[9]),
-        weighted_reacher(finger_density=density_range[10]),
-        weighted_reacher(finger_density=density_range[11]),
-        weighted_reacher(finger_density=density_range[12]),
-        weighted_reacher(finger_density=density_range[13]),
-        weighted_reacher(finger_density=density_range[14]),
+    # 'models': [weighted_reacher(finger_density=density_range[0]),
+    #     weighted_reacher(finger_density=density_range[1]),
+    #     weighted_reacher(finger_density=density_range[2]),
+    #     weighted_reacher(finger_density=density_range[3]),
+    #     weighted_reacher(finger_density=density_range[4]),
+    #     weighted_reacher(finger_density=density_range[5]),
+    #     weighted_reacher(finger_density=density_range[6]),
+    #     weighted_reacher(finger_density=density_range[7]),
+    #     weighted_reacher(finger_density=density_range[8]),
+    #     weighted_reacher(finger_density=density_range[9]),
+    #     weighted_reacher(finger_density=density_range[10]),
+    #     weighted_reacher(finger_density=density_range[11]),
+    #     weighted_reacher(finger_density=density_range[12]),
+    #     weighted_reacher(finger_density=density_range[13]),
+    #     weighted_reacher(finger_density=density_range[14]),
+    #     ],
+    'models': [weighted_reacher(arm_density=1.0, finger_density=1.0),
+        weighted_reacher(arm_density=1e1, finger_density=1e1),
+        weighted_reacher(arm_density=1e8, finger_density=1e8),
+        weighted_reacher(arm_density=1e9, finger_density=1e9),
         ],
     'density_range': density_range,
     'x0': np.zeros(4),
@@ -137,10 +145,15 @@ agent = {
 
 demo_agent = {
     'type': AgentMuJoCo,
-    'models': [weighted_reacher(density=1e-8),
-        weighted_reacher(density=1e-7),
-        weighted_reacher(density=1e7),
-        weighted_reacher(density=1e8),
+    # 'models': [weighted_reacher(finger_density=1e-8),
+    #     weighted_reacher(finger_density=1e-7),
+    #     weighted_reacher(finger_density=1e7),
+    #     weighted_reacher(finger_density=1e8),
+    #     ],
+    'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
+        weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+        weighted_reacher(arm_density=1e6, finger_density=1e6),
+        weighted_reacher(arm_density=1e7, finger_density=1e7),
         ],
     'exp_name': 'reacher',
     'x0': np.zeros(4)*4,
@@ -250,7 +263,7 @@ algorithm['gt_cost'] = [{
 
 algorithm['cost'] = {
     'type': CostIOCTF,
-    'wu': 200.0 / PR2_GAINS,
+    'wu': 100.0 / PR2_GAINS,
     'network_params': {
         'obs_include': agent['obs_include'],
         'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
@@ -263,6 +276,7 @@ algorithm['cost'] = {
     'demo_batch_size': 5,
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
+    'approximate_lxx': False,
 }
 
 #algorithm['init_traj_distr'] = {

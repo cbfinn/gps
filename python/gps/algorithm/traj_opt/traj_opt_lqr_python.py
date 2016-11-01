@@ -87,7 +87,7 @@ class TrajOptLQRPython(TrajOpt):
             eta = new_eta
 
         if kl_div > kl_step and abs(kl_div - kl_step) > 0.1*kl_step:
-            LOGGER.warning(
+            LOGGER.warn(
                 "Final KL divergence after DGD convergence is too high."
             )
 
@@ -133,8 +133,8 @@ class TrajOptLQRPython(TrajOpt):
         idx_x = slice(dX)
 
         # Allocate space.
-        sigma = np.zeros((T, dX+dU, dX+dU)).astype(np.float32)
-        mu = np.zeros((T, dX+dU)).astype(np.float32)
+        sigma = np.zeros((T, dX+dU, dX+dU))
+        mu = np.zeros((T, dX+dU))
 
         # Pull out dynamics.
         Fm = traj_info.dynamics.Fm
