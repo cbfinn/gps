@@ -98,7 +98,7 @@ def multimodal_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
     test_obs_single = tf.expand_dims(test_obs_single, 0)
     test_torque_single = tf.expand_dims(test_torque_single, 0)
 
-    test_cost_single_preu, test_imgfeat_single, test_feat_single, _ = nn_vis_forward(test_obs_single, test_torque_single, num_hidden=num_hidden, dim_hidden=dim_hidden, learn_wu=learn_wu, x_idx=x_idx, img_idx=img_idx)
+    test_cost_single_preu, test_X_single, test_feat_single, _ = nn_vis_forward(test_obs_single, test_torque_single, num_hidden=num_hidden, dim_hidden=dim_hidden, learn_wu=learn_wu, x_idx=x_idx, img_idx=img_idx)
     test_cost_single = tf.squeeze(test_cost_single_preu)
 
     sup_loss = tf.nn.l2_loss(sup_costs - sup_cost_labels)*multi_obj_supervised_wt
@@ -144,7 +144,7 @@ def multimodal_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
         'test_loss': test_cost,
         'test_imgfeat': test_imgfeat,
         'test_loss_single': test_cost_single,
-        'test_imgfeat_single': test_imgfeat_single,
+        'test_X_single': test_X_single,
         'test_feat_single': test_feat_single,
     }
     return inputs, outputs
@@ -264,7 +264,7 @@ def compute_feats(net_input, num_hidden=1, dim_hidden=42):
     return feat
 
 
-def nn_forward(net_input, u_input, num_hidden=1, dim_hidden=42, wu=1e-3, learn_wu=False):
+def nn_forward(net_input, u_input, num_hidden=1, dim_hidden=42, learn_wu=False):
     # Reshape into 2D matrix for matmuls
     u_input = tf.reshape(u_input, [-1, 1])
 
@@ -280,7 +280,7 @@ def nn_forward(net_input, u_input, num_hidden=1, dim_hidden=42, wu=1e-3, learn_w
         # Calculate torque penalty
         u_penalty = safe_get('wu', initializer=tf.constant(1.0), trainable=learn_wu)
         assert_shape(u_penalty, [])
-        u_cost = u_input*u_penalty*wu
+        u_cost = u_input*u_penalty
 
     # Reshape result back into batches
     input_shape = net_input.get_shape()
@@ -354,7 +354,7 @@ def compute_image_feats(img_input, num_filters=[15,15,15]):
     return fp
 
 
-def nn_vis_forward(net_input, u_input, num_hidden=1, dim_hidden=42, wu=1e-3, learn_wu=False, x_idx=None, img_idx=None,
+def nn_vis_forward(net_input, u_input, num_hidden=1, dim_hidden=42, learn_wu=False, x_idx=None, img_idx=None,
                    num_filters=[15,15,15]):
 
     net_input = tf.transpose(net_input)
@@ -397,7 +397,7 @@ def nn_vis_forward(net_input, u_input, num_hidden=1, dim_hidden=42, wu=1e-3, lea
         # Calculate torque penalty
         u_penalty = safe_get('wu', initializer=tf.constant(1.0), trainable=learn_wu)
         assert_shape(u_penalty, [])
-        u_cost = u_input*u_penalty*wu
+        u_cost = u_input*u_penalty
 
     # Reshape result back into batches
     input_shape = net_input.get_shape()
