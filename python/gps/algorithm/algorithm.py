@@ -4,6 +4,7 @@ import abc
 import copy
 import logging
 
+import random
 import numpy as np
 
 from gps.algorithm.config import ALG
@@ -224,3 +225,16 @@ class Algorithm(object):
                 np.log(np.diag(self.cur[m].traj_distr.chol_pol_covar[t, :, :]))
             )
         return ent
+
+    # For pickling.
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state['_random_state'] = random.getstate()
+        state['_np_random_state'] = np.random.get_state()
+        return state
+
+    # For unpickling.
+    def __setstate__(self, state):
+        self.__dict__ = state
+        random.setstate(state.pop('_random_state'))
+        np.random.set_state(state.pop('_np_random_state'))

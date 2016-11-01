@@ -38,12 +38,9 @@ POLICY_OPT_CAFFE = {
 POLICY_OPT_CAFFE.update(GENERIC_CONFIG)
 
 
-checkpoint_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                               '..', 'policy_opt/tf_checkpoint/policy_checkpoint.ckpt'))
 POLICY_OPT_TF = {
     # Other hyperparameters.
     'copy_param_scope': 'conv_params',
-    'checkpoint_prefix': checkpoint_path,
     'fc_only_iterations': 0,
 }
 

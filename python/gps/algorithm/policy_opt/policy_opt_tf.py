@@ -31,7 +31,6 @@ class PolicyOptTf(PolicyOpt):
         tf.set_random_seed(self._hyperparams['random_seed'])
 
         self.tf_iter = 0
-        self.checkpoint_file = self._hyperparams['checkpoint_prefix']
         self.batch_size = self._hyperparams['batch_size']
         self.device_string = "/cpu:0"
         if self._hyperparams['use_gpu'] == 1:
@@ -244,7 +243,7 @@ class PolicyOptTf(PolicyOpt):
 
     def save_model(self, fname):
         LOGGER.debug('Saving model to: %s', fname)
-        self.saver.save(self.sess, fname)
+        self.saver.save(self.sess, fname, write_meta_graph=False)
 
     def restore_model(self, fname):
         self.saver.restore(self.sess, fname)
@@ -257,7 +256,6 @@ class PolicyOptTf(PolicyOpt):
             f.seek(0)
             with open(f.name, 'r') as f2:
                 wts = f2.read()
-            os.remove(f.name+'.meta')
         return {
             'hyperparams': self._hyperparams,
             'dO': self._dO,
