@@ -78,7 +78,7 @@ def example_tf_network(dim_input=27, dim_output=7, batch_size=25, network_config
     Returns:
         a TfMap object used to serialize, inputs, outputs, and loss.
     """
-    n_layers = 2
+    n_layers = 3  # This should be changed to 3.
     dim_hidden = (n_layers - 1) * [40]
     dim_hidden.append(dim_output)
     nn_input, action, precision = get_input_layer(dim_input, dim_output)
@@ -175,8 +175,8 @@ def multi_modal_network_fp(dim_input=27, dim_output=7, batch_size=25, network_co
     Returns:
         A tfMap object that stores inputs, outputs, and scalar loss.
     """
-    n_layers = 3
-    layer_size = 20
+    n_layers = 3 # TODO TODO this used to be 3.
+    layer_size = 20  # TODO TODO This used to be 20.
     dim_hidden = (n_layers - 1)*[layer_size]
     dim_hidden.append(dim_output)
     pool_size = 2
