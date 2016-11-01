@@ -74,11 +74,11 @@ class AlgorithmMDGPS(Algorithm):
         itr = self.iteration_count
 
 
-        with Timer('update_features'):
-            if itr == 0 and RGB_IMAGE in sample_lists[0][0].agent.obs_data_types:
-                for sample_list in sample_lists:
-                    for sample in sample_list:
-                        sample.update_features(self.policy_opt.policy)
+        #with Timer('update_features'):
+        #    if itr == 0 and RGB_IMAGE in sample_lists[0][0].agent.obs_data_types:
+        #        for sample_list in sample_lists:
+        #            for sample in sample_list:
+        #                sample.update_features(self.policy_opt.policy)
 
         with Timer('compute_dist_to_target'):
             # Store the samples.

@@ -212,7 +212,7 @@ class AgentMuJoCo(Agent):
         self.randomize_world(condition)
         # Create new sample, populate first time step.
         feature_fn = None
-        if self.feature_encoder:
+        if self.feature_encoder:    # TODO TODO - this will default to always using the feature encoder.
             feature_fn = self.feature_encoder.get_image_features
         elif 'get_image_features' in dir(policy):
             feature_fn = policy.get_image_features

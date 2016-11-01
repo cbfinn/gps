@@ -133,6 +133,7 @@ agent = {
     'camera_pos': np.array([0., 0., 1.5, 0., 0., 0.]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01]) +pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(CONDITIONS)],
+    'feature_encoder': common['demo_controller_file'][0], # initialize conv layers of policy
 }
 
 demo_agent = {
@@ -157,6 +158,7 @@ demo_agent = {
     'camera_pos': np.array([0., 0., 1.5, 0., 0., 0.]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+demo_pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(CONDITIONS)],
+    'feature_encoder': common['demo_controller_file'][0], # initialize conv layers of policy
 }
 
 
