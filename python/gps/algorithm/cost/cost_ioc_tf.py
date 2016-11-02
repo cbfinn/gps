@@ -145,8 +145,8 @@ class CostIOCTF(Cost):
             sampleO: the observations of samples.
             s_log_iw: log importance weights for samples.
         """
-        demo_torque_norm = np.sum(demoU **2, axis=2, keepdims=True)
-        sample_torque_norm = np.sum(sampleU **2, axis=2, keepdims=True)
+        demo_torque_norm = np.sum(self._hyperparams['wu']* (demoU **2), axis=2, keepdims=True)
+        sample_torque_norm = np.sum(self._hyperparams['wu'] * (sampleU **2), axis=2, keepdims=True)
 
         num_samp = sampleU.shape[0]
         s_log_iw = s_log_iw[-num_samp:,:]

@@ -78,7 +78,7 @@ class CostIOCSupervised(CostIOCTF):
         return train_samples, test_samples, sample_costs
 
     def init_supervised(self, train_samples, test_samples, train_costs, heartbeat=100):
-        sample_torque_norm = np.sum(train_samples.get_U() **2, axis=2, keepdims=True)
+        sample_torque_norm = np.sum(self._hyperparams['wu']* (train_samples.get_U() **2), axis=2, keepdims=True)
 
         sampler = BatchSampler([train_samples.get_X(), sample_torque_norm, train_costs])
         batch_size = self._hyperparams['demo_batch_size']+self._hyperparams['sample_batch_size']
@@ -107,9 +107,9 @@ class CostIOCSupervised(CostIOCTF):
             sampleO: the observations of samples.
             s_log_iw: log importance weights for samples.
         """
-        demo_torque_norm = np.sum(demoU **2, axis=2, keepdims=True)
-        sample_torque_norm = np.sum(sampleU **2, axis=2, keepdims=True)
-        sup_torque_norm = np.sum(sup_samples.get_U() **2, axis=2, keepdims=True)
+        demo_torque_norm = np.sum(self._hyperparams['wu']*(demoU **2), axis=2, keepdims=True)
+        sample_torque_norm = np.sum(self._hyperparams['wu']*(sampleU **2), axis=2, keepdims=True)
+        sup_torque_norm = np.sum(self._hyperparams['wu']*(sup_samples.get_U() **2), axis=2, keepdims=True)
 
         num_samp = sampleU.shape[0]
         s_log_iw = s_log_iw[-num_samp:,:]
