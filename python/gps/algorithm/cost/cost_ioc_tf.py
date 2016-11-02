@@ -84,7 +84,6 @@ class CostIOCTF(Cost):
         Args:
             sample:  A single sample
         """
-        # TODO - right now, we're going to assume that Obs = X
         T = sample.T
         obs = sample.get_obs()
         sample_u = sample.get_U()
@@ -153,8 +152,6 @@ class CostIOCTF(Cost):
         d_sampler = BatchSampler([demoO, demo_torque_norm, d_log_iw])
         s_sampler = BatchSampler([sampleO, sample_torque_norm, s_log_iw])
 
-        demo_batch = self._hyperparams['demo_batch_size']
-        samp_batch = self._hyperparams['sample_batch_size']
         for i, (d_batch, s_batch) in enumerate(
                 izip(d_sampler.with_replacement(batch_size=self.demo_batch_size), \
                     s_sampler.with_replacement(batch_size=self.sample_batch_size))):

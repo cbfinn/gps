@@ -1,7 +1,7 @@
 """ This file defines the sample class. """
 import numpy as np
 
-from gps.proto.gps_pb2 import ACTION, IMAGE_FEAT
+from gps.proto.gps_pb2 import ACTION, IMAGE_FEAT, RGB_IMAGE
 
 
 class Sample(object):
@@ -112,7 +112,7 @@ class Sample(object):
 
     def update_features(self, policy):
         """ Update the image features using the policy. """
-        self.set(IMAGE_FEAT, policy.get_features(self.get_obs()))
+        self.set(IMAGE_FEAT, policy.get_image_features(self.get(RGB_IMAGE)))
 
     # For pickling.
     def __getstate__(self):
