@@ -263,7 +263,7 @@ def compute_feats(net_input, num_hidden=1, dim_hidden=42):
     return feat
 
 
-def nn_forward(net_input, u_input, num_hidden=1, dim_hidden=42, wu=1e-3, learn_wu=False):
+def nn_forward(net_input, u_input, num_hidden=1, dim_hidden=42, learn_wu=False):
     # Reshape into 2D matrix for matmuls
     u_input = tf.reshape(u_input, [-1, 1])
 
@@ -279,7 +279,7 @@ def nn_forward(net_input, u_input, num_hidden=1, dim_hidden=42, wu=1e-3, learn_w
         # Calculate torque penalty
         u_penalty = safe_get('wu', initializer=tf.constant(1.0), trainable=learn_wu)
         assert_shape(u_penalty, [])
-        u_cost = u_input*u_penalty*wu
+        u_cost = u_input*u_penalty
 
     # Reshape result back into batches
     input_shape = net_input.get_shape()
