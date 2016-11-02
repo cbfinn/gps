@@ -8,7 +8,7 @@ import os
 from itertools import izip
 
 import tensorflow as tf
-from tf_cost_utils import jacobian, multimodal_nn_cost_net_tf
+from tf_cost_utils import jacobian, multimodal_nn_cost_net_tf, find_variable
 
 from gps.utility.general_utils import BatchSampler
 from gps.algorithm.cost.config import COST_IOC_VISION_TF
@@ -32,6 +32,7 @@ class CostIOCVisionTF(Cost):
 
         self.demo_batch_size = self._hyperparams['demo_batch_size']
         self.sample_batch_size = self._hyperparams['sample_batch_size']
+        self.approximate_lxx = self._hyperparams['approximate_lxx']
 
         self.graph = tf.Graph()
         with self.graph.as_default():
@@ -53,12 +54,33 @@ class CostIOCVisionTF(Cost):
             lx[t], lxx[t] = self.run([self.dldx, self.dldxx], test_obs_single=obs[t])
         return lx, lxx
 
+    def compute_lx_dfdx(self, obs):
+        T, dO = obs.shape
+        lx = []
+        dfdx = []
+        for t in range(T):
+            lx_t, dfdx_t = self.run([self.dldx, self.dfdx], test_obs_single=obs[t])
+            lx.append(np.expand_dims(lx_t, axis=0))
+            dfdx.append(np.expand_dims(dfdx_t, axis=0))
+        lx = np.concatenate(lx)
+        dfdx = np.concatenate(dfdx)
+        return lx, dfdx
+
+    def get_ATA(self):
+        with self.graph.as_default():
+            A_matrix = find_variable('Acost')
+            bias = find_variable('bcost')
+        A, b = self.run([A_matrix, bias])
+        weighted_array = np.c_[A, b]
+        ATA = weighted_array.T.dot(weighted_array)
+        return ATA
+
     def get_features(self, obs):
         """ Get the image features corresponding to the rgb image.
         """
         if len(obs.shape) == 1:
             obs = np.expand_dims(obs, axis=0)
-        return self.run([self.outputs['test_feat']], test_obs=obs)[0]
+        return self.run([self.outputs['test_imgfeat']], test_obs=obs)[0]
 
     def eval(self, sample):
         """
@@ -83,7 +105,16 @@ class CostIOCVisionTF(Cost):
 
         tq_norm = np.sum(self._hyperparams['wu'] * (sample_u ** 2), axis=1, keepdims=True)
         l[:] = np.squeeze(self.run([self.outputs['test_loss']], test_obs=obs, test_torque_norm=tq_norm)[0])
-        lx, lxx = self.compute_lx_lxx(obs, dX)
+
+        if self.approximate_lxx:
+            lx, dfdx = self.compute_lx_dfdx(obs)
+            _, dF, _ = dfdx.shape  # T x df x dx
+            A = self.get_ATA()
+            for t in xrange(T):
+                lxx[t, :, :] = dfdx[t, :, :].T.dot(A[:dF,:dF]).dot(dfdx[t, :, :])
+        else:
+            lx, lxx = self.compute_lx_lxx(obs, dX)
+
 
         if self._hyperparams['learn_wu']:
             raise NotImplementedError()
@@ -121,8 +152,8 @@ class CostIOCVisionTF(Cost):
             fc_only: only train fc layers of cost (not conv layers).
         """
         print 'Updating cost'
-        demo_torque_norm = np.sum(demoU **2, axis=2, keepdims=True)
-        sample_torque_norm = np.sum(sampleU **2, axis=2, keepdims=True)
+        demo_torque_norm = np.sum(self._hyperparams['wu']* (demoU **2), axis=2, keepdims=True)
+        sample_torque_norm = np.sum(self._hyperparams['wu']* (sampleU **2), axis=2, keepdims=True)
 
         num_samp = sampleU.shape[0]
         s_log_iw = s_log_iw[-num_samp:,:]
@@ -200,10 +231,11 @@ class CostIOCVisionTF(Cost):
         l_single, obs_single = outputs['test_loss_single'], inputs['test_obs_single']
         # NOTE - we are assuming that the features here are the same
         # as the state X
-        feat_single = outputs['test_feat_single']
+        imgfeat_single = outputs['test_imgfeat_single']
 
-        self.dldx =  tf.gradients(l_single, feat_single)[0]
-        self.dldxx = jacobian(self.dldx, feat_single)
+        self.dldx =  tf.gradients(l_single, imgfeat_single)[0]
+        self.dldxx = jacobian(self.dldx, imgfeat_single)
+        self.dfdx = jacobian(outputs['test_feat_single'][0], imgfeat_single) # TODO - this is the WRONG feat.
 
         # Get all conv weights
         vision_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='conv_params')

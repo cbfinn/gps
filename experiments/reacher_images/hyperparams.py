@@ -54,11 +54,31 @@ PR2_GAINS = np.array([1.0, 1.0])
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
-CONDITIONS = 20
-np.random.seed(14)
-pos_body_offset = []
-for _ in range(CONDITIONS):
-    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1, 0]))
+#CONDITIONS = 20
+#np.random.seed(14)
+#pos_body_offset = []
+#for _ in range(CONDITIONS):
+#    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1, 0]))
+
+# restrict to right triangle of space.
+CONDITIONS = 5
+pos_body_offset = [np.array([0.1,-0.1,0.0]),
+                   np.array([0.1,0.1,0.0]),
+                   np.array([0.1,0.3,0.0]),
+                   np.array([0.0,0.2,0.0]),
+                   np.array([0.0,0.0,0.0])]
+
+# extrapolations
+#TEST_CONDITIONS = 5
+#test_pos_body_offset = [np.array([-0.1, 0.2, 0.0]),
+#                        np.array([-0.1, 0.0, 0.0]),
+#                        np.array([0.0, 0.3, 0.0]),
+#                        np.array([0.0, -0.1, 0.0]),
+#                        np.array([0.1, 0.1, 0.0])]
+#
+#all_pos_body_offset = pos_body_offset + test_pos_body_offset
+#TOTAL_CONDITIONS = TRAIN_CONDITIONS + TEST_CONDITIONS
+
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -69,7 +89,7 @@ common = {
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': CONDITIONS,
     'train_conditions': range(CONDITIONS),
-    'test_conditions': range(CONDITIONS),
+    'test_conditions':  range(CONDITIONS),
 }
 
 if not os.path.exists(common['data_files_dir']):

@@ -450,12 +450,12 @@ class Algorithm(object):
         # For IOC+vision, recompute demoX here using self.cost. Assumes
         # that the features are the last part of the state and that the dynamics
         # are fit to the feature encoder in the cost.
-        if 'get_features' in dir(self.cost):
-          for m in range(M):
-            for samp in range(demoO[m].shape[0]):
-                demoFeat = self.cost.get_features(demoO[m][samp])
-                dF = demoFeat.shape[1]
-                demoX[m][samp, :,-dF:] = demoFeat
+        #if 'get_features' in dir(self.cost):
+        #  for m in range(M):
+        #    for samp in range(demoO[m].shape[0]):
+        #        demoFeat = self.cost.get_features(demoO[m][samp])
+        #        dF = demoFeat.shape[1]
+        #        demoX[m][samp, :,-dF:] = demoFeat
         self.demo_traj = {}
 
 

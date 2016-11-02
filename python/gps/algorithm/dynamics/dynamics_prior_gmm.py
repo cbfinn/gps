@@ -95,7 +95,7 @@ class DynamicsPriorGMM(object):
         LOGGER.debug('Generating %d clusters for dynamics GMM.', K)
 
         # Update GMM.
-        self.gmm.update(xux, K)
+        self.gmm.update(xux, K, max_iterations=self._hyperparams['max_iters'])
 
     def eval(self, Dx, Du, pts):
         """

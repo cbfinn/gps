@@ -139,9 +139,6 @@ algorithm = {
     'num_demos': 10,
     'synthetic_cost_samples': 100,
     'global_cost': True,
-    'policy_eval': False,
-    'bootstrap': False,
-    'init_demo_policy': False,
     'demo_var_mult': 1.0,
     'conditions': common['conditions'],  # NON IOC STUFF HERE
     'train_conditions': common['train_conditions'],
