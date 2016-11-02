@@ -51,8 +51,8 @@ TRAIN_CONDITIONS = 6
 np.random.seed(47)
 DEMO_CONDITIONS = 4 #20
 TEST_CONDITIONS = 0 # 4
-# TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
-TOTAL_CONDITIONS = 13
+TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
+# TOTAL_CONDITIONS = 13
 
 demo_pos_body_offset = []
 for _ in range(DEMO_CONDITIONS):
@@ -101,15 +101,15 @@ agent = {
     #     weighted_reacher(finger_density=1e8),
     #     weighted_reacher(finger_density=1e9),
     #     ],
-    # 'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
-    #     weighted_reacher(arm_density=1e-4, finger_density=1e-4),
-    #     weighted_reacher(arm_density=1e5, finger_density=1e5),
-    #     weighted_reacher(arm_density=1e6, finger_density=1e6),
-    #     weighted_reacher(arm_density=1e7, finger_density=1e7),
-    #     weighted_reacher(arm_density=1e8, finger_density=1e8),
-    #     ],
-    'models': [weighted_reacher(arm_density=density_range[i], finger_density=density_range[i]) \
-                for i in xrange(common['conditions'])],
+    'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
+        weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+        weighted_reacher(arm_density=1e5, finger_density=1e5),
+        weighted_reacher(arm_density=1e6, finger_density=1e6),
+        weighted_reacher(arm_density=1e7, finger_density=1e7),
+        weighted_reacher(arm_density=1e8, finger_density=1e8),
+        ],
+    # 'models': [weighted_reacher(arm_density=density_range[i], finger_density=density_range[i]) \
+    #             for i in xrange(common['conditions'])],
     'density_range': density_range,
     'x0': np.zeros(4),
     'dt': 0.05,
@@ -254,7 +254,7 @@ algorithm['gt_cost'] = [{
 
 algorithm['cost'] = {
     'type': CostIOCTF,
-    'wu': 100.0 / PR2_GAINS,
+    'wu': 200.0 / PR2_GAINS,
     # 'wu' : 0.0,
     'network_params': {
         'obs_include': agent['obs_include'],

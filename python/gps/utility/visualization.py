@@ -27,9 +27,9 @@ def compare_samples(gps, N, agent_config, three_dim=True, weight_varying=False, 
     pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
     # pol_iter = 11
     print pol_iter
-    algorithm_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
+    # algorithm_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
     algorithm_sup = gps.data_logger.unpickle(gps._hyperparams['common']['supervised_exp_dir'] + 'data_files_arm/algorithm_itr_%02d' % pol_iter + '.pkl')
-    algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_arm/algorithm_itr_09.pkl.gz') # Assuming not using 4 policies
+    algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_arm/algorithm_itr_09.pkl') # Assuming not using 4 policies
     algorithm_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_arm_oracle/algorithm_itr_09.pkl')
     if not weight_varying:
         pos_body_offset = gps._hyperparams['agent']['pos_body_offset']
@@ -166,14 +166,14 @@ def compare_samples(gps, N, agent_config, three_dim=True, weight_varying=False, 
         #     subplt.plot(only_demo_zip[0], [x-0.5 for x in only_demo_zip[1]], c='r', marker='v')
         # else:
         #     subplt.plot([], [], c='r', marker='v')
-        subplt.scatter(ioc_success_zip[0], [0.4 for i in xrange(len(ioc_success_zip[1]))], c='g', marker='o')
-        subplt.scatter(ioc_failed_zip[0], [0.4 for i in xrange(len(ioc_failed_zip[1]))], c='r', marker='x')
-        subplt.scatter(demo_success_zip[0], [0.8 for i in xrange(len(demo_success_zip[1]))], c='g', marker='o')
-        subplt.scatter(demo_failed_zip[0], [0.8 for i in xrange(len(demo_failed_zip[1]))], c='r', marker='x')
-        subplt.scatter(oracle_success_zip[0], [0.2 for i in xrange(len(oracle_success_zip[1]))], c='g', marker='o')
-        subplt.scatter(oracle_failed_zip[0], [0.2 for i in xrange(len(oracle_failed_zip[1]))], c='r', marker='x')
-        subplt.scatter(sup_success_zip[0], [0.6 for i in xrange(len(sup_success_zip[1]))], c='g', marker='o')
-        subplt.scatter(sup_failed_zip[0], [0.6 for i in xrange(len(sup_failed_zip[1]))], c='r', marker='x')
+        subplt.scatter(ioc_success_zip[0], [0.4 for i in xrange(len(ioc_success_zip[1]))], c='g', marker='o', markersize=25, markeredgewidth=0.0)
+        subplt.scatter(ioc_failed_zip[0], [0.4 for i in xrange(len(ioc_failed_zip[1]))], c='r', marker='x', markersize=25)
+        subplt.scatter(demo_success_zip[0], [0.8 for i in xrange(len(demo_success_zip[1]))], c='g', marker='o', markersize=25, markeredgewidth=0.0)
+        subplt.scatter(demo_failed_zip[0], [0.8 for i in xrange(len(demo_failed_zip[1]))], c='r', marker='x', markersize=25)
+        subplt.scatter(oracle_success_zip[0], [0.2 for i in xrange(len(oracle_success_zip[1]))], c='g', marker='o', markersize=25, markeredgewidth=0.0)
+        subplt.scatter(oracle_failed_zip[0], [0.2 for i in xrange(len(oracle_failed_zip[1]))], c='r', marker='x', markersize=25)
+        subplt.scatter(sup_success_zip[0], [0.6 for i in xrange(len(sup_success_zip[1]))], c='g', marker='o', markersize=25, markeredgewidth=0.0)
+        subplt.scatter(sup_failed_zip[0], [0.6 for i in xrange(len(sup_failed_zip[1]))], c='r', marker='x', markersize=25)
         # for i, txt in enumerate(dists_diff):
         #     subplt.annotate(repr(round(txt,2)), (ioc_conditions_zip[0][i], ioc_conditions_zip[1][i]))
         # for i, txt in enumerate(dists_to_target[0]):
@@ -185,7 +185,7 @@ def compare_samples(gps, N, agent_config, three_dim=True, weight_varying=False, 
         ax = plt.gca()
         if experiment == 'peg':
             ax.add_patch(Rectangle((-0.1, -0.1), 0.2, 0.2, fill = False, edgecolor = 'blue')) # peg
-        pol_names = ['Oracle', 'S3G', 'Sup cost', 'Base policy']
+        pol_names = ['Oracle', 'S3G', 'Sup cost', 'RL policy']
         yrange = [0.2, 0.4, 0.6, 0.8]
         plt.yticks(yrange, pol_names)
         # for i in xrange(len(policies)):

@@ -39,10 +39,10 @@ class CostIOCSupervised(CostIOCTF):
         if hyperparams.get('agent', False):
             train_samples, test_samples, train_costs = self.extract_supervised_data(demo_agent, demo_file, traj_file) 
             self.init_supervised(train_samples, test_samples, train_costs)
-            self.sup_samples = train_samples
-            self.sup_costs = train_costs
-            self.sup_test_samples = test_samples
-            self.demo_agent = None  # don't pickle agent
+        self.sup_samples = train_samples
+        self.sup_costs = train_costs
+        self.sup_test_samples = test_samples
+        self.demo_agent = None  # don't pickle agent
         if self._hyperparams.get('agent', False):
             del self._hyperparams['agent']
 
