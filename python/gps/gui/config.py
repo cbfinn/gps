@@ -88,7 +88,7 @@ config = {
 
     # Images
     'image_on': False,
-    'fp_on': True,
+    'fp_on': False,
     'image_topic': '/camera/rgb/image_color',
     'image_size': (240, 240),
     'image_overlay_actuator': 'trial_arm',

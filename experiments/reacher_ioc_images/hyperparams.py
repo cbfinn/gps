@@ -53,11 +53,45 @@ BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 DEMO_DIR = BASE_DIR + '/../experiments/reacher_images/'
 
-CONDITIONS = 4
-np.random.seed(14)
-pos_body_offset = []
-for _ in range(CONDITIONS):
-    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1, 0]))
+#CONDITIONS = 4
+#np.random.seed(14)
+#pos_body_offset = []
+#for _ in range(CONDITIONS):
+#    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1, 0]))
+DEMO_CONDITIONS = 15
+demo_pos_body_offset = [np.array([0.1,-0.1,0.0]),
+                   np.array([0.1,0.1,0.0]),
+                   np.array([0.1,0.3,0.0]),
+                   np.array([0.0,0.2,0.0]),
+                   np.array([0.0,0.0,0.0]),  # training cond up to here
+                   np.array([0.1,0.0,0.0]),
+                   np.array([0.1,0.2,0.0]),
+                   np.array([0.05,-0.05,0.0]),
+                   np.array([0.05,0.05,0.0]),
+                   np.array([0.05,0.15,0.0]),
+                   np.array([0.05,0.25,0.0]),
+                   np.array([-0.1,0.1,0.0]),
+                   np.array([-0.05,0.15,0.0]),
+                   np.array([-0.05,0.05,0.0]),
+                   np.array([-0.05,0.1,0.0]), # these are the 15 demo cond in which it works
+                   ]
+
+
+CONDITIONS = 7
+pos_body_offset = [np.array([-0.1, 0.2, 0.0]),
+                   np.array([-0.1,0.0, 0.0]),
+                   np.array([0.0,0.3, 0.0]),
+                   np.array([0.0,-0.1, 0.0]),
+                   np.array([0.1,0.1,0.0]), # start training cond here.
+                   np.array([0.0,0.0,0.0]),
+                   np.array([0.0,0.2,0.0]), # 7 training conditions that get 6/7 success, compared to 5/7 demo policy success
+                   ]
+                   #np.array([0.0,0.2, 0.0]),
+                   #np.array([0.0,0.1, 0.0]),
+                   #np.array([0.0,0.0, 0.0]),
+                   #np.array([-0.1,0.1, 0.0]),
+                   #np.array([0.1,0.0,0.0]),
+                   #np.array([0.1,0.2,0.0]), # 13 conditions that gets 12/13 success, compared to 9/13 demo policy success
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -67,7 +101,7 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_exp_dir': DEMO_DIR,
-    'demo_controller_file': [DEMO_DIR + 'data_files/algorithm_itr_12.pkl'],
+    'demo_controller_file': [DEMO_DIR + 'data_files/algorithm_itr_09.pkl'],
     'demo_conditions': 4,
     'conditions': CONDITIONS,
     'nn_demo': True,
@@ -99,6 +133,7 @@ agent = {
     'camera_pos': np.array([0., 0., 1.5, 0., 0., 0.]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01]) +pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(CONDITIONS)],
+    'feature_encoder': common['demo_controller_file'][0], # initialize conv layers of policy
 }
 
 demo_agent = {
@@ -107,7 +142,7 @@ demo_agent = {
     'x0': np.zeros(4),
     'dt': 0.05,
     'substeps': 5,
-    'pos_body_offset': pos_body_offset,
+    'pos_body_offset': demo_pos_body_offset,
     'pos_body_idx': np.array([4]),
     'conditions': common['demo_conditions'],
     'T': agent['T'],
@@ -121,8 +156,9 @@ demo_agent = {
     'image_channels': IMAGE_CHANNELS,
     'sensor_dims': SENSOR_DIMS,
     'camera_pos': np.array([0., 0., 1.5, 0., 0., 0.]),
-    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
+    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+demo_pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(CONDITIONS)],
+    'feature_encoder': common['demo_controller_file'][0], # initialize conv layers of policy
 }
 
 
@@ -134,11 +170,11 @@ algorithm = {
     'iterations': 13,
     'kl_step': 0.5,
     'min_step_mult': 0.1,
-    'max_step_mult': 4.0,
+    'max_step_mult': 2.0,
     'policy_sample_mode': 'replace',
     'sample_on_policy': True,
     'demo_cond': demo_agent['conditions'],
-    'num_demos': 10,
+    'num_demos': 2,
     'demo_var_mult': 1.0,
     'synthetic_cost_samples': 100,
     'init_cost_params': common['demo_controller_file'][0], # initialize conv layers of policy
@@ -230,7 +266,7 @@ algorithm['cost'] = {
     'demo_batch_size': 5,  # are we going to run out of memory? # also should we init from policy feat?
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
-    'fc_only_iters': 15,  # Train fc only.
+    'fc_only_iters': algorithm['iterations'],  # Train fc only.
 }
 
 NUM_SAMPLES = 5

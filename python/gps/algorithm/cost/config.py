@@ -111,5 +111,6 @@ COST_IOC_TF.update(IOC_CONFIG)
 COST_IOC_VISION_TF = {
     # Other hyperparameters.
     'fc_only_iters': None,
+    'approximate_lxx': True,
 }
 COST_IOC_VISION_TF.update(COST_IOC_TF)
