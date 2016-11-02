@@ -89,11 +89,11 @@ def get_target_end_effector(algorithm, condition=0):
         target_position = target_dict[:3]
     return target_position
 
-def compute_distance(target_end_effector, sample_list):
+def compute_distance(target_end_effector, sample_list, end_effector_idxs=range(0,3)):
     target_position = target_end_effector
     cur_samples = sample_list.get_samples()
     sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
-    dists = [(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2,
+    dists = [(np.sqrt(np.sum((sample_end_effectors[i][:, end_effector_idxs] - target_position.reshape(1, -1))**2,
                 axis=1))) for i in xrange(len(cur_samples))]
     return dists
 
