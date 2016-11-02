@@ -43,15 +43,16 @@ SENSOR_DIMS = {
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 DEMO_DIR = BASE_DIR + '/../experiments/reacher_mdgps_weight/'
+SUPERVISED_DIR = BASE_DIR + '/../experiments/reacher_mdgps_weight_supervised/'
 
 #CONDITIONS = 1
-TRAIN_CONDITIONS = 4
+TRAIN_CONDITIONS = 6
 
 np.random.seed(47)
 DEMO_CONDITIONS = 4 #20
 TEST_CONDITIONS = 0 # 4
-TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
-# TOTAL_CONDITIONS = 15
+# TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
+TOTAL_CONDITIONS = 13
 
 demo_pos_body_offset = []
 for _ in range(DEMO_CONDITIONS):
@@ -66,7 +67,7 @@ for _ in range(TOTAL_CONDITIONS):
 #pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
 #pos_body_offset.append(np.array([0.05, 0.2, 0.0]))
 #demo_pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
-density_range = 10**(np.array([0, 1, 2, 3, 4, 5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]))
+density_range = 10**(np.array([4.5, 5, 5.5, 6, 6.5, 7, 7.25, 7.5, 7.75, 8, 8.25, 8.5, 8.75]))
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -77,6 +78,7 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_exp_dir': DEMO_DIR,
+    'supervised_exp_dir': SUPERVISED_DIR,
     # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'demo_controller_file': DEMO_DIR + 'data_files_arm/algorithm_itr_09.pkl',
     'nn_demo': True, # Use neural network demonstrations. For experiment only
@@ -99,27 +101,15 @@ agent = {
     #     weighted_reacher(finger_density=1e8),
     #     weighted_reacher(finger_density=1e9),
     #     ],
-    # 'models': [weighted_reacher(finger_density=density_range[0]),
-    #     weighted_reacher(finger_density=density_range[1]),
-    #     weighted_reacher(finger_density=density_range[2]),
-    #     weighted_reacher(finger_density=density_range[3]),
-    #     weighted_reacher(finger_density=density_range[4]),
-    #     weighted_reacher(finger_density=density_range[5]),
-    #     weighted_reacher(finger_density=density_range[6]),
-    #     weighted_reacher(finger_density=density_range[7]),
-    #     weighted_reacher(finger_density=density_range[8]),
-    #     weighted_reacher(finger_density=density_range[9]),
-    #     weighted_reacher(finger_density=density_range[10]),
-    #     weighted_reacher(finger_density=density_range[11]),
-    #     weighted_reacher(finger_density=density_range[12]),
-    #     weighted_reacher(finger_density=density_range[13]),
-    #     weighted_reacher(finger_density=density_range[14]),
+    # 'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
+    #     weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+    #     weighted_reacher(arm_density=1e5, finger_density=1e5),
+    #     weighted_reacher(arm_density=1e6, finger_density=1e6),
+    #     weighted_reacher(arm_density=1e7, finger_density=1e7),
+    #     weighted_reacher(arm_density=1e8, finger_density=1e8),
     #     ],
-    'models': [weighted_reacher(arm_density=1.0, finger_density=1.0),
-        weighted_reacher(arm_density=1e1, finger_density=1e1),
-        weighted_reacher(arm_density=1e8, finger_density=1e8),
-        weighted_reacher(arm_density=1e9, finger_density=1e9),
-        ],
+    'models': [weighted_reacher(arm_density=density_range[i], finger_density=density_range[i]) \
+                for i in xrange(common['conditions'])],
     'density_range': density_range,
     'x0': np.zeros(4),
     'dt': 0.05,
@@ -152,8 +142,8 @@ demo_agent = {
     #     ],
     'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
         weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+        weighted_reacher(arm_density=1e5, finger_density=1e5),
         weighted_reacher(arm_density=1e6, finger_density=1e6),
-        weighted_reacher(arm_density=1e7, finger_density=1e7),
         ],
     'exp_name': 'reacher',
     'x0': np.zeros(4)*4,
@@ -239,6 +229,7 @@ fk_cost_1 = [{
     'l2': 10.0,
     'alpha': 1e-5,
     'evalnorm': evall1l2term,
+    # 'use_jacobian': False,
 } for i in range(common['conditions'])]
 
 algorithm['gt_cost'] = [{
@@ -264,6 +255,7 @@ algorithm['gt_cost'] = [{
 algorithm['cost'] = {
     'type': CostIOCTF,
     'wu': 100.0 / PR2_GAINS,
+    # 'wu' : 0.0,
     'network_params': {
         'obs_include': agent['obs_include'],
         'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],

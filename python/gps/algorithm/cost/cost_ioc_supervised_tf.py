@@ -3,6 +3,9 @@ import logging
 import numpy as np
 import pickle
 from itertools import izip
+import copy
+import os
+
 
 import tensorflow as tf
 
@@ -15,7 +18,7 @@ LOGGER = logging.getLogger(__name__)
 
 class CostIOCSupervised(CostIOCTF):
     """ Set up weighted neural network norm loss with learned parameters. """
-    def __init__(self, hyperparams):
+    def __init__(self, hyperparams, train_samples=None, test_samples=None, train_costs=None):
         super(CostIOCSupervised, self).__init__(hyperparams)
         self.gt_cost = hyperparams['gt_cost']  # Ground truth cost
         self.gt_cost = self.gt_cost['type'](self.gt_cost)
@@ -27,15 +30,33 @@ class CostIOCSupervised(CostIOCTF):
 
         self.update_after = hyperparams.get('update_after', 0)
 
-        self.demo_agent = hyperparams['agent']  # Required for sample packing
-        self.demo_agent = self.demo_agent['type'](self.demo_agent)
-        self.weights_dir = hyperparams['weight_dir']
+        if hyperparams.get('agent', False):
+            demo_agent = hyperparams['agent']  # Required for sample packing
+            demo_agent = demo_agent['type'](demo_agent)
+        # self.weights_dir = hyperparams['weight_dir']
 
         demo_file, traj_file = hyperparams['demo_file'], hyperparams.get('traj_samples', [])
-        train_samples, test_samples, train_costs = self.extract_supervised_data(demo_file, traj_file)
-        self.init_supervised(train_samples, test_samples, train_costs)
-        self.sup_samples = train_samples
-        self.sup_costs = train_costs
+        if hyperparams.get('agent', False):
+            train_samples, test_samples, train_costs = self.extract_supervised_data(demo_agent, demo_file, traj_file) 
+            self.init_supervised(train_samples, test_samples, train_costs)
+            self.sup_samples = train_samples
+            self.sup_costs = train_costs
+            self.sup_test_samples = test_samples
+            self.demo_agent = None  # don't pickle agent
+        if self._hyperparams.get('agent', False):
+            del self._hyperparams['agent']
+
+    def copy(self):
+        new_cost = CostIOCSupervised(self._hyperparams, train_samples=copy.copy(self.sup_samples), \
+                        test_samples=copy.copy(self.sup_test_samples), \
+                        train_costs=copy.copy(self.sup_costs))
+        with open('tmp.wts', 'w+b') as f:
+            self.save_model(f.name)
+            f.seek(0)
+            new_cost.restore_model(f.name)
+            os.remove(f.name+'.meta')
+        os.remove('tmp.wts')
+        return new_cost
 
     def update(self, demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=-1):
         if self.finetune:
@@ -47,7 +68,7 @@ class CostIOCSupervised(CostIOCTF):
         else:
             pass
 
-    def extract_supervised_data(self, demo_file, traj_files):
+    def extract_supervised_data(self, demo_agent, demo_file, traj_files):
         X, U, O, cond = extract_demos(demo_file)
 
 
@@ -63,8 +84,8 @@ class CostIOCSupervised(CostIOCTF):
         testU = U[-n_test:]
         X = X[:-n_test]
         U = U[:-n_test]
-        train_samples = xu_to_sample_list(self.demo_agent, X, U)
-        test_samples = xu_to_sample_list(self.demo_agent, testX, testU)
+        train_samples = xu_to_sample_list(demo_agent, X, U)
+        test_samples = xu_to_sample_list(demo_agent, testX, testU)
 
 
         num_samp = U.shape[0]

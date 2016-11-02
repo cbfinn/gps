@@ -392,7 +392,9 @@ class GPSMain(object):
         # if itr == self.algorithm._hyperparams['iterations'] - 1 or itr == self.algorithm._hyperparams['ioc_maxent_iter'] - 1: # Just save the last iteration of the algorithm file
         # if ((itr+1) % 5 == 0) or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
         log_data = itr>0 and (itr%5 == 0) or (itr==self._hyperparams['iterations']-1)
-        if log_data:
+        # TODO: still save samples for every iteration?
+        # if log_data:
+        if True:
             with Timer('saving algorithm file'):
                 self.algorithm.demo_policy = None
                 copy_alg = copy.copy(self.algorithm)
@@ -527,8 +529,8 @@ def main():
     import random
     import numpy as np
 
-    random.seed(1)
-    np.random.seed(1)
+    random.seed(0)
+    np.random.seed(0)
 
     if args.targetsetup:
         try:
@@ -572,7 +574,7 @@ def main():
         else:
             gps.test_policy(itr=current_itr, N=test_policy_N, testing=args.extendtesting, eval_pol_gt=args.eval)
     elif measure:
-        for i in xrange(2, 3):
+        for i in xrange(1):
             random.seed(i)
             np.random.seed(i)
             gps = GPSMain(hyperparams.config)

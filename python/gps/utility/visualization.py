@@ -25,10 +25,12 @@ def compare_samples(gps, N, agent_config, three_dim=True, weight_varying=False, 
         experiment: whether the experiment is peg, reacher or pointmass.
     """
     pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
-    # pol_iter = 9
+    # pol_iter = 11
+    print pol_iter
     algorithm_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
-    algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files/algorithm_itr_09.pkl') # Assuming not using 4 policies
-    algorithm_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_oracle/algorithm_itr_09.pkl')
+    algorithm_sup = gps.data_logger.unpickle(gps._hyperparams['common']['supervised_exp_dir'] + 'data_files_arm/algorithm_itr_%02d' % pol_iter + '.pkl')
+    algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_arm/algorithm_itr_09.pkl.gz') # Assuming not using 4 policies
+    algorithm_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_arm_oracle/algorithm_itr_09.pkl')
     if not weight_varying:
         pos_body_offset = gps._hyperparams['agent']['pos_body_offset']
     M = agent_config['conditions']
@@ -38,10 +40,11 @@ def compare_samples(gps, N, agent_config, three_dim=True, weight_varying=False, 
             self.agent.reset_initial_body_offset(m)
 
     pol_ioc = algorithm_ioc.policy_opt.policy
+    pol_sup = algorithm_sup.policy_opt.policy
     # pol_ioc.chol_pol_covar *= 0.0
     pol_demo = algorithm_demo.policy_opt.policy
     pol_oracle = algorithm_oracle.policy_opt.policy
-    policies = [pol_ioc, pol_demo, pol_oracle]
+    policies = [pol_ioc, pol_demo, pol_oracle, pol_sup]
     samples = {i: [] for i in xrange(len(policies))}
     agent = agent_config['type'](agent_config)
     if not weight_varying:
@@ -66,7 +69,8 @@ def compare_samples(gps, N, agent_config, three_dim=True, weight_varying=False, 
     # all_success_conditions, only_ioc_conditions, only_demo_conditions, all_failed_conditions, \
     #     percentages = [], [], [], [], []
     ioc_success_conditions, demo_success_conditions, ioc_failed_conditions, demo_failed_conditions, \
-        oracle_success_conditions, oracle_failed_conditions, percentages = [], [], [], [], [], [], []
+        oracle_success_conditions, oracle_failed_conditions, sup_success_conditions, \
+        sup_failed_conditions, percentages = [], [], [], [], [], [], [], [], []
     for i in xrange(len(samples[0])):
         if experiment == 'reacher':
             pos_body_offset = gps.agent._hyperparams['pos_body_offset'][i]
@@ -105,22 +109,27 @@ def compare_samples(gps, N, agent_config, three_dim=True, weight_varying=False, 
             oracle_success_conditions.append(ioc_conditions[i])
         else:
             oracle_failed_conditions.append(ioc_conditions[i])
+        if dists_to_target[3][i] <= 0.05:
+            sup_success_conditions.append(ioc_conditions[i])
+        else:
+            sup_failed_conditions.append(ioc_conditions[i])
         # dists_diff.append(np.around(dists_to_target[0][i] - dists_to_target[1][i], decimals=2))
     # percentages.append(round(float(len(all_success_conditions))/len(ioc_conditions), 2))
     # percentages.append(round(float(len(all_failed_conditions))/len(ioc_conditions), 2))
     # percentages.append(round(float(len(only_ioc_conditions))/len(ioc_conditions), 2))
     # percentages.append(round(float(len(only_demo_conditions))/len(ioc_conditions), 2))
-    percentages.append(round(float(len(ioc_success_conditions))/len(ioc_conditions), 2))
-    percentages.append(round(float(len(ioc_failed_conditions))/len(ioc_conditions), 2))
-    percentages.append(round(float(len(demo_success_conditions))/len(ioc_conditions), 2))
-    percentages.append(round(float(len(demo_failed_conditions))/len(ioc_conditions), 2))
     percentages.append(round(float(len(oracle_success_conditions))/len(ioc_conditions), 2))
     percentages.append(round(float(len(oracle_failed_conditions))/len(ioc_conditions), 2))
+    percentages.append(round(float(len(ioc_success_conditions))/len(ioc_conditions), 2))
+    percentages.append(round(float(len(ioc_failed_conditions))/len(ioc_conditions), 2))
+    percentages.append(round(float(len(sup_success_conditions))/len(ioc_conditions), 2))
+    percentages.append(round(float(len(sup_failed_conditions))/len(ioc_conditions), 2))
+    percentages.append(round(float(len(demo_success_conditions))/len(ioc_conditions), 2))
+    percentages.append(round(float(len(demo_failed_conditions))/len(ioc_conditions), 2))
     from matplotlib.patches import Rectangle
 
     plt.close('all')
     fig = plt.figure()
-    ax = Axes3D(fig)
     # ioc_conditions_zip = zip(*ioc_conditions)
     # all_success_zip = zip(*all_success_conditions)
     # all_failed_zip = zip(*all_failed_conditions)
@@ -133,8 +142,11 @@ def compare_samples(gps, N, agent_config, three_dim=True, weight_varying=False, 
     demo_failed_zip = zip(*demo_failed_conditions)
     oracle_success_zip = zip(*oracle_success_conditions)
     oracle_failed_zip = zip(*oracle_failed_conditions)
+    sup_success_zip = zip(*sup_success_conditions)
+    sup_failed_zip = zip(*sup_failed_conditions)
 
     if three_dim:
+        ax = Axes3D(fig)
         ax.scatter(all_success_zip[0], all_success_zip[1], all_success_zip[2], c='y', marker='o')
         ax.scatter(all_failed_zip[0], all_failed_zip[1], all_failed_zip[2], c='r', marker='x')
         ax.scatter(only_ioc_zip[0], only_ioc_zip[1], only_ioc_zip[2], c='g', marker='^')
@@ -154,41 +166,55 @@ def compare_samples(gps, N, agent_config, three_dim=True, weight_varying=False, 
         #     subplt.plot(only_demo_zip[0], [x-0.5 for x in only_demo_zip[1]], c='r', marker='v')
         # else:
         #     subplt.plot([], [], c='r', marker='v')
-        subplt.scatter(ioc_success_zip[0], [0.5 for i in xrange(len(ioc_success_zip[1]))], c='g', marker='o')
-        subplt.scatter(ioc_failed_zip[0], [0.5 for i in xrange(len(ioc_failed_zip[1]))], c='r', marker='x')
-        subplt.scatter(demo_success_zip[0], [0.0 for i in xrange(len(demo_success_zip[1]))], c='g', marker='^')
-        subplt.scatter(demo_failed_zip[0], [0.0 for i in xrange(len(demo_failed_zip[1]))], c='r', marker='v')
-        subplt.scatter(oracle_success_zip[0], [-0.5 for i in xrange(len(oracle_success_zip[1]))], c='g', marker='*')
-        subplt.scatter(oracle_failed_zip[0], [-0.5 for i in xrange(len(oracle_failed_zip[1]))], c='r', marker='s')
+        subplt.scatter(ioc_success_zip[0], [0.4 for i in xrange(len(ioc_success_zip[1]))], c='g', marker='o')
+        subplt.scatter(ioc_failed_zip[0], [0.4 for i in xrange(len(ioc_failed_zip[1]))], c='r', marker='x')
+        subplt.scatter(demo_success_zip[0], [0.8 for i in xrange(len(demo_success_zip[1]))], c='g', marker='o')
+        subplt.scatter(demo_failed_zip[0], [0.8 for i in xrange(len(demo_failed_zip[1]))], c='r', marker='x')
+        subplt.scatter(oracle_success_zip[0], [0.2 for i in xrange(len(oracle_success_zip[1]))], c='g', marker='o')
+        subplt.scatter(oracle_failed_zip[0], [0.2 for i in xrange(len(oracle_failed_zip[1]))], c='r', marker='x')
+        subplt.scatter(sup_success_zip[0], [0.6 for i in xrange(len(sup_success_zip[1]))], c='g', marker='o')
+        subplt.scatter(sup_failed_zip[0], [0.6 for i in xrange(len(sup_failed_zip[1]))], c='r', marker='x')
         # for i, txt in enumerate(dists_diff):
         #     subplt.annotate(repr(round(txt,2)), (ioc_conditions_zip[0][i], ioc_conditions_zip[1][i]))
-        for i, txt in enumerate(dists_to_target[0]):
-            subplt.annotate(repr(round(txt,2)), (ioc_conditions_zip[0][i], 0.5))
-        for i, txt in enumerate(dists_to_target[1]):
-            subplt.annotate(repr(round(txt,2)), (ioc_conditions_zip[0][i], 0.0))
-        for i, txt in enumerate(dists_to_target[2]):
-            subplt.annotate(repr(round(txt,2)), (ioc_conditions_zip[0][i], -0.5))
+        # for i, txt in enumerate(dists_to_target[0]):
+        #     subplt.annotate(repr(round(txt,2)), (ioc_conditions_zip[0][i], 0.5))
+        # for i, txt in enumerate(dists_to_target[1]):
+        #     subplt.annotate(repr(round(txt,2)), (ioc_conditions_zip[0][i], 0.0))
+        # for i, txt in enumerate(dists_to_target[2]):
+        #     subplt.annotate(repr(round(txt,2)), (ioc_conditions_zip[0][i], -0.5))
         ax = plt.gca()
         if experiment == 'peg':
             ax.add_patch(Rectangle((-0.1, -0.1), 0.2, 0.2, fill = False, edgecolor = 'blue')) # peg
+        pol_names = ['Oracle', 'S3G', 'Sup cost', 'Base policy']
+        yrange = [0.2, 0.4, 0.6, 0.8]
+        plt.yticks(yrange, pol_names)
+        # for i in xrange(len(policies)):
+        #     subplt.annotate(pol_names[i], (ax.get_xticks()[0], yrange[i]), horizontalalignment='left')
+        for i in xrange(len(policies)):
+            subplt.annotate(repr(percentages[2*i]*100) + "%", (ax.get_xticks()[-1], yrange[i]), color='green')
         # elif experiment == 'reacher':
         #     ax.add_patch(Rectangle((-0.3, -0.3), 0.6, 0.6, fill = False, edgecolor = 'blue')) # reacher
-        box = subplt.get_position()
-    ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
+        # ax.axes.get_yaxis().set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.tick_params(axis='y', which='both',length=0)
     # ax.legend(['all_success: ' + repr(percentages[0]), 'all_failed: ' + repr(percentages[1]), 'only_ioc: ' + repr(percentages[2]), \
     #                 'only_demo: ' + repr(percentages[3])], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
     #                 shadow=True, ncol=2)
-    ax.legend(['ioc_success: ' + repr(percentages[0]), 'ioc_failed: ' + repr(percentages[1]), 'demo_success: ' + repr(percentages[2]), \
-                    'demo_failed: ' + repr(percentages[3]), 'oracle_success: ' + repr(percentages[4]), 'oracle_failed: ' + repr(percentages[5])], \
-                    loc='upper center', bbox_to_anchor=(0.4, -0.05), shadow=True, ncol=3)
+    # ax.legend(['ioc_success: ' + repr(percentages[0]), 'ioc_failed: ' + repr(percentages[1]), 'demo_success: ' + repr(percentages[2]), \
+    #                 'demo_failed: ' + repr(percentages[3]), 'oracle_success: ' + repr(percentages[4]), 'oracle_failed: ' + repr(percentages[5])], \
+    #                 loc='upper center', bbox_to_anchor=(0.4, -0.05), shadow=True, ncol=3)
     # subplt.plot(all_success_zip[0], [x - 0.5 for x in all_success_zip[1]], c='y', marker='o')
     # if len(all_failed_zip) > 0:
     #     subplt.plot(all_failed_zip[0], [x - 0.5 for x in all_failed_zip[1]], c='r', marker='x')
     # else:
     #     subplt.plot([], [], c='r', marker='x')
-    plt.xlabel('log of density')
-    plt.title("Distribution of samples drawn from demo policy, IOC policy and oracle policy")
-    plt.savefig(gps._data_files_dir + 'distribution_of_sample_conditions_2.png')
+    plt.xlabel('log density')
+    plt.title("Distribution of samples drawn from various policies of 2-link arm task")
+    plt.savefig(gps._data_files_dir + 'distribution_of_sample_conditions.png')
     plt.close('all')
 
 
