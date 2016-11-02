@@ -254,7 +254,7 @@ algorithm['gt_cost'] = [{
 
 algorithm['cost'] = {
     'type': CostIOCTF,
-    'wu': 200.0 / PR2_GAINS,
+    'wu': 2000.0 / PR2_GAINS,
     # 'wu' : 0.0,
     'network_params': {
         'obs_include': agent['obs_include'],

@@ -151,7 +151,7 @@ state_cost = {
     'alpha': 1e-4,
     'data_types' : {
         JOINT_ANGLES: {
-            'wp': np.ones(SENSOR_DIMS[ACTION]),
+            'wp': np.ones(SENSOR_DIMS[ACTION])*0.1,
             'target_state': target_pos[0:2],
         },
         # JOINT_VELOCITIES: {
@@ -162,13 +162,13 @@ state_cost = {
 
 action_cost = {
     'type': CostAction,
-    'wu': np.array([1, 1])*1e-5, 
+    'wu': np.array([1, 1])*1e-6, 
 }
 
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [state_cost, action_cost],
-    'weights': [0.1, 0.1], # used 10,1 for T=3
+    'weights': [1.0, 1.0], # used 10,1 for T=3
 }
 
 algorithm['dynamics'] = {
