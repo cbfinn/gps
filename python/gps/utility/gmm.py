@@ -113,7 +113,7 @@ class GMM(object):
         logwts = logsum(logwts, axis=0) - np.log(data.shape[0])
         return logwts.T
 
-    def update(self, data, K, max_iterations=10):
+    def update(self, data, K, max_iterations=100):
         """
         Run EM to update clusters.
         Args:
