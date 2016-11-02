@@ -106,7 +106,7 @@ class GenDemo(object):
                     for j in xrange(N):
                         demo = self.agent.sample(
                             controllers_var[i], i,
-                            verbose=(i < self._hyperparams['verbose_trials']), noisy=True,
+                            verbose=(j < self._hyperparams['verbose_trials']), noisy=True,
                             save = True
                         )
                         demos.append(demo)
@@ -133,7 +133,7 @@ class GenDemo(object):
                         for j in xrange(N):
                             demo = self.agent.sample(
                                 pol, i, # Should be changed back to controller if using linearization
-                                verbose=(i < self._hyperparams['verbose_trials']), noisy=True
+                                verbose=(j < self._hyperparams['verbose_trials']), noisy=True
                                 )
                             demos.append(demo)
                             #import pdb; pdb.set_trace()
@@ -143,7 +143,7 @@ class GenDemo(object):
             if agent_config.get('filter_demos', False): # USED FOR PR2
                 target_position = agent_config['target_end_effector'][:3]
                 dist_threshold = agent_config.get('success_upper_bound', 0.01)
-                dists = compute_distance(target_position, SampleList(demos))
+                dists = compute_distance(target_position, SampleList(demos), agent_config['filter_end_effector_idxs'])
                 failed_idx = []
                 for i, distance in enumerate(dists):
                     distance = distance[-1]
