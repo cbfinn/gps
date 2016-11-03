@@ -73,7 +73,7 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentMuJoCo,
     'models': [
-        half_cheetah_hop(wall_height=0.2, wall_pos=1.8, gravity=1.0)
+        half_cheetah_hop(wall_height=0.5, wall_pos=1.8, gravity=1.0)
     ],
     'x0': x0[:CONDITIONS],
     'dt': 0.05,
@@ -124,7 +124,7 @@ algorithm = {
     'conditions': common['conditions'],
     #'train_conditions': common['train_conditions'],
     #'test_conditions': common['test_conditions'],
-    'iterations': 40,
+    'iterations': 70,
     'kl_step': 0.5,
     'min_step_mult': 0.2,
     'max_step_mult': 5.0,
@@ -190,7 +190,7 @@ algorithm['gt_cost'] = {
 algorithm['cost'] = {
     #'type': CostIOCQuadratic,
     'type': CostIOCTF,
-    'wu': np.ones(6)*1e-3,
+    'wu': np.ones(6)*1e-4,
     'dO': np.sum([SENSOR_DIMS[dtype] for dtype in agent['obs_include']]),
     'T': agent['T'],
     'iterations': 2000,
