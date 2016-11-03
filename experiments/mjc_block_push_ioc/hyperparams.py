@@ -18,10 +18,12 @@ from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
+from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
+from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy.lin_gauss_init import init_lqr, init_pd
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
-from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_QUADRATIC
+from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_QUADRATIC, RAMP_CONSTANT
 
 IMAGE_WIDTH = 80
 IMAGE_HEIGHT = 64
@@ -45,7 +47,7 @@ PR2_GAINS = np.array([ 1.0, 1.0, 1.0, 1.0])
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = os.path.dirname(__file__)+'/'
-DEMO_DIR = BASE_DIR + '/../experiments/mjc_block_push/'
+DEMO_DIR = BASE_DIR + '/../experiments/mjc_block_push_mdgps/'
 
 OBS_INCLUDE =  [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES]
 
@@ -55,10 +57,11 @@ common = {
     'experiment_dir': EXP_DIR,
     'demo_exp_dir': DEMO_DIR,
     'data_files_dir': EXP_DIR + 'data_files/',
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_10.pkl.gz',
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_15.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 1,
+    'conditions': 4,
+    'demo_conditions': 8,
     'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
     'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
     'nn_demo': False,
@@ -68,6 +71,7 @@ if not os.path.exists(common['data_files_dir']):
     os.makedirs(common['data_files_dir'])
 
 
+"""
 OBJECT_POS = [np.array([1.1, 0.0, -0.45]),np.array([0.9, 0.0, -0.65]),np.array([1., 0.0, 0.45]),
               np.array([0.9, 0.0, 0.65]),np.array([-0.3, 0.0, 0.6]),np.array([-0.4, 0.0, -0.5]),
               np.array([-0.3, 0.0, 0.6]),np.array([-0.4, 0.0, -0.6])][0:4]
@@ -77,6 +81,12 @@ GOAL_POS =  [np.array([1.25, 0.0, 0.0]), np.array([1.25, 0.0, 0.0]), np.array([1
  np.array([0.5, 0.0, -0.75]),
  np.array([0.6, 0.0, 0.85]),
  np.array([0.45, 0.0, -0.95])][0:4]
+ """
+
+OBJECT_POS = [np.array([1.1, 0.0, -0.45]),np.array([0.9, 0.0, -0.65]),np.array([1., 0.0, 0.45]),
+              np.array([0.9, 0.0, 0.65]), np.array([0.8, 0.0, 0.35]), np.array([0.6, 0.0, 0.2]),
+              np.array([0.6,0,-0.2]), np.array([0.7,0,0])]
+GOAL_POS =  [np.array([1.25, 0.0, 0.0])]*8
 
 agent = {
     'type': AgentMuJoCo,
@@ -94,7 +104,7 @@ agent = {
     'image_width': IMAGE_WIDTH,
     'image_height': IMAGE_HEIGHT,
     'image_channels': IMAGE_CHANNELS,
-    'T': 200,
+    'T': 150,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
@@ -107,20 +117,20 @@ agent = {
 demo_agent = {
     'type': AgentMuJoCo,
     #'filename': './mjc_models/3link_gripper_push_2step.xml',
-    'models': [block_push(object_pos=OBJECT_POS[i], goal_pos=GOAL_POS[i]) for i in range(4)],
+    'models': [block_push(object_pos=OBJECT_POS[i], goal_pos=GOAL_POS[i]) for i in range(common['demo_conditions'])],
     'x0': np.concatenate([np.array([np.pi/2, 0.0, 0.0, 0.0, 0., 0.]), np.zeros((6,))]),
     'dt': 0.05,
     'substeps': 5,
     # [np.array([1.2, 0.0, 0.4]),np.array([1.2, 0.0, 0.9])]
     'pos_body_offset': np.array([0,0,0]),
     'pos_body_idx': np.array([6,8]),
-    'conditions': 4,
+    'conditions': common['demo_conditions'],
     #'train_conditions': [0, 1,2,3],
     #'test_conditions': [4,5,6,7],
     'image_width': IMAGE_WIDTH,
     'image_height': IMAGE_HEIGHT,
     'image_channels': IMAGE_CHANNELS,
-    'T': 200,
+    'T': 150,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
@@ -128,6 +138,10 @@ demo_agent = {
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
     'camera_pos': np.array([0, 8., 0., 0.3, 0., 0.3]),
+    'filter_demos': True,
+    'filter_end_effector_idxs': range(6, 9),
+    'success_upper_bound': 0.1,
+    'target_end_effector': GOAL_POS[0]+np.array([0.05,0.05,0.05]),
 }
 
 
@@ -149,6 +163,8 @@ demo_agent = {
 #     'sample_increase_var': 0.1,
 #     'init_pol_wt': 0.005,
 # }]
+
+#"""
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': agent['conditions'],
@@ -161,7 +177,30 @@ algorithm = {
     'min_step_mult': 0.1,
     'max_step_mult': 4.0,
     'max_ent_traj': 1.0,
+    'synthetic_cost_samples': 0,
 }
+#"""
+
+"""
+algorithm = {
+    'type': AlgorithmBADMM,
+    'conditions': agent['conditions'],
+    'iterations': 25,
+    'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-2]),
+    'policy_dual_rate': 0.2,
+    'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
+    'fixed_lg_step': 3,
+    'kl_step': 5.0,
+    'min_step_mult': 0.01,
+    'max_step_mult': 1.0,
+    'sample_decrease_var': 0.05,
+    'sample_increase_var': 0.1,
+    'init_pol_wt': 0.005,
+    'ioc' : 'ICML',
+    'num_demos': 10,
+    'synthetic_cost_samples': 0,
+}
+"""
 
 
 algorithm['init_traj_distr'] = {
@@ -188,7 +227,7 @@ fk_cost_1 = [{
     'l1': 0.1,
     'l2': 10.0,
     'alpha': 1e-5,
-    'ramp_option': RAMP_QUADRATIC
+    'ramp_option': RAMP_CONSTANT,
 } for i in range(agent['conditions'])]
 
 
@@ -247,7 +286,7 @@ algorithm['gt_cost'] = [{
 algorithm['cost'] = {
     #'type': CostIOCQuadratic,
     'type': CostIOCTF,
-    'wu': np.array([1,1,1,1])*1e-4,
+    'wu': np.array([1,1,1,1])*1e-3,
     'dO': np.sum([SENSOR_DIMS[dtype] for dtype in agent['obs_include']]),
     'T': agent['T'],
     'iterations': 1000,
@@ -277,6 +316,27 @@ algorithm['traj_opt'] = {
 
 
 algorithm['policy_prior'] = {
+    'type': PolicyPriorGMM,
+    'max_clusters': 20,
+    'min_samples_per_cluster': 40,
+    'max_samples': 20,
+}
+
+
+algorithm['policy_opt'] = {
+    'type': PolicyOptTf,
+    'network_params': {
+        'obs_include': agent['obs_include'],
+        #'obs_vector_data': agent['obs_include'],
+        'n_layers': 3,
+        'dim_hidden': 40,
+        'sensor_dims': SENSOR_DIMS,
+    },
+    'network_model': example_tf_network,
+    'fc_only_iterations': 2000,
+    'init_iterations': 1000,
+    'iterations': 1000,  # was 100
+    'weights_file_prefix': EXP_DIR + 'policy',
 }
 
 

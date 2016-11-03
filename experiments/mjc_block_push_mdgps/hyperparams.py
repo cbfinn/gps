@@ -16,14 +16,15 @@ from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_fk_blocktouch import CostFKBlock
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
+from gps.algorithm.dynamics.dynamics_lr import DynamicsLR
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
 from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-from gps.algorithm.policy.lin_gauss_init import init_lqr, init_pd, init_from_file
+from gps.algorithm.policy.lin_gauss_init import init_lqr, init_pd
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
-from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_QUADRATIC
+from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_QUADRATIC, evall1l2term, RAMP_CONSTANT
 
 IMAGE_WIDTH = 80
 IMAGE_HEIGHT = 64
@@ -58,7 +59,7 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 6,
+    'conditions': 8,
     #'train_conditions': [0,1,2,3],
     #'test_conditions': [4,5,6,7],
     'num_robots':1,
@@ -93,17 +94,9 @@ if not os.path.exists(common['data_files_dir']):
 
 
 OBJECT_POS = [np.array([1.1, 0.0, -0.45]),np.array([0.9, 0.0, -0.65]),np.array([1., 0.0, 0.45]),
-              np.array([0.9, 0.0, 0.65]), np.array([0.8, 0.0, 0.35]),
-              np.array([1.0, 0.0, -0.3]),np.array([-0.4, 0.0, -0.5]),
-              np.array([-0.3, 0.0, 0.6]),np.array([-0.4, 0.0, -0.6])][0:6]
-GOAL_POS =  [np.array([1.25, 0.0, 0.0]), np.array([1.25, 0.0, 0.0]), np.array([1.25, 0.0, 0.0]),
- np.array([1.25, 0.0, 0.0]),
- np.array([1.25, 0.0, 0.0]),
- np.array([1.25, 0.0, 0.0]),
- np.array([0.5, 0.0, 0.9]),
- np.array([0.5, 0.0, -0.75]),
- np.array([0.6, 0.0, 0.85]),
- np.array([0.45, 0.0, -0.95])][0:6]
+              np.array([0.9, 0.0, 0.65]), np.array([0.8, 0.0, 0.35]), np.array([0.6, 0.0, 0.2]),
+              np.array([0.6,0,-0.2]), np.array([0.7,0,0])]
+GOAL_POS =  [np.array([1.25, 0.0, 0.0])]*8
 
 agent = {
     'type': AgentMuJoCo,
@@ -121,7 +114,7 @@ agent = {
     #'image_width': IMAGE_WIDTH,
     #'image_height': IMAGE_HEIGHT,
     #'image_channels': IMAGE_CHANNELS,
-    'T': 200,
+    'T': 150,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                       END_EFFECTOR_POINT_VELOCITIES],
@@ -133,25 +126,23 @@ agent = {
          }
 
 
-# algorithm = [{
-#     'type': AlgorithmBADMM,
-#     'conditions': agent[0]['conditions'],
-#     'train_conditions': agent[0]['train_conditions'],
-#     'test_conditions': agent[0]['test_conditions'],
-#     'num_robots': common['num_robots'],
-#     'iterations': 25,
-#     'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-2]),
-#     'policy_dual_rate': 0.2,
-#     'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
-#     'fixed_lg_step': 3,
-#     'kl_step': 5.0,
-#     'min_step_mult': 0.01,
-#     'max_step_mult': 1.0,
-#     'sample_decrease_var': 0.05,
-#     'sample_increase_var': 0.1,
-#     'init_pol_wt': 0.005,
-# }]
+algorithm = {
+     'type': AlgorithmBADMM,
+     'conditions': agent['conditions'],
+     'iterations': 25,
+     'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-2]),
+     'policy_dual_rate': 0.2,
+     'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
+     'fixed_lg_step': 3,
+     'kl_step': 5.0,
+     'min_step_mult': 0.01,
+     'max_step_mult': 1.0,
+     'sample_decrease_var': 0.05,
+     'sample_increase_var': 0.1,
+     'init_pol_wt': 0.005,
+}
 
+"""
 algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
@@ -159,12 +150,13 @@ algorithm = {
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
-    'max_ent_traj': 0.01,
+    'max_ent_traj': 0.001,
     'step_rule': 'laplace',
     'sample_on_policy': True,
     'plot_dir': EXP_DIR,
     #'target_end_effector': target_pos,
 }
+"""
 
 
 #"""
@@ -191,7 +183,7 @@ algorithm['init_traj_distr'] = {
 
 torque_cost_1 = [{
     'type': CostAction,
-    'wu': 5e-5 / PR2_GAINS,
+    'wu': 5e-3 / PR2_GAINS,
 } for i in range(agent['conditions'])]
 
 fk_cost_1 = [{
@@ -203,7 +195,8 @@ fk_cost_1 = [{
     'l1': 0.1,
     'l2': 10.0,
     'alpha': 1e-5,
-    'ramp_option': RAMP_QUADRATIC
+    'evalnorm': evall1l2term,
+    'ramp_option': RAMP_CONSTANT,
 } for i in range(agent['conditions'])]
 
 
@@ -214,6 +207,7 @@ state_cost = [{
     'l1': 0.0,
     'l2': 10.0,
     'alpha': 1e-5,
+    'evalnorm': evall1l2term,
     'data_types': {
         JOINT_ANGLES: {
             'target_state': cost_tgt,
@@ -237,9 +231,10 @@ state_cost = [{
 fk_cost_blocktouch = [{
     'type': CostFKBlock,
     'wp': np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0]),
-    'l1': 0.1,
+    'l1': 0.0,
     'l2': 10.0,
     'alpha': 1e-5,
+    'evalnorm': evall1l2term,
 } for i in range(agent['conditions'])]
 
 # data_logger = DataLogger()
@@ -262,7 +257,7 @@ algorithm['cost'] = [{
 
 algorithm['dynamics'] = {
     'type': DynamicsLRPrior,
-    'regularization': 1e-6,
+    'regularization': 1e-5,
     'prior': {
         'type': DynamicsPriorGMM,
         'max_clusters': 20,
@@ -290,6 +285,8 @@ algorithm['policy_opt'] = {
     'network_params': {
         'obs_include': agent['obs_include'],
         #'obs_vector_data': agent['obs_include'],
+        'n_layers': 3,
+        'dim_hidden': 40,
         'sensor_dims': SENSOR_DIMS,
     },
     'network_model': example_tf_network,
@@ -303,7 +300,7 @@ algorithm['policy_opt'] = {
 config = {
     'iterations': 25,
     'num_samples':10,
-    'verbose_trials': 0,
+    'verbose_trials': 1,
     'verbose_policy_trials': 0,
     'save_wts': True,
     'common': common,
