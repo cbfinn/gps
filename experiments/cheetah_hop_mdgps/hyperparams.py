@@ -40,7 +40,7 @@ EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
 CONDITIONS = 4
 TARGET_X = 5.0
-TARGET_Z = 0.2+0.1
+TARGET_Z = 5.0
 
 np.random.seed(47)
 x0 = []
@@ -125,6 +125,11 @@ algorithm = {
     'sample_on_policy': True,
     'plot_dir': EXP_DIR,
     #'target_end_effector': target_pos,
+    'compute_distances': {
+        'type': 'min',
+        'targets': [np.array([TARGET_X]) for i in xrange(common['conditions'])],
+        'state_idx': range(0, 1),
+    }
 }
 
 algorithm['policy_prior'] = {
@@ -173,7 +178,7 @@ state_cost = {
     'data_types': {
         JOINT_ANGLES: {
             'target_state': np.array([TARGET_X, TARGET_Z]+[0.0]*7),
-            'wp': np.array([1.0, 0.0] + [0.0]*7)
+            'wp': np.array([1.0, 0.1] + [0.0]*7)
         },
         #JOINT_VELOCITIES: {
         #    'target_state': np.array([2.0]+[0.0]*8),
