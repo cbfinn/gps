@@ -258,7 +258,7 @@ class Algorithm(object):
             self.cur[cond].cgt = cgt[synN:]
 
 
-    def _advance_iteration_variables(self, store_prev=False):
+    def _advance_iteration_variables(self, store_prev=True):
         """
         Move all 'cur' variables to 'prev', and advance iteration
         counter.
