@@ -140,6 +140,12 @@ algorithm = {
      'sample_decrease_var': 0.05,
      'sample_increase_var': 0.1,
      'init_pol_wt': 0.005,
+
+    'compute_distances': {
+        'type': 'min',
+        'targets': [GOAL_POS[0]+np.array([0.05,0.05,0.05]) for i in xrange(common['conditions'])],
+        'state_idx': range(6+12,9+12),
+    }
 }
 
 """

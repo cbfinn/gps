@@ -374,6 +374,10 @@ class GPSTrainingGUI(object):
                 condition_titles += ' %8s' % ('')
                 itr_data_fields  += ' %8s' % ('mean_dist')
 
+            if 'compute_distances' in algorithm._hyperparams:
+                condition_titles += ' %8s' % ('')
+                itr_data_fields  += ' %8s' % ('distance')
+
             if isinstance(algorithm, AlgorithmBADMM):
                 condition_titles += ' %8s %8s %8s' % ('', '', '')
                 itr_data_fields  += ' %8s %8s %8s' % ('pol_cost', 'kl_div_i', 'kl_div_f')
@@ -421,6 +425,29 @@ class GPSTrainingGUI(object):
             itr_data += ' | %8.2f %8.2f %8.2f' % (cost, step, entropy)
             #if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
             #    itr_data += ' %8.2f' % (algorithm.kl_div[itr][m])
+
+
+            # COMPUTE DISTANCES:
+            if 'compute_distances' in algorithm._hyperparams:
+                distance_options = algorithm._hyperparams['compute_distances']
+                filter_type = distance_options.get('type', 'min')
+                targets = distance_options['targets'][m]
+                pos_idx = distance_options['state_idx']
+                cur_samples = algorithm.prev[m].sample_list
+                sample_end_effectors = [cur_samples[i].get_X()[:,pos_idx] for i in xrange(len(cur_samples))]
+                dists = [(np.sqrt(np.sum((sample_end_effectors[i] - targets.reshape(1, -1))**2,
+                                         axis=1))) for i in xrange(len(cur_samples))]
+                dists_all = []
+                for i, distance in enumerate(dists):
+                    if filter_type == 'last':
+                        dist_single = distance[-1]
+                    elif filter_type == 'min':
+                        dist_single = min(distance)
+                    else:
+                        raise ValueError('unrecognized filter type:', filter_type)
+                    dists_all.append(dist_single)
+                itr_data += ' %8.2f' % (sum(dists_all) / len(cur_samples))
+
 
             if pol_sample_lists is None:
                 if algorithm.dists_to_target:

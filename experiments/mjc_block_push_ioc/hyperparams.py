@@ -178,6 +178,12 @@ algorithm = {
     'max_step_mult': 4.0,
     'max_ent_traj': 1.0,
     'synthetic_cost_samples': 0,
+
+    'compute_distances': {
+        'type': 'min',
+        'targets': [GOAL_POS[0]+np.array([0.05,0.05,0.05]) for i in xrange(common['conditions'])],
+        'state_idx': range(6+12,9+12),
+    }
 }
 #"""
 

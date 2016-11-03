@@ -37,6 +37,8 @@ BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
 CONDITIONS = 1
+TARGET_X = 5.0
+TARGET_Z = 5.0
 
 np.random.seed(47)
 x0 = []
@@ -87,12 +89,19 @@ algorithm = {
     'kl_step': 1.0,
     'min_step_mult': 0.1,
     'max_step_mult': 10.0,
+    'max_ent_traj': 1.0,
     #'policy_sample_mode': 'replace',
     #'num_clusters': 0,
     #'cluster_method': 'kmeans',
     #'sample_on_policy': True,
     #'max_ent_mult': 1E-2,
     #'max_ent_decay': 0.3,
+
+    'compute_distances': {
+        'type': 'min',
+        'targets': [np.array([TARGET_X]) for i in xrange(common['conditions'])],
+        'state_idx': range(0, 1),
+    }
 }
 
 algorithm['policy_opt'] = {
@@ -102,7 +111,7 @@ algorithm['init_traj_distr'] = {
     'type': init_lqr,
     'init_gains':  np.zeros(SENSOR_DIMS[ACTION]),
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-    'init_var': 1e0,
+    'init_var': 1e-1,
     'dt': agent['dt'],
     'T': agent['T'],
 }
@@ -120,8 +129,8 @@ state_cost = {
     'evalnorm': evall1l2term,
     'data_types': {
         JOINT_ANGLES: {
-            'target_state': np.array([3.0]+[0.0]*8),
-            'wp': np.array([1.0] + [0.0]*8)
+            'target_state': np.array([TARGET_X, TARGET_Z]+[0.0]*7),
+            'wp': np.array([1.0, 1.0] + [0.0]*7)
         },
         #JOINT_VELOCITIES: {
         #    'target_state': np.array([5.0]+[0.0]*8),
@@ -134,7 +143,7 @@ state_cost = {
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [torque_cost_1, state_cost],
-    'weights': [1.0, 1.0],
+    'weights': [10.0, 1.0],
 }
 
 algorithm['dynamics'] = {
@@ -145,6 +154,7 @@ algorithm['dynamics'] = {
         'max_clusters': 20,
         'min_samples_per_cluster': 40,
         'max_samples': 20,
+        'max_iters': 20,
     },
 }
 
