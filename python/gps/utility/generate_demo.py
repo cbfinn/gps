@@ -106,7 +106,7 @@ class GenDemo(object):
                     for j in xrange(N):
                         demo = self.agent.sample(
                             controllers_var[i], i,
-                            verbose=(i < self._hyperparams['verbose_trials']), noisy=True,
+                            verbose=(j < self._hyperparams['verbose_trials']), noisy=True,
                             save = True
                         )
                         demos.append(demo)
@@ -133,7 +133,7 @@ class GenDemo(object):
                         for j in xrange(N):
                             demo = self.agent.sample(
                                 pol, i, # Should be changed back to controller if using linearization
-                                verbose=(i < self._hyperparams['verbose_trials']), noisy=True
+                                verbose=(j < self._hyperparams['verbose_trials']), noisy=True
                                 )
                             demos.append(demo)
                             #import pdb; pdb.set_trace()
@@ -141,12 +141,20 @@ class GenDemo(object):
 
             # Filter failed demos
             if agent_config.get('filter_demos', False): # USED FOR PR2
-                target_position = agent_config['target_end_effector'][:3]
+                filter_type = agent_config.get('filter_type', 'last')
+                max_per_condition = agent_config.get('max_demos_per_condition', 999)
+                target_position = agent_config['target_end_effector']
                 dist_threshold = agent_config.get('success_upper_bound', 0.01)
-                dists = compute_distance(target_position, SampleList(demos))
+                dists = compute_distance(target_position, SampleList(demos), agent_config['filter_end_effector_idxs'])
                 failed_idx = []
                 for i, distance in enumerate(dists):
-                    distance = distance[-1]
+                    if filter_type == 'last':
+                        distance = distance[-1]
+                    elif filter_type == 'min':
+                        distance = min(distance)
+                    else:
+                        raise NotImplementedError()
+
                     print distance
                     if(distance > dist_threshold):
                         failed_idx.append(i)
@@ -154,6 +162,14 @@ class GenDemo(object):
                 demos_filtered = [demo for (i, demo) in enumerate(demos) if i not in failed_idx]
                 demo_idx_conditions = [cond for (i, cond) in enumerate(demo_idx_conditions) if i not in failed_idx]
                 demos = demos_filtered
+
+                # Filter max demos per condition
+                condition_to_demo = {
+                    cond: [demo for (i, demo) in enumerate(demos) if demo_idx_conditions[i]==cond][:max_per_condition]
+                    for cond in range(M)
+                }
+                LOGGER.debug('Successes per condition: %s', str([len(demo_list) for demo_list in condition_to_demo.values()]))
+                demos = [demo for cond in condition_to_demo for demo in condition_to_demo[cond]]
                 shuffle(demos)
 
                 for demo in demos: demo.reset_agent(ioc_agent)

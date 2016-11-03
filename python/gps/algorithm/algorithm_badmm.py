@@ -9,7 +9,7 @@ from gps.algorithm.algorithm import Algorithm
 from gps.algorithm.algorithm_utils import PolicyInfo
 from gps.algorithm.config import ALG_BADMM
 from gps.sample.sample_list import SampleList
-
+from gps.utility.general_utils import Timer
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,19 +34,39 @@ class AlgorithmBADMM(Algorithm):
             self._hyperparams['policy_opt'], self.dO, self.dU
         )
 
-    def iteration(self, sample_lists):
+    def iteration(self, sample_lists, itr=0):
         """
         Run iteration of BADMM-based guided policy search.
 
         Args:
             sample_lists: List of SampleList objects for each condition.
         """
+
+        if self._hyperparams['ioc']:
+            self.N = sum(len(self.sample_list[i]) for i in self.sample_list.keys())
+            self.num_samples = [len(self.sample_list[i]) for i in self.sample_list.keys()]
         for m in range(self.M):
             self.cur[m].sample_list = sample_lists[m]
 
-        self._set_interp_values()
-        self._update_dynamics()  # Update dynamics model using all sample.
-        self._update_step_size()  # KL Divergence step size.
+            if self._hyperparams['ioc']:
+                prev_samples = self.sample_list[m].get_samples()
+                prev_samples.extend(sample_lists[m].get_samples())
+                self.sample_list[m] = SampleList(prev_samples)
+                self.N += len(sample_lists[m])
+
+
+        with Timer('SetInterpValues'):
+            self._set_interp_values()
+        with Timer('UpdateDynamics'):
+            self._update_dynamics()  # Update dynamics model using all sample.
+        with Timer('UpdateStepSize'):
+            self._update_step_size()  # KL Divergence step size.
+
+        if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
+            if self._hyperparams['ioc_maxent_iter'] == -1 or itr < self._hyperparams['ioc_maxent_iter']:
+                # copy conv layers from policy to cost here, at all iterations.
+                with Timer('UpdateCost'):
+                    self._update_cost()
 
         for m in range(self.M):
             # save initial kl for debugging / visualization
@@ -274,6 +294,12 @@ class AlgorithmBADMM(Algorithm):
             m: Condition
         """
 
+        if self._hyperparams['ioc']:
+            self._eval_cost(m, prev_cost=True)
+            traj_info = self.cur[m].prevcost_traj_info
+        else:
+            traj_info = self.cur[m].traj_info
+
         # Compute values under Laplace approximation. This is the policy
         # that the previous samples were actually drawn from under the
         # dynamics that were estimated from the previous samples.
@@ -290,7 +316,7 @@ class AlgorithmBADMM(Algorithm):
         # This is the actual cost we have under the current trajectory
         # based on the latest samples.
         new_actual_laplace_obj, new_actual_laplace_kl = self._estimate_cost(
-            self.cur[m].traj_distr, self.cur[m].traj_info, self.cur[m].pol_info, m
+            self.cur[m].traj_distr, traj_info, self.cur[m].pol_info, m
         )
 
         # Measure the entropy of the current trajectory (for printout).
@@ -299,6 +325,11 @@ class AlgorithmBADMM(Algorithm):
         # Compute actual objective values based on the samples.
         prev_mc_obj = np.mean(np.sum(self.prev[m].cs, axis=1), axis=0)
         new_mc_obj = np.mean(np.sum(self.cur[m].cs, axis=1), axis=0)
+
+        if self._hyperparams['ioc']:
+            new_mc_obj = self.cur[m].prevcost_cs.mean(axis=0).sum()
+        else:
+            new_mc_obj = self.cur[m].cs.mean(axis=0).sum()
 
         # Compute sample-based estimate of KL divergence between policy
         # and trajectories.
@@ -321,6 +352,7 @@ class AlgorithmBADMM(Algorithm):
             'Trajectory step: ent: %f cost: %f -> %f KL: %f -> %f',
             ent, prev_mc_obj, new_mc_obj, prev_mc_kl_sum, new_mc_kl_sum
         )
+
 
         # Compute predicted and actual improvement.
         predicted_impr = np.sum(prev_laplace_obj) + prev_laplace_kl_sum - \
