@@ -407,7 +407,7 @@ def half_cheetah():
     return mjcmodel
 
 
-def half_cheetah_hop(wall_height=0.2, wall_pos=1.2):
+def half_cheetah_hop(wall_height=0.2, wall_pos=1.2, gravity=9.81):
     """
      The state space is populated with joints in the order that they are
     defined in this file. The actuators also operate on joints.
@@ -452,7 +452,7 @@ def half_cheetah_hop(wall_height=0.2, wall_pos=1.2):
     default.motor(ctrllimited="true", ctrlrange="-1 1")
 
     root.size(nstack="300000", nuser_geom="1")
-    root.option(gravity="0 0 -9.81", timestep="0.01")
+    root.option(gravity=[0,0,-gravity], timestep="0.01")
     asset = root.asset()
     asset.texture(builtin="gradient", height="100", rgb1="1 1 1", rgb2="0 0 0", type="skybox", width="100")
     asset.texture(builtin="flat", height="1278", mark="cross", markrgb="1 1 1", name="texgeom", random="0.01",

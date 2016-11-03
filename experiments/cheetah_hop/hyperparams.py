@@ -64,7 +64,9 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'models': [half_cheetah_hop(wall_height=0.2)],
+    'models': [
+        half_cheetah_hop(wall_height=0.2, wall_pos=1.8, gravity=1.0)
+    ],
     'x0': x0[:CONDITIONS],
     'dt': 0.05,
     'substeps': 5,
@@ -111,14 +113,14 @@ algorithm['init_traj_distr'] = {
     'type': init_lqr,
     'init_gains':  np.zeros(SENSOR_DIMS[ACTION]),
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-    'init_var': 1e-1,
+    'init_var': 1e-2,
     'dt': agent['dt'],
     'T': agent['T'],
 }
 
 torque_cost_1 = {
     'type': CostAction,
-    'wu': np.array([1.0 ,1.0, 1.0, 1.0, 1.0, 1.0]),
+    'wu': np.array([1.0 ,1.0, 1.0, 1.0, 1.0, 1.0])*1e-2,
 }
 
 state_cost = {
@@ -130,10 +132,10 @@ state_cost = {
     'data_types': {
         JOINT_ANGLES: {
             'target_state': np.array([TARGET_X, TARGET_Z]+[0.0]*7),
-            'wp': np.array([1.0, 1.0] + [0.0]*7)
+            'wp': np.array([1.0, 0.1] + [0.0]*7)
         },
         #JOINT_VELOCITIES: {
-        #    'target_state': np.array([5.0]+[0.0]*8),
+        #    'target_state': np.array([2.0]+[0.0]*8),
         #    'wp': np.array([1.0] + [0.0]*8)
         #},
     },
@@ -143,7 +145,7 @@ state_cost = {
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [torque_cost_1, state_cost],
-    'weights': [10.0, 1.0],
+    'weights': [1.0, 1.0],
 }
 
 algorithm['dynamics'] = {
