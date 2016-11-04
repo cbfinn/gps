@@ -88,7 +88,7 @@ agent = {
     'type': AgentMuJoCo,
     #'filename': './mjc_models/3link_gripper_push_2step.xml',
     'models': [block_push(object_pos=OBJECT_POS[i], goal_pos=GOAL_POS[i]) for i in range(common['conditions'])],
-    'x0': np.concatenate([np.array([0.0, np.pi/2, 0., 0., 0., 0.0]), np.zeros((6,))]),
+    'x0': np.concatenate([np.array([-np.pi/3, (3*np.pi)/4, 0., 0., 0., 0.0]), np.zeros((6,))]),
     'dt': 0.05,
     'substeps': 5,
     # [np.array([1.2, 0.0, 0.4]),np.array([1.2, 0.0, 0.9])]
