@@ -69,17 +69,17 @@ if not os.path.exists(common['data_files_dir']):
 #OBJECT_POS = [np.array([1.1, 0.0, -0.45]),np.array([0.9, 0.0, -0.65]),np.array([1., 0.0, 0.45]),
 #              np.array([0.9, 0.0, 0.65]), np.array([0.8, 0.0, 0.35]), np.array([0.6, 0.0, 0.2]),
 #              np.array([0.6,0,-0.2]), np.array([0.7,0,0])]
-GOAL_POS =  [np.array([0.4, 0.0, -1.6])]*8
+GOAL_POS =  [np.array([0.4, 0.0, -1.25])]*8
 OBJECT_OFFSET = np.array([0.4,0,0])
 OBJECT_POS = [
-    np.array([0.3, 0.0, -1.2]),
-    np.array([-0.3, 0.0, -1.2]),
-    np.array([0.5, 0.0, -1.2]),
-    np.array([-0.5, 0.0, -1.2]),
-    np.array([0.4, 0.0, -1.1]),
-    np.array([-0.4, 0.0, -1.1]),
-    np.array([0.6, 0.0, -1.1]),
-    np.array([-0.6, 0.0, -1.1]),
+    np.array([0.1, 0.0, -0.9]),
+    np.array([-0.1, 0.0, -0.9]),
+    np.array([0.3, 0.0, -0.9]),
+    np.array([-0.3, 0.0, -0.9]),
+    np.array([0.2, 0.0, -1.0]),
+    np.array([-0.2, 0.0, -1.0]),
+    np.array([0.0, 0.0, -1.0]),
+    np.array([0.0, 0.0, -0.9]),
 ]
 OBJECT_POS = [OBJECT_POS[i]+OBJECT_OFFSET for i in range(len(OBJECT_POS))]
 
@@ -88,7 +88,7 @@ agent = {
     'type': AgentMuJoCo,
     #'filename': './mjc_models/3link_gripper_push_2step.xml',
     'models': [block_push(object_pos=OBJECT_POS[i], goal_pos=GOAL_POS[i]) for i in range(common['conditions'])],
-    'x0': np.concatenate([np.array([0.0, np.pi/2, 0., 0., 0., 0.0]), np.zeros((6,))]),
+    'x0': np.concatenate([np.array([-np.pi/3, (3*np.pi)/4, 0., 0., 0., 0.0]), np.zeros((6,))]),
     'dt': 0.05,
     'substeps': 5,
     # [np.array([1.2, 0.0, 0.4]),np.array([1.2, 0.0, 0.9])]
