@@ -60,49 +60,35 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': 8,
-    #'train_conditions': [0,1,2,3],
-    #'test_conditions': [4,5,6,7],
-    'num_robots':1,
-    # 'policy_opt': {
-    #     'type': PolicyOptTf,
-    #     'network_model': example_tf_network_multi,
-    #     'network_model_feat': invariant_subspace_test,
-    #     'run_feats': True,
-    #     'load_weights': '/home/abhigupta/gps/subspace_newweights.pkl',
-    #     'network_params': [{
-    #         'dim_hidden': [10],
-    #         'num_filters': [10, 20],
-    #         'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
-    #         'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
-    #         'obs_image_data':[],
-    #         'image_width': IMAGE_WIDTH,
-    #         'image_height': IMAGE_HEIGHT,
-    #         'image_channels': IMAGE_CHANNELS,
-    #         'sensor_dims': SENSOR_DIMS[0],
-    #         'batch_size': 25,
-    #         # 'dim_input': reduce(operator.mul, [SENSOR_DIMS[0][s] for s in OBS_INCLUDE]),
-    #     }],
-    #     'iterations': 4000,
-    #     'fc_only_iterations': 5000,
-    #     'checkpoint_prefix': EXP_DIR + 'data_files/policy',
-    #     # 'restore_all_wts':'/home/abhigupta/gps/allweights_push_4link.npy'
-    # }
 }
 
 if not os.path.exists(common['data_files_dir']):
     os.makedirs(common['data_files_dir'])
 
 
-OBJECT_POS = [np.array([1.1, 0.0, -0.45]),np.array([0.9, 0.0, -0.65]),np.array([1., 0.0, 0.45]),
-              np.array([0.9, 0.0, 0.65]), np.array([0.8, 0.0, 0.35]), np.array([0.6, 0.0, 0.2]),
-              np.array([0.6,0,-0.2]), np.array([0.7,0,0])]
-GOAL_POS =  [np.array([1.25, 0.0, 0.0])]*8
+#OBJECT_POS = [np.array([1.1, 0.0, -0.45]),np.array([0.9, 0.0, -0.65]),np.array([1., 0.0, 0.45]),
+#              np.array([0.9, 0.0, 0.65]), np.array([0.8, 0.0, 0.35]), np.array([0.6, 0.0, 0.2]),
+#              np.array([0.6,0,-0.2]), np.array([0.7,0,0])]
+GOAL_POS =  [np.array([0.4, 0.0, -1.6])]*8
+OBJECT_OFFSET = np.array([0.4,0,0])
+OBJECT_POS = [
+    np.array([0.3, 0.0, -1.2]),
+    np.array([-0.3, 0.0, -1.2]),
+    np.array([0.5, 0.0, -1.2]),
+    np.array([-0.5, 0.0, -1.2]),
+    np.array([0.4, 0.0, -1.1]),
+    np.array([-0.4, 0.0, -1.1]),
+    np.array([0.6, 0.0, -1.1]),
+    np.array([-0.6, 0.0, -1.1]),
+]
+OBJECT_POS = [OBJECT_POS[i]+OBJECT_OFFSET for i in range(len(OBJECT_POS))]
+
 
 agent = {
     'type': AgentMuJoCo,
     #'filename': './mjc_models/3link_gripper_push_2step.xml',
     'models': [block_push(object_pos=OBJECT_POS[i], goal_pos=GOAL_POS[i]) for i in range(common['conditions'])],
-    'x0': np.concatenate([np.array([np.pi/2, 0.0, 0.0, 0.0, 0., 0.]), np.zeros((6,))]),
+    'x0': np.concatenate([np.array([0.0, np.pi/2, 0., 0., 0., 0.0]), np.zeros((6,))]),
     'dt': 0.05,
     'substeps': 5,
     # [np.array([1.2, 0.0, 0.4]),np.array([1.2, 0.0, 0.9])]
@@ -126,6 +112,7 @@ agent = {
          }
 
 
+"""
 algorithm = {
      'type': AlgorithmBADMM,
      'conditions': agent['conditions'],
@@ -147,6 +134,24 @@ algorithm = {
         'state_idx': range(6+12,9+12),
     }
 }
+"""
+
+algorithm = {
+    'type': AlgorithmTrajOpt,
+    'conditions': agent['conditions'],
+    #'train_conditions': agent['train_conditions'],
+    #'test_conditions': agent['test_conditions'],
+    'iterations': 25,
+    'kl_step': 5.0,
+    'min_step_mult': 0.01,
+    'max_step_mult': 1.0,
+
+    'compute_distances': {
+        'type': 'min',
+        'targets': [GOAL_POS[0]+np.array([0.05,0.05,0.05]) for i in xrange(common['conditions'])],
+        'state_idx': range(6+12,9+12),
+    }
+}
 
 """
 algorithm = {
@@ -161,6 +166,12 @@ algorithm = {
     'sample_on_policy': True,
     'plot_dir': EXP_DIR,
     #'target_end_effector': target_pos,
+
+    'compute_distances': {
+        'type': 'min',
+        'targets': [GOAL_POS[0]+np.array([0.05,0.05,0.05]) for i in xrange(common['conditions'])],
+        'state_idx': range(6+12,9+12),
+    }
 }
 """
 
