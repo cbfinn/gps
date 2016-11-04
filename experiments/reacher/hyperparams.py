@@ -42,7 +42,7 @@ BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
 
-CONDITIONS = 20
+CONDITIONS = 2
 #CONDITIONS = 4
 np.random.seed(14)
 pos_body_offset = []
@@ -95,8 +95,13 @@ algorithm = {
     'agent_x0': agent['x0'],
     'agent_pos_body_idx': agent['pos_body_idx'],
     'agent_pos_body_offset': agent['pos_body_offset'],
-    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
-                            for i in xrange(CONDITIONS)],
+    #'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
+    #                        for i in xrange(CONDITIONS)],
+    'compute_distances': {
+        'type': 'min',
+        'targets': [np.array([.1, -.1, .01])+ agent['pos_body_offset'][i] for i in xrange(CONDITIONS)],
+        'state_idx': range(4,7),
+    }
 }
 
 

@@ -13,6 +13,7 @@ from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
+from gps.algorithm.cost.cost_ioc_supervised_tf import CostIOCSupervised
 from gps.algorithm.cost.cost_ioc_tf import CostIOCTF
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_sum import CostSum
@@ -61,7 +62,7 @@ common = {
     #'test_conditions': range(CONDITIONS),
     'demo_conditions': 1,
     'demo_exp_dir': DEMO_DIR,
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_30.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files/demo_algorithm.pkl',
     'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
     'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
     'nn_demo': False,
@@ -73,7 +74,7 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentMuJoCo,
     'models': [
-        half_cheetah_hop(wall_height=0.5, wall_pos=1.8, gravity=1.0), #, wall_sample_range=[0.5,1.2])
+        half_cheetah_hop(wall_height=0.5, wall_pos=1.8, gravity=1.0), #wall_sample_range=[0.6, 1.0])
     ],
     'x0': x0[:CONDITIONS],
     'dt': 0.05,
@@ -82,7 +83,7 @@ agent = {
     #'train_conditions': common['train_conditions'],
     #'test_conditions': common['test_conditions'],
     'T': 200,
-    'randomize_world': True,
+    #'randomize_world': True,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
@@ -143,7 +144,7 @@ algorithm = {
     'compute_distances': {
         'type': 'min',
         'targets': [np.array([TARGET_X]) for i in xrange(common['demo_conditions'])],
-        'state_idx': range(0, 1),
+        'state_idx': list(range(0, 1)),
     }
 }
 
@@ -192,14 +193,19 @@ algorithm['gt_cost'] = {
 
 algorithm['cost'] = {
     #'type': CostIOCQuadratic,
-    'type': CostIOCTF,
-    'wu': np.ones(6)*1e-4,
+    'type': CostIOCSupervised,
+    'wu': np.ones(6)*1e-2,
     'dO': np.sum([SENSOR_DIMS[dtype] for dtype in agent['obs_include']]),
     'T': agent['T'],
     'iterations': 2000,
+    'init_iterations': 10000,
     'demo_batch_size': 10,
     'sample_batch_size': 10,
     'ioc_loss': algorithm['ioc'],
+    'agent': demo_agent,
+    'demo_file': common['LG_demo_file'],
+    'gt_cost': algorithm['gt_cost'],
+    'traj_samples': [DEMO_DIR + 'data_files/traj_sample_itr_05.pkl']
 }
 
 algorithm['dynamics'] = {

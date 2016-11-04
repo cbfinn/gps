@@ -178,7 +178,7 @@ state_cost = {
     'data_types': {
         JOINT_ANGLES: {
             'target_state': np.array([TARGET_X, TARGET_Z]+[0.0]*7),
-            'wp': np.array([1.0, 0.1] + [0.0]*7)
+            'wp': np.array([1.0, 0.0] + [0.0]*7)
         },
         #JOINT_VELOCITIES: {
         #    'target_state': np.array([2.0]+[0.0]*8),
