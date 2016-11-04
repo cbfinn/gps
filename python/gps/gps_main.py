@@ -67,14 +67,18 @@ class GPSMain(object):
         config['algorithm']['agent'] = self.agent
 
         if self.using_ioc() and not test_pol:
-            with Timer('loading demos'):
-                demos = get_demos(self)
-                self.algorithm.demoX = demos['demoX']
-                self.algorithm.demoU = demos['demoU']
-                self.algorithm.demoO = demos['demoO']
-                if 'demo_conditions' in demos.keys() and 'failed_conditions' in demos.keys():
-                    self.algorithm.demo_conditions = demos['demo_conditions']
-                    self.algorithm.failed_conditions = demos['failed_conditions']
+            if config['demo_agent'].get('eval_only', False):
+                from gps.utility.visualization import run_alg
+                run_alg(config['demo_agent'], config['demo_agent']['algorithm_file'], verbose=True)
+            else:
+                with Timer('loading demos'):
+                    demos = get_demos(self)
+                    self.algorithm.demoX = demos['demoX']
+                    self.algorithm.demoU = demos['demoU']
+                    self.algorithm.demoO = demos['demoO']
+                    if 'demo_conditions' in demos.keys() and 'failed_conditions' in demos.keys():
+                        self.algorithm.demo_conditions = demos['demo_conditions']
+                        self.algorithm.failed_conditions = demos['failed_conditions']
         else:
             with Timer('init algorithm'):
                 self.algorithm = config['algorithm']['type'](config['algorithm'])

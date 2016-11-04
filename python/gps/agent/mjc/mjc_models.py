@@ -1,6 +1,6 @@
 import numpy as np
 
-from gps.agent.mjc.model_builder import default_model, pointmass_model, MJCModel
+from gps.agent.mjc.model_builder import default_model, pointmass_model, MJCModel, MJCModelRegen
 
 COLOR_MAP = {
     'red': [1, 0, 0, 1],
@@ -407,7 +407,7 @@ def half_cheetah():
     return mjcmodel
 
 
-def half_cheetah_hop(wall_height=0.2, wall_pos=1.2, gravity=9.81):
+def half_cheetah_hop(wall_height=0.2, wall_pos=1.2, gravity=9.81, wall_sample_range=None):
     """
      The state space is populated with joints in the order that they are
     defined in this file. The actuators also operate on joints.
@@ -440,7 +440,7 @@ def half_cheetah_hop(wall_height=0.2, wall_pos=1.2, gravity=9.81):
         - fshin     hinge       torque (N m)
         - ffoot     hinge       torque (N m)
     """
-    mjcmodel = MJCModel('half_cheetah')
+    mjcmodel = MJCModelRegen('half_cheetah', regen_fn=lambda: half_cheetah_hop(wall_height, wall_pos, gravity, wall_sample_range))
     root = mjcmodel.root
 
     root.compiler(angle="radian", coordinate="local", inertiafromgeom="true", settotalmass="14")
@@ -501,6 +501,9 @@ def half_cheetah_hop(wall_height=0.2, wall_pos=1.2, gravity=9.81):
 
     # Wall
     wall = worldbody.body(name='wall', pos=[wall_pos,0,0])
+    # Sample wall height
+    if wall_sample_range:
+        wall_height = np.random.uniform(low=wall_sample_range[0], high=wall_sample_range[1])
     wall.geom(rgba="1. 0. 1. 1",type="box",size=[0.05,0.4,wall_height*2+0.01],density='0.00001',contype="1",conaffinity="1")
 
 

@@ -249,3 +249,84 @@ def compare_experiments(mean_dists_1_dict, mean_dists_2_dict, success_rates_1_di
     plt.savefig(exp_dir + hyperparams_compare['plot']['success_plot_name'])
 
     plt.close()
+
+
+def load_alg(alg_file, cond=0):
+    from data_logger import open_zip
+    import cPickle
+    with open_zip(alg_file, 'rb') as pklf:
+        ss = pklf.read()
+    algorithm = cPickle.loads(ss)
+    controller = algorithm.cur[cond].traj_distr
+    return controller
+
+def run_alg(test_agent, alg_file, verbose=True):
+    from gps.sample.sample_list import SampleList
+    controller = load_alg(alg_file)
+
+    agent_config = test_agent
+    agent = agent_config['type'](agent_config)
+
+    # Roll out the demonstrations from controllers
+    # var_mult = self._hyperparams['algorithm']['demo_var_mult']
+    var_mult = 1.0
+    T = controller.T
+    demos = []
+    demo_idx_conditions = []  # Stores conditions for each demo
+
+    M = len(agent_config['models'])
+    N = agent_config['num_demos']
+    controllers = {}
+
+    # Store each controller under M conditions into controllers.
+    for i in xrange(M):
+        controllers[i] = controller
+    controllers_var = copy.copy(controllers)
+    for i in xrange(M):
+        # Increase controller variance.
+        controllers_var[i].chol_pol_covar *= var_mult
+        # Gather demos.
+        for j in xrange(N):
+            demo = agent.sample(
+                controllers_var[i], i,
+                verbose=j < agent_config['verbose_trials'], noisy=True,
+                save = True
+            )
+            demos.append(demo)
+            demo_idx_conditions.append(i)
+
+
+    if 'filter_demos' in  agent_config:
+        filter_options = agent_config['filter_demos']
+        filter_type = filter_options.get('type', 'min')
+        targets = filter_options['target']
+        pos_idx = filter_options['state_idx']
+        dist_threshold = filter_options.get('success_upper_bound', 0.01)
+        cur_samples = SampleList(demos)
+        sample_end_effectors = [cur_samples[i].get_X()[:,pos_idx] for i in xrange(len(cur_samples))]
+        dists = [(np.sqrt(np.sum((sample_end_effectors[i] - targets.reshape(1, -1))**2,
+                                 axis=1))) for i in xrange(len(cur_samples))]
+        failed_idx = []
+        for i, distance in enumerate(dists):
+            if filter_type == 'last':
+                dist_single = distance[-1]
+            elif filter_type == 'min':
+                dist_single = min(distance)
+            else:
+                raise ValueError('unrecognized filter type:', filter_type)
+            print dist_single
+            if(dist_single > dist_threshold):
+                failed_idx.append(i)
+
+
+        print "Removing %d failed demos: %s" %(len(failed_idx), str(failed_idx))
+        demos_filtered = [demo for (i, demo) in enumerate(demos) if i not in failed_idx]
+        demo_idx_conditions = [cond for (i, cond) in enumerate(demo_idx_conditions) if i not in failed_idx]
+        demos = demos_filtered
+
+        # Filter max demos per condition
+        condition_to_demo = {
+            cond: [demo for (i, demo) in enumerate(demos) if demo_idx_conditions[i]==cond]
+            for cond in range(M)
+            }
+        print 'Successes per condition: %s' % str([len(demo_list) for demo_list in condition_to_demo.values()])
