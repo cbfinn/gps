@@ -69,17 +69,17 @@ if not os.path.exists(common['data_files_dir']):
 #OBJECT_POS = [np.array([1.1, 0.0, -0.45]),np.array([0.9, 0.0, -0.65]),np.array([1., 0.0, 0.45]),
 #              np.array([0.9, 0.0, 0.65]), np.array([0.8, 0.0, 0.35]), np.array([0.6, 0.0, 0.2]),
 #              np.array([0.6,0,-0.2]), np.array([0.7,0,0])]
-GOAL_POS =  [np.array([0.4, 0.0, -1.6])]*8
+GOAL_POS =  [np.array([0.4, 0.0, -1.15])]*8
 OBJECT_OFFSET = np.array([0.4,0,0])
 OBJECT_POS = [
-    np.array([0.3, 0.0, -1.2]),
-    np.array([-0.3, 0.0, -1.2]),
-    np.array([0.5, 0.0, -1.2]),
-    np.array([-0.5, 0.0, -1.2]),
-    np.array([0.4, 0.0, -1.1]),
-    np.array([-0.4, 0.0, -1.1]),
-    np.array([0.6, 0.0, -1.1]),
-    np.array([-0.6, 0.0, -1.1]),
+    np.array([0.1, 0.0, -0.9]),
+    np.array([-0.1, 0.0, -0.9]),
+    np.array([0.3, 0.0, -0.9]),
+    np.array([-0.3, 0.0, -1.0]),
+    np.array([0.2, 0.0, -1.0]),
+    np.array([-0.2, 0.0, -1.0]),
+    np.array([0.0, 0.0, -1.0]),
+    np.array([-0.0, 0.0, -0.9]),
 ]
 OBJECT_POS = [OBJECT_POS[i]+OBJECT_OFFSET for i in range(len(OBJECT_POS))]
 
@@ -108,15 +108,14 @@ agent = {
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
     'camera_pos': np.array([0, 8., 0., 0.3, 0., 0.3]),
+}
 
-         }
 
-
-"""
+#"""
 algorithm = {
      'type': AlgorithmBADMM,
      'conditions': agent['conditions'],
-     'iterations': 25,
+     'iterations': 35,
      'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-2]),
      'policy_dual_rate': 0.2,
      'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
@@ -134,8 +133,9 @@ algorithm = {
         'state_idx': range(6+12,9+12),
     }
 }
-"""
+#"""
 
+"""
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': agent['conditions'],
@@ -152,6 +152,7 @@ algorithm = {
         'state_idx': range(6+12,9+12),
     }
 }
+"""
 
 """
 algorithm = {
