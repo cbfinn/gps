@@ -201,6 +201,6 @@ class ColorLogger(object):
         msg = color_string(msg % frmat, color=get_color_code(self.name))
         self.logger.debug(msg)
 
-    def warn(self, msg, *frmat):
+    def warning(self, msg, *frmat):
         msg = color_string(msg % frmat, color='red')
-        self.logger.debug(msg)
+        self.logger.warning(msg)

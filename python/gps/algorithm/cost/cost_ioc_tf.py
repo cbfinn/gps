@@ -151,6 +151,7 @@ class CostIOCTF(Cost):
         d_sampler = BatchSampler([demoO, demo_torque_norm, d_log_iw])
         s_sampler = BatchSampler([sampleO, sample_torque_norm, s_log_iw])
 
+        tot_ioc_loss = 0
         for i, (d_batch, s_batch) in enumerate(
                 izip(d_sampler.with_replacement(batch_size=self.demo_batch_size), \
                     s_sampler.with_replacement(batch_size=self.sample_batch_size))):
@@ -161,8 +162,10 @@ class CostIOCTF(Cost):
                                       sample_obs = s_batch[0],
                                       sample_torque_norm = s_batch[1],
                                       sample_iw = s_batch[2])
-            if i%200 == 0:
-                LOGGER.debug("Iteration %d loss: %f", i, ioc_loss)
+            tot_ioc_loss += ioc_loss
+            if i>0 and i%200 == 0:
+                LOGGER.debug("Iteration %d loss: %f", i, tot_ioc_loss/200)
+                tot_ioc_loss = 0
 
             if i > self._hyperparams['iterations']:
                 break
