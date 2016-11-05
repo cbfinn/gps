@@ -152,6 +152,7 @@ class CostIOCQuadratic(Cost):
         """ Helper method to initialize the solver. """
         solver_param = SolverParameter()
         solver_param.display = 0  # Don't display anything.
+        solver_param.snapshot_prefix = self._hyperparams['weights_file_prefix']
         solver_param.base_lr = self._hyperparams['lr']
         solver_param.lr_policy = self._hyperparams['lr_policy']
         solver_param.momentum = self._hyperparams['momentum']

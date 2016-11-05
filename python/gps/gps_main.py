@@ -26,7 +26,8 @@ from gps.sample.sample_list import SampleList
 from gps.utility.general_utils import disable_caffe_logs, Timer
 from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
                                     measure_distance_and_success_peg, get_demos, extract_samples
-from gps.utility.visualization import get_comparison_hyperparams, compare_experiments, compare_samples
+from gps.utility.visualization import get_comparison_hyperparams, compare_experiments, compare_samples, \
+                                        manual_compare_samples, manual_compare_samples_curve, manual_compare_samples_curve_hard
 
 
 class GPSMain(object):
@@ -596,7 +597,9 @@ def main():
             np.random.seed(i)
             gps = GPSMain(hyperparams.config)
             agent_config = gps._hyperparams['agent']
-            compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
+            # compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
+            # manual_compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
+            manual_compare_samples_curve_hard(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
     elif compare:
         mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
             success_rates_2_dict = {}, {}, {}, {}

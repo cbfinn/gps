@@ -217,6 +217,16 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
                                python_param=dict(module='ioc_layers',
                                                  param_str=data_layer_info,
                                                  layer='IOCDataLayer'))
+    elif phase == 'supervised':
+        data_layer_info = json.dumps({
+            'shape': [{'dim': (sample_batch_size+demo_batch_size, T, dim_input)}, # sample obs
+                      {'dim': (sample_batch_size+demo_batch_size, T, 1)},  # sample torque norm
+                      {'dim': (sample_batch_size+demo_batch_size, T, 1)}]  # gt cost labels
+        })
+        n.net_input, n.all_u, n.cost_labels = L.Python(ntop=3,
+                               python_param=dict(module='ioc_layers',
+                                                 param_str=data_layer_info,
+                                                 layer='IOCDataLayer'))
     else:
         raise Exception('Unknown network phase')
 
@@ -269,6 +279,8 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
         n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, n.Z, loss_weight=1.0,
                          python_param=dict(module='ioc_layers',
                                            layer=layer_name))
+    elif phase == 'supervised':
+        n.out = L.EuclideanLoss(n.all_costs, n.cost_labels)
 
 
     return n.to_proto()

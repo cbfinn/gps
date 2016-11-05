@@ -10,17 +10,16 @@ from caffe.proto.caffe_pb2 import SolverParameter, TRAIN, TEST
 from google.protobuf.text_format import MessageToString
 
 from gps.algorithm.cost.cost import Cost
-from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.cost.cost_ioc_quad import CostIOCQuadratic
 from gps.utility.demo_utils import xu_to_sample_list, extract_demos
 
 LOGGER = logging.getLogger(__name__)
 
 
-class CostIOCSupervised(CostIOCNN):
+class CostIOCSupervisedQuad(CostIOCQuadratic):
     """ Set up weighted neural network norm loss with learned parameters. """
     def __init__(self, hyperparams):
-        super(CostIOCSupervised, self).__init__(hyperparams)
+        super(CostIOCSupervisedQuad, self).__init__(hyperparams)
         self.gt_cost = hyperparams['gt_cost']  # Ground truth cost
         self.gt_cost = self.gt_cost['type'](self.gt_cost)
 
@@ -29,31 +28,36 @@ class CostIOCSupervised(CostIOCNN):
 
         self.update_after = hyperparams.get('update_after', 0)
 
-        self.agent = hyperparams['agent']  # Required for sample packing
-        self.agent = self.agent['type'](self.agent)
+        if hyperparams.get('init_from_demos', True):
+            self.agent = hyperparams['agent']  # Required for sample packing
+            self.agent = self.agent['type'](self.agent)
         self.weights_dir = hyperparams['weight_dir']
         self.params_file = join(self.weights_dir, 'supervised_net.params')
 
         # Debugging
-        X, U, O, cond = extract_demos(self._hyperparams['demo_file'])
-        self.test_sample_list = xu_to_sample_list(self.agent, X, U)
+        if hyperparams.get('init_from_demos', True):
+            X, U, O, cond = extract_demos(self._hyperparams['demo_file'])
+            self.test_sample_list = xu_to_sample_list(self.agent, X, U)
 
         sup_solver = self.init_solver(phase='supervised')
         if hyperparams.get('init_from_demos', True):
             self.init_supervised_demos(sup_solver, hyperparams['demo_file'], hyperparams.get('traj_samples', []))
+            self._hyperparams['init_from_demos'] = False
+            self.agent = None
         solver = self.init_solver(phase='multi_objective' if self.multi_objective_wt else TRAIN)
         solver.net.share_with(sup_solver.net)
         solver.test_nets[0].share_with(sup_solver.net)
-        solver.test_nets[1].share_with(sup_solver.net)
         #solver.net.copy_from(self.weight_file)  # Load weights into train net
 
         self.finetune = hyperparams.get('finetune', False)
+        if self._hyperparams.get('agent', False):
+            del self._hyperparams['agent']
 
     def eval(self, sample):
         if self.eval_gt:
             return self.gt_cost.eval(sample)
         else:
-            return super(CostIOCSupervised, self).eval(sample)
+            return super(CostIOCSupervisedQuad, self).eval(sample)
 
     def test_eval(self):
         return self.eval(self.test_sample_list[0])[0]
@@ -75,7 +79,7 @@ class CostIOCSupervised(CostIOCNN):
                 if self.multi_objective_wt:
                     self.update_multiobjective(demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=itr)
                 else:
-                    super(CostIOCSupervised, self).update(demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=itr)
+                    super(CostIOCSupervisedQuad, self).update(demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=itr)
         else:
             return
 
@@ -151,7 +155,6 @@ class CostIOCSupervised(CostIOCNN):
         # Keep track of Caffe iterations for loading solver states.
         # self.caffe_iter += self._hyperparams['iterations']
         solver.test_nets[0].share_with(solver.net)
-        solver.test_nets[1].share_with(solver.net)
 
         # supervised_losses = []
         # for n in range(Ns):
@@ -159,28 +162,28 @@ class CostIOCSupervised(CostIOCNN):
         #    supervised_losses.append(l)
         # supervised_losses = np.array(supervised_losses)
         # supervised_losses = np.expand_dims(supervised_losses, -1)
+        if False:
+            import matplotlib.pyplot as plt
+            test_costs = []
+            nTest = testX.shape[0]
+            sample_list = xu_to_sample_list(self.agent, testX, testU)
+            for n in range(nTest):
+                l, _, _, _, _, _ = self.gt_cost.eval(sample_list[n])
+                test_costs.append(l)
+            test_costs = np.array(test_costs)
 
-        import matplotlib.pyplot as plt
-        test_costs = []
-        nTest = testX.shape[0]
-        sample_list = xu_to_sample_list(self.agent, testX, testU)
-        for n in range(nTest):
-            l, _, _, _, _, _ = self.gt_cost.eval(sample_list[n])
-            test_costs.append(l)
-        test_costs = np.array(test_costs)
+            supervised_test = []
+            for n in range(nTest):
+                l, _, _, _, _, _ = self.eval(sample_list[n])
+                supervised_test.append(l)
+            supervised_test = np.array(supervised_test)
 
-        supervised_test = []
-        for n in range(nTest):
-            l, _, _, _, _, _ = self.eval(sample_list[n])
-            supervised_test.append(l)
-        supervised_test = np.array(supervised_test)
-
-        plt.figure()
-        linestyles = ['-', ':', 'dashed']
-        for i in range(4):
-            plt.plot(np.arange(T), test_costs[i], color='red', linestyle=linestyles[i % len(linestyles)])
-            plt.plot(np.arange(T), 2 * supervised_test[i], color='blue', linestyle=linestyles[i % len(linestyles)])
-        plt.show()
+            plt.figure()
+            linestyles = ['-', ':', 'dashed']
+            for i in range(4):
+                plt.plot(np.arange(T), test_costs[i], color='red', linestyle=linestyles[i % len(linestyles)])
+                plt.plot(np.arange(T), 2 * supervised_test[i], color='blue', linestyle=linestyles[i % len(linestyles)])
+            plt.show()
 
         #solver.net.save(self.weight_file)
 
@@ -206,11 +209,11 @@ class CostIOCSupervised(CostIOCNN):
             network_arch_params['sample_batch_size'] = sample_batch_size
         network_arch_params['T'] = self._T
         network_arch_params['ioc_loss'] = self._hyperparams['ioc_loss']
-        network_arch_params['Nq'] = self._iteration_count
-        network_arch_params['smooth_reg_weight'] = self._hyperparams['smooth_reg_weight']
-        network_arch_params['mono_reg_weight'] = self._hyperparams['mono_reg_weight']
-        network_arch_params['gp_reg_weight'] = self._hyperparams['gp_reg_weight']
-        network_arch_params['learn_wu'] = self._hyperparams['learn_wu']
+        # network_arch_params['Nq'] = self._iteration_count
+        # network_arch_params['smooth_reg_weight'] = self._hyperparams['smooth_reg_weight']
+        # network_arch_params['mono_reg_weight'] = self._hyperparams['mono_reg_weight']
+        # network_arch_params['gp_reg_weight'] = self._hyperparams['gp_reg_weight']
+        # network_arch_params['learn_wu'] = self._hyperparams['learn_wu']
         network_arch_params['phase'] = phase
         if self.multi_objective_wt:
             network_arch_params['multi_obj_supervised_wt'] = self.multi_objective_wt
@@ -224,14 +227,14 @@ class CostIOCSupervised(CostIOCNN):
             self._hyperparams['network_model'](**network_arch_params)
         )
 
-        network_arch_params['phase'] = 'forward_feat'
-        solver_param.test_net_param.add().CopyFrom(
-            self._hyperparams['network_model'](**network_arch_params)
-        )
+        # network_arch_params['phase'] = 'forward_feat'
+        # solver_param.test_net_param.add().CopyFrom(
+        #     self._hyperparams['network_model'](**network_arch_params)
+        # )
 
         # These are required by Caffe to be set, but not used.
         solver_param.test_iter.append(1)
-        solver_param.test_iter.append(1)
+        # solver_param.test_iter.append(1)
         solver_param.test_interval = 1000000
 
         #f = tempfile.NamedTemporaryFile(mode='w+', delete=False)

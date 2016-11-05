@@ -15,6 +15,7 @@ from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.cost.cost_ioc_quad import CostIOCQuadratic
+from gps.algorithm.cost.cost_ioc_supervised_quad import CostIOCSupervisedQuad
 # from gps.algorithm.cost.cost_ioc_tf import CostIOCTF
 # from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
@@ -41,9 +42,8 @@ SENSOR_DIMS = {
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = os.path.dirname(__file__) + '/'
 DEMO_DIR = BASE_DIR + '/../experiments/pointmass_mdgps_weight/'
-SUPERVISED_DIR = BASE_DIR + '/../experiments/pointmass_mdgps_weight_sup/'
 target_pos = np.array([1.3, 0.0, 0.])
-density_range = 10**(np.array([-6, -5.75, -5.5, -5, -4, -3, -2, -1, 0, 1, 1.5, 2, 2.5, 3, 3.5]))
+density_range = 10**(np.array([-6.5, -6, -5, -4, -3, -2, -1, 0, 1, 1.5, 2, 3, 3.5]))
 # wall_1_center = np.array([0.5, -0.8, 0.])
 # wall_2_center = np.array([0.5, 0.8, 0.])
 # wall_height = 2.8
@@ -54,14 +54,13 @@ common = {
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
     'data_files_dir': EXP_DIR + 'data_files/',
-    'supervised_exp_dir': SUPERVISED_DIR,
     'demo_exp_dir': DEMO_DIR,
     'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_05.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_conditions': 4,
-    'conditions': len(density_range),
-    # 'conditions': 6,
+    # 'conditions': 13,
+    'conditions': 6,
     'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
     'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
     'nn_demo': True,
@@ -73,27 +72,32 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentMuJoCo,
     # 'models': obstacle_pointmass(target_pos, wall_center=0.5, hole_height=0.3, control_limit=50),
-    # 'models': [weighted_pointmass(target_pos, density=1e1, control_limit=10.0),
-    #    weighted_pointmass(target_pos, density=1.0, control_limit=10.0),
-    #    weighted_pointmass(target_pos, density=1e-1, control_limit=10.0),
-    #    weighted_pointmass(target_pos, density=1e-2, control_limit=10.0),
-    #    weighted_pointmass(target_pos, density=1e-3, control_limit=10.0),
-    #    weighted_pointmass(target_pos, density=1e-4, control_limit=10.0),
+    'models': [weighted_pointmass(target_pos, density=1e1, control_limit=10.0),
+       weighted_pointmass(target_pos, density=1.0, control_limit=10.0),
+       weighted_pointmass(target_pos, density=1e-1, control_limit=10.0),
+       weighted_pointmass(target_pos, density=1e-2, control_limit=10.0),
+       weighted_pointmass(target_pos, density=1e-3, control_limit=10.0),
+       weighted_pointmass(target_pos, density=1e-4, control_limit=10.0),
+       ],
+    # 'models': [weighted_pointmass(target_pos, density=density_range[0], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[1], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[2], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[3], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[4], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[5], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[6], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[7], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[8], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[9], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[10], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[11], control_limit=10.0),
+    #    weighted_pointmass(target_pos, density=density_range[12], control_limit=10.0),
     #    ],
-    # 'models': [weighted_pointmass(target_pos, density=10., control_limit=10.0),
-    #    weighted_pointmass(target_pos, density=8., control_limit=10.0),
-    #    weighted_pointmass(target_pos, density=6., control_limit=10.0),
-    #    weighted_pointmass(target_pos, density=4., control_limit=10.0),
-    #    weighted_pointmass(target_pos, density=2., control_limit=10.0),
-    #    weighted_pointmass(target_pos, density=1., control_limit=10.0),
-    #    ],
-    'models': [weighted_pointmass(target_pos, density=density_range[i], control_limit=10.0) \
-                for i in xrange(len(density_range))],
     'density_range': density_range,
     'filename': '',
     #'x0': [np.array([-1., 1., 0., 0.]), np.array([1., 1., 0., 0.]),
     #       np.array([1., -1., 0., 0.]), np.array([-1., -1., 0., 0.])],
-    'x0': np.array([-1., 0., 0., 0.]),
+    'x0': [np.array([-1., 0., 0., 0.])]*6,
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
@@ -165,20 +169,6 @@ algorithm['init_traj_distr'] = {
     'T': agent['T'],
 }
 
-algorithm['cost'] = {
-    'type': CostIOCQuadratic,
-    # 'type': CostIOCTF,
-    # 'type': CostIOCNN,
-    'wu': np.array([1e-1, 1e-1]),
-    'dO': 10,
-    'T': agent['T'],
-    'iterations': 5000,
-    'demo_batch_size': 10,
-    'sample_batch_size': 10,
-    'ioc_loss': algorithm['ioc'],
-    'weights_file_prefix': common['data_files_dir'] + 'cost'
-}
-
 state_cost = {
     'type': CostState,
     'l2': 10,
@@ -197,13 +187,33 @@ state_cost = {
 
 action_cost = {
     'type': CostAction,
-    'wu': np.array([1.0, 1.0])*1e-1, 
+    'wu': np.array([1., 1.])*1e-1, 
 }
 
 algorithm['gt_cost'] = {
     'type': CostSum,
     'costs': [state_cost, action_cost],
     'weights': [1.0, 1.0], # used 10,1 for T=3
+}
+
+algorithm['cost'] = {
+    # 'type': CostIOCQuadratic,
+    'type': CostIOCSupervisedQuad,
+    # 'type': CostIOCTF,
+    # 'type': CostIOCNN,
+    'demo_file': common['NN_demo_file'],
+    'traj_samples': [os.path.join(common['demo_exp_dir'], 'data_files', 'traj_sample_itr_%02d.pkl' % i) for i in range(6)],
+    'wu': np.array([1e-1, 1e-1]),
+    'dO': 10,
+    'T': agent['T'],
+    'init_iterations': 20000,
+    'demo_batch_size': 10,
+    'sample_batch_size': 10, 
+    'ioc_loss': algorithm['ioc'],
+    'gt_cost': algorithm['gt_cost'],
+    'agent': demo_agent,
+    'weight_dir': common['data_files_dir'],
+    'lr': 1e-2,
 }
 
 algorithm['dynamics'] = {

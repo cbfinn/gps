@@ -233,7 +233,7 @@ fk_cost_1 = [{
 algorithm['gt_cost'] = [{
     'type': CostSum,
     'costs': [torque_cost_1[i], fk_cost_1[i]],
-    'weights': [2.0, 1.0],
+    'weights': [2000.0, 1000.0],
 }  for i in range(common['conditions'])][0]
 
 # algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
@@ -263,14 +263,16 @@ algorithm['cost'] = {
     'T': agent['T'],
     'dO': 16,
     'init_iterations': 5000, # TODO - do we need 5k?
-    'demo_batch_size': 5,
-    'sample_batch_size': 5,
+    'demo_batch_size': 10,
+    'sample_batch_size': 10,
     'ioc_loss': algorithm['ioc'],
     'approximate_lxx': False,
     'demo_file': common['NN_demo_file'],
     'traj_samples': [DEMO_DIR + 'data_files_arm/traj_sample_itr_%02d' % i + '.pkl' for i in xrange(10)],
     'gt_cost': algorithm['gt_cost'],
     'agent': demo_agent,
+    # 'mono_reg_weight': 100.0,
+    'lr': 1e-2,
 }
 
 #algorithm['init_traj_distr'] = {

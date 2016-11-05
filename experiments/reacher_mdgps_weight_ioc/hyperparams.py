@@ -51,8 +51,10 @@ TRAIN_CONDITIONS = 6
 np.random.seed(47)
 DEMO_CONDITIONS = 4 #20
 TEST_CONDITIONS = 0 # 4
-TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
-# TOTAL_CONDITIONS = 13
+# TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
+# density_range = 10**(np.array([6.25, 6.375, 6.5, 6.625, 6.75, 6.875, 7, 7.125, 7.25, 7.375, 7.5, 7.625, 7.75, 7.875, 8, 8.05, 8.1, 8.15, 8.2, 8.25]))
+density_range = 10**(np.array([7.5, 7.625, 7.75, 7.875, 8, 8.1, 8.125, 8.15, 8.175, 8.2]))
+TOTAL_CONDITIONS = len(density_range)
 
 demo_pos_body_offset = []
 for _ in range(DEMO_CONDITIONS):
@@ -67,7 +69,6 @@ for _ in range(TOTAL_CONDITIONS):
 #pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
 #pos_body_offset.append(np.array([0.05, 0.2, 0.0]))
 #demo_pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
-density_range = 10**(np.array([4.5, 5, 5.5, 6, 6.5, 7, 7.25, 7.5, 7.75, 8, 8.25, 8.5, 8.75]))
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -101,15 +102,15 @@ agent = {
     #     weighted_reacher(finger_density=1e8),
     #     weighted_reacher(finger_density=1e9),
     #     ],
-    'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
-        weighted_reacher(arm_density=1e-4, finger_density=1e-4),
-        weighted_reacher(arm_density=1e5, finger_density=1e5),
-        weighted_reacher(arm_density=1e6, finger_density=1e6),
-        weighted_reacher(arm_density=1e7, finger_density=1e7),
-        weighted_reacher(arm_density=1e8, finger_density=1e8),
-        ],
-    # 'models': [weighted_reacher(arm_density=density_range[i], finger_density=density_range[i]) \
-    #             for i in xrange(common['conditions'])],
+    # 'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
+    #     weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+    #     weighted_reacher(arm_density=1e5, finger_density=1e5),
+    #     weighted_reacher(arm_density=1e6, finger_density=1e6),
+    #     weighted_reacher(arm_density=1e7, finger_density=1e7),
+    #     weighted_reacher(arm_density=1e8, finger_density=1e8),
+    #     ],
+    'models': [weighted_reacher(arm_density=density_range[i], finger_density=density_range[i]) \
+                for i in xrange(common['conditions'])],
     'density_range': density_range,
     'x0': np.zeros(4),
     'dt': 0.05,

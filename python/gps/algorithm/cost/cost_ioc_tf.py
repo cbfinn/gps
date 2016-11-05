@@ -24,7 +24,6 @@ class CostIOCTF(Cost):
         config = copy.deepcopy(COST_IOC_TF) # Set this up in the config?
         config.update(hyperparams)
         Cost.__init__(self, config)
-
         self._dO = self._hyperparams['dO']
         self._T = self._hyperparams['T']
         self.use_jacobian = self._hyperparams['use_jacobian']
