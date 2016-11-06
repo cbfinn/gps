@@ -412,7 +412,7 @@ class GPSMain(object):
 
         # if itr == self.algorithm._hyperparams['iterations'] - 1 or itr == self.algorithm._hyperparams['ioc_maxent_iter'] - 1: # Just save the last iteration of the algorithm file
         # if ((itr+1) % 5 == 0) or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
-        log_data = itr>0 and (itr%5 == 0) or (itr==self._hyperparams['iterations']-1)
+        log_data = (itr%5 == 0) or (itr==self._hyperparams['iterations']-1)
         if log_data:
             with Timer('saving algorithm file'):
                 self.algorithm.demo_policy = None

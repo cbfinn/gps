@@ -269,7 +269,6 @@ def run_alg(test_agent, alg_file, verbose=True):
 
     # Roll out the demonstrations from controllers
     # var_mult = self._hyperparams['algorithm']['demo_var_mult']
-    var_mult = 1.0
     T = controller.T
     demos = []
     demo_idx_conditions = []  # Stores conditions for each demo
@@ -283,9 +282,6 @@ def run_alg(test_agent, alg_file, verbose=True):
         controllers[i] = controller
     controllers_var = copy.copy(controllers)
     for i in xrange(M):
-        # Increase controller variance.
-        controllers_var[i].chol_pol_covar *= var_mult
-        # Gather demos.
         for j in xrange(N):
             demo = agent.sample(
                 controllers_var[i], i,

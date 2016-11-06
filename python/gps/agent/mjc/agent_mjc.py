@@ -243,6 +243,10 @@ class AgentMuJoCo(Agent):
 
         # Take the sample.
         for t in range(self.T):
+            if 'screenshot_pause' in self._hyperparams:
+                if t in self._hyperparams['screenshot_pause']:
+                    print 'Pausing for screenshot!'
+                    import pdb; pdb.set_trace()
             X_t = new_sample.get_X(t=t)
             obs_t = new_sample.get_obs(t=t)
             mj_U = policy.act(X_t, obs_t, t, noise[t, :])
@@ -424,3 +428,10 @@ class AgentMuJoCo(Agent):
         img = obs[imstart:imend]
         img = img.reshape((image_width, image_height, image_channels))
         return img
+
+    def __getstate__(self):
+        print 'Pickling agent'
+        return {}
+
+    def __setstate__(self, state):
+        raise NotImplementedError()

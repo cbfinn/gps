@@ -21,7 +21,7 @@ class CostIOCSupervised(CostIOCTF):
         self.gt_cost = self.gt_cost['type'](self.gt_cost)
 
         self.eval_gt = hyperparams.get('eval_gt', False)
-        self.multi_objective_wt = hyperparams.get('multi_objective', 0.0)
+        self.multi_objective_wt = hyperparams.get('multi_objective', 1.0)
         self.finetune = hyperparams.get('finetune', False)
         self.multiobj = hyperparams.get('multiobj', False)
 
@@ -29,7 +29,7 @@ class CostIOCSupervised(CostIOCTF):
 
         self.demo_agent = hyperparams['agent']  # Required for sample packing
         self.demo_agent = self.demo_agent['type'](self.demo_agent)
-        self.weights_dir = hyperparams['weight_dir']
+        #self.weights_dir = hyperparams['weight_dir']
 
         demo_file, traj_file = hyperparams['demo_file'], hyperparams.get('traj_samples', [])
         train_samples, test_samples, train_costs = self.extract_supervised_data(demo_file, traj_file)
@@ -138,3 +138,10 @@ class CostIOCSupervised(CostIOCTF):
 
             if i > self._hyperparams['iterations']:
                 break
+
+    def __getstate__(self):
+        return {}
+
+    def __setstate__(self, state):
+        raise NotImplementedError()
+

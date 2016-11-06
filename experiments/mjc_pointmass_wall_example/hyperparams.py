@@ -47,7 +47,7 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 4,
+    'conditions': 1,
     # 'conditions': 1,
 }
 
@@ -62,9 +62,14 @@ agent = {
     #            obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3),
     #            obstacle_pointmass(target_pos, wall_center=0.5, hole_height=0.3),
     #            ],
-    'models': obstacle_pointmass(target_pos, wall_center=-0.3, hole_height=0.3),
-    'x0': [np.array([-0.75, 0., 0., 0.]), np.array([-0.75, -0.25, 0., 0.]),
-          np.array([-0.75, -0.5, 0., 0.]), np.array([-0.75, -0.75, 0., 0.])],
+    'models': [
+        #obstacle_pointmass(target_pos, wall_center=0.1, hole_height=0.2, delete_top=True, control_limit=20),
+        #obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.2, delete_top=True, control_limit=20),
+        obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.2, delete_top=True, control_limit=20),
+    ],
+    #'x0': [np.array([-0.75, 0., 0., 0.]), np.array([-0.75, -0.25, 0., 0.]),
+    #      np.array([-0.75, -0.5, 0., 0.]), np.array([-0.75, -0.75, 0., 0.])],
+    'x0': np.array([-1., 0., 0., 0.]),
     # 'x0': [np.array([-1., 0., 0., 0.])]*4,
     'dt': 0.05,
     'substeps': 1,
@@ -75,17 +80,19 @@ agent = {
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'smooth_noise': False,
-    'camera_pos': np.array([1., 0., 8., 0., 0., 0.]),
+    #'camera_pos': np.array([1., 0., 8., 0., 0., 0.]),
+    'camera_pos': np.array([0., 0., 6., 0., 1., 0.]),
 }
+
 
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
-    'iterations': 15,
-    'kl_step': 1.0,
+    'iterations': 25,
+    'kl_step': 2.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
-    'max_ent_traj': 1.0,
+    'max_ent_traj': 10.0,
     'target_end_effector': target_pos,
 }
 
@@ -117,13 +124,13 @@ state_cost = {
 
 action_cost = {
     'type': CostAction,
-    'wu': np.array([1, 1])*1e-5, 
+    'wu': np.array([1, 1])*1e-3,
 }
 
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [state_cost, action_cost],
-    'weights': [0.05, 0.05], # used 10,1 for T=3
+    'weights': [1., 1.], # used 10,1 for T=3
 }
 
 algorithm['dynamics'] = {
@@ -131,7 +138,7 @@ algorithm['dynamics'] = {
     'regularization': 1e-6,
     'prior': {
         'type': DynamicsPriorGMM,
-        'max_clusters': 2,
+        'max_clusters': 5,
         'min_samples_per_cluster': 20,
         'max_samples': 20,
     }
@@ -157,7 +164,7 @@ algorithm['policy_prior'] = {
 
 config = {
     'iterations': algorithm['iterations'],
-    'num_samples': 5,
+    'num_samples': 10,
     'verbose_trials': 1,
     'verbose_policy_trials': 1,
     'common': common,

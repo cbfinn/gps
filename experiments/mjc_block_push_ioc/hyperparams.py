@@ -57,42 +57,39 @@ common = {
     'experiment_dir': EXP_DIR,
     'demo_exp_dir': DEMO_DIR,
     'data_files_dir': EXP_DIR + 'data_files/',
-    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_15.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_20.pkl',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
-    'conditions': 4,
+    'conditions': 8,
     'demo_conditions': 8,
     'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
     'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
-    'nn_demo': False,
+    'nn_demo': True,
 }
 
 if not os.path.exists(common['data_files_dir']):
     os.makedirs(common['data_files_dir'])
 
 
-"""
-OBJECT_POS = [np.array([1.1, 0.0, -0.45]),np.array([0.9, 0.0, -0.65]),np.array([1., 0.0, 0.45]),
-              np.array([0.9, 0.0, 0.65]),np.array([-0.3, 0.0, 0.6]),np.array([-0.4, 0.0, -0.5]),
-              np.array([-0.3, 0.0, 0.6]),np.array([-0.4, 0.0, -0.6])][0:4]
-GOAL_POS =  [np.array([1.25, 0.0, 0.0]), np.array([1.25, 0.0, 0.0]), np.array([1.25, 0.0, 0.0]),
- np.array([1.25, 0.0, 0.0]),
- np.array([0.5, 0.0, 0.9]),
- np.array([0.5, 0.0, -0.75]),
- np.array([0.6, 0.0, 0.85]),
- np.array([0.45, 0.0, -0.95])][0:4]
- """
-
-OBJECT_POS = [np.array([1.1, 0.0, -0.45]),np.array([0.9, 0.0, -0.65]),np.array([1., 0.0, 0.45]),
-              np.array([0.9, 0.0, 0.65]), np.array([0.8, 0.0, 0.35]), np.array([0.6, 0.0, 0.2]),
-              np.array([0.6,0,-0.2]), np.array([0.7,0,0])]
-GOAL_POS =  [np.array([1.25, 0.0, 0.0])]*8
+GOAL_POS =  [np.array([0.4, 0.0, -1.15])]*8
+OBJECT_OFFSET = np.array([0.4,0,0])
+OBJECT_POS = [
+    np.array([0.1, 0.0, -0.9]),
+    np.array([-0.1, 0.0, -0.9]),
+    np.array([0.3, 0.0, -0.9]),
+    np.array([-0.3, 0.0, -1.0]),
+    np.array([0.2, 0.0, -1.0]),
+    np.array([-0.2, 0.0, -1.0]),
+    np.array([0.0, 0.0, -1.0]),
+    np.array([-0.0, 0.0, -0.9]),
+]
+OBJECT_POS = [OBJECT_POS[i]+OBJECT_OFFSET for i in range(len(OBJECT_POS))]
 
 agent = {
     'type': AgentMuJoCo,
     #'filename': './mjc_models/3link_gripper_push_2step.xml',
     'models': [block_push(object_pos=OBJECT_POS[i], goal_pos=GOAL_POS[i]) for i in range(common['conditions'])],
-    'x0': np.concatenate([np.array([np.pi/2, 0.0, 0.0, 0.0, 0., 0.]), np.zeros((6,))]),
+    'x0': np.concatenate([np.array([-np.pi/3, (3*np.pi)/4, 0., 0., 0., 0.0]), np.zeros((6,))]),
     'dt': 0.05,
     'substeps': 5,
     # [np.array([1.2, 0.0, 0.4]),np.array([1.2, 0.0, 0.9])]
@@ -118,7 +115,7 @@ demo_agent = {
     'type': AgentMuJoCo,
     #'filename': './mjc_models/3link_gripper_push_2step.xml',
     'models': [block_push(object_pos=OBJECT_POS[i], goal_pos=GOAL_POS[i]) for i in range(common['demo_conditions'])],
-    'x0': np.concatenate([np.array([np.pi/2, 0.0, 0.0, 0.0, 0., 0.]), np.zeros((6,))]),
+    'x0': np.concatenate([np.array([-np.pi/3, (3*np.pi)/4, 0., 0., 0., 0.0]), np.zeros((6,))]),
     'dt': 0.05,
     'substeps': 5,
     # [np.array([1.2, 0.0, 0.4]),np.array([1.2, 0.0, 0.9])]
@@ -138,10 +135,14 @@ demo_agent = {
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
     'camera_pos': np.array([0, 8., 0., 0.3, 0., 0.3]),
-    'filter_demos': True,
-    'filter_end_effector_idxs': range(6, 9),
-    'success_upper_bound': 0.1,
-    'target_end_effector': GOAL_POS[0]+np.array([0.05,0.05,0.05]),
+
+    'filter_demos': {
+        'type': 'min',
+        'target': GOAL_POS[0]+np.array([0.05,0.05,0.05]),# for i in xrange(common['conditions'])],
+        'state_idx': range(6+12,9+12),
+        'success_upper_bound': 0.07,
+        'max_demos_per_condition': 15,
+    }
 }
 
 
@@ -172,7 +173,7 @@ algorithm = {
     #'test_conditions': agent['test_conditions'],
     'iterations': 25,
     'ioc' : 'ICML',
-    'num_demos': 10,
+    'num_demos': 200,
     'kl_step': 1.0,
     'min_step_mult': 0.1,
     'max_step_mult': 4.0,

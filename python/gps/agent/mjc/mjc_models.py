@@ -159,7 +159,7 @@ def colored_reacher(ncubes=6, target_color="red", cube_size=0.012, target_pos=(.
 
 
 def obstacle_pointmass(target_position=np.array([1.3, 0.5, 0]), wall_center=0.0, hole_height=1.0, control_limit=100,
-                       add_hole_indicator=False):
+                       add_hole_indicator=False, delete_top=False):
     """
     An example usage of MJCModel building the pointmass task
     Args:
@@ -200,14 +200,13 @@ def obstacle_pointmass(target_position=np.array([1.3, 0.5, 0]), wall_center=0.0,
     wall_2_center = [wall_x, wall_center+h/2, wall_z]
 
     body = worldbody.body(name="wall1", pos=wall_1_center)
-    # body = worldbody.body(name="wall1", pos=np.array([0.5, -0.3, 0.]))
     y1, y2 = wall_1_center[1], wall_2_center[1]
     body.geom(name="wall1_geom", type="capsule", fromto=np.array([0., y1-10, 0., 0., y1, 0.]), size="0.1", contype="1", rgba="0.9 0 0.1 1")
-    # body.geom(name="wall1_geom", type="capsule", fromto=np.array([0., 0., 0., 1., 0., 0.]), size="0.1", contype="1", rgba="0.9 0 0.1 1")
-    body = worldbody.body(name="wall2", pos=wall_2_center)
-    # body = worldbody.body(name="wall2", pos=np.array([0.15, -0.3, 0.]))
-    body.geom(name="wall2_geom", type="capsule", fromto=np.array([0., y2, 0., 0., y2+10, 0.]), size="0.1", contype="1", rgba="0.9 0 0.1 1")
-    # body.geom(name="wall2_geom", type="capsule", fromto=np.array([0., 0., 0., -1., 0., 0.]), size="0.1", contype="1", rgba="0.9 0 0.1 1")
+
+    if not delete_top:
+        body = worldbody.body(name="wall2", pos=wall_2_center)
+        body.geom(name="wall2_geom", type="capsule", fromto=np.array([0., y2, 0., 0., y2+10, 0.]), size="0.1", contype="1", rgba="0.9 0 0.1 1")
+
     if add_hole_indicator:
         y3 = wall_center
         h = 1.0

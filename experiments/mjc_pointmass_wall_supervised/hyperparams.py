@@ -11,6 +11,7 @@ from gps.agent.mjc import AgentMuJoCo, obstacle_pointmass
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
+from gps.algorithm.cost.cost_ioc_supervised_tf import CostIOCSupervised
 from gps.algorithm.cost.cost_ioc_tf import CostIOCTF
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_action import CostAction
@@ -69,7 +70,7 @@ agent = {
     'type': AgentMuJoCo,
     'exp_name': 'pointmass_wall',
     'models': [
-        obstacle_pointmass(target_pos, wall_center=0.4, hole_height=0.2, control_limit=20, delete_top=True),
+        obstacle_pointmass(target_pos, wall_center=0.5, hole_height=0.2, control_limit=20, delete_top=True),
         #obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.25, control_limit=30),
         #obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.25, control_limit=30),
         #obstacle_pointmass(target_pos, wall_center=0.4, hole_height=0.25, control_limit=30),
@@ -123,7 +124,7 @@ algorithm = {
     'ioc' : 'ICML',
     'demo_distr_empest': True,
     'conditions': common['conditions'],
-    'iterations': 30,
+    'iterations': 20,
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
@@ -145,20 +146,7 @@ algorithm['init_traj_distr'] = {
 }
 
 
-algorithm['cost'] = {
-    #'type': CostIOCQuadratic,
-    'type': CostIOCTF,
-    #'wu': np.array([1e-5, 1e-5]),
-    'wu': np.array([1, 1])*1e-3,
-    'dO': 10,
-    'T': agent['T'],
-    'iterations': 2000,
-    'demo_batch_size': 5,
-    'sample_batch_size': 5,
-    'ioc_loss': algorithm['ioc'],
-}
-
-algorithm['gt_cost'] = {
+state_cost = {
     'type': CostState,
     'l2': 10,
     'l1': 0,
@@ -166,14 +154,43 @@ algorithm['gt_cost'] = {
     'data_types' : {
         JOINT_ANGLES: {
             'wp': np.ones(SENSOR_DIMS[ACTION]),
-            'target_state': target_pos[:2],
+            'target_state': target_pos[0:2],
         },
         # JOINT_VELOCITIES: {
-        #     'wp': np.ones(SENSOR_DIMS[ACTION]),
-        #     'target_state': target_pos,
+        #     'wp': 0*np.ones(SENSOR_DIMS[ACTION]),
         # },
     },
 }
+
+action_cost = {
+    'type': CostAction,
+    'wu': np.array([1, 1])*1e-3,
+}
+
+algorithm['gt_cost'] = {
+    'type': CostSum,
+    'costs': [state_cost, action_cost],
+    'weights': [1., 1.], # used 10,1 for T=3
+}
+
+algorithm['cost'] = {
+    #'type': CostIOCQuadratic,
+    'type': CostIOCSupervised,
+    'wu': np.array([1, 1])*1e-3,
+    'dO': 10,
+    'T': agent['T'],
+    'iterations': 2000,
+    'demo_batch_size': 5,
+    'sample_batch_size': 5,
+    'ioc_loss': algorithm['ioc'],
+
+    'init_iterations': 10000,
+    'agent': demo_agent,
+    'demo_file': common['LG_demo_file'],
+    'gt_cost': algorithm['gt_cost'],
+    'traj_samples': [DEMO_DIR + 'data_files/traj_sample_itr_05.pkl']
+}
+
 
 algorithm['dynamics'] = {
     'type': DynamicsLRPrior,
@@ -215,7 +232,7 @@ algorithm['policy_prior'] = {
 
 config = {
     'iterations': algorithm['iterations'],
-    'num_samples': 10,
+    'num_samples': 5,
     'verbose_trials': 1,
     'verbose_policy_trials': 1,
     'common': common,

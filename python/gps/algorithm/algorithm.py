@@ -525,3 +525,27 @@ class Algorithm(object):
             demos_logiw[i] = logsum(np.sum(demos_logprob[i], 1), 0)
 
         return demos_logiw, samples_logiw
+
+    """
+    def __getstate__(self):
+        print 'Getting state algorithm'
+        for key in ['init_traj_distr', 'cost', 'gt_cost']:
+            if key in self._hyperparams:
+                del self._hyperparams[key]
+        return {'traj_distr': self.traj_distr,
+                'cur': self.cur,
+                'prev': self.prev,
+                '_hyperparams': self._hyperparams}
+
+    def __setstate__(self, state):
+        #import pdb; pdb.set_trace()
+        #type(self).__init__(self, state['_hyperparams'])
+        self._hyperparams = state['_hyperparams']
+        self.traj_distr = state['traj_distr']
+        self.cur = state['cur']
+        self.prev = state['prev']
+    """
+
+
+
+

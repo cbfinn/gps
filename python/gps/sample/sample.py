@@ -63,8 +63,8 @@ class Sample(object):
 
     def get_X(self, t=None):
         """ Get the state. Put it together if not precomputed. """
-        if self._feat_stale and IMAGE_FEAT in self.agent.x_data_types:
-            raise ValueError('Features stale, recompute them')
+        #if self._feat_stale and IMAGE_FEAT in self.agent.x_data_types:
+        #    raise ValueError('Features stale, recompute them')
         X = self._X if t is None else self._X[t, :]
         if np.any(np.isnan(X)):
             for data_type in self._data:
