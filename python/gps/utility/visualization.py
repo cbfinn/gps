@@ -1,4 +1,4 @@
-from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
+from gps.proto.gps_pb2 import END_EFFECTOR_POINTS, RGB_IMAGE
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -540,7 +540,7 @@ def manual_compare_samples_curve_hard(gps, N, agent_config, three_dim=True, weig
     # ax.legend(['ioc_success: ' + repr(percentages[0]), 'ioc_failed: ' + repr(percentages[1]), 'demo_success: ' + repr(percentages[2]), \
     #                 'demo_failed: ' + repr(percentages[3]), 'oracle_success: ' + repr(percentages[4]), 'oracle_failed: ' + repr(percentages[5])], \
     #                 loc='upper center', bbox_to_anchor=(0.4, -0.05), shadow=True, ncol=3)
-    ax.legend(['S3G', 'reward regr', 'RL policy', 'oracle'], loc='lower left')
+    ax.legend(['S3G', 'reward regr.', 'RL policy', 'oracle'], loc='lower left')
     # subplt.plot(all_success_zip[0], [x - 0.5 for x in all_success_zip[1]], c='y', marker='o')
     # if len(all_failed_zip) > 0:
     #     subplt.plot(all_failed_zip[0], [x - 0.5 for x in all_failed_zip[1]], c='r', marker='x')
@@ -552,6 +552,65 @@ def manual_compare_samples_curve_hard(gps, N, agent_config, three_dim=True, weig
     plt.savefig(gps._data_files_dir + 'distribution_of_sample_conditions_average_curve.png')
     plt.close('all')
 
+def visualize_samples(gps, N, agent_config, experiment='reacher'):
+    """
+    Compare samples between IOC and demo policies and visualize them in a plot.
+    Args:
+        gps: GPS object.
+        N: number of samples taken from the policy for comparison
+        config: Configuration of the agent to sample.
+        experiment: whether the experiment is peg, reacher or pointmass.
+    """
+    pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
+    # pol_iter = 13
+    algorithm_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
+    algorithm_sup = gps.data_logger.unpickle(gps._hyperparams['common']['supervised_exp_dir'] + 'data_files_arm/algorithm_itr_%02d' % pol_iter + '.pkl')
+    algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_arm/algorithm_itr_09.pkl') # Assuming not using 4 policies
+    algorithm_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_arm_oracle/algorithm_itr_09.pkl')
+    M = agent_config['conditions']
+    pol_ioc = algorithm_ioc.policy_opt.policy
+    pol_sup = algorithm_sup.policy_opt.policy
+    # pol_ioc.chol_pol_covar *= 0.0
+    pol_demo = algorithm_demo.policy_opt.policy
+    pol_oracle = algorithm_oracle.policy_opt.policy
+    policies = [pol_ioc, pol_demo, pol_oracle, pol_sup]
+    samples = {i: [] for i in xrange(len(policies))}
+    agent = agent_config['type'](agent_config)
+    ioc_conditions = [np.array([np.log10(agent_config['density_range'][i]), 0.]) \
+                        for i in xrange(M)]
+    print "Number of testing conditions: %d" % M
+    for i in xrange(M):
+        # Gather demos.
+        for j in xrange(N):
+            for k in xrange(len(samples)):
+                sample = agent.sample(
+                    policies[k], i,
+                    verbose=(i < gps._hyperparams['verbose_trials']), noisy=True, record_image=True
+                    )
+                samples[k].append(sample)
+
+    from gps.sample.sample_list import SampleList
+
+    sample_list_ioc = [SampleList(sample_ioc) for sample_ioc in samples[0]]
+    sample_list_demo = [SampleList(sample_demo) for sample_demo in samples[1]]
+    sample_list_oracle = [SampleList(sample_oracle) for sample_oracle in samples[2]]
+    sample_list_sup = [SampleList(sample_sup) for sample_sup in samples[3]]
+    gps.data_logger.pickle(
+            gps._data_files_dir + 'ioc_policy_sample_list.pkl',
+            copy.copy(sample_list_ioc)
+        )
+    gps.data_logger.pickle(
+            gps._data_files_dir + 'demo_policy_sample_list.pkl',
+            copy.copy(sample_list_demo)
+        )
+    gps.data_logger.pickle(
+            gps._data_files_dir + 'oracle_policy_sample_list.pkl',
+            copy.copy(sample_list_oracle)
+        )
+    gps.data_logger.pickle(
+            gps._data_files_dir + 'sup_policy_sample_list.pkl',
+            copy.copy(sample_list_sup)
+        )
 
 def get_comparison_hyperparams(hyperparam_file, itr):
     """ 
