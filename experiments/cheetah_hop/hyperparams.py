@@ -167,6 +167,10 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
+    'record_gif': {
+        'gif_dir': os.path.join(common['data_files_dir'], 'gifs'),
+        'gifs_per_condition': 2,
+    }
     #'train_conditions': common['train_conditions'],
     #'test_conditions': common['test_conditions'],
 }

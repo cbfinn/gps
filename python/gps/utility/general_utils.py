@@ -1,4 +1,5 @@
 """ This file defines general utility functions and classes. """
+import errno
 import numpy as np
 import os
 import time
@@ -36,6 +37,16 @@ class Timer(object):
         _, fname = os.path.split(fname)
         id_str = '%s:%s' % (fname, method)
         print 'TIMER:'+color_string('%s: %s (Elapsed: %fs)' % (id_str, self.message, new_time), color='gray')
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
 
 def flatten_lists(lists):
