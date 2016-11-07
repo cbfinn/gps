@@ -11,6 +11,7 @@ COLOR_CODES = {
     'algorithm': 'lblue',
     'traj_opt': 'lgreen',
     'dynamics': 'lblue',
+    'agent': 'lyellow',
     'default': 'white',
 }
 

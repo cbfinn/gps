@@ -23,7 +23,7 @@ from gps.gui.gps_training_gui import GPSTrainingGUI, NUM_DEMO_PLOTS
 from gps.utility.data_logger import DataLogger, open_zip
 from gps.sample.sample_list import SampleList
 # from gps.utility.generate_demo import GenDemo
-from gps.utility.general_utils import disable_caffe_logs, Timer
+from gps.utility.general_utils import disable_caffe_logs, Timer, mkdir_p
 from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
                                     measure_distance_and_success_peg, get_demos, extract_samples
 from gps.utility.visualization import get_comparison_hyperparams, compare_experiments, compare_samples, \
@@ -278,6 +278,17 @@ class GPSMain(object):
                 pol = self.algorithm.policy_opts[cond / self.algorithm.num_policies].policy
         else:
             pol = self.algorithm.cur[cond].traj_distr
+
+        gif_name=None
+        gif_fps = None
+        if 'record_gif' in self._hyperparams:
+            gif_config = self._hyperparams['record_gif']
+            gif_fps = gif_config.get('fps', None)
+            gif_dir = gif_config.get('gif_dir', self._hyperparams['common']['data_files_dir'])
+            mkdir_p(gif_dir)
+            if i < gif_config.get('gifs_per_condition', float('inf')):
+                gif_name = os.path.join(gif_dir,'itr%d.cond%d.samp%d.gif' % (itr, cond, i))
+
         if self.gui:
             self.gui.set_image_overlays(cond)   # Must call for each new cond.
             redo = True
@@ -300,9 +311,12 @@ class GPSMain(object):
                     'Sampling: iteration %d, condition %d, sample %d.' %
                     (itr, cond, i)
                 )
+
                 self.agent.sample(
                     pol, cond,
                     verbose=(i < self._hyperparams['verbose_trials']),
+                    record_gif=gif_name,
+                    record_gif_fps=gif_fps,
                 )
 
                 if self.gui.mode == 'request' and self.gui.request == 'fail':
@@ -314,7 +328,9 @@ class GPSMain(object):
         else:
             self.agent.sample(
                 pol, cond,
-                verbose=(i < self._hyperparams['verbose_trials'])
+                verbose=(i < self._hyperparams['verbose_trials']),
+                record_gif=gif_name,
+                record_gif_fps=gif_fps,
             )
 
     def _take_iteration(self, itr, sample_lists):

@@ -2,6 +2,11 @@
 import copy
 
 import numpy as np
+try:
+    import imageio
+except ImportError:
+    print 'imageio not found'
+    imageio = None
 
 import mjcpy
 import pickle
@@ -18,6 +23,10 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
 
 from gps.sample.sample import Sample
 from gps.utility.general_utils import sample_params
+from gps.utility import ColorLogger
+
+LOGGER = ColorLogger(__name__)
+
 
 class AgentMuJoCo(Agent):
     """
@@ -198,7 +207,7 @@ class AgentMuJoCo(Agent):
 
 
 
-    def sample(self, policy, condition, verbose=True, save=True, noisy=True, record_image=False):
+    def sample(self, policy, condition, verbose=True, save=True, noisy=True, record_image=False, record_gif=None, record_gif_fps=None):
         """
         Runs a trial and constructs a new sample containing information
         about the trial.
@@ -210,6 +219,10 @@ class AgentMuJoCo(Agent):
             noisy: Whether or not to use noise during sampling.
             feature_encoder: Function to get image features from.
         """
+        if record_gif:
+            verbose = True
+            record_image = True
+
         self.randomize_world(condition)
         # Create new sample, populate first time step.
         feature_fn = None
@@ -264,7 +277,16 @@ class AgentMuJoCo(Agent):
                 self._set_sample(new_sample, mj_X, t, condition, feature_fn=feature_fn, record_image=record_image)
 
 
-
+        if record_gif and imageio:
+            # record a gif of sample.
+            images = new_sample.get(RGB_IMAGE)
+            size = list(new_sample.get(RGB_IMAGE_SIZE))
+            images = images.reshape([-1]+size)
+            images = np.transpose(images, [0,2,3,1])
+            LOGGER.debug('Saving gif sample to :%s', record_gif)
+            if record_gif_fps is None:
+                record_gif_fps = 1./self._hyperparams['dt']
+            imageio.mimsave(record_gif, images, fps=record_gif_fps)
 
         new_sample.set(ACTION, U)
         if self._hyperparams['record_reward']:
