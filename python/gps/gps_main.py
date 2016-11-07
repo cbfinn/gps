@@ -287,11 +287,12 @@ class GPSMain(object):
         gif_fps = None
         if 'record_gif' in self._hyperparams:
             gif_config = self._hyperparams['record_gif']
-            gif_fps = gif_config.get('fps', None)
-            gif_dir = gif_config.get('gif_dir', self._hyperparams['common']['data_files_dir'])
-            mkdir_p(gif_dir)
-            if i < gif_config.get('gifs_per_condition', float('inf')):
-                gif_name = os.path.join(gif_dir,'itr%d.cond%d.samp%d.gif' % (itr, cond, i))
+            if itr % gif_config.get('record_every', 1) == 0:
+                gif_fps = gif_config.get('fps', None)
+                gif_dir = gif_config.get('gif_dir', self._hyperparams['common']['data_files_dir'])
+                mkdir_p(gif_dir)
+                if i < gif_config.get('gifs_per_condition', float('inf')):
+                    gif_name = os.path.join(gif_dir,'itr%d.cond%d.samp%d.gif' % (itr, cond, i))
 
         if self.gui:
             self.gui.set_image_overlays(cond)   # Must call for each new cond.
