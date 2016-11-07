@@ -12,7 +12,7 @@ from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_action import CostAction
 # from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
-from gps.algorithm.cost.cost_ioc_tf import CostIOCTF
+from gps.algorithm.cost.cost_ioc_supervised_tf import CostIOCSupervised
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_sum import CostSum
@@ -43,7 +43,6 @@ SENSOR_DIMS = {
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 DEMO_DIR = BASE_DIR + '/../experiments/reacher_mdgps_weight/'
-SUPERVISED_DIR = BASE_DIR + '/../experiments/reacher_mdgps_weight_supervised/'
 
 #CONDITIONS = 1
 TRAIN_CONDITIONS = 6
@@ -51,10 +50,8 @@ TRAIN_CONDITIONS = 6
 np.random.seed(47)
 DEMO_CONDITIONS = 4 #20
 TEST_CONDITIONS = 0 # 4
-# TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
-# density_range = 10**(np.array([6.25, 6.375, 6.5, 6.625, 6.75, 6.875, 7, 7.125, 7.25, 7.375, 7.5, 7.625, 7.75, 7.875, 8, 8.05, 8.1, 8.15, 8.2, 8.25]))
-density_range = 10**(np.array([7.5, 7.625, 7.75, 7.875, 8, 8.1, 8.125, 8.15, 8.175, 8.2]))
-TOTAL_CONDITIONS = len(density_range)
+TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
+# TOTAL_CONDITIONS = 15
 
 demo_pos_body_offset = []
 for _ in range(DEMO_CONDITIONS):
@@ -69,6 +66,7 @@ for _ in range(TOTAL_CONDITIONS):
 #pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
 #pos_body_offset.append(np.array([0.05, 0.2, 0.0]))
 #demo_pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
+density_range = 10**(np.array([0, 1, 2, 3, 4, 5, 6, 6.5, 7, 7.5, 8, 8.25, 8.5, 9, 9.5]))
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -79,7 +77,6 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_exp_dir': DEMO_DIR,
-    'supervised_exp_dir': SUPERVISED_DIR,
     # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'demo_controller_file': DEMO_DIR + 'data_files_arm/algorithm_itr_09.pkl',
     'nn_demo': True, # Use neural network demonstrations. For experiment only
@@ -102,15 +99,15 @@ agent = {
     #     weighted_reacher(finger_density=1e8),
     #     weighted_reacher(finger_density=1e9),
     #     ],
-    # 'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
-    #     weighted_reacher(arm_density=1e-4, finger_density=1e-4),
-    #     weighted_reacher(arm_density=1e5, finger_density=1e5),
-    #     weighted_reacher(arm_density=1e6, finger_density=1e6),
-    #     weighted_reacher(arm_density=1e7, finger_density=1e7),
-    #     weighted_reacher(arm_density=1e8, finger_density=1e8),
-    #     ],
-    'models': [weighted_reacher(arm_density=density_range[i], finger_density=density_range[i]) \
-                for i in xrange(common['conditions'])],
+    'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
+        weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+        weighted_reacher(arm_density=1e5, finger_density=1e5),
+        weighted_reacher(arm_density=1e6, finger_density=1e6),
+        weighted_reacher(arm_density=1e7, finger_density=1e7),
+        weighted_reacher(arm_density=1e8, finger_density=1e8),
+        ],
+    # 'models': [weighted_reacher(arm_density=density_range[i], finger_density=density_range[i]) \
+    #             for i in xrange(common['conditions'])],
     'density_range': density_range,
     'x0': np.zeros(4),
     'dt': 0.05,
@@ -174,7 +171,7 @@ algorithm = {
     'ioc' : 'ICML',  # IOC STUFF HERE
     'max_ent_traj': 1.0,
     'num_demos': 10,
-    'synthetic_cost_samples': 100,
+    'synthetic_cost_samples': 0,
     'global_cost': True,
     'policy_eval': False,
     'bootstrap': False,
@@ -230,13 +227,13 @@ fk_cost_1 = [{
     'l2': 10.0,
     'alpha': 1e-5,
     'evalnorm': evall1l2term,
-    # 'use_jacobian': False,
+    'use_jacobian': False,
 } for i in range(common['conditions'])]
 
 algorithm['gt_cost'] = [{
     'type': CostSum,
     'costs': [torque_cost_1[i], fk_cost_1[i]],
-    'weights': [2.0, 1.0],
+    'weights': [2000.0, 1000.0],
 }  for i in range(common['conditions'])][0]
 
 # algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
@@ -254,7 +251,7 @@ algorithm['gt_cost'] = [{
 # }
 
 algorithm['cost'] = {
-    'type': CostIOCTF,
+    'type': CostIOCSupervised,
     'wu': 2000.0 / PR2_GAINS,
     # 'wu' : 0.0,
     'network_params': {
@@ -265,11 +262,17 @@ algorithm['cost'] = {
     },
     'T': agent['T'],
     'dO': 16,
-    'iterations': 1000, # TODO - do we need 5k?
-    'demo_batch_size': 5,
-    'sample_batch_size': 5,
+    'init_iterations': 5000, # TODO - do we need 5k?
+    'demo_batch_size': 10,
+    'sample_batch_size': 10,
     'ioc_loss': algorithm['ioc'],
     'approximate_lxx': False,
+    'demo_file': common['NN_demo_file'],
+    'traj_samples': [DEMO_DIR + 'data_files_arm/traj_sample_itr_%02d' % i + '.pkl' for i in xrange(10)],
+    'gt_cost': algorithm['gt_cost'],
+    'agent': demo_agent,
+    # 'mono_reg_weight': 100.0,
+    'lr': 1e-2,
 }
 
 #algorithm['init_traj_distr'] = {

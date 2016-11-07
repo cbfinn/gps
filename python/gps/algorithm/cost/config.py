@@ -107,7 +107,6 @@ COST_IOC_TF = {
 }
 COST_IOC_TF.update(IOC_CONFIG)
 
-
 # CostIOCTF + Vision
 COST_IOC_VISION_TF = {
     # Other hyperparameters.

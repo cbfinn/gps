@@ -38,7 +38,7 @@ EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
 CONDITIONS = 1
 TARGET_X = 5.0
-TARGET_Z = 0.2+0.1
+TARGET_Z = 5.0
 
 np.random.seed(47)
 x0 = []
@@ -55,11 +55,6 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': CONDITIONS,
-    #'train_conditions': range(CONDITIONS),
-    #'test_conditions': range(CONDITIONS),
-    'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
-    'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
-    'nn_demo': False,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -68,7 +63,7 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentMuJoCo,
     'models': [
-        half_cheetah_hop(wall_height=0.5, wall_pos=1.8, gravity=1.0)
+        half_cheetah_hop(wall_height=0.2, wall_pos=1.8, gravity=1.0)
     ],
     'x0': x0[:CONDITIONS],
     'dt': 0.05,
@@ -95,7 +90,7 @@ algorithm = {
     'kl_step': 1.0,
     'min_step_mult': 0.1,
     'max_step_mult': 10.0,
-    'max_ent_traj': 0.1,
+    'max_ent_traj': 0.5,
     #'policy_sample_mode': 'replace',
     #'num_clusters': 0,
     #'cluster_method': 'kmeans',
@@ -136,7 +131,7 @@ state_cost = {
     'data_types': {
         JOINT_ANGLES: {
             'target_state': np.array([TARGET_X, TARGET_Z]+[0.0]*7),
-            'wp': np.array([1.0, 0.0] + [0.0]*7)
+            'wp': np.array([1.0, 0.1] + [0.0]*7)
         },
         #JOINT_VELOCITIES: {
         #    'target_state': np.array([2.0]+[0.0]*8),
@@ -183,6 +178,11 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
+    'arecord_gif': {
+        'gif_dir': os.path.join(common['data_files_dir'], 'gifs'),
+        'gifs_per_condition': 1,
+        'save_traj_samples': False,
+    }
     #'train_conditions': common['train_conditions'],
     #'test_conditions': common['test_conditions'],
 }

@@ -98,6 +98,8 @@ class Algorithm(object):
                 self._hyperparams['cost']['type'](self._hyperparams['cost'])
                 for _ in range(self.M)
             ]
+        if type(self._hyperparams['cost']) is dict and self._hyperparams['cost'].get('agent', False):
+            del self._hyperparams['cost']['agent']
 
         if self._hyperparams['ioc']:
             if type(hyperparams['gt_cost']) == list:

@@ -2,6 +2,11 @@
 import copy
 
 import numpy as np
+try:
+    import imageio
+except ImportError:
+    print 'imageio not found'
+    imageio = None
 
 import mjcpy
 import pickle
@@ -18,6 +23,10 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
 
 from gps.sample.sample import Sample
 from gps.utility.general_utils import sample_params
+from gps.utility import ColorLogger
+
+LOGGER = ColorLogger(__name__)
+
 
 class AgentMuJoCo(Agent):
     """
@@ -103,6 +112,7 @@ class AgentMuJoCo(Agent):
             for i in range(self._hyperparams['conditions']):
                 self._world.append(mjcpy.MJCWorld(filename[i]))
                 self._model.append(self._world[i].get_model())
+                # import pdb; pdb.set_trace()
 
         for i in range(self._hyperparams['conditions']):
             for j in range(len(self._hyperparams['pos_body_idx'][i])):
@@ -197,7 +207,7 @@ class AgentMuJoCo(Agent):
 
 
 
-    def sample(self, policy, condition, verbose=True, save=True, noisy=True):
+    def sample(self, policy, condition, verbose=True, save=True, noisy=True, record_image=False, record_gif=None):
         """
         Runs a trial and constructs a new sample containing information
         about the trial.
@@ -209,6 +219,10 @@ class AgentMuJoCo(Agent):
             noisy: Whether or not to use noise during sampling.
             feature_encoder: Function to get image features from.
         """
+        if record_gif:
+            verbose = True
+            record_image = True
+
         self.randomize_world(condition)
         # Create new sample, populate first time step.
         feature_fn = None
@@ -216,7 +230,7 @@ class AgentMuJoCo(Agent):
             feature_fn = self.feature_encoder.get_image_features
         elif 'get_image_features' in dir(policy):
             feature_fn = policy.get_image_features
-        new_sample = self._init_sample(condition, feature_fn=feature_fn)
+        new_sample = self._init_sample(condition, feature_fn=feature_fn, record_image=record_image)
 
         mj_X = self._hyperparams['x0'][condition]
         U = np.zeros([self.T, self.dU])
@@ -264,10 +278,17 @@ class AgentMuJoCo(Agent):
                 #TODO: Some hidden state stuff will go here.
                 #TODO: Will it? This TODO has been here for awhile
                 self._data = self._world[condition].get_data()
-                self._set_sample(new_sample, mj_X, t, condition, feature_fn=feature_fn)
+                self._set_sample(new_sample, mj_X, t, condition, feature_fn=feature_fn, record_image=record_image)
 
 
-
+        if record_gif and imageio:
+            # record a gif of sample.
+            images = new_sample.get(RGB_IMAGE)
+            size = list(new_sample.get(RGB_IMAGE_SIZE))
+            images = images.reshape([-1]+size)
+            images = np.transpose(images, [0,2,3,1])
+            LOGGER.debug('Saving gif sample to :%s', record_gif)
+            imageio.mimsave(record_gif, images)
 
         new_sample.set(ACTION, U)
         if self._hyperparams['record_reward']:
@@ -291,7 +312,7 @@ class AgentMuJoCo(Agent):
         self._world[condition].set_data(data)
         self._world[condition].kinematics()
 
-    def _init_sample(self, condition, feature_fn=None):
+    def _init_sample(self, condition, feature_fn=None, record_image=False):
         """
         Construct a new sample and fill in the first time step.
         Args:
@@ -347,22 +368,22 @@ class AgentMuJoCo(Agent):
                                                     self._hyperparams['image_width'],
                                                     self._hyperparams['image_height']]), t=None)
             # only save subsequent images if image is part of observation
-            if RGB_IMAGE in self.obs_data_types or IMAGE_FEAT in self.x_data_types or IMAGE_FEAT in self.obs_data_types:
+            if RGB_IMAGE in self.obs_data_types or IMAGE_FEAT in self.x_data_types or IMAGE_FEAT in self.obs_data_types or record_image:
                 sample.set(RGB_IMAGE, img_data, t=0)
                 sample.set(RGB_IMAGE_SIZE, [self._hyperparams['image_channels'],
                                             self._hyperparams['image_width'],
                                             self._hyperparams['image_height']], t=None)
-
-                if feature_fn is not None:
-                    sample.set(IMAGE_FEAT, feature_fn(sample.get(RGB_IMAGE, t=0))[0], t=0)
-                    if RGB_IMAGE not in self.obs_data_types:
-                        sample.set(RGB_IMAGE, None, t=0)  # Remove image from sample for memory reasons.
-                else:
-                    # TODO - need better solution than setting this to 0.
-                    sample.set(IMAGE_FEAT, np.zeros((self._hyperparams['sensor_dims'][IMAGE_FEAT],)), t=0)
+                if IMAGE_FEAT in self.obs_data_types:
+                    if feature_fn is not None:
+                        sample.set(IMAGE_FEAT, feature_fn(sample.get(RGB_IMAGE, t=0))[0], t=0)
+                        if RGB_IMAGE not in self.obs_data_types:
+                            sample.set(RGB_IMAGE, None, t=0)  # Remove image from sample for memory reasons.
+                    else:
+                        # TODO - need better solution than setting this to 0.
+                        sample.set(IMAGE_FEAT, np.zeros((self._hyperparams['sensor_dims'][IMAGE_FEAT],)), t=0)
         return sample
 
-    def _set_sample(self, sample, mj_X, t, condition, feature_fn=None):
+    def _set_sample(self, sample, mj_X, t, condition, feature_fn=None, record_image=False):
         """
         Set the data for a sample for one time step.
         Args:
@@ -399,18 +420,18 @@ class AgentMuJoCo(Agent):
         if CONDITION_DATA in self.obs_data_types:
             sample.set(CONDITION_DATA, self._hyperparams['condition_data'][condition], t=t+1)
 
-        if RGB_IMAGE in self.obs_data_types or IMAGE_FEAT in self.x_data_types or IMAGE_FEAT in self.obs_data_types:
+        if RGB_IMAGE in self.obs_data_types or IMAGE_FEAT in self.x_data_types or IMAGE_FEAT in self.obs_data_types or record_image:
             img = self._world[condition].get_image_scaled(self._hyperparams['image_width'],
                                                           self._hyperparams['image_height'])
             sample.set(RGB_IMAGE, np.transpose(img["img"], (2, 1, 0)).flatten(), t=t+1)
-
-            if feature_fn is not None:
-                sample.set(IMAGE_FEAT, feature_fn(sample.get(RGB_IMAGE, t=t+1))[0], t=t+1)
-                if RGB_IMAGE not in self.obs_data_types:
-                    sample.set(RGB_IMAGE, None, t=t+1)  # Remove image from sample for memory reasons.
-            else:
-                # TODO - need better solution than setting this to 0.
-                sample.set(IMAGE_FEAT, np.zeros((self._hyperparams['sensor_dims'][IMAGE_FEAT],)), t=t+1)
+            if IMAGE_FEAT in self.obs_data_types:
+                if feature_fn is not None:
+                    sample.set(IMAGE_FEAT, feature_fn(sample.get(RGB_IMAGE, t=t+1))[0], t=t+1)
+                    if RGB_IMAGE not in self.obs_data_types:
+                        sample.set(RGB_IMAGE, None, t=t+1)  # Remove image from sample for memory reasons.
+                else:
+                    # TODO - need better solution than setting this to 0.
+                    sample.set(IMAGE_FEAT, np.zeros((self._hyperparams['sensor_dims'][IMAGE_FEAT],)), t=t+1)
 
     def _get_image_from_obs(self, obs):
         imstart = 0

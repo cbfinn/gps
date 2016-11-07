@@ -41,7 +41,7 @@ def extract_samples(itr, sample_file):
     """ Extract samples from iteration 0 up to iteration itr. """
     sample_list = {}
     for i in xrange(itr):
-        sample_file_i = sample_file + '_%2d' % itr + '.pkl.gz'
+        sample_file_i = sample_file + '_%2d' % itr + '.pkl'
         samples = DataLogger().unpickle(sample_file_i)
         sample_list[i] = samples[0]
     return sample_list
