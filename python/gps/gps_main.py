@@ -316,7 +316,7 @@ class GPSMain(object):
                     pol, cond,
                     verbose=(i < self._hyperparams['verbose_trials']),
                     record_gif=gif_name,
-                    record_gif_gps=gif_fps,
+                    record_gif_fps=gif_fps,
                 )
 
                 if self.gui.mode == 'request' and self.gui.request == 'fail':
@@ -330,7 +330,7 @@ class GPSMain(object):
                 pol, cond,
                 verbose=(i < self._hyperparams['verbose_trials']),
                 record_gif=gif_name,
-                record_gif_gps=gif_fps,
+                record_gif_fps=gif_fps,
             )
 
     def _take_iteration(self, itr, sample_lists):
