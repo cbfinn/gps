@@ -207,7 +207,7 @@ class AgentMuJoCo(Agent):
 
 
 
-    def sample(self, policy, condition, verbose=True, save=True, noisy=True, record_image=False, record_gif=None):
+    def sample(self, policy, condition, verbose=True, save=True, noisy=True, record_image=False, record_gif=None, record_gif_fps=None):
         """
         Runs a trial and constructs a new sample containing information
         about the trial.
@@ -288,7 +288,9 @@ class AgentMuJoCo(Agent):
             images = images.reshape([-1]+size)
             images = np.transpose(images, [0,2,3,1])
             LOGGER.debug('Saving gif sample to :%s', record_gif)
-            imageio.mimsave(record_gif, images)
+            if record_gif_fps is None:
+                record_gif_fps = 1./self._hyperparams['dt']
+            imageio.mimsave(record_gif, images, fps=record_gif_fps)
 
         new_sample.set(ACTION, U)
         if self._hyperparams['record_reward']:

@@ -284,11 +284,13 @@ class GPSMain(object):
             pol = self.algorithm.cur[cond].traj_distr
 
         gif_name=None
+        gif_fps = None
         if 'record_gif' in self._hyperparams:
             gif_config = self._hyperparams['record_gif']
+            gif_fps = gif_config.get('fps', None)
             gif_dir = gif_config.get('gif_dir', self._hyperparams['common']['data_files_dir'])
             mkdir_p(gif_dir)
-            if i <= gif_config.get('gifs_per_condition', float('inf')):
+            if i < gif_config.get('gifs_per_condition', float('inf')):
                 gif_name = os.path.join(gif_dir,'itr%d.cond%d.samp%d.gif' % (itr, cond, i))
 
         if self.gui:
@@ -318,6 +320,7 @@ class GPSMain(object):
                     pol, cond,
                     verbose=(i < self._hyperparams['verbose_trials']),
                     record_gif=gif_name,
+                    record_gif_fps=gif_fps,
                 )
 
                 if self.gui.mode == 'request' and self.gui.request == 'fail':
@@ -331,6 +334,7 @@ class GPSMain(object):
                 pol, cond,
                 verbose=(i < self._hyperparams['verbose_trials']),
                 record_gif=gif_name,
+                record_gif_fps=gif_fps,
             )
 
     def _take_iteration(self, itr, sample_lists):
