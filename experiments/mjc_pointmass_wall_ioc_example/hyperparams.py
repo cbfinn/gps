@@ -136,7 +136,7 @@ algorithm = {
 
 algorithm['init_traj_distr'] = {
     'type': init_pd,
-    'init_var': 1.0,
+    'init_var': 5.0,
     'pos_gains': 1.0,
     'vel_gains_mult': 0.0,
     'dQ': SENSOR_DIMS[ACTION],
@@ -223,6 +223,13 @@ config = {
     'demo_agent': demo_agent,
     'gui_on': True,
     'algorithm': algorithm,
+    'record_gif': {
+        'gif_dir': os.path.join(common['data_files_dir'], 'gifs'),
+        'gifs_per_condition': 1,
+        'record_every': 5,
+        'save_traj_samples': False,
+        'fps': 40,
+    }
 }
 
 common['info'] = generate_experiment_info(config)

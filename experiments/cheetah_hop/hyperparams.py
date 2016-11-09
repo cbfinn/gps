@@ -20,7 +20,8 @@ from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy.lin_gauss_init import init_lqr, init_pd
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
-from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_QUADRATIC, evall1l2term
+from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_QUADRATIC, evall1l2term, \
+    RAMP_REVERSE_LINEAR
 from gps.utility.data_logger import DataLogger
 
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
@@ -87,7 +88,7 @@ algorithm = {
     #'train_conditions': common['train_conditions'],
     #'test_conditions': common['test_conditions'],
     'iterations': 60,
-    'kl_step': 1.0,
+    'kl_step': 2.0,
     'min_step_mult': 0.1,
     'max_step_mult': 10.0,
     'max_ent_traj': 0.5,
@@ -131,20 +132,34 @@ state_cost = {
     'data_types': {
         JOINT_ANGLES: {
             'target_state': np.array([TARGET_X, TARGET_Z]+[0.0]*7),
-            'wp': np.array([1.0, 0.1] + [0.0]*7)
+            'wp': np.array([1.0, 0.0] + [0.0]*7)
         },
         #JOINT_VELOCITIES: {
-        #    'target_state': np.array([2.0]+[0.0]*8),
-        #    'wp': np.array([1.0] + [0.0]*8)
+        #    'target_state': np.array([5.0, 5.0]+[0.0]*7),
+        #    'wp': np.array([0.1, 0.1] + [0.0]*7)
         #},
     },
+}
 
+state_cost_2 = {
+    'type': CostState,
+    'l1': 0.0,
+    'l2': 10.0,
+    'alpha': 1e-5,
+    'evalnorm': evall1l2term,
+    'data_types': {
+        JOINT_VELOCITIES: {
+            'target_state': np.array([10.0, 10.0]+[0.0]*7),
+            'wp': np.array([1.0, 1.0] + [0.0]*7)
+        },
+    },
+    'ramp_option': RAMP_REVERSE_LINEAR,
 }
 
 algorithm['cost'] = {
     'type': CostSum,
-    'costs': [torque_cost_1, state_cost],
-    'weights': [1.0, 1.0],
+    'costs': [torque_cost_1, state_cost, state_cost_2],
+    'weights': [1.0, 1.0, 1.0],
 }
 
 algorithm['dynamics'] = {
