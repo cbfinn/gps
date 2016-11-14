@@ -18,10 +18,10 @@ from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-from gps.algorithm.policy.lin_gauss_init import init_lqr, init_pd
+from gps.algorithm.policy.lin_gauss_init import init_lqr, init_pd, load_from_file
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_QUADRATIC, evall1l2term, \
-    RAMP_REVERSE_LINEAR
+    RAMP_REVERSE_QUADRATIC
 from gps.utility.data_logger import DataLogger
 
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
@@ -56,6 +56,11 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': CONDITIONS,
+    #'train_conditions': range(CONDITIONS),
+    #'test_conditions': range(CONDITIONS),
+    'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
+    'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
+    'nn_demo': False,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -65,6 +70,7 @@ agent = {
     'type': AgentMuJoCo,
     'models': [
         half_cheetah_hop(wall_height=0.2, wall_pos=1.8, gravity=1.0)
+        #half_cheetah_hop_fix_grav(wall_height=0.2, wall_pos=1.8, mult=10.0)
     ],
     'x0': x0[:CONDITIONS],
     'dt': 0.05,
@@ -88,10 +94,10 @@ algorithm = {
     #'train_conditions': common['train_conditions'],
     #'test_conditions': common['test_conditions'],
     'iterations': 60,
-    'kl_step': 2.0,
+    'kl_step': 1.0,
     'min_step_mult': 0.1,
     'max_step_mult': 10.0,
-    'max_ent_traj': 0.5,
+    'max_ent_traj': 0.1,
     #'policy_sample_mode': 'replace',
     #'num_clusters': 0,
     #'cluster_method': 'kmeans',
@@ -118,9 +124,21 @@ algorithm['init_traj_distr'] = {
     'T': agent['T'],
 }
 
+"""
+algorithm['init_traj_distr'] = {
+    'type': load_from_file,
+    'init_gains':  np.zeros(SENSOR_DIMS[ACTION]),
+    'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
+    'init_var': 1e-2,
+    'dt': agent['dt'],
+    'T': agent['T'],
+    'algorithm_file': EXP_DIR+'../cheetah_hop_run/data_files/rl_2.pkl'
+}
+"""
+
 torque_cost_1 = {
     'type': CostAction,
-    'wu': np.array([1.0 ,1.0, 1.0, 1.0, 1.0, 1.0])*1e-2,
+    'wu': np.array([1.0 ,1.0, 1.0, 1.0, 1.0, 1.0])*1e-4,
 }
 
 state_cost = {
@@ -132,33 +150,29 @@ state_cost = {
     'data_types': {
         JOINT_ANGLES: {
             'target_state': np.array([TARGET_X, TARGET_Z]+[0.0]*7),
-            'wp': np.array([1.0, 0.0] + [0.0]*7)
+            'wp': np.array([2.0, 1.0] + [0.0]*7)
         },
-        #JOINT_VELOCITIES: {
-        #    'target_state': np.array([5.0, 5.0]+[0.0]*7),
-        #    'wp': np.array([0.1, 0.1] + [0.0]*7)
-        #},
     },
 }
 
-state_cost_2 = {
+jump_cost = {
     'type': CostState,
     'l1': 0.0,
     'l2': 10.0,
     'alpha': 1e-5,
     'evalnorm': evall1l2term,
+    'ramp_option': RAMP_REVERSE_QUADRATIC,
     'data_types': {
         JOINT_VELOCITIES: {
-            'target_state': np.array([10.0, 10.0]+[0.0]*7),
+            'target_state': np.array([5., 5.]+[0.0]*7),
             'wp': np.array([1.0, 1.0] + [0.0]*7)
         },
     },
-    'ramp_option': RAMP_REVERSE_LINEAR,
 }
 
 algorithm['cost'] = {
     'type': CostSum,
-    'costs': [torque_cost_1, state_cost, state_cost_2],
+    'costs': [torque_cost_1, state_cost, jump_cost],
     'weights': [1.0, 1.0, 1.0],
 }
 
@@ -193,13 +207,16 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
+    #'train_conditions': common['train_conditions'],
+    #'test_conditions': common['test_conditions'],
     'arecord_gif': {
         'gif_dir': os.path.join(common['data_files_dir'], 'gifs'),
         'gifs_per_condition': 1,
+        'record_every': 5,
         'save_traj_samples': False,
+        'fps': 40,
     }
-    #'train_conditions': common['train_conditions'],
-    #'test_conditions': common['test_conditions'],
 }
+seed = 8
 
 common['info'] = generate_experiment_info(config)

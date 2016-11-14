@@ -85,19 +85,18 @@ agent = {
 }
 
 MODELS =  [
-    #obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.2, delete_top=True, control_limit=20),
-    #obstacle_pointmass(target_pos, wall_center=0.1, hole_height=0.2, delete_top=True, control_limit=20),
-    #obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.2, delete_top=True, control_limit=20),
-    #obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.2, delete_top=True, control_limit=20),
-    #obstacle_pointmass(target_pos, wall_center=0.4, hole_height=0.2, delete_top=True, control_limit=20),
-    #obstacle_pointmass(target_pos, wall_center=0.5, hole_height=0.2, delete_top=True, control_limit=20),
-    #obstacle_pointmass(target_pos, wall_center=0.6, hole_height=0.2, delete_top=True, control_limit=20),
-    obstacle_pointmass(target_pos, wall_center=0.7, hole_height=0.2, delete_top=True, control_limit=20),
+    obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.2, delete_top=True, control_limit=20),
+    obstacle_pointmass(target_pos, wall_center=0.1, hole_height=0.2, delete_top=True, control_limit=20),
+    obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.2, delete_top=True, control_limit=20),
+    obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.2, delete_top=True, control_limit=20),
+    obstacle_pointmass(target_pos, wall_center=0.4, hole_height=0.2, delete_top=True, control_limit=20),
+    obstacle_pointmass(target_pos, wall_center=0.5, hole_height=0.2, delete_top=True, control_limit=20),
+    obstacle_pointmass(target_pos, wall_center=0.6, hole_height=0.2, delete_top=True, control_limit=20),
 ]
 
 
 demo_agent = {
-    'algorithm_file': EXP_DIR + 'data_files/oracle_1.pkl',
+    'algorithm_file': EXP_DIR + 'data_files/sup_1.pkl',
     'type': AgentMuJoCo,
     'models': MODELS,
     'x0': np.array([-1., 0., 0., 0.]),
@@ -105,7 +104,7 @@ demo_agent = {
     'substeps': 1,
     'conditions': len(MODELS),
     'record_reward': False,
-    'screenshot_pause': [5],
+    #'screenshot_pause': [5],
     'dont_save': True,
     'eval_only': True,
     'num_demos': 20,
@@ -208,13 +207,20 @@ algorithm['policy_prior'] = {
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': 10,
-    'verbose_trials': 1,
+    'verbose_trials': 0,
     'verbose_policy_trials': 1,
     'common': common,
     'agent': agent,
     'demo_agent': demo_agent,
     'gui_on': True,
     'algorithm': algorithm,
+    'arecord_gif': {
+        'gif_dir': os.path.join(common['data_files_dir'], 'gifs'),
+        'gifs_per_condition': 1,
+        'save_traj_samples': False,
+        'fps': 40,
+    }
 }
+seed = 4
 
 common['info'] = generate_experiment_info(config)

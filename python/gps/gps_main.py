@@ -71,7 +71,8 @@ class GPSMain(object):
         if self.using_ioc() and not test_pol:
             if config['demo_agent'].get('eval_only', False):
                 from gps.utility.visualization import run_alg
-                run_alg(config['demo_agent'], config['demo_agent']['algorithm_file'], verbose=True)
+                record_gif = config.get('record_gif', None)
+                run_alg(config['demo_agent'], config['demo_agent']['algorithm_file'], record_gif=record_gif, verbose=True)
             else:
                 with Timer('loading demos'):
                     demos = get_demos(self)
@@ -573,8 +574,9 @@ def main():
     import random
     import numpy as np
 
-    random.seed(0)
-    np.random.seed(0)
+    SEED = hyperparams.seed
+    random.seed(SEED)
+    np.random.seed(SEED)
 
     if args.targetsetup:
         try:

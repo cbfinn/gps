@@ -82,7 +82,7 @@ agent = {
     #'train_conditions': common['train_conditions'],
     #'test_conditions': common['test_conditions'],
     'T': 200,
-    'randomize_world': True,
+    #'randomize_world': True,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
@@ -125,7 +125,7 @@ algorithm = {
     'conditions': common['conditions'],
     #'train_conditions': common['train_conditions'],
     #'test_conditions': common['test_conditions'],
-    'iterations': 70,
+    'iterations': 60,
     'kl_step': 0.1,
     'min_step_mult': 1.0,
     'max_step_mult': 10.0,
@@ -151,7 +151,7 @@ algorithm['policy_opt'] = {
 }
 
 algorithm['init_traj_distr'] = {
-    'type': load_from_file,
+    'type': init_lqr,
     'init_gains':  np.zeros(SENSOR_DIMS[ACTION]),
     'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
     'init_var': 1e-2,
@@ -236,6 +236,14 @@ config = {
     'conditions': common['conditions'],
     #'train_conditions': common['train_conditions'],
     #'test_conditions': common['test_conditions'],
+    'arecord_gif': {
+        'gif_dir': os.path.join(common['data_files_dir'], 'gifs'),
+        'gifs_per_condition': 1,
+        'record_every': 5,
+        'save_traj_samples': False,
+        'fps': 40,
+    }
 }
+seed = 2
 
 common['info'] = generate_experiment_info(config)

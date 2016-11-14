@@ -70,7 +70,7 @@ agent = {
     'type': AgentMuJoCo,
     'exp_name': 'pointmass_wall',
     'models': [
-        obstacle_pointmass(target_pos, wall_center=0.5, hole_height=0.2, control_limit=20, delete_top=True),
+        obstacle_pointmass(target_pos, wall_center=0.4, hole_height=0.2, control_limit=20, delete_top=True),
         #obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.25, control_limit=30),
         #obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.25, control_limit=30),
         #obstacle_pointmass(target_pos, wall_center=0.4, hole_height=0.25, control_limit=30),
@@ -241,5 +241,6 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
 }
+seed=2
 
 common['info'] = generate_experiment_info(config)

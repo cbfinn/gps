@@ -65,7 +65,7 @@ agent = {
     'models': [
         #obstacle_pointmass(target_pos, wall_center=0.1, hole_height=0.2, delete_top=True, control_limit=20),
         #obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.2, delete_top=True, control_limit=20),
-        obstacle_pointmass(target_pos, wall_center=0.4, hole_height=0.2, delete_top=True, control_limit=20),
+        obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.2, delete_top=True, control_limit=20),
     ],
     #'x0': [np.array([-0.75, 0., 0., 0.]), np.array([-0.75, -0.25, 0., 0.]),
     #      np.array([-0.75, -0.5, 0., 0.]), np.array([-0.75, -0.75, 0., 0.])],
@@ -172,7 +172,7 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
 
-    'record_gif': {
+    'arecord_gif': {
         'gif_dir': os.path.join(common['data_files_dir'], 'gifs'),
         'gifs_per_condition': 1,
         'record_every': 5,
@@ -180,5 +180,6 @@ config = {
         'fps': 40,
     }
 }
+seed = 8
 
 common['info'] = generate_experiment_info(config)

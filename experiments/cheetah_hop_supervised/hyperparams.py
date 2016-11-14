@@ -126,7 +126,7 @@ algorithm = {
     'conditions': common['conditions'],
     #'train_conditions': common['train_conditions'],
     #'test_conditions': common['test_conditions'],
-    'iterations': 70,
+    'iterations': 60,
     'kl_step': 0.1,
     'min_step_mult': 1.0,
     'max_step_mult': 10.0,
@@ -163,7 +163,7 @@ algorithm['init_traj_distr'] = {
 
 torque_cost_1 = {
     'type': CostAction,
-    'wu': np.array([1.0 ,1.0, 1.0, 1.0, 1.0, 1.0])*1e-2,
+    'wu': np.array([1.0 ,1.0, 1.0, 1.0, 1.0, 1.0])*1e-4,
 }
 
 state_cost = {
@@ -175,12 +175,12 @@ state_cost = {
     'data_types': {
         JOINT_ANGLES: {
             'target_state': np.array([TARGET_X, TARGET_Z]+[0.0]*7),
-            'wp': np.array([1.0, 0.0] + [0.0]*7)
+            'wp': np.array([1.0, 0.5] + [0.0]*7)
         },
-        #JOINT_VELOCITIES: {
-        #    'target_state': np.array([2.0]+[0.0]*8),
-        #    'wp': np.array([1.0] + [0.0]*8)
-        #},
+        JOINT_VELOCITIES: {
+            'target_state': np.array([1., 1.]+[0.0]*7),
+            'wp': np.array([1.0, 1.0] + [0.0]*7)
+        },
     },
 
 }
@@ -194,7 +194,7 @@ algorithm['gt_cost'] = {
 algorithm['cost'] = {
     #'type': CostIOCQuadratic,
     'type': CostIOCSupervised,
-    'wu': np.ones(6)*1e-2,
+    'wu': np.ones(6)*1e-4,
     'dO': np.sum([SENSOR_DIMS[dtype] for dtype in agent['obs_include']]),
     'T': agent['T'],
     'iterations': 2000,
@@ -232,7 +232,7 @@ algorithm['policy_prior'] = {
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': 20,
-    'verbose_trials': 1,
+    'verbose_trials': 0,
     'verbose_policy_trials': 0,
     'common': common,
     'agent': agent,
@@ -243,5 +243,6 @@ config = {
     #'train_conditions': common['train_conditions'],
     #'test_conditions': common['test_conditions'],
 }
+seed = 4
 
 common['info'] = generate_experiment_info(config)

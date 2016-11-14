@@ -123,7 +123,7 @@ algorithm = {
     'ioc' : 'ICML',
     'demo_distr_empest': True,
     'conditions': common['conditions'],
-    'iterations': 30,
+    'iterations': 10,
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
@@ -223,7 +223,7 @@ config = {
     'demo_agent': demo_agent,
     'gui_on': True,
     'algorithm': algorithm,
-    'record_gif': {
+    'arecord_gif': {
         'gif_dir': os.path.join(common['data_files_dir'], 'gifs'),
         'gifs_per_condition': 1,
         'record_every': 5,
@@ -231,5 +231,6 @@ config = {
         'fps': 40,
     }
 }
+seed = 9
 
 common['info'] = generate_experiment_info(config)

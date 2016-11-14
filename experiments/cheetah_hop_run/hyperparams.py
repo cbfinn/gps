@@ -92,13 +92,13 @@ agent = {
 
 
 MODELS = [
-#half_cheetah_hop(wall_height=0.0, wall_pos=1.8, gravity=1.0),
-#half_cheetah_hop(wall_height=0.2, wall_pos=1.8, gravity=1.0),
-#half_cheetah_hop(wall_height=0.4, wall_pos=1.8, gravity=1.0),
-#half_cheetah_hop(wall_height=0.6, wall_pos=1.8, gravity=1.0),
-#half_cheetah_hop(wall_height=0.8, wall_pos=1.8, gravity=1.0),
+half_cheetah_hop(wall_height=0.0, wall_pos=1.8, gravity=1.0),
+half_cheetah_hop(wall_height=0.2, wall_pos=1.8, gravity=1.0),
+half_cheetah_hop(wall_height=0.4, wall_pos=1.8, gravity=1.0),
+half_cheetah_hop(wall_height=0.6, wall_pos=1.8, gravity=1.0),
+half_cheetah_hop(wall_height=0.8, wall_pos=1.8, gravity=1.0),
 half_cheetah_hop(wall_height=1.0, wall_pos=1.8, gravity=1.0),
-#half_cheetah_hop(wall_height=1.2, wall_pos=1.8, gravity=1.0)
+half_cheetah_hop(wall_height=1.2, wall_pos=1.8, gravity=1.0)
 ]
 
 demo_agent = {
@@ -117,7 +117,7 @@ demo_agent = {
     'meta_include': [],
     'camera_pos': np.array([0., -12., 7., 2., 0., 0.]),
     'record_reward': False,
-    'screenshot_pause': [40,70],
+    #'screenshot_pause': [40,70],
 
     'filter_demos': {
         'type': 'min',
@@ -128,12 +128,13 @@ demo_agent = {
     'dont_save': True,
     'eval_only': True,
     'num_demos': 20,
-    'verbose_trials': 20,
+    'verbose_trials': 0,
     #'algorithm_file': DEMO_DIR + 'data_files/ioc_06_10_algorithm.pkl',
     #'algorithm_file': DEMO_DIR + 'data_files/demo_algorithm.pkl',
-    #'algorithm_file': DEMO_DIR + 'data_files/ioc_algorithm.pkl',
-    'algorithm_file': DEMO_DIR + 'data_files/supervised_algorithm.pkl',
+    'algorithm_file': EXP_DIR + 'data_files/rl_5.pkl',
+    #'algorithm_file': DEMO_DIR + 'data_files/supervised_algorithm.pkl',
 }
+seed = 2
 
 algorithm = {
     'type': AlgorithmTrajOpt,

@@ -13,6 +13,9 @@ import threading
 import time
 import scipy.io
 
+from gps.utility.general_utils import mkdir_p
+
+
 def compare_samples(gps, N, agent_config, three_dim=True, weight_varying=False, experiment='peg'):
     """
     Compare samples between IOC and demo policies and visualize them in a plot.
@@ -680,9 +683,17 @@ def load_alg(alg_file, cond=0):
     controller = algorithm.cur[cond].traj_distr
     return controller
 
-def run_alg(test_agent, alg_file, verbose=True):
+def run_alg(test_agent, alg_file, record_gif=None, verbose=True):
     from gps.sample.sample_list import SampleList
     controller = load_alg(alg_file)
+
+    gif_fname=None
+    gif_fps=None
+    if record_gif is not None:
+        gif_fps = record_gif.get('fps', None)
+        gif_dir = record_gif.get('gif_dir', None)
+        mkdir_p(gif_dir)
+        gif_fname = os.path.join(gif_dir,'test_cond%d.sample%d.gif')
 
     agent_config = test_agent
     agent = agent_config['type'](agent_config)
@@ -706,7 +717,9 @@ def run_alg(test_agent, alg_file, verbose=True):
             demo = agent.sample(
                 controllers_var[i], i,
                 verbose=j < agent_config['verbose_trials'], noisy=True,
-                save = True
+                save = True,
+                record_gif_fps=gif_fps,
+                record_gif=gif_fname % (i, j) if gif_fname else None,
             )
             demos.append(demo)
             demo_idx_conditions.append(i)
