@@ -23,6 +23,13 @@ def safe_get(name, *args, **kwargs):
         tf.get_variable_scope().reuse_variables()
         return tf.get_variable(name, *args, **kwargs)
 
+def init_weights(shape, name=None):
+    weights = np.random.normal(scale=0.01, size=shape).astype('f')
+    return safe_get(name, list(shape), initializer=tf.constant_initializer(weights))
+
+def init_bias(shape, name=None):
+    return safe_get(name, initializer=tf.zeros(shape, dtype='float'))
+
 
 def find_variable(name):
     """ Find a trainable variable in a graph by its name (not including scope)
@@ -248,12 +255,14 @@ def compute_feats(net_input, num_hidden=1, dim_hidden=42):
         layer = net_input
         for i in range(num_hidden-1):
             with tf.variable_scope('layer_%d' % i):
-                W = safe_get('W', (dim_hidden, layer.get_shape()[1].value))
-                b = safe_get('b', (dim_hidden))
+                # W = safe_get('W', shape=(dim_hidden, layer.get_shape()[1].value))
+                # b = safe_get('b', shape=(dim_hidden))
+                W = init_weights((dim_hidden, layer.get_shape()[1].value), name='W')
+                b = init_bias((dim_hidden), name='b')
                 layer = tf.nn.relu(tf.matmul(layer, W, transpose_b=True, name='mul_layer'+str(i)) + b)
 
-        Wfeat = safe_get('Wfeat', (dim_hidden, layer.get_shape()[1].value))
-        bfeat = safe_get('bfeat', (dim_hidden))
+        Wfeat = init_weights((dim_hidden, layer.get_shape()[1].value), name='Wfeat')
+        bfeat = init_bias((dim_hidden), name='bfeat')
         feat = tf.matmul(layer, Wfeat, transpose_b=True, name='mul_feat')+bfeat
 
     if len_shape == 3:
@@ -272,8 +281,10 @@ def nn_forward(net_input, u_input, num_hidden=1, dim_hidden=42, learn_wu=False):
     feat = tf.reshape(feat, [-1, dim_hidden])
 
     with tf.variable_scope('cost_forward'):
-        A = safe_get('Acost', shape=(dim_hidden, dim_hidden))
-        b = safe_get('bcost', shape=(dim_hidden))
+        # A = safe_get('Acost', shape=(dim_hidden, dim_hidden))
+        # b = safe_get('bcost', shape=(dim_hidden))
+        A = init_weights((dim_hidden, dim_hidden), name='Acost')
+        b = init_bias((dim_hidden), name='bcost')
         Ax = tf.matmul(feat, A, transpose_b=True)+b
         AxAx = Ax*Ax
 
@@ -296,11 +307,6 @@ def nn_forward(net_input, u_input, num_hidden=1, dim_hidden=42, learn_wu=False):
     all_costs = all_costs_preu + u_cost
     return all_costs_preu, all_costs
 
-def init_weights(shape, name=None):
-    return safe_get(name, initializer=tf.random_normal(shape, stddev=0.01))
-
-def init_bias(shape, name=None):
-    return safe_get(name, initializer=tf.zeros(shape, dtype='float'))
 
 def conv2d(img, w, b, strides=[1, 1, 1, 1]):
     return tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(img, w, strides=strides, padding='SAME'), b))

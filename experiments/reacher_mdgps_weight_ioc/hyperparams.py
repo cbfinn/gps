@@ -31,7 +31,7 @@ from gps.utility.data_logger import DataLogger
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, RGB_IMAGE, RGB_IMAGE_SIZE, ACTION
 from gps.gui.config import generate_experiment_info
-
+ 
 SENSOR_DIMS = {
     JOINT_ANGLES: 2,
     JOINT_VELOCITIES: 2,
@@ -47,13 +47,14 @@ SUPERVISED_DIR = BASE_DIR + '/../experiments/reacher_mdgps_weight_supervised/'
 
 #CONDITIONS = 1
 TRAIN_CONDITIONS = 6
+SEED = 2
 
 np.random.seed(47)
 DEMO_CONDITIONS = 4 #20
 TEST_CONDITIONS = 0 # 4
-# TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
-# density_range = 10**(np.array([6.25, 6.375, 6.5, 6.625, 6.75, 6.875, 7, 7.125, 7.25, 7.375, 7.5, 7.625, 7.75, 7.875, 8, 8.05, 8.1, 8.15, 8.2, 8.25]))
-density_range = 10**(np.array([7.5, 7.625, 7.75, 7.875, 8, 8.1, 8.125, 8.15, 8.175, 8.2]))
+TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
+# density_range = 10**(np.array([5.25, 5.5, 5.75, 6, 6.25, 6.5, 6.75, 7, 7.25, 7.5, 7.75, 8, 8.1, 8.2, 8.25, 8.3, 8.35, 8.4, 8.45, 8.5]))
+density_range = 10**(np.array([6.25, 6.375, 6.5, 6.625, 6.75, 6.875, 7, 7.125, 7.25, 7.375, 7.5, 7.625, 7.75, 7.875, 8, 8.1, 8.15, 8.2, 8.25, 8.3]))
 TOTAL_CONDITIONS = len(density_range)
 
 demo_pos_body_offset = []
@@ -97,13 +98,8 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    # 'models': [weighted_reacher(finger_density=1e-10),
-    #     weighted_reacher(finger_density=1e-9),
-    #     weighted_reacher(finger_density=1e8),
-    #     weighted_reacher(finger_density=1e9),
-    #     ],
-    # 'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
-    #     weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+    # 'models': [weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+    #     weighted_reacher(arm_density=1e-3, finger_density=1e-3),
     #     weighted_reacher(arm_density=1e5, finger_density=1e5),
     #     weighted_reacher(arm_density=1e6, finger_density=1e6),
     #     weighted_reacher(arm_density=1e7, finger_density=1e7),
@@ -128,7 +124,7 @@ agent = {
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, \
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
-    'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    'camera_pos': np.array([0., 0., 1.5, 0., 0., 0.]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(TOTAL_CONDITIONS)],
     'render': True,
@@ -141,8 +137,8 @@ demo_agent = {
     #     weighted_reacher(finger_density=1e7),
     #     weighted_reacher(finger_density=1e8),
     #     ],
-    'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
-        weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+    'models': [weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+        weighted_reacher(arm_density=1e-3, finger_density=1e-3),
         weighted_reacher(arm_density=1e5, finger_density=1e5),
         weighted_reacher(arm_density=1e6, finger_density=1e6),
         ],
@@ -160,7 +156,7 @@ demo_agent = {
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, \
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
-    'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    'camera_pos': np.array([0., 0., 1.5, 0., 0., 0.]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ demo_pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(DEMO_CONDITIONS)],
     'success_upper_bound': 0.01,
@@ -174,7 +170,7 @@ algorithm = {
     'ioc' : 'ICML',  # IOC STUFF HERE
     'max_ent_traj': 1.0,
     'num_demos': 10,
-    'synthetic_cost_samples': 100,
+    'synthetic_cost_samples': 0,
     'global_cost': True,
     'policy_eval': False,
     'bootstrap': False,
@@ -184,7 +180,7 @@ algorithm = {
     # 'train_conditions': common['train_conditions'],
     # 'test_conditions': common['test_conditions'],
     'iterations': 15,
-    'ioc_maxent_iter': 10,
+    'ioc_maxent_iter': 15,
     'kl_step': 1.0,
     'min_step_mult': 0.2,
     'max_step_mult': 2.0,
@@ -265,11 +261,12 @@ algorithm['cost'] = {
     },
     'T': agent['T'],
     'dO': 16,
-    'iterations': 1000, # TODO - do we need 5k?
+    'iterations': 5000, # TODO - do we need 5k?
     'demo_batch_size': 5,
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
     'approximate_lxx': False,
+    'random_seed': SEED,
 }
 
 #algorithm['init_traj_distr'] = {
@@ -326,6 +323,7 @@ algorithm['policy_opt'] = {
     #'init_iterations': 1000,
     'iterations': 1000,  # was 100
     'weights_file_prefix': common['data_files_dir'] + 'policy',
+    'random_seed': SEED,
 }
 
 algorithm['policy_prior'] = {
@@ -340,13 +338,17 @@ config = {
     'num_samples': 10,
     'verbose_trials': 1,
     'verbose_policy_trials': 1,
+    # 'record_gif': {
+    #     'gif_dir': os.path.join(common['data_files_dir'], 'gifs'),
+    #     'gifs_per_condition': 1,
+    # },
     'common': common,
     'agent': agent,
     'demo_agent': demo_agent,
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
-    'random_seed': 1,
+    'random_seed': SEED,
 }
 
 common['info'] = generate_experiment_info(config)

@@ -47,6 +47,8 @@ DEMO_DIR = BASE_DIR + '/../experiments/reacher_mdgps_weight/'
 #CONDITIONS = 1
 TRAIN_CONDITIONS = 6
 
+SEED = 0
+
 np.random.seed(47)
 DEMO_CONDITIONS = 4 #20
 TEST_CONDITIONS = 0 # 4
@@ -99,8 +101,8 @@ agent = {
     #     weighted_reacher(finger_density=1e8),
     #     weighted_reacher(finger_density=1e9),
     #     ],
-    'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
-        weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+    'models': [weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+        weighted_reacher(arm_density=1e-3, finger_density=1e-3),
         weighted_reacher(arm_density=1e5, finger_density=1e5),
         weighted_reacher(arm_density=1e6, finger_density=1e6),
         weighted_reacher(arm_density=1e7, finger_density=1e7),
@@ -181,7 +183,7 @@ algorithm = {
     # 'train_conditions': common['train_conditions'],
     # 'test_conditions': common['test_conditions'],
     'iterations': 15,
-    'ioc_maxent_iter': 10,
+    'ioc_maxent_iter': 15,
     'kl_step': 1.0,
     'min_step_mult': 0.2,
     'max_step_mult': 2.0,
@@ -272,7 +274,8 @@ algorithm['cost'] = {
     'gt_cost': algorithm['gt_cost'],
     'agent': demo_agent,
     # 'mono_reg_weight': 100.0,
-    'lr': 1e-2,
+    'lr': 1e-3,
+    'random_seed': SEED,
 }
 
 #algorithm['init_traj_distr'] = {
@@ -329,6 +332,7 @@ algorithm['policy_opt'] = {
     #'init_iterations': 1000,
     'iterations': 1000,  # was 100
     'weights_file_prefix': common['data_files_dir'] + 'policy',
+    'random_seed': SEED,
 }
 
 algorithm['policy_prior'] = {
@@ -349,7 +353,7 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
-    'random_seed': 1,
+    'random_seed': SEED,
 }
 
 common['info'] = generate_experiment_info(config)

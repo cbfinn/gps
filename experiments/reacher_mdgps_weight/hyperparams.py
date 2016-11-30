@@ -38,9 +38,10 @@ SENSOR_DIMS = {
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
+SEED = 2
 
 np.random.seed(47)
-TRAIN_CONDITIONS = 6 # 4
+TRAIN_CONDITIONS = 4 # 6
 TEST_CONDITIONS = 0 # 9
 TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
 pos_body_offset = []
@@ -56,9 +57,9 @@ common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
-    # 'data_files_dir': EXP_DIR + 'data_files_arm/',
-    # 'data_files_dir': EXP_DIR + 'data_files_oracle/',
-    'data_files_dir': EXP_DIR + 'data_files_arm_oracle/',
+    'data_files_dir': EXP_DIR + 'data_files_arm_2/',
+    # 'data_files_dir': EXP_DIR + 'data_files_arm_oracle/',
+    # 'data_files_dir': EXP_DIR + 'data_files_arm_oracle_4/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': TOTAL_CONDITIONS,
@@ -70,33 +71,18 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentMuJoCo,
     # 'filename': './mjc_models/reacher_img.xml',
-    # 'models': [weighted_reacher(finger_density=1e-8),
-    #     weighted_reacher(finger_density=1e-7),
-    #     weighted_reacher(finger_density=1e7),
-    #     weighted_reacher(finger_density=1e8),
-    #     ],
-    # 'models': [weighted_reacher(finger_density=1e-10),
-    #     weighted_reacher(finger_density=1e-9),
-    #     weighted_reacher(finger_density=1e8),
-    #     weighted_reacher(finger_density=1e9),
-    #     ],
-    # 'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
-    #     weighted_reacher(arm_density=1e-4, finger_density=1e-4),
-    #     weighted_reacher(arm_density=1e6, finger_density=1e6),
-    #     weighted_reacher(arm_density=1e7, finger_density=1e7),
-    #     ],
-    # 'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
-    #     weighted_reacher(arm_density=1e-4, finger_density=1e-4),
-    #     weighted_reacher(arm_density=1e5, finger_density=1e5),
-    #     weighted_reacher(arm_density=1e6, finger_density=1e6),
-    #     ],
-    'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
-        weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+    'models': [weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+        weighted_reacher(arm_density=1e-3, finger_density=1e-3),
         weighted_reacher(arm_density=1e5, finger_density=1e5),
         weighted_reacher(arm_density=1e6, finger_density=1e6),
-        weighted_reacher(arm_density=1e7, finger_density=1e7),
-        weighted_reacher(arm_density=1e8, finger_density=1e8),
         ],
+    # 'models': [weighted_reacher(arm_density=1e-4, finger_density=1e-4),
+    #     weighted_reacher(arm_density=1e-3, finger_density=1e-3),
+    #     weighted_reacher(arm_density=1e5, finger_density=1e5),
+    #     weighted_reacher(arm_density=1e6, finger_density=1e6),
+    #     weighted_reacher(arm_density=1e7, finger_density=1e7),
+    #     weighted_reacher(arm_density=1e8, finger_density=1e8),
+    #     ],
     'x0': np.zeros(4),
     'dt': 0.05,
     'substeps': 5,
@@ -110,7 +96,7 @@ agent = {
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, \
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
-    'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    'camera_pos': np.array([0., 0., 1.5, 0., 0., 0.]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[i], np.array([0., 0., 0.])])
         for i in range(TOTAL_CONDITIONS)],
     'render':True,
@@ -119,18 +105,18 @@ agent = {
 test_agent = {
     'type': AgentMuJoCo,
     # 'filename': './mjc_models/reacher_img.xml',
-    # 'models': [weighted_reacher(finger_density=1e-51),
-    #     weighted_reacher(finger_density=1e-50),
-    #     weighted_reacher(finger_density=1e10),
-    #     weighted_reacher(finger_density=1e11),
-    #     ],
-    'models': [weighted_reacher(arm_density=1.0, finger_density=1.0),
-        weighted_reacher(arm_density=1e1, finger_density=1e1),
-        weighted_reacher(arm_density=1e6, finger_density=1e6),
-        weighted_reacher(arm_density=1e7, finger_density=1e7),
-        weighted_reacher(arm_density=1e8, finger_density=1e8),
-        weighted_reacher(arm_density=1e9, finger_density=1e9),
+    'models': [weighted_reacher(finger_density=1e-51),
+        weighted_reacher(finger_density=1e-50),
+        weighted_reacher(finger_density=1e10),
+        weighted_reacher(finger_density=1e11),
         ],
+    # 'models': [weighted_reacher(arm_density=1.0, finger_density=1.0),
+    #     weighted_reacher(arm_density=1e1, finger_density=1e1),
+    #     weighted_reacher(arm_density=1e6, finger_density=1e6),
+    #     weighted_reacher(arm_density=1e7, finger_density=1e7),
+    #     weighted_reacher(arm_density=1e8, finger_density=1e8),
+    #     weighted_reacher(arm_density=1e9, finger_density=1e9),
+    #     ],
     'x0': np.zeros(4),
     'dt': 0.05,
     'substeps': 5,
@@ -144,7 +130,7 @@ test_agent = {
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, \
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
-    'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    'camera_pos': np.array([0., 0., 1.5, 0., 0., 0.]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[i], np.array([0., 0., 0.])])
         for i in range(TOTAL_CONDITIONS)],
     'render':True,
@@ -236,6 +222,7 @@ algorithm['policy_opt'] = {
     # 'init_iterations': 1000,
     'iterations': 1000,  # was 100
     'weights_file_prefix': common['data_files_dir'] + 'policy',
+    'random_seed': SEED,
 }
 
 algorithm['init_traj_distr'] = {
@@ -283,7 +270,7 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
-    'random_seed': 1,
+    'random_seed': SEED,
 }
 
 common['info'] = generate_experiment_info(config)

@@ -589,7 +589,7 @@ def main():
         algorithm_filenames = [f for f in data_filenames if f.startswith(algorithm_prefix)]
         current_algorithm = sorted(algorithm_filenames, reverse=True)[0]
         current_itr = int(current_algorithm[len(algorithm_prefix):len(algorithm_prefix)+2])
-
+        current_itr = 9
         gps = GPSMain(hyperparams.config, test_pol=True)
         if hyperparams.config['gui_on']:
             if type(test_policy_N) is int:
@@ -619,7 +619,7 @@ def main():
             agent_config = gps._hyperparams['agent']
             # compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
             # manual_compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
-            manual_compare_samples_curve_hard(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
+            manual_compare_samples_curve(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
     elif visualize:
         gps = GPSMain(hyperparams.config)
         agent_config = gps._hyperparams['agent']

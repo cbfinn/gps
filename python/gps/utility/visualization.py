@@ -343,6 +343,7 @@ def manual_compare_samples_curve(gps, N, agent_config, three_dim=True, weight_va
     pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
     # pol_iter = 13
     algorithm_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
+    # algorithm_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_09.pkl')
     algorithm_sup = gps.data_logger.unpickle(gps._hyperparams['common']['supervised_exp_dir'] + 'data_files_arm/algorithm_itr_%02d' % pol_iter + '.pkl')
     algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_arm/algorithm_itr_09.pkl') # Assuming not using 4 policies
     algorithm_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_arm_oracle/algorithm_itr_09.pkl')
@@ -394,6 +395,10 @@ def manual_compare_samples_curve(gps, N, agent_config, three_dim=True, weight_va
     success_rate_sup = np.mean(successes[1], axis=0)
     success_rate_demo = np.mean(successes[2], axis=0)
     success_rate_oracle = np.mean(successes[3], axis=0)
+    print "ioc mean: " + repr(success_rate_ioc.mean())
+    print "sup mean: " + repr(success_rate_sup.mean())
+    print "demo mean: " + repr(success_rate_demo.mean())
+    print "oracle mean: " + repr(success_rate_oracle.mean())
     print "ioc: " + repr(success_rate_ioc)
     print "sup: " + repr(success_rate_sup)
     print "demo: " + repr(success_rate_demo)
@@ -480,11 +485,23 @@ def manual_compare_samples_curve_hard(gps, N, agent_config, three_dim=True, weig
     ioc_conditions = [np.log10(agent_config['density_range'][i])-4.0 \
                             for i in xrange(10)]
 
-    success_rate_ioc = np.array([1., 1., 1., 1., 1., 1., 0.75, 0.8, 0.65, 0.4])
-    success_rate_sup = np.array([1., 1., 1., 1., 1., 0.8, 0.35, 0.15, 0., 0.])
-    success_rate_demo = np.array([1., 0.9, 0.8, 0.2, 0., 0., 0., 0., 0., 0.])
-    success_rate_oracle = np.array([1., 1., 1., 0.95, 0.95, 0.4, 0.25, 0.05, 0., 0.])
+    success_rate_ioc = np.array(([1., 1., 1., 1., 1., 1., 1., 1., 0.75, 0.35], [1., 1., 1., 0.95, 0.75, 0.25, 0.05, 0., 0., 0.], \
+                                [0.7, 0.55, 0.4, 0.55, 0.9, 1., 1., 1., 1., 1.]))
+    success_rate_sup = np.array(([0.5, 0.45, 0.4, 0.15, 0., 0., 0., 0., 0., 0.], [0.85, 0.9, 1., 1., 1., 1., 1., 1., \
+                                0.95, 0.3], [0.15, 0.05, 0., 0., 0., 0., 0., 0., 0., 0.]))
+    success_rate_demo = np.array(([1., 1., 1., 1., 1., 0.9, 0.85, 0.85, 0.75, 0.65], [1., 1., 1., 1., 0.7, 0.4, 0.25, 0.1,\
+                                0., 0.], [1., 0.8, 0.45, 0.2, 0.15, 0.05, 0.05, 0.1 , 0., 0.]))
+    success_rate_oracle = np.array(([ 1., 1., 1., 1., 0.9, 0.85, 0.7, 0.6, 0.05,  0.], [1., 1., 1., 1., 1., 1., 0.9, 0.85,\
+                                0.1, 0.], [1., 1., 1., 1., 1., 1., 0.95, 0.95, 0.3, 0.]))
 
+    success_rate_ioc_mean = np.mean(success_rate_ioc, axis=0)
+    success_rate_sup_mean = np.mean(success_rate_sup, axis=0)
+    success_rate_demo_mean = np.mean(success_rate_demo, axis=0)
+    success_rate_oracle_mean = np.mean(success_rate_oracle, axis=0)
+    success_rate_ioc_std = np.std(success_rate_ioc, axis=0)
+    success_rate_sup_std = np.std(success_rate_sup, axis=0)
+    success_rate_demo_std = np.std(success_rate_demo, axis=0)
+    success_rate_oracle_std = np.std(success_rate_oracle, axis=0)
 
     from matplotlib.patches import Rectangle
 
@@ -513,10 +530,15 @@ def manual_compare_samples_curve_hard(gps, N, agent_config, three_dim=True, weig
         #     subplt.plot(only_demo_zip[0], [x-0.5 for x in only_demo_zip[1]], c='r', marker='v')
         # else:
         #     subplt.plot([], [], c='r', marker='v')
-        subplt.plot(ioc_conditions, 100*success_rate_ioc, '-r', linewidth=6)
-        subplt.plot(ioc_conditions, 100*success_rate_sup, '--g', linewidth=6)
-        subplt.plot(ioc_conditions, 100*success_rate_demo, ':b', linewidth=6)
-        subplt.plot(ioc_conditions, 100*success_rate_oracle, '-.k', linewidth=3)
+        # subplt.plot(ioc_conditions, 100*success_rate_ioc, '-r', linewidth=6)
+        # subplt.plot(ioc_conditions, 100*success_rate_sup, '--g', linewidth=6)
+        # subplt.plot(ioc_conditions, 100*success_rate_demo, ':b', linewidth=6)
+        # subplt.plot(ioc_conditions, 100*success_rate_oracle, '-.k', linewidth=3)
+        subplt.errorbar(ioc_conditions, 100*success_rate_ioc_mean, yerr=100*success_rate_ioc_std, ecolor='r', fmt='-r', linewidth=6, elinewidth=2)
+        subplt.errorbar(ioc_conditions, 100*success_rate_sup_mean, yerr=100*success_rate_sup_std, ecolor='g', fmt='--g', linewidth=6, elinewidth=2)
+        subplt.errorbar(ioc_conditions, 100*success_rate_demo_mean, yerr=100*success_rate_demo_std, ecolor='b', fmt=':b', linewidth=6, elinewidth=2)
+        subplt.errorbar(ioc_conditions, 100*success_rate_oracle_mean, yerr=100*success_rate_oracle_std, ecolor='k', fmt='-.k', linewidth=3, elinewidth=2)
+        subplt.set_ylim([0, 100])
         ax = plt.gca()
         if experiment == 'peg':
             ax.add_patch(Rectangle((-0.1, -0.1), 0.2, 0.2, fill = False, edgecolor = 'blue')) # peg
@@ -564,9 +586,9 @@ def visualize_samples(gps, N, agent_config, experiment='reacher'):
     pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
     # pol_iter = 13
     algorithm_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
-    algorithm_sup = gps.data_logger.unpickle(gps._hyperparams['common']['supervised_exp_dir'] + 'data_files_arm/algorithm_itr_%02d' % pol_iter + '.pkl')
-    algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_arm/algorithm_itr_09.pkl') # Assuming not using 4 policies
-    algorithm_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_arm_oracle/algorithm_itr_09.pkl')
+    algorithm_sup = gps.data_logger.unpickle(gps._hyperparams['common']['supervised_exp_dir'] + 'data_files_arm_2/algorithm_itr_%02d' % pol_iter + '.pkl')
+    algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_arm_2/algorithm_itr_09.pkl') # Assuming not using 4 policies
+    algorithm_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + 'data_files_arm_oracle_2/algorithm_itr_09.pkl')
     M = agent_config['conditions']
     pol_ioc = algorithm_ioc.policy_opt.policy
     pol_sup = algorithm_sup.policy_opt.policy
@@ -579,38 +601,49 @@ def visualize_samples(gps, N, agent_config, experiment='reacher'):
     ioc_conditions = [np.array([np.log10(agent_config['density_range'][i]), 0.]) \
                         for i in xrange(M)]
     print "Number of testing conditions: %d" % M
+
+    from gps.utility.general_utils import mkdir_p
+
+    if 'record_gif' in gps._hyperparams:
+        gif_config = gps._hyperparams['record_gif']
+        gif_fps = gif_config.get('fps', None)
+        gif_dir = gif_config.get('gif_dir', gps._hyperparams['common']['data_files_dir'])
+        mkdir_p(gif_dir)
     for i in xrange(M):
         # Gather demos.
         for j in xrange(N):
             for k in xrange(len(samples)):
+                gif_name = os.path.join(gif_dir, 'pol%d_cond%d.gif' % (k, i))
                 sample = agent.sample(
                     policies[k], i,
-                    verbose=(i < gps._hyperparams['verbose_trials']), noisy=True, record_image=True
+                    # verbose=(i < gps._hyperparams['verbose_trials']), noisy=True, record_image=True
+                    verbose=(i < gps._hyperparams['verbose_trials']), noisy=True, record_image=True, \
+                    record_gif=gif_name, record_gif_fps=gif_fps
                     )
                 samples[k].append(sample)
 
-    from gps.sample.sample_list import SampleList
+    # from gps.sample.sample_list import SampleList
 
-    sample_list_ioc = [SampleList(sample_ioc) for sample_ioc in samples[0]]
-    sample_list_demo = [SampleList(sample_demo) for sample_demo in samples[1]]
-    sample_list_oracle = [SampleList(sample_oracle) for sample_oracle in samples[2]]
-    sample_list_sup = [SampleList(sample_sup) for sample_sup in samples[3]]
-    gps.data_logger.pickle(
-            gps._data_files_dir + 'ioc_policy_sample_list.pkl',
-            copy.copy(sample_list_ioc)
-        )
-    gps.data_logger.pickle(
-            gps._data_files_dir + 'demo_policy_sample_list.pkl',
-            copy.copy(sample_list_demo)
-        )
-    gps.data_logger.pickle(
-            gps._data_files_dir + 'oracle_policy_sample_list.pkl',
-            copy.copy(sample_list_oracle)
-        )
-    gps.data_logger.pickle(
-            gps._data_files_dir + 'sup_policy_sample_list.pkl',
-            copy.copy(sample_list_sup)
-        )
+    # sample_list_ioc = [SampleList(sample_ioc) for sample_ioc in samples[0]]
+    # sample_list_demo = [SampleList(sample_demo) for sample_demo in samples[1]]
+    # sample_list_oracle = [SampleList(sample_oracle) for sample_oracle in samples[2]]
+    # sample_list_sup = [SampleList(sample_sup) for sample_sup in samples[3]]
+    # gps.data_logger.pickle(
+    #         gps._data_files_dir + 'ioc_policy_sample_list.pkl',
+    #         copy.copy(sample_list_ioc)
+    #     )
+    # gps.data_logger.pickle(
+    #         gps._data_files_dir + 'demo_policy_sample_list.pkl',
+    #         copy.copy(sample_list_demo)
+    #     )
+    # gps.data_logger.pickle(
+    #         gps._data_files_dir + 'oracle_policy_sample_list.pkl',
+    #         copy.copy(sample_list_oracle)
+    #     )
+    # gps.data_logger.pickle(
+    #         gps._data_files_dir + 'sup_policy_sample_list.pkl',
+    #         copy.copy(sample_list_sup)
+    #     )
 
 def get_comparison_hyperparams(hyperparam_file, itr):
     """ 

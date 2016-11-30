@@ -31,8 +31,10 @@ class CostIOCTF(Cost):
         self.demo_batch_size = self._hyperparams['demo_batch_size']
         self.sample_batch_size = self._hyperparams['sample_batch_size']
         self.approximate_lxx = self._hyperparams['approximate_lxx']
-
+        
+        tf.set_random_seed(self._hyperparams['random_seed'])
         self.graph = tf.Graph()
+
         with self.graph.as_default():
             self._init_solver()
 
@@ -151,7 +153,6 @@ class CostIOCTF(Cost):
         d_sampler = BatchSampler([demoO, demo_torque_norm, d_log_iw])
         s_sampler = BatchSampler([sampleO, sample_torque_norm, s_log_iw])
 
-        tot_ioc_loss = 0
         for i, (d_batch, s_batch) in enumerate(
                 izip(d_sampler.with_replacement(batch_size=self.demo_batch_size), \
                     s_sampler.with_replacement(batch_size=self.sample_batch_size))):
@@ -162,10 +163,8 @@ class CostIOCTF(Cost):
                                       sample_obs = s_batch[0],
                                       sample_torque_norm = s_batch[1],
                                       sample_iw = s_batch[2])
-            tot_ioc_loss += ioc_loss
-            if i>0 and i%200 == 0:
-                LOGGER.debug("Iteration %d loss: %f", i, tot_ioc_loss/200)
-                tot_ioc_loss = 0
+            if i%200 == 0:
+                LOGGER.debug("Iteration %d loss: %f", i, ioc_loss)
 
             if i > self._hyperparams['iterations']:
                 break
@@ -214,6 +213,7 @@ class CostIOCTF(Cost):
 
     def run(self, targets, **feeds):
         with self.graph.as_default():
+            tf.set_random_seed(self._hyperparams['random_seed'])
             feed_dict = {self.input_dict[k]:v for (k,v) in feeds.iteritems()}
             result = self.session.run(targets, feed_dict=feed_dict)
         return result

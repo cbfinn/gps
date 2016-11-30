@@ -149,7 +149,7 @@ class AlgorithmMDGPS(Algorithm):
                     for sample in self.cur[m].sample_list:
                         sample.update_features(self.cost) # assumes a single cost.
                 if self.cur[0].traj_info.dynamics.prior._max_samples > len(self.cur[0].sample_list):
-                    print LOGGER.warn('refitting dynamics -- updating prior with the same set of samples')
+                    print LOGGER.warning('refitting dynamics -- updating prior with the same set of samples')
                 with Timer('UpdateDynamics'):
                     self._update_dynamics()  # recompute dynamics with new state space.
                 """

@@ -115,6 +115,28 @@ class CostIOCSupervised(CostIOCTF):
             if i > self._hyperparams['init_iterations']:
                 break
 
+        import matplotlib.pyplot as plt
+        test_costs = []
+        T = train_costs.shape[1]
+        nTest = len(test_samples)
+        for n in range(nTest):
+            l, _, _, _, _, _ = self.gt_cost.eval(test_samples[n])
+            test_costs.append(l)
+        test_costs = np.array(test_costs)
+
+        supervised_test = []
+        for n in range(nTest):
+            l, _, _, _, _, _ = self.eval(test_samples[n])
+            supervised_test.append(l)
+        supervised_test = np.array(supervised_test)
+
+        plt.figure()
+        linestyles = ['-', ':', 'dashed']
+        for i in range(4):
+            plt.plot(np.arange(T), test_costs[i], color='red', linestyle=linestyles[i % len(linestyles)])
+            plt.plot(np.arange(T), 2 * supervised_test[i], color='blue', linestyle=linestyles[i % len(linestyles)])
+        plt.show()
+
 
     def update_multiobj(self, demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw,
                         sup_samples, sup_cost_labels, itr=-1):

@@ -201,7 +201,7 @@ class CostIOCVisionTF(Cost):
         network_arch_params['mono_reg_weight'] = self._hyperparams['mono_reg_weight']
         network_arch_params['gp_reg_weight'] = self._hyperparams['gp_reg_weight']
         network_arch_params['learn_wu'] = self._hyperparams['learn_wu']
-
+        network_arch_params['random_seed'] = self._hyperparams['random_seed']
 
         x_idx, img_idx, i = [], [], 0
         for sensor in self._hyperparams['network_params']['obs_include']:
