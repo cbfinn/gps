@@ -45,8 +45,10 @@ class GPSMain(object):
         self._hyperparams = config
         self._conditions = config['common']['conditions']
         if 'train_conditions' in config['common']:
-            self._train_idx = config['common']['train_conditions']
-            self._test_idx = config['common']['test_conditions']
+            self._train_idx = range(config['common']['train_conditions'])
+            self._test_idx = range(config['common']['test_conditions'])
+            if not self._test_idx:
+                self._test_idx = self._train_idx
         else:
             self._train_idx = range(self._conditions)
             config['common']['train_conditions'] = config['common']['conditions']
@@ -424,11 +426,6 @@ class GPSMain(object):
             if 'no_sample_logging' in self._hyperparams['common']:
                 return
 
-        # if itr == self.algorithm._hyperparams['iterations'] - 1 or itr == self.algorithm._hyperparams['ioc_maxent_iter'] - 1: # Just save the last iteration of the algorithm file
-        # if ((itr+1) % 5 == 0) or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
-        log_data = itr>0 and (itr%5 == 0) or (itr==self._hyperparams['iterations']-1)
-        # TODO: still save samples for every iteration?
-        # if log_data:
         if True:
             with Timer('saving algorithm file'):
                 self.algorithm.demo_policy = None
@@ -492,7 +489,6 @@ def main():
                     help='evaluate the ground truth cost of the last policy')
     parser.add_argument('-x', '--extendtesting', metavar='N', type=int,
                     help='testing the policy performance on a larger domain')
-    # TODO: make these subparsers
 
     args = parser.parse_args()
 
@@ -589,7 +585,6 @@ def main():
         algorithm_filenames = [f for f in data_filenames if f.startswith(algorithm_prefix)]
         current_algorithm = sorted(algorithm_filenames, reverse=True)[0]
         current_itr = int(current_algorithm[len(algorithm_prefix):len(algorithm_prefix)+2])
-        current_itr = 9
         gps = GPSMain(hyperparams.config, test_pol=True)
         if hyperparams.config['gui_on']:
             if type(test_policy_N) is int:
@@ -612,14 +607,11 @@ def main():
         else:
             gps.test_policy(itr=current_itr, N=test_policy_N, testing=args.extendtesting, eval_pol_gt=args.eval)
     elif measure:
-        for i in xrange(1):
-            random.seed(i)
-            np.random.seed(i)
-            gps = GPSMain(hyperparams.config)
-            agent_config = gps._hyperparams['agent']
-            # compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
-            # manual_compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
-            manual_compare_samples_curve(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
+        gps = GPSMain(hyperparams.config)
+        agent_config = gps._hyperparams['agent']
+        # compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
+        # manual_compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
+        manual_compare_samples_curve(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
     elif visualize:
         gps = GPSMain(hyperparams.config)
         agent_config = gps._hyperparams['agent']

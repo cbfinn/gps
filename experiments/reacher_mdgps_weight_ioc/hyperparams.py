@@ -11,17 +11,14 @@ from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_action import CostAction
-# from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.cost.cost_ioc_tf import CostIOCTF
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_sum import CostSum
-#from gps.algorithm.cost.cost_gym import CostGym
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy.lin_gauss_init import init_lqr, init_pd, init_demo
-# from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
 from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
@@ -47,50 +44,41 @@ SUPERVISED_DIR = BASE_DIR + '/../experiments/reacher_mdgps_weight_supervised/'
 
 #CONDITIONS = 1
 TRAIN_CONDITIONS = 6
-SEED = 2
+SEED = 0
 
 np.random.seed(47)
 DEMO_CONDITIONS = 4 #20
 TEST_CONDITIONS = 0 # 4
 TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
-# density_range = 10**(np.array([5.25, 5.5, 5.75, 6, 6.25, 6.5, 6.75, 7, 7.25, 7.5, 7.75, 8, 8.1, 8.2, 8.25, 8.3, 8.35, 8.4, 8.45, 8.5]))
-density_range = 10**(np.array([6.25, 6.375, 6.5, 6.625, 6.75, 6.875, 7, 7.125, 7.25, 7.375, 7.5, 7.625, 7.75, 7.875, 8, 8.1, 8.15, 8.2, 8.25, 8.3]))
-TOTAL_CONDITIONS = len(density_range)
+density_range = [1e-4, 1e-3, 1e5, 1e6, 1e7, 1e8] # range of density of arm and finger tip
+demo_density_range = [1e-4, 1e-3, 1e5, 1e6] # make sure that this should be same as the range trained for demo
 
 demo_pos_body_offset = []
 for _ in range(DEMO_CONDITIONS):
-    # demo_pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
     demo_pos_body_offset.append(np.array([-0.2, 0.2, 0.0])) # fix the offset for weight-varying
 
 pos_body_offset = []
 for _ in range(TOTAL_CONDITIONS):
     pos_body_offset.append(np.array([-0.2, 0.2, 0.0])) # fix the offset for weight-varying
-    # pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
 
-#pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
-#pos_body_offset.append(np.array([0.05, 0.2, 0.0]))
-#demo_pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
     # 'data_files_dir': EXP_DIR + 'data_files/',
-    'data_files_dir': EXP_DIR + 'data_files_arm/',
+    'data_files_dir': EXP_DIR + 'data_files_arm_2/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_exp_dir': DEMO_DIR,
     'supervised_exp_dir': SUPERVISED_DIR,
-    # 'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
-    'demo_controller_file': DEMO_DIR + 'data_files_arm/algorithm_itr_09.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'nn_demo': True, # Use neural network demonstrations. For experiment only
-    # 'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
-    # 'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
-    'LG_demo_file': os.path.join(EXP_DIR, 'data_files_arm', 'demos_LG.pkl'),
-    'NN_demo_file': os.path.join(EXP_DIR, 'data_files_arm', 'demos_NN.pkl'),
+    'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
+    'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
     'conditions': TOTAL_CONDITIONS,
-    # 'train_conditions': range(TRAIN_CONDITIONS),
-    # 'test_conditions': range(TRAIN_CONDITIONS, TOTAL_CONDITIONS),
+    'train_conditions': range(TRAIN_CONDITIONS),
+    'test_conditions': range(TRAIN_CONDITIONS, TOTAL_CONDITIONS),
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -98,13 +86,6 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    # 'models': [weighted_reacher(arm_density=1e-4, finger_density=1e-4),
-    #     weighted_reacher(arm_density=1e-3, finger_density=1e-3),
-    #     weighted_reacher(arm_density=1e5, finger_density=1e5),
-    #     weighted_reacher(arm_density=1e6, finger_density=1e6),
-    #     weighted_reacher(arm_density=1e7, finger_density=1e7),
-    #     weighted_reacher(arm_density=1e8, finger_density=1e8),
-    #     ],
     'models': [weighted_reacher(arm_density=density_range[i], finger_density=density_range[i]) \
                 for i in xrange(common['conditions'])],
     'density_range': density_range,
@@ -132,18 +113,10 @@ agent = {
 
 demo_agent = {
     'type': AgentMuJoCo,
-    # 'models': [weighted_reacher(finger_density=1e-8),
-    #     weighted_reacher(finger_density=1e-7),
-    #     weighted_reacher(finger_density=1e7),
-    #     weighted_reacher(finger_density=1e8),
-    #     ],
-    'models': [weighted_reacher(arm_density=1e-4, finger_density=1e-4),
-        weighted_reacher(arm_density=1e-3, finger_density=1e-3),
-        weighted_reacher(arm_density=1e5, finger_density=1e5),
-        weighted_reacher(arm_density=1e6, finger_density=1e6),
-        ],
+    'models': [weighted_reacher(arm_density=demo_density_range[i], finger_density=demo_density_range[i]) \
+                for i in xrange(DEMO_CONDITIONS)],
     'exp_name': 'reacher',
-    'x0': np.zeros(4)*4,
+    'x0': np.zeros(4),
     'dt': 0.05,
     'substeps': 5,
     'pos_body_offset': demo_pos_body_offset,
@@ -177,8 +150,6 @@ algorithm = {
     'init_demo_policy': False,
     'demo_var_mult': 1.0,
     'conditions': common['conditions'],  # NON IOC STUFF HERE
-    # 'train_conditions': common['train_conditions'],
-    # 'test_conditions': common['test_conditions'],
     'iterations': 15,
     'ioc_maxent_iter': 15,
     'kl_step': 1.0,
@@ -193,24 +164,6 @@ algorithm = {
         for i in range(TOTAL_CONDITIONS)],
 }
 
-
-#algorithm = {
-#    'type': AlgorithmTrajOpt,
-#    'ioc' : 'ICML',
-#    'max_ent_traj': 1.0,
-#    'conditions': common['conditions'],
-#    'kl_step': 0.5,
-#    'min_step_mult': 0.05,
-#    'max_step_mult': 2.0,
-#    'demo_cond': demo_agent['conditions'],
-#    'num_demos': 2,
-#    'demo_var_mult': 1.0,
-#    'synthetic_cost_samples': 100,
-#    'iterations': 15,
-#    'plot_dir': EXP_DIR,
-#    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
-#                            for i in xrange(CONDITIONS)],
-#}
 
 PR2_GAINS = np.array([1.0, 1.0])
 torque_cost_1 = [{
@@ -235,19 +188,6 @@ algorithm['gt_cost'] = [{
     'weights': [2.0, 1.0],
 }  for i in range(common['conditions'])][0]
 
-# algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
-#     'type': CostIOCNN,
-#     'wu': 200 / PR2_GAINS,
-#     'T': agent['T'],
-#     'dO': 16,
-#     'iterations': 1000,
-#     'demo_batch_size': 5,
-#     'sample_batch_size': 5,
-#     'ioc_loss': algorithm['ioc'],
-#     'smooth_reg_weight': 0.1,
-#     'mono_reg_weight': 100.0,
-#     'learn_wu': False,
-# }
 
 algorithm['cost'] = {
     'type': CostIOCTF,
@@ -269,17 +209,6 @@ algorithm['cost'] = {
     'random_seed': SEED,
 }
 
-#algorithm['init_traj_distr'] = {
-#    'type': init_demo,
-#    'init_gains':  1.0 / PR2_GAINS,
-#    'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-#    'init_var': 5.0,
-#    'stiffness': 1.0,
-##    'stiffness_vel': 0.5,
-#    'final_weight': 50.0,
-#    'dt': agent['dt'],
-#    'T': agent['T'],
-#}
 
 algorithm['init_traj_distr'] = {
     'type': init_lqr,
@@ -300,7 +229,7 @@ algorithm['dynamics'] = {
         'type': DynamicsPriorGMM,
         'max_clusters': 30,
         'min_samples_per_cluster': 40,
-        'max_samples': 10, #len(common['conditions']),
+        'max_samples': 10,
     },
 }
 
@@ -319,8 +248,6 @@ algorithm['policy_opt'] = {
         'sensor_dims': SENSOR_DIMS,
     },
     'network_model': example_tf_network,
-    #'fc_only_iterations': 5000,
-    #'init_iterations': 1000,
     'iterations': 1000,  # was 100
     'weights_file_prefix': common['data_files_dir'] + 'policy',
     'random_seed': SEED,
