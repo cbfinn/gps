@@ -66,8 +66,7 @@ common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
-    # 'data_files_dir': EXP_DIR + 'data_files/',
-    'data_files_dir': EXP_DIR + 'data_files_arm_2/',
+    'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_exp_dir': DEMO_DIR,
@@ -132,7 +131,7 @@ demo_agent = {
     'camera_pos': np.array([0., 0., 1.5, 0., 0., 0.]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ demo_pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(DEMO_CONDITIONS)],
-    'success_upper_bound': 0.01,
+    'success_upper_bound': 0.05,
     'render': True,
 }
 

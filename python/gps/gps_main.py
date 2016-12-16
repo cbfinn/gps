@@ -22,13 +22,11 @@ sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
 from gps.gui.gps_training_gui import GPSTrainingGUI, NUM_DEMO_PLOTS
 from gps.utility.data_logger import DataLogger, open_zip
 from gps.sample.sample_list import SampleList
-# from gps.utility.generate_demo import GenDemo
 from gps.utility.general_utils import disable_caffe_logs, Timer, mkdir_p
 from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
                                     measure_distance_and_success_peg, get_demos, extract_samples
-from gps.utility.visualization import get_comparison_hyperparams, compare_experiments, compare_samples, \
-                                        manual_compare_samples, manual_compare_samples_curve, \
-                                        manual_compare_samples_curve_hard, visualize_samples
+from gps.utility.visualization import get_comparison_hyperparams, compare_experiments, \
+                                        compare_samples_curve, visualize_samples
 
 
 class GPSMain(object):
@@ -134,8 +132,6 @@ class GPSMain(object):
                         pol_sample_lists = self._take_policy_samples(idx=self._train_idx)
                     self._log_data(itr, traj_sample_lists, pol_sample_lists)
                 else:
-                    #for i in range(self._hyperparams['num_samples']):
-                    #    self._take_sample(itr, cond, i)
                     self._log_data(itr, traj_sample_lists)
         self._end()
         return None
@@ -240,8 +236,6 @@ class GPSMain(object):
                         ('pol_sample_itr_%02d.pkl' % itr_load))
                 else:
                     pol_sample_lists = None
-                #self.gui.update(itr_load, self.algorithm, self.agent,
-                #    traj_sample_lists, pol_sample_lists)
                 self.gui.set_status_text(
                     ('Resuming training from algorithm state at iteration %d.\n' +
                     'Press \'go\' to begin.') % itr_load)
@@ -609,9 +603,7 @@ def main():
     elif measure:
         gps = GPSMain(hyperparams.config)
         agent_config = gps._hyperparams['agent']
-        # compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
-        # manual_compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
-        manual_compare_samples_curve(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
+        compare_samples_curve(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
     elif visualize:
         gps = GPSMain(hyperparams.config)
         agent_config = gps._hyperparams['agent']

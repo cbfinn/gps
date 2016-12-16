@@ -69,14 +69,14 @@ common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
-    'data_files_dir': EXP_DIR + 'data_files_arm/',
+    'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'demo_exp_dir': DEMO_DIR,
-    'demo_controller_file': DEMO_DIR + 'data_files_arm/algorithm_itr_09.pkl',
+    'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_09.pkl',
     'nn_demo': True, # Use neural network demonstrations. For experiment only
-    'LG_demo_file': os.path.join(EXP_DIR, 'data_files_arm', 'demos_LG.pkl'),
-    'NN_demo_file': os.path.join(EXP_DIR, 'data_files_arm', 'demos_NN.pkl'),
+    'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
+    'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
     'conditions': TOTAL_CONDITIONS,
     'train_conditions': range(TRAIN_CONDITIONS),
     'test_conditions': range(TRAIN_CONDITIONS, TOTAL_CONDITIONS),
@@ -133,7 +133,7 @@ demo_agent = {
     'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ demo_pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(DEMO_CONDITIONS)],
-    'success_upper_bound': 0.01,
+    'success_upper_bound': 0.05,
     'render': True,
 }
 

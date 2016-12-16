@@ -70,11 +70,6 @@ class GenDemo(object):
             """
             # Load the algorithm
 
-            # algorithm_file = self._algorithm_files_dir # This should give us the optimal controller. Maybe set to 'controller_itr_%02d.pkl' % itr_load will be better?
-            # self.algorithm = pickle.load(open(algorithm_file)) # Just one demo algorithm for now.
-            # if self.algorithm is None:
-            #     print("Error: cannot find '%s.'" % algorithm_file)
-            #     os._exit(1) # called instead of sys.exit(), since t
             self.algorithms = self.load_algorithms()
             self.algorithm = self.algorithms[0]
 
@@ -83,9 +78,7 @@ class GenDemo(object):
             self.agent = agent_config['type'](agent_config)
 
             # Roll out the demonstrations from controllers
-            # var_mult = self._hyperparams['algorithm']['demo_var_mult']
-            var_mult = 1.0
-            # T = self.algorithm.T
+            var_mult = self._hyperparams['algorithm']['demo_var_mult']
             T = self.algorithms[0].T
             demos = []
             demo_idx_conditions = []  # Stores conditions for each demo
@@ -113,20 +106,7 @@ class GenDemo(object):
                         demo_idx_conditions.append(i)
             else:
                 all_pos_body_offsets = []
-                # Extract the neural network policy.
-
-                # self.algorithm.num_policies = self.algorithm._hyperparams.get('num_policies', 1)
-                # for j in xrange(self.algorithm.num_policies):
-                # # for j in xrange(1):
-                #     if self.algorithm._hyperparams['multiple_policy']:
-                #         pol = self.algorithm.policy_opts[j].policy
-                #     else:
-                #         pol = self.algorithm.policy_opt.policy
-                #     pol.chol_pol_covar *= var_mult
-
-                # for i in range(M / self.algorithm.num_policies * j, M / self.algorithm.num_policies * (j + 1)):
-                # for i in xrange(M):
-                    # Gather demos.
+                # Gather demos.
                 for a in xrange(len(self.algorithms)):
                     pol = self.algorithms[a].policy_opt.policy
                     for i in xrange(M / len(self.algorithms) * a, M / len(self.algorithms) * (a + 1)):
@@ -136,7 +116,6 @@ class GenDemo(object):
                                 verbose=(j < self._hyperparams['verbose_trials']), noisy=True
                                 )
                             demos.append(demo)
-                            #import pdb; pdb.set_trace()
                             demo_idx_conditions.append(i)
 
             # Filter failed demos
@@ -183,33 +162,20 @@ class GenDemo(object):
             elif agent_config['type']==AgentMuJoCo and agent_config.get('filename', False) == './mjc_models/pr2_arm3d.xml':
                 target_position = agent_config['target_end_effector'][:3]
                 dists_to_target = np.zeros(M*N)
-                # dists_to_target = np.zeros(len(demos)*N)
-                # dists_to_target = [np.zeros(M*N) for i in xrange(4)]
                 good_indices = []
                 failed_indices = []
-                success_thresh = 0.05 # For pointmass
-                # M = len(demos)/N
+                success_thresh = agent_config['success_upper_bound']
                 for i in xrange(M):
-                # for i in xrange(len(demos)):
                     if type(agent_config['target_end_effector']) is list:
                         target_position = agent_config['target_end_effector'][i][:3]
                     else:
                         target_position = agent_config['target_end_effector'][:3]
                     for j in xrange(N):
                         demo_end_effector = demos[i*N + j].get(END_EFFECTOR_POINTS)
-                        # demo_end_effector = demos[k][i*N + j].get(END_EFFECTOR_POINTS)
-                        # NOTE - there was a bug here!!!
-                        # dists_to_target[i*N+j] = np.amin(np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
-                        # Just choose the last time step since it may become unstable after achieving the minimum point.
                         dists_to_target[i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
-                        # dists_to_target[k][i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
                         if dists_to_target[i*N + j] > success_thresh:
                             failed_indices.append(i)
-                        # if dists_to_target[i*N + j] <= agent_config['success_upper_bound']:
-                        #     good_indices.append(i)
                 good_indices = [i for i in xrange(M) if i not in failed_indices]
-                # good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
-                import pdb; pdb.set_trace()
                 good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
                 self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
                 filtered_demos, demo_conditions, failed_conditions = []
@@ -217,7 +183,6 @@ class GenDemo(object):
                     filtered_demos.append(demos[i])
                     demo_conditions.append(all_pos_body_offsets[i])
                 for i in xrange(M):
-                # for i in xrange(len(demos)):
                     if i not in good_indices:
                         failed_conditions.append(all_pos_body_offsets[i])
                 shuffle(filtered_demos)
@@ -233,32 +198,19 @@ class GenDemo(object):
                 ax = Axes3D(fig)
                 demo_conditions_zip = zip(*demo_conditions)
                 failed_conditions_zip = zip(*failed_conditions)
-                # subplt = plt.subplot()
                 ax.scatter(demo_conditions_zip[0], demo_conditions_zip[1], demo_conditions_zip[2], c='g', marker='o')
                 ax.scatter(failed_conditions_zip[0], failed_conditions_zip[1], failed_conditions_zip[2], c='r', marker='x')
-                # ax.scatter([-0.05, -0.05, .05, .05], [-0.05, 0.05, -.05, .05], [-0.05, 0.05, .05, .05], c='b', marker='*')
-                # subplt.plot(demo_conditions_x, demo_conditions_y, 'go')
-                # subplt.plot(failed_conditions_x, failed_conditions_y, 'rx')
-                # ax = plt.gca()
-                # ax.add_patch(Rectangle((-0.1, -0.1), 0.2, 0.2, fill = False, edgecolor = 'blue'))
-                # box = subplt.get_position()
-                # subplt.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
-                # subplt.legend(['demo_cond', 'failed_badmm'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
-                #                     shadow=True, ncol=2)
                 box = ax.get_position()
                 ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height*0.9])
                 ax.legend(['demo_cond', 'failed_demo'], loc='upper center', bbox_to_anchor=(0.5, -0.05), \
                                     shadow=True, ncol=2)
                 plt.title("Distribution of demo conditions")
-                # plt.xlabel('width')
-                # plt.ylabel('length')
                 plt.savefig(self._data_files_dir + 'distribution_of_demo_conditions_MaxEnt_z_0.05.png')
                 plt.close()
             elif agent_config['type']==AgentMuJoCo and \
                 ('reacher' in agent_config.get('exp_name', []) or 'pointmass' in agent_config.get('exp_name', [])):
                 dists = []; failed_indices = []
-                # success_thresh = 0.10 # for weight-varying experiment
-                success_thresh = 0.05 # for reacher
+                success_thresh = agent_config['success_upper_bound'] # for reacher
                 for m in range(M):
                     if type(agent_config['target_end_effector']) is list:
                         target_position = agent_config['target_end_effector'][m][:3]
@@ -272,7 +224,6 @@ class GenDemo(object):
                       if dists[index] >= success_thresh: #agent_config['success_upper_bound']:
                         failed_indices.append(index)
                 good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
-                #import pdb; pdb.set_trace()
                 self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
                 filtered_demos = []
                 filtered_demo_conditions = []
@@ -297,7 +248,7 @@ class GenDemo(object):
                 copy.copy(demo_store)
             )
 
-
+        # Maybe useful to linearize the neural net policy before taking demos
         def linearize_policy(self, samples, cond):
             policy_prior = self.algorithms[cond]._hyperparams['policy_prior']
             init_policy_prior = policy_prior['type'](policy_prior)

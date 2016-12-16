@@ -322,18 +322,12 @@ class Algorithm(object):
         new_mult = predicted_impr / (2.0 * max(1e-4,
                                                predicted_impr - actual_impr))
         new_mult = max(0.1, min(5.0, new_mult))
-        # if self._hyperparams['ioc_maxent_iter'] == -1 or self.iteration_count < self._hyperparams['ioc_maxent_iter']:
         new_step = max(
             min(new_mult * self.cur[m].step_mult,
                 self._hyperparams['max_step_mult']),
             self._hyperparams['min_step_mult']
         )
-        # else:
-        #     new_step = max(
-        #         min(new_mult * self.cur[m].step_mult,
-        #             self._hyperparams['max_step_mult_no_ioc']),
-        #         self._hyperparams['min_step_mult_no_ioc']
-        #     )
+        
         self.cur[m].step_mult = new_step
 
         if new_mult > 1:
