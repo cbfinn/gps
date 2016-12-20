@@ -178,7 +178,6 @@ fk_cost_1 = [{
     'l2': 10.0,
     'alpha': 1e-5,
     'evalnorm': evall1l2term,
-    # 'use_jacobian': False,
 } for i in range(common['conditions'])]
 
 algorithm['gt_cost'] = [{
@@ -191,7 +190,6 @@ algorithm['gt_cost'] = [{
 algorithm['cost'] = {
     'type': CostIOCTF,
     'wu': 2000.0 / PR2_GAINS,
-    # 'wu' : 0.0,
     'network_params': {
         'obs_include': agent['obs_include'],
         'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
@@ -264,6 +262,7 @@ config = {
     'num_samples': 10,
     'verbose_trials': 1,
     'verbose_policy_trials': 1,
+    # Uncomment below if want to take videos.
     # 'record_gif': {
     #     'gif_dir': os.path.join(common['data_files_dir'], 'gifs'),
     #     'gifs_per_condition': 1,

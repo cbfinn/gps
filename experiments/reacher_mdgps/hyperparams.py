@@ -43,8 +43,6 @@ TEST_CONDITIONS = 0 # 9
 TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
 pos_body_offset = []
 np.random.seed(13)
-#pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
-#pos_body_offset.append(np.array([0.05, 0.2, 0.0]))
 for _ in range(TOTAL_CONDITIONS):
     pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
 
@@ -124,33 +122,6 @@ algorithm['cost'] = [{
     'weights': [2.0, 1.0],
 }  for i in range(common['conditions'])]
 
-
-# Cost function
-#torque_cost = {
-    #'type': CostAction,
-    #'wu': np.ones(2),
-#}
-#
-
-#state_cost = {
-    #'type': CostState,
-    #'data_types': [END_EFFECTOR_POINTS],
-    #'A' : np.c_[np.eye(3), -np.eye(3)],
-    #'l1': 1.0,
-    #'l2': 0.0,
-    #'alpha': 0.0,
-    #'evalnorm': evall1l2term,
-#}
-
-#algorithm['cost'] = {
-    #'type': CostSum,
-    #'costs': [torque_cost, state_cost],
-    #'weights': [2.0, 1.0],
-#}
-
-#algorithm['cost'] = {
-#    'type': CostGym,
-#}
 
 algorithm['policy_opt'] = {
     'type': PolicyOptCaffe,

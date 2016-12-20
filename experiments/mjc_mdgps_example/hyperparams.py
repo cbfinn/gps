@@ -12,7 +12,7 @@ from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
-from gps.algorithm.cost.cost_utils import RAMP_FINAL_ONLY, evall1l2term
+from gps.algorithm.cost.cost_utils import RAMP_FINAL_ONLY
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
@@ -41,9 +41,15 @@ EXP_DIR = BASE_DIR + '/../experiments/mjc_mdgps_example/'
 common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
-    #'conditions': 4,
-    'conditions': 9,
+    'experiment_dir': EXP_DIR,
+    'data_files_dir': EXP_DIR + 'data_files/',
+    'target_filename': EXP_DIR + 'target.npz',
+    'log_filename': EXP_DIR + 'log.txt',
+    'conditions': 4,
 }
+
+if not os.path.exists(common['data_files_dir']):
+    os.makedirs(common['data_files_dir'])
 
 agent = {
     'type': AgentMuJoCo,
@@ -53,25 +59,9 @@ agent = {
     'dt': 0.05,
     'substeps': 5,
     'conditions': common['conditions'],
-    'randomly_sample_bodypos': False,
-    'randomly_sample_x0': False,
-    'sampling_range_bodypos': [np.array([-0.1,-0.1, 0.0]), np.array([0.1, 0.1, 0.0])], # Format is [lower_lim, upper_lim]
-    'prohibited_ranges_bodypos':[[None, None, None, None]],
     'pos_body_idx': np.array([1]),
-    # 'pos_body_offset': [np.array([-0.08, -0.08, 0])],
-    # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0.1, 0]),
-    #                     np.array([0.1, 0.1, 0]), np.array([0.1, -0.1, 0])],
-    'pos_body_offset': [np.array([-0.05, -0.05, -0.05]), np.array([-0.05, 0.05, 0.05]),
-                        np.array([-0.05, -0.05, 0.05]), np.array([0.0,0.0,0.0]),
-                        np.array([-0.05,0.05,-0.05]), np.array([0.05,0.05,-0.05]),
-                        np.array([0.05,-0.05,-0.05]),
-                        np.array([0.05, -0.05, 0.05]), np.array([0.05, 0.05, 0.05])],
-    # 'pos_body_offset': [np.array([-0.1, -0.1, 0]), np.array([-0.1, 0, 0]), np.array([-0.1, 0.1, 0]),
-    #                     np.array([0, -0.1, 0]), np.array([0, 0, 0]), np.array([0, 0.1, 0]),
-    #                     np.array([0.1, 0.1, 0]), np.array([0.1, 0, 0]), np.array([0.1, -0.1, 0])],
-    # 'pos_body_offset': [np.array([-0.05, -0.05, 0]), np.array([-0.05, 0, 0]), np.array([-0.05, 0.05, 0]),
-    #             np.array([0, -0.05, 0]), np.array([0, 0, 0]), np.array([0, 0.05, 0]),
-    #             np.array([0.05, 0.05, 0]), np.array([0.05, 0, 0]), np.array([0.05, -0.05, 0])],
+    'pos_body_offset': [np.array([-0.08, -0.08, 0]), np.array([-0.08, 0.08, 0]),
+                        np.array([0.08, 0.08, 0]), np.array([0.08, -0.08, 0])],
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
@@ -79,19 +69,16 @@ agent = {
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS,
                     END_EFFECTOR_POINT_VELOCITIES],
     'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
-    'render': False,
 }
 
 algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
     'iterations': 12,
-    'max_ent_traj': 1.0,
-    'kl_step': 2.0, #1.0
+    'kl_step': 1.0,
     'min_step_mult': 0.5,
-    'max_step_mult': 2.0, # 3.0
+    'max_step_mult': 3.0,
     'policy_sample_mode': 'replace',
-    'target_end_effector': np.array([0.0, 0.3, -0.5, 0.0, 0.3, -0.2]),
 }
 
 algorithm['init_traj_distr'] = {
@@ -118,7 +105,6 @@ fk_cost = {
     'l1': 0.1,
     'l2': 10.0,
     'alpha': 1e-5,
-    'evalnorm': evall1l2term,
 }
 
 # Create second cost function for last step only.
@@ -131,13 +117,12 @@ final_cost = {
     'l2': 0.0,
     'alpha': 1e-5,
     'wp_final_multiplier': 10.0,
-    'evalnorm': evall1l2term,
 }
 
 algorithm['cost'] = {
     'type': CostSum,
     'costs': [torque_cost, fk_cost, final_cost],
-    'weights': [1000.0, 1000.0, 1000.0],
+    'weights': [1.0, 1.0, 1.0],
 }
 
 algorithm['dynamics'] = {
@@ -169,11 +154,14 @@ algorithm['policy_prior'] = {
 }
 
 config = {
+    'gui_on': True,
     'iterations': algorithm['iterations'],
     'num_samples': 5,
-    'verbose_trials': 0,
+    'verbose_trials': 1,
     'verbose_policy_trials': 1,
+    'common': common,
     'agent': agent,
-    'gui_on': True,
+    'algorithm': algorithm,
 }
 
+common['info'] = generate_experiment_info(config)

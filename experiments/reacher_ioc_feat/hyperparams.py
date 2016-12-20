@@ -61,7 +61,6 @@ np.random.seed(14)
 demo_pos_body_offset = []
 for _ in range(DEMO_CONDITIONS):
     demo_pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1, 0]))
-#pos_body_offset = demo_pos_body_offset[:CONDITIONS]
 
 np.random.seed(42)
 pos_body_offset = []
@@ -100,7 +99,6 @@ agent = {
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET,
                       END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, IMAGE_FEAT],  # TODO - may want to include fp velocities.
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, IMAGE_FEAT],
-    # 'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, RGB_IMAGE],
     'target_idx': np.array(list(range(3,6))),
     'meta_include': [RGB_IMAGE_SIZE],
     'image_width': IMAGE_WIDTH,
@@ -170,18 +168,6 @@ algorithm['init_traj_distr'] = {
     'T': agent['T'],
 }
 
-# This doesn't work unless features are initialized properly.
-#algorithm['init_traj_distr'] = {
-#    'type': init_demo,
-#    'init_gains':  1.0 / PR2_GAINS,
-#    'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-#    'init_var': 5.0,
-#    'stiffness': 1.0,
-#    'stiffness_vel': 0.5,
-#    'final_weight': 50.0,
-#    'dt': agent['dt'],
-#    'T': agent['T'],
-#}
 
 torque_cost_1 = [{
     'type': CostAction,
@@ -204,26 +190,6 @@ algorithm['gt_cost'] = [{
     'costs': [torque_cost_1[i], fk_cost_1[i]],
     'weights': [2.0, 1.0],
 }  for i in range(common['conditions'])]
-
-#algorithm['cost'] = {
-#    'type': CostIOCVisionTF,
-#    'wu': 2000 / PR2_GAINS,
-#    'network_params': {
-#        'obs_include': agent['obs_include'],
-#        'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, IMAGE_FEAT],
-#        'obs_image_data': [],
-#        'image_width': IMAGE_WIDTH,
-#        'image_height': IMAGE_HEIGHT,
-#        'image_channels': IMAGE_CHANNELS,
-#        'sensor_dims': SENSOR_DIMS,
-#    },
-#    'T': agent['T'],
-#    'iterations': 1000,  # TODO - we might want to make fc only training here too.
-#    'demo_batch_size': 5,  # are we going to run out of memory? # also should we init from policy feat?
-#    'sample_batch_size': 5,
-#    'ioc_loss': algorithm['ioc'],
-#    'fc_only_iters': 15,  # Train fc only.
-#}
 
 
 algorithm['cost'] = {

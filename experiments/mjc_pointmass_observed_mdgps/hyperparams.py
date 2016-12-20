@@ -49,7 +49,6 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': 5,
-    # 'conditions': 1,
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -64,9 +63,7 @@ agent = {
                obstacle_pointmass(target_pos, wall_center=-0.25, hole_height=0.3, control_limit=20),
                ],
     'condition_data': np.array([[0], [0.15], [-0.15], [0.25], [-0.25]]),
-    #'filename': './mjc_models/particle2d.xml',
     'x0': np.array([-1., 0., 0., 0.]),
-    # 'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
@@ -79,7 +76,7 @@ agent = {
     'camera_pos': np.array([1., 0., 8., 0., 0., 0.]),
 }
 
-#"""
+
 algorithm = {
     'type': AlgorithmMDGPS,
     'conditions': common['conditions'],
@@ -93,34 +90,7 @@ algorithm = {
     'plot_dir': EXP_DIR,
     'target_end_effector': target_pos,
 }
-#"""
 
-"""
-algorithm = {
-    'type': AlgorithmBADMM,
-    'conditions': common['conditions'],
-    'plot_dir': EXP_DIR,
-    'max_ent_traj': 1.0,
-    'target_end_effector': target_pos,
-    'iterations': 15,
-    'lg_step_schedule': np.array([1e-4, 1e-3, 1e-2, 1e-1]),
-    'policy_dual_rate': 0.1,
-    'ent_reg_schedule': np.array([1e-3, 1e-3, 1e-2, 1e-1]),
-    'fixed_lg_step': 3,
-    'kl_step': 1.0,
-    'init_pol_wt': 0.01,
-    'min_step_mult': 0.1,
-    'max_step_mult': 3.0,
-    'sample_decrease_var': 0.05,
-    'sample_increase_var': 0.1,
-    'exp_step_increase': 2.0,
-    'exp_step_decrease': 0.5,
-    'exp_step_upper': 0.5,
-    'exp_step_lower': 1.0,
-    'max_policy_samples': 6,
-    'policy_sample_mode': 'add',
-}
-"""
 
 algorithm['init_traj_distr'] = {
     'type': init_pd,
@@ -171,15 +141,6 @@ algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
 }
 
-# algorithm['policy_opt'] = {
-#     'type': PolicyOptCaffe,
-#     'weights_file_prefix': EXP_DIR + 'policy',
-#     'iterations': 10000,
-#     'network_arch_params': {
-#         'n_layers': 2,
-#         'dim_hidden': [20],
-#     },
-# }
 
 algorithm['policy_opt'] = {
     'type': PolicyOptTf,
@@ -203,7 +164,6 @@ config = {
     'iterations': algorithm['iterations'],
     'num_samples': 10,
     'verbose_trials': 1,
-    #'verbose_policy_trials': 1,
     'common': common,
     'agent': agent,
     'gui_on': True,

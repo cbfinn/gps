@@ -40,8 +40,8 @@ EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 SEED = 0
 
 np.random.seed(47)
-TRAIN_CONDITIONS = 4 # 4
-TEST_CONDITIONS = 0 # 9
+TRAIN_CONDITIONS = 4
+TEST_CONDITIONS = 0
 TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
 pos_body_offset = []
 np.random.seed(13)
@@ -159,8 +159,6 @@ algorithm['policy_opt'] = {
         'sensor_dims': SENSOR_DIMS,
     },
     'network_model': example_tf_network,
-    # 'fc_only_iterations': 5000,
-    # 'init_iterations': 1000,
     'iterations': 1000,  # was 100
     'weights_file_prefix': common['data_files_dir'] + 'policy',
     'random_seed': SEED,
@@ -182,7 +180,7 @@ algorithm['dynamics'] = {
         'type': DynamicsPriorGMM,
         'max_clusters': 30,
         'min_samples_per_cluster': 40,
-        'max_samples': 10, #len(common['train_conditions']),
+        'max_samples': 10,
     },
 }
 

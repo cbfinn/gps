@@ -112,7 +112,6 @@ class AgentMuJoCo(Agent):
             for i in range(self._hyperparams['conditions']):
                 self._world.append(mjcpy.MJCWorld(filename[i]))
                 self._model.append(self._world[i].get_model())
-                # import pdb; pdb.set_trace()
 
         for i in range(self._hyperparams['conditions']):
             for j in range(len(self._hyperparams['pos_body_idx'][i])):

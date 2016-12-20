@@ -15,7 +15,6 @@ from gps.algorithm.cost.cost_ioc_nn import CostIOCNN
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_sum import CostSum
-#from gps.algorithm.cost.cost_gym import CostGym
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
@@ -39,10 +38,8 @@ SENSOR_DIMS = {
 
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
-#DEMO_DIR = BASE_DIR + '/../experiments/reacher_mdgps/'
 DEMO_DIR = BASE_DIR + '/../experiments/reacher/'
 
-#CONDITIONS = 1
 TRAIN_CONDITIONS = 9
 
 np.random.seed(47)
@@ -58,9 +55,6 @@ pos_body_offset = []
 for _ in range(TOTAL_CONDITIONS):
     pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
 
-#pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
-#pos_body_offset.append(np.array([0.05, 0.2, 0.0]))
-#demo_pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
 
 
 common = {
@@ -72,7 +66,6 @@ common = {
     'log_filename': EXP_DIR + 'log.txt',
     'demo_exp_dir': DEMO_DIR,
     'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_14.pkl',
-    #'demo_controller_file': DEMO_DIR + 'data_files_maxent_9cond_z_0.05_1/algorithm_itr_09.pkl',
     'nn_demo': False, # Use neural network demonstrations. For experiment only
     'conditions': TOTAL_CONDITIONS,
     'train_conditions': range(TRAIN_CONDITIONS),
@@ -158,24 +151,6 @@ algorithm = {
 }
 
 
-#algorithm = {
-#    'type': AlgorithmTrajOpt,
-#    'ioc' : 'ICML',
-#    'max_ent_traj': 1.0,
-#    'conditions': common['conditions'],
-#    'kl_step': 0.5,
-#    'min_step_mult': 0.05,
-#    'max_step_mult': 2.0,
-#    'demo_cond': demo_agent['conditions'],
-#    'num_demos': 2,
-#    'demo_var_mult': 1.0,
-#    'synthetic_cost_samples': 100,
-#    'iterations': 15,
-#    'plot_dir': EXP_DIR,
-#    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
-#                            for i in xrange(CONDITIONS)],
-#}
-
 PR2_GAINS = np.array([1.0, 1.0])
 torque_cost_1 = [{
     'type': CostAction,
@@ -212,17 +187,6 @@ algorithm['cost'] = {  # TODO - make vision cost and emp. est derivatives
     'learn_wu': False,
 }
 
-#algorithm['init_traj_distr'] = {
-#    'type': init_demo,
-#    'init_gains':  1.0 / PR2_GAINS,
-#    'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-#    'init_var': 5.0,
-#    'stiffness': 1.0,
-##    'stiffness_vel': 0.5,
-#    'final_weight': 50.0,
-#    'dt': agent['dt'],
-#    'T': agent['T'],
-#}
 
 algorithm['init_traj_distr'] = {
     'type': init_lqr,

@@ -286,8 +286,6 @@ class IOCLossMod(caffe.Layer):
 
         for i in xrange(self.num_demos):
             demo_bottom_diff[i, :] = (1.0 / self.num_demos) - (dc[i] / self._partition)
-            #max_val = max(-np.sum(bottom[0].data[i,:]), 2*self._d_log_iw[i])
-            #Z_diff += np.exp(-2.0*0.5*np.sum(bottom[0].data[i,:])-max_val) / (self._partition * Z_tilde*np.exp(2*self._d_log_iw[i])-max_val)
             cost_i = 0.5*np.sum(bottom[0].data[i,:])
             logq_i = d_log_q[i][0]
             max_val = max(-cost_i, logq_i)
@@ -317,8 +315,6 @@ class SigmoidMPFLoss(caffe.Layer):
 
     def sigmoid(self, input):
         # input is a numpy array
-        #max_val = (-input).max()
-        #result = np.exp(-max_val) / (np.exp(-max_val) + np.exp(-input-max_val))
         result = 1.0 / (1.0 + np.exp(-input))
         if np.isnan(result).any():
           import pdb; pdb.set_trace()
@@ -497,5 +493,3 @@ class LogMPFLoss(caffe.Layer):
                 sample_bottom_diff[i, t] = -0.5 * 0.5 * np.sum(pairs[:, i]) / self._pairs_sum
         bottom[0].diff[...] = demo_bottom_diff * loss_weight
         bottom[1].diff[...] = sample_bottom_diff * loss_weight
-
-

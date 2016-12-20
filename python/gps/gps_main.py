@@ -176,19 +176,9 @@ class GPSMain(object):
             all_dists.append(dists)
         print [np.mean(dist) for dist in all_dists]
 
-        import pdb; pdb.set_trace()
-
         for cond in range(len(self._train_idx)):
             for i in range(N):
                 self.agent.visualize_sample(traj_sample_lists[cond][i], cond)
-
-        # Code for looking at demo policy.
-        # demo_controller = self.data_logger.unpickle(self._hyperparams['common']['demo_controller_file'][0])
-        # demo_policy = demo_controller.policy_opt.policy
-        # sample = self.agent.sample(demo_policy, 0)
-        # self.agent.visualize_sample(sample, 0)
-
-        import pdb; pdb.set_trace()
 
         pol_sample_lists = self._take_policy_samples(N, testing, self._test_idx)
         self.data_logger.pickle(

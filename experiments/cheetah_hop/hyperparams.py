@@ -53,8 +53,6 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': CONDITIONS,
-    #'train_conditions': range(CONDITIONS),
-    #'test_conditions': range(CONDITIONS),
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -67,8 +65,6 @@ agent = {
     'dt': 0.05,
     'substeps': 5,
     'conditions': common['conditions'],
-    #'train_conditions': common['train_conditions'],
-    #'test_conditions': common['test_conditions'],
     'T': 200,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],
@@ -81,18 +77,10 @@ agent = {
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
-    #'train_conditions': common['train_conditions'],
-    #'test_conditions': common['test_conditions'],
     'iterations': 40,
     'kl_step': 1.0,
     'min_step_mult': 0.1,
     'max_step_mult': 10.0,
-    #'policy_sample_mode': 'replace',
-    #'num_clusters': 0,
-    #'cluster_method': 'kmeans',
-    #'sample_on_policy': True,
-    #'max_ent_mult': 1E-2,
-    #'max_ent_decay': 0.3,
 }
 
 algorithm['policy_opt'] = {
@@ -123,10 +111,6 @@ state_cost = {
             'target_state': np.array([3.0]+[0.0]*8),
             'wp': np.array([1.0] + [0.0]*8)
         },
-        #JOINT_VELOCITIES: {
-        #    'target_state': np.array([5.0]+[0.0]*8),
-        #    'wp': np.array([1.0] + [0.0]*8)
-        #},
     },
 
 }
@@ -171,8 +155,6 @@ config = {
         'gif_dir': os.path.join(common['data_files_dir'], 'gifs'),
         'gifs_per_condition': 2,
     }
-    #'train_conditions': common['train_conditions'],
-    #'test_conditions': common['test_conditions'],
 }
 
 common['info'] = generate_experiment_info(config)

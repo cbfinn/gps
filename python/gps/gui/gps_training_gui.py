@@ -317,17 +317,8 @@ class GPSTrainingGUI(object):
                 fps = []
                 for sample in samples:
                     fp = sample.get(IMAGE_FEAT, 0)
-                    #fp = fp.reshape(-1, 2).T.reshape(-1)
                     fps.append(fp)
-                    #fp1 = sample.get(IMAGE_FEAT, 1)
-                    #fp2 = sample.get(IMAGE_FEAT, 2)
-                    #img = sample.get(RGB_IMAGE, 0)
                 self._update_feature_visualization(img, fps)
-                    #images = sample.get(RGB_IMAGE)
-                #for image in images:
-                   # img.append(image.reshape(size).transpose((2, 1, 0)))
-                   # feature_points = algorithm.policy_opt.fp_vals
-                   # idx = np.random.randint(len(img))
 
         costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
         if algorithm._hyperparams['ioc']:
@@ -367,9 +358,6 @@ class GPSTrainingGUI(object):
             condition_titles += ' | %8s %9s %-7d' % ('', 'condition', m)
             itr_data_fields  += ' | %8s %8s %8s' % ('  cost  ', '  step  ', 'entropy ')
 
-            #if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
-            #    condition_titles += ' %8s' % ('')
-            #    itr_data_fields  += ' %8s' % ('kl_div')
             if 'target_end_effector' in algorithm._hyperparams:
                 condition_titles += ' %8s' % ('')
                 itr_data_fields  += ' %8s' % ('mean_dist')
@@ -393,7 +381,6 @@ class GPSTrainingGUI(object):
         pol_costs = [-123 for _ in range(algorithm.M)]
         if pol_sample_lists is not None:
             test_idx = algorithm._hyperparams['test_conditions']
-            # import pdb; pdb.set_trace()
             # pol_sample_lists is a list of singletons
             samples = [sl[0] for sl in pol_sample_lists]
             if not eval_pol_gt:
@@ -419,9 +406,6 @@ class GPSTrainingGUI(object):
             entropy = 2*np.sum(np.log(np.diagonal(algorithm.prev[m].traj_distr.chol_pol_covar,
                     axis1=1, axis2=2)))
             itr_data += ' | %8.2f %8.2f %8.2f' % (cost, step, entropy)
-            #if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
-            #    itr_data += ' %8.2f' % (algorithm.kl_div[itr][m])
-
             if pol_sample_lists is None:
                 if algorithm.dists_to_target:
                     if itr in algorithm.dists_to_target and algorithm.dists_to_target[itr]:

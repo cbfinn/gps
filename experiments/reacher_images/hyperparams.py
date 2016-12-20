@@ -11,10 +11,8 @@ from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_fk import CostFK
-#from gps.algorithm.cost.cost_fk_blocktouch import CostFKBlock
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_sum import CostSum
-#from gps.algorithm.cost.cost_gym import CostGym
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
@@ -54,11 +52,6 @@ PR2_GAINS = np.array([1.0, 1.0])
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
-#CONDITIONS = 20
-#np.random.seed(14)
-#pos_body_offset = []
-#for _ in range(CONDITIONS):
-#    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1, 0]))
 
 # restrict to right triangle of space.
 CONDITIONS = 5
@@ -67,18 +60,6 @@ pos_body_offset = [np.array([0.1,-0.1,0.0]),
                    np.array([0.1,0.3,0.0]),
                    np.array([0.0,0.2,0.0]),
                    np.array([0.0,0.0,0.0])]
-
-# extrapolations
-#TEST_CONDITIONS = 5
-#test_pos_body_offset = [np.array([-0.1, 0.2, 0.0]),
-#                        np.array([-0.1, 0.0, 0.0]),
-#                        np.array([0.0, 0.3, 0.0]),
-#                        np.array([0.0, -0.1, 0.0]),
-#                        np.array([0.1, 0.1, 0.0])]
-#
-#all_pos_body_offset = pos_body_offset + test_pos_body_offset
-#TOTAL_CONDITIONS = TRAIN_CONDITIONS + TEST_CONDITIONS
-
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \

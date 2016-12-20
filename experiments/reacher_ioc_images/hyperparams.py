@@ -53,11 +53,7 @@ BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 DEMO_DIR = BASE_DIR + '/../experiments/reacher_images/'
 
-#CONDITIONS = 4
-#np.random.seed(14)
-#pos_body_offset = []
-#for _ in range(CONDITIONS):
-#    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1, 0]))
+
 DEMO_CONDITIONS = 15
 demo_pos_body_offset = [np.array([0.1,-0.1,0.0]),
                    np.array([0.1,0.1,0.0]),
@@ -86,12 +82,7 @@ pos_body_offset = [np.array([-0.1, 0.2, 0.0]),
                    np.array([0.0,0.0,0.0]),
                    np.array([0.0,0.2,0.0]), # 7 training conditions that get 6/7 success, compared to 5/7 demo policy success
                    ]
-                   #np.array([0.0,0.2, 0.0]),
-                   #np.array([0.0,0.1, 0.0]),
-                   #np.array([0.0,0.0, 0.0]),
-                   #np.array([-0.1,0.1, 0.0]),
-                   #np.array([0.1,0.0,0.0]),
-                   #np.array([0.1,0.2,0.0]), # 13 conditions that gets 12/13 success, compared to 9/13 demo policy success
+
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -214,18 +205,6 @@ algorithm['init_traj_distr'] = {
     'T': agent['T'],
 }
 
-# This doesn't work unless features are initialized properly.
-#algorithm['init_traj_distr'] = {
-#    'type': init_demo,
-#    'init_gains':  1.0 / PR2_GAINS,
-#    'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-#    'init_var': 5.0,
-#    'stiffness': 1.0,
-#    'stiffness_vel': 0.5,
-#    'final_weight': 50.0,
-#    'dt': agent['dt'],
-#    'T': agent['T'],
-#}
 
 torque_cost_1 = [{
     'type': CostAction,

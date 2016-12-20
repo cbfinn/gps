@@ -53,8 +53,6 @@ common = {
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': 4,
     'demo_conditions': 4,
-    # 'conditions': 1,
-
     'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
     'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
     'nn_demo': False,
@@ -72,9 +70,7 @@ agent = {
                obstacle_pointmass(target_pos, wall_center=-0.5, hole_height=0.3, control_limit=50),
                ],
     'condition_data': np.array([[0.4], [-0.4], [0.5], [-0.5]]),
-    #'filename': './mjc_models/particle2d.xml',
     'x0': np.array([-1., 0., 0., 0.]),
-    # 'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['conditions'],
@@ -98,7 +94,6 @@ demo_agent = {
     'filename': '',
     'condition_data': np.array([[0], [0.2], [-0.2], [0.3], [-0.3]]),
     'x0': np.array([-1., 0., 0., 0.]),
-    # 'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['demo_conditions'],
@@ -114,7 +109,6 @@ demo_agent = {
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
-    #'sample_on_policy': True,
     'iterations': 15,
     'kl_step': 1.0,
     'min_step_mult': 0.1,
@@ -162,7 +156,6 @@ algorithm['gt_cost'] = {
 }
 
 algorithm['cost'] = {
-    #'type': CostIOCQuadratic,
     'type': CostIOCTF,
     'wu': np.array([1e-5, 1e-5]),
     'dO': np.sum([SENSOR_DIMS[dtype] for dtype in agent['obs_include']]),

@@ -129,7 +129,6 @@ class CostIOCVisionTF(Cost):
 
             jx = sample.get(END_EFFECTOR_POINT_JACOBIANS)
             # TODO - support end_effector_points_no_target here.
-            import pdb; pdb.set_trace()
             dl_dee = sample.agent.unpack_data_x(lx, [END_EFFECTOR_POINTS])
             dl_dev = sample.agent.unpack_data_x(lx, [END_EFFECTOR_POINT_VELOCITIES])
 
@@ -196,7 +195,6 @@ class CostIOCVisionTF(Cost):
             network_arch_params['sample_batch_size'] = sample_batch_size
         network_arch_params['T'] = self._T
         network_arch_params['ioc_loss'] = self._hyperparams['ioc_loss']
-        #network_arch_params['Nq'] = self._iteration_count
         network_arch_params['smooth_reg_weight'] = self._hyperparams['smooth_reg_weight']
         network_arch_params['mono_reg_weight'] = self._hyperparams['mono_reg_weight']
         network_arch_params['gp_reg_weight'] = self._hyperparams['gp_reg_weight']
@@ -302,4 +300,3 @@ class CostIOCVisionTF(Cost):
             f.write(state['wts'])
             f.seek(0)
             self.restore_model(f.name)
-

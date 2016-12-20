@@ -129,10 +129,6 @@ def measure_distance_and_success_peg(gps):
     mean_dists = []
     success_rates = []
     for i in xrange(pol_iter):
-        # if 'sample_on_policy' in gps._hyperparams['algorithm'] and \
-        #     gps._hyperparams['algorithm']['sample_on_policy']:
-        #     pol_samples_file = gps._data_files_dir + 'pol_sample_itr_%02d.pkl' % i
-        # else:
         pol_samples_file = gps._data_files_dir + 'traj_sample_itr_%02d.pkl.gz' % i
         pol_sample_lists = gps.data_logger.unpickle(pol_samples_file)
         if pol_sample_lists is None:

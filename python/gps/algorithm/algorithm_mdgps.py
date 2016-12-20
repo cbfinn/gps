@@ -73,13 +73,6 @@ class AlgorithmMDGPS(Algorithm):
         """
         itr = self.iteration_count
 
-
-        #with Timer('update_features'):
-        #    if itr == 0 and RGB_IMAGE in sample_lists[0][0].agent.obs_data_types:
-        #        for sample_list in sample_lists:
-        #            for sample in sample_list:
-        #                sample.update_features(self.policy_opt.policy)
-
         with Timer('compute_dist_to_target'):
             # Store the samples.
             if self._hyperparams['ioc']:
@@ -128,31 +121,11 @@ class AlgorithmMDGPS(Algorithm):
         # Move this after line 78 if using random initializarion.
         if self._hyperparams['ioc'] and self._hyperparams['init_demo_policy']:
             raise ValueError("haven't supported this with vision and dynamics fit has moved.")
-        #if not self._hyperparams['global_cost']:
-        #    raise NotImplementedError('no support for multiple costs with vision.')
 
         if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
             if self._hyperparams['ioc_maxent_iter'] == -1 or itr < self._hyperparams['ioc_maxent_iter']:
-                # copy conv layers from policy to cost here, at all iterations.
-                #if 'set_vision_params' in dir(self.cost):
-                #    conv_params = self.policy_opt.policy.get_copy_params()
-                #    self.cost.set_vision_params(conv_params)
-
-
                 with Timer('UpdateCost'):
                     self._update_cost()
-                # Commenting this out because we're not updating the cost end-to-end right now.
-                """
-                with Timer('UpdateCost'):
-                    self._update_cost()
-                for m in range(self.M):
-                    for sample in self.cur[m].sample_list:
-                        sample.update_features(self.cost) # assumes a single cost.
-                if self.cur[0].traj_info.dynamics.prior._max_samples > len(self.cur[0].sample_list):
-                    print LOGGER.warning('refitting dynamics -- updating prior with the same set of samples')
-                with Timer('UpdateDynamics'):
-                    self._update_dynamics()  # recompute dynamics with new state space.
-                """
 
         # Update policy linearizations.
         for m in range(self.M):
@@ -167,7 +140,7 @@ class AlgorithmMDGPS(Algorithm):
                 with Timer('stepadjust'):
                     self._stepadjust()
             except OverflowError:
-                import pdb; pdb.set_trace()
+                import ; .set_trace()
         with Timer('UpdateTrajectories'):
             self._update_trajectories()
 

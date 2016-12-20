@@ -26,10 +26,6 @@ algorithm.update({
     'sample_on_policy': False,
 })
 
-algorithm['policy_opt'].update({
-    'weights_file_prefix': common['data_files_dir'] + 'policy',
-})
-
 config = default.config.copy()
 config.update({
     'common': common,
