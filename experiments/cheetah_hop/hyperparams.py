@@ -43,8 +43,6 @@ x0 = []
 for _ in range(CONDITIONS):
     x0.append(np.concatenate((0.2*np.random.rand(9)-0.1, 0.1*np.random.randn(9))))
 
-# x0 = [np.zeros(18)]
-
 common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
