@@ -87,12 +87,10 @@ def compare_samples_curve(gps, N, agent_config, three_dim=True, weight_varying=F
     print "demo: " + repr(success_rate_demo)
     print "oracle: " + repr(success_rate_oracle)
 
-
     from matplotlib.patches import Rectangle
 
     plt.close('all')
     fig = plt.figure(figsize=(8, 5))
-
 
     if three_dim:
         ax = Axes3D(fig)
@@ -193,7 +191,6 @@ def compare_experiments(mean_dists_1_dict, mean_dists_2_dict, success_rates_1_di
         hyperparams_compare: the hyperparams of the control group.
         hyperparams: the hyperparams of the experimental group.
     """
-
     plt.close('all')
     avg_dists_1 = [float(sum(mean_dists_1_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
     avg_succ_rate_1 = [float(sum(success_rates_1_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
@@ -223,5 +220,4 @@ def compare_experiments(mean_dists_1_dict, mean_dists_2_dict, success_rates_1_di
     plt.ylabel(hyperparams_compare['plot']['ylabel'])
     plt.title(hyperparams_compare['success_title'])
     plt.savefig(exp_dir + hyperparams_compare['plot']['success_plot_name'])
-
     plt.close()

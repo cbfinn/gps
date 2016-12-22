@@ -22,7 +22,6 @@ from gps.utility.demo_utils import compute_distance
 
 LOGGER = ColorLogger(__name__)
 
-
 class AlgorithmMDGPS(Algorithm):
     """
     Sample-based joint policy learning and trajectory optimization with
@@ -56,7 +55,6 @@ class AlgorithmMDGPS(Algorithm):
             if self._hyperparams['ioc'] and 'get_vision_params' in dir(self.cost):
                 # Make cost and policy conv params consistent here.
                 self.policy_opt.policy.set_copy_params(conv_params)
-
 
     def iteration(self, sample_lists):
         """

@@ -112,7 +112,7 @@ class GenDemo(object):
                     for i in xrange(M / len(self.algorithms) * a, M / len(self.algorithms) * (a + 1)):
                         for j in xrange(N):
                             demo = self.agent.sample(
-                                pol, i, # Should be changed back to controller if using linearization
+                                pol, i,
                                 verbose=(j < self._hyperparams['verbose_trials']), noisy=True
                                 )
                             demos.append(demo)
@@ -246,51 +246,3 @@ class GenDemo(object):
                 demo_file,
                 copy.copy(demo_store)
             )
-
-        # Maybe useful to linearize the neural net policy before taking demos
-        def linearize_policy(self, samples, cond):
-            policy_prior = self.algorithms[cond]._hyperparams['policy_prior']
-            init_policy_prior = policy_prior['type'](policy_prior)
-            init_policy_prior._hyperparams['keep_samples'] = False
-            dX, dU, T = self.algorithms[cond].dX, self.algorithms[cond].dU, self.algorithms[cond].T
-            N = len(samples)
-            X = samples.get_X()
-            pol_mu, pol_sig = self.algorithms[cond].policy_opt.prob(samples.get_obs().copy())[:2]
-            # Update the policy prior with collected samples
-            init_policy_prior.update(SampleList([]), self.algorithms[cond].policy_opt, samples)
-            # Collapse policy covariances. This is not really correct, but
-            # it works fine so long as the policy covariance doesn't depend
-            # on state.
-            pol_sig = np.mean(pol_sig, axis=0)
-            pol_info_pol_K = np.zeros((T, dU, dX))
-            pol_info_pol_k = np.zeros((T, dU))
-            pol_info_pol_S = np.zeros((T, dU, dU))
-            pol_info_chol_pol_S = np.zeros((T, dU, dU))
-            pol_info_inv_pol_S = np.empty_like(pol_info_chol_pol_S)
-            # Estimate the policy linearization at each time step.
-            for t in range(T):
-                # Assemble diagonal weights matrix and data.
-                dwts = (1.0 / N) * np.ones(N)
-                Ts = X[:, t, :]
-                Ps = pol_mu[:, t, :]
-                Ys = np.concatenate((Ts, Ps), axis=1)
-                # Obtain Normal-inverse-Wishart prior.
-                mu0, Phi, mm, n0 = init_policy_prior.eval(Ts, Ps)
-                sig_reg = np.zeros((dX+dU, dX+dU))
-                # On the first time step, always slightly regularize covariance.
-                if t == 0:
-                    sig_reg[:dX, :dX] = 1e-8 * np.eye(dX)
-                # Perform computation.
-                pol_K, pol_k, pol_S = gauss_fit_joint_prior(Ys, mu0, Phi, mm, n0,
-                                                                                                        dwts, dX, dU, sig_reg)
-                pol_S += pol_sig[t, :, :]
-                pol_info_pol_K[t, :, :], pol_info_pol_k[t, :] = pol_K, pol_k
-                pol_info_pol_S[t, :, :], pol_info_chol_pol_S[t, :, :] = \
-                        pol_S, sp.linalg.cholesky(pol_S)
-                pol_info_inv_pol_S[t, :, :] = sp.linalg.solve(
-                                                    pol_info_chol_pol_S[t, :, :],
-                                                    np.linalg.solve(pol_info_chol_pol_S[t, :, :].T, np.eye(dU))
-                                                    )
-            return LinearGaussianPolicy(pol_info_pol_K, pol_info_pol_k, pol_info_pol_S, pol_info_chol_pol_S, \
-                                                                            pol_info_inv_pol_S)
-

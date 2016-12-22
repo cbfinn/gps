@@ -11,7 +11,6 @@ from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 from gps.utility.data_logger import DataLogger
 from gps.utility.general_utils import flatten_lists
 
-
 def generate_pos_body_offset(conditions):
 	""" Generate position body offset for all conditions. """
 	pos_body_offset = []
@@ -65,7 +64,6 @@ def eval_demos(agent, demo_file, costfn, n=10):
     demoU = demos['demoU']
     return eval_demos_xu(agent, demoX, demoU, costfn, n=n)
 
-
 def eval_demos_xu(agent, demoX, demoU, costfn, n=-1):
     num_demos = demoX.shape[0]
     losses = []
@@ -97,7 +95,6 @@ def compute_distance(target_end_effector, sample_list, end_effector_idxs=range(0
                 axis=1))) for i in xrange(len(cur_samples))]
     return dists
 
-
 def compute_distance_cost_plot(algorithm, agent, sample_list):
     if 'target_end_effector' not in algorithm._hyperparams:
         return None
@@ -123,7 +120,6 @@ def measure_distance_and_success_peg(gps):
         None
     Returns: the mean distance and the success rate
     """
-
     pol_iter = gps._hyperparams['algorithm']['iterations']
     peg_height = gps._hyperparams['demo_agent']['peg_height']
     mean_dists = []

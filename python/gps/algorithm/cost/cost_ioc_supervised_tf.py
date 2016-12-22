@@ -5,8 +5,6 @@ import pickle
 from itertools import izip
 import copy
 import os
-
-
 import tensorflow as tf
 
 from gps.utility.demo_utils import xu_to_sample_list, extract_demos
@@ -14,7 +12,6 @@ from gps.utility.general_utils import BatchSampler
 from gps.algorithm.cost.cost_ioc_tf import CostIOCTF
 
 LOGGER = logging.getLogger(__name__)
-
 
 class CostIOCSupervised(CostIOCTF):
     """ Set up weighted neural network norm loss with learned parameters. """
@@ -33,7 +30,6 @@ class CostIOCSupervised(CostIOCTF):
         if hyperparams.get('agent', False):
             demo_agent = hyperparams['agent']  # Required for sample packing
             demo_agent = demo_agent['type'](demo_agent)
-        # self.weights_dir = hyperparams['weight_dir']
 
         demo_file, traj_file = hyperparams['demo_file'], hyperparams.get('traj_samples', [])
         if hyperparams.get('agent', False):
@@ -78,7 +74,6 @@ class CostIOCSupervised(CostIOCTF):
                 for sample_list in sample_lists:
                     X = np.r_[sample_list.get_X(), X]
                     U = np.r_[sample_list.get_U(), U]
-                    # O = np.r_[sample_list.get_obs(), O]
         n_test = 5
         testX = X[-n_test:]
         testU = U[-n_test:]
@@ -86,7 +81,6 @@ class CostIOCSupervised(CostIOCTF):
         U = U[:-n_test]
         train_samples = xu_to_sample_list(demo_agent, X, U)
         test_samples = xu_to_sample_list(demo_agent, testX, testU)
-
 
         num_samp = U.shape[0]
         sample_costs = []
@@ -136,7 +130,6 @@ class CostIOCSupervised(CostIOCTF):
             plt.plot(np.arange(T), test_costs[i], color='red', linestyle=linestyles[i % len(linestyles)])
             plt.plot(np.arange(T), 2 * supervised_test[i], color='blue', linestyle=linestyles[i % len(linestyles)])
         plt.show()
-
 
     def update_multiobj(self, demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw,
                         sup_samples, sup_cost_labels, itr=-1):

@@ -369,7 +369,6 @@ class GPSMain(object):
             pol_sample_lists: policy samples as SampleList object
         Returns: None
         """
-
         with Timer('Updating GUI'):
             if False: #self.using_ioc():
                 # Produce time vs cost plots
@@ -432,7 +431,6 @@ class GPSMain(object):
 
     def using_ioc(self):
         return 'ioc' in self._hyperparams['algorithm'] and self._hyperparams['algorithm']['ioc']
-
 
 def main():
     """ Main function to be run. """

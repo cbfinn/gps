@@ -5,7 +5,6 @@ import tensorflow as tf
 def assert_shape(tensor, shape):
     assert tensor.get_shape().is_compatible_with(shape), "Shape mismatch: %s vs %s" % (str(tensor.get_shape()), shape)
 
-
 def logsumexp(x, reduction_indices=None):
     """ Compute numerically stable logsumexp """
     max_val = tf.reduce_max(x)
@@ -13,7 +12,6 @@ def logsumexp(x, reduction_indices=None):
     _partition = tf.reduce_sum(exp, reduction_indices=reduction_indices)
     _log = tf.log(_partition)+max_val
     return _log
-
 
 def safe_get(name, *args, **kwargs):
     """ Same as tf.get_variable, except flips on reuse_variables automatically """
@@ -30,7 +28,6 @@ def init_weights(shape, name=None):
 def init_bias(shape, name=None):
     return safe_get(name, initializer=tf.zeros(shape, dtype='float'))
 
-
 def find_variable(name):
     """ Find a trainable variable in a graph by its name (not including scope)
 
@@ -46,7 +43,6 @@ def find_variable(name):
     if len(matches) == 0:
         raise ValueError('No variables found with name %s. List: %s' % (name, [var.name for var in varnames]))
     return matches[0]
-
 
 def jacobian(y, x):
     """Compute derivative of y (vector) w.r.t. x (another vector)"""
@@ -72,7 +68,6 @@ def multimodal_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
         x_idx is required, and should indicate the indices corresponding to the robot config
         img_idx is required, and should indicate the indices corresponding to the imagej
     """
-
     inputs = {}
     inputs['demo_obs'] = demo_obs = tf.placeholder(tf.float32, shape=(demo_batch_size, T, dim_input))
     inputs['demo_torque_norm'] = demo_torque_norm = tf.placeholder(tf.float32, shape=(demo_batch_size, T, 1))
@@ -157,7 +152,6 @@ def multimodal_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
     return inputs, outputs
 
 
-
 def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
                              demo_batch_size=5, sample_batch_size=5, phase=None, ioc_loss='ICML',
                              Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, gp_reg_weight=0.0,
@@ -195,7 +189,6 @@ def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
     test_cost_single = tf.squeeze(test_cost_single_preu)
 
     sup_loss = tf.nn.l2_loss(sup_costs - sup_cost_labels)*multi_obj_supervised_wt
-
 
     demo_sample_preu = tf.concat(0, [demo_cost_preu, sample_cost_preu])
     sample_demo_size = sample_batch_size+demo_batch_size
@@ -241,7 +234,6 @@ def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
     }
     return inputs, outputs
 
-
 def compute_feats(net_input, num_hidden=1, dim_hidden=42):
     len_shape = len(net_input.get_shape())
     if  len_shape == 3:
@@ -271,7 +263,6 @@ def compute_feats(net_input, num_hidden=1, dim_hidden=42):
         feat = tf.reshape(feat, [-1, dim_hidden])
 
     return feat
-
 
 def nn_forward(net_input, u_input, num_hidden=1, dim_hidden=42, learn_wu=False):
     # Reshape into 2D matrix for matmuls
@@ -306,7 +297,6 @@ def nn_forward(net_input, u_input, num_hidden=1, dim_hidden=42, learn_wu=False):
     all_costs_preu = tf.reduce_sum(AxAx, reduction_indices=[-1], keep_dims=True)
     all_costs = all_costs_preu + u_cost
     return all_costs_preu, all_costs
-
 
 def conv2d(img, w, b, strides=[1, 1, 1, 1]):
     return tf.nn.relu(tf.nn.bias_add(tf.nn.conv2d(img, w, strides=strides, padding='SAME'), b))
@@ -358,7 +348,6 @@ def compute_image_feats(img_input, num_filters=[15,15,15]):
 
     fp = tf.reshape(tf.concat(1, [fp_x, fp_y]), [-1, num_fp*2])
     return fp
-
 
 def nn_vis_forward(net_input, u_input, num_hidden=1, dim_hidden=42, learn_wu=False, x_idx=None, img_idx=None,
                    num_filters=[15,15,15]):
@@ -425,19 +414,11 @@ def icml_loss(demo_costs, sample_costs, d_log_iw, s_log_iw, Z):
     num_samples, T, _ = sample_costs.get_shape()
 
     # Sum over time and compute max value for safe logsum.
-    #for i in xrange(num_demos):
-    #    dc[i] = 0.5 * tf.reduce_sum(demo_costs[i])
-    #    loss += dc[i]
-    #    # Add importance weight to demo feature count. Will be negated.
-    #    dc[i] += d_log_iw[i]
     demo_reduced = 0.5*tf.reduce_sum(demo_costs, reduction_indices=[1,2])
     dc = demo_reduced + tf.reduce_sum(d_log_iw, reduction_indices=[1])
     assert_shape(dc, [num_demos])
 
     #for i in xrange(num_samples):
-    #    sc[i] = 0.5 * tf.reduce_sum(sample_costs[i])
-    #    # Add importance weight to sample feature count. Will be negated.
-    #    sc[i] += s_log_iw[i]
     sc = 0.5*tf.reduce_sum(sample_costs, reduction_indices=[1,2])+tf.reduce_sum(s_log_iw, reduction_indices=[1])
     assert_shape(sc, [num_samples])
 
@@ -457,25 +438,9 @@ def icml_loss(demo_costs, sample_costs, d_log_iw, s_log_iw, Z):
     return loss
 
 def l2_mono_loss(slope):
-    #_temp = np.zeros(slope.shape[0])
     offset = 1.0
     bottom_data = slope
 
-    #for i in range(batch_size):
-    #    _temp[i] = np.maximum(0.0, bottom_data[i] + offset)
     _temp = tf.nn.relu(bottom_data+offset)
-    loss = tf.nn.l2_loss(_temp)# _temp*_temp).sum() / batch_size
+    loss = tf.nn.l2_loss(_temp)
     return loss
-
-
-def main():
-    inputs, outputs= construct_nn_cost_net_tf(mono_reg_weight=1.0)
-    Y, X = outputs['test_loss_single'], inputs['test_obs_single']
-    dldx =  tf.gradients(Y, X)[0]
-    print dldx
-    print jacobian(dldx, X)
-    print dfdx
-
-
-if __name__ == "__main__":
-    main()

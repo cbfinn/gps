@@ -386,7 +386,6 @@ def construct_nn_cost_net(num_hidden=3, dim_hidden=None, dim_input=27, T=100,
     else:
         raise Exception('Unknown network phase')
 
-
     n.layer = n.net_input
     for i in range(num_hidden-1):
         n.layer = L.InnerProduct(n.layer, num_output=dim_hidden,
@@ -661,16 +660,12 @@ def construct_fp_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
         n.slope_prev_normed = L.Scale(n.prev_reshaped, n.cost_stdinv_tiled, scale_param=dict(axis=0))
         ### END compute normalization factor of slowness cost (std of c) ###
 
-
         n.smooth_reg = L.EuclideanLoss(n.slope_next_normed, n.slope_prev_normed, loss_weight=smooth_reg_weight)
 
         n.demo_slope, _ = L.Slice(n.slope_next, axis=0, slice_point=demo_batch_size, ntop=2)
         n.demo_slope_reshape = L.Reshape(n.demo_slope, shape=dict(dim=[-1,1]))
         n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=mono_reg_weight,
                               python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
-
-        #n.gp_prior_reg = L.Python(n.total, n.all_costs, n.l, loss_weight=gp_reg_weight,
-        #              python_param=dict(module='ioc_layers', layer='GaussianProcessPriors'))
 
         n.dummy = L.DummyData(ntop=1, shape=dict(dim=[1]), data_filler=dict(type='constant',value=0))
         # init logZ or Z to 1, only learn the bias

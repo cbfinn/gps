@@ -17,7 +17,6 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES,\
 
 LOGGER = logging.getLogger(__name__)
 
-
 class CostIOCTF(Cost):
     """ Set up weighted neural network norm loss with learned parameters. """
     def __init__(self, hyperparams):
@@ -69,7 +68,6 @@ class CostIOCTF(Cost):
         dfdx = np.concatenate(dfdx)
         return lx, dfdx
 
-
     def get_ATA(self):
         with self.graph.as_default():
             A_matrix = find_variable('Acost')
@@ -119,7 +117,6 @@ class CostIOCTF(Cost):
         lu = wu_mult * self._hyperparams['wu'] * sample_u
         luu = wu_mult * np.tile(np.diag(self._hyperparams['wu']), [T, 1, 1])
 
-
         if self.use_jacobian and END_EFFECTOR_POINT_JACOBIANS in sample._data:
             jnt_idx = sample.agent.get_idx_x(JOINT_ANGLES)
             vel_idx = sample.agent.get_idx_x(JOINT_VELOCITIES)
@@ -168,7 +165,6 @@ class CostIOCTF(Cost):
 
             if i > self._hyperparams['iterations']:
                 break
-
 
     def _init_solver(self, sample_batch_size=None):
         """ Helper method to initialize the solver. """
@@ -246,4 +242,3 @@ class CostIOCTF(Cost):
             f.write(state['wts'])
             f.seek(0)
             self.restore_model(f.name)
-
