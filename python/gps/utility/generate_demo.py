@@ -175,7 +175,6 @@ class GenDemo(object):
                         dists_to_target[i*N + j] = np.sqrt(np.sum((demo_end_effector[:, :3] - target_position.reshape(1, -1))**2, axis = 1))[-1]
                         if dists_to_target[i*N + j] > success_thresh:
                             failed_indices.append(i)
-                good_indices = [i for i in xrange(M) if i not in failed_indices]
                 good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
                 self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
                 filtered_demos, demo_conditions, failed_conditions = []

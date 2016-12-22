@@ -42,7 +42,6 @@ EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 DEMO_DIR = BASE_DIR + '/../experiments/reacher_mdgps_weight/'
 SUPERVISED_DIR = BASE_DIR + '/../experiments/reacher_mdgps_weight_supervised/'
 
-#CONDITIONS = 1
 TRAIN_CONDITIONS = 6
 SEED = 0
 
@@ -143,10 +142,6 @@ algorithm = {
     'max_ent_traj': 1.0,
     'num_demos': 10,
     'synthetic_cost_samples': 0,
-    'global_cost': True,
-    'policy_eval': False,
-    'bootstrap': False,
-    'init_demo_policy': False,
     'demo_var_mult': 1.0,
     'conditions': common['conditions'],  # NON IOC STUFF HERE
     'iterations': 15,

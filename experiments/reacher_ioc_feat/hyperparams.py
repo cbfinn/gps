@@ -154,7 +154,6 @@ algorithm = {
     'plot_dir': EXP_DIR,
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
                             for i in xrange(CONDITIONS)],
-    'global_cost': True,
 }
 
 

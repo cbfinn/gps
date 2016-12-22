@@ -18,7 +18,7 @@ from gps.gui.fp_plot import FPPlot
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
         END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
         END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
-        CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE, GYM_REWARD, END_EFFECTOR_POINTS_NO_TARGET, \
+        CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE, END_EFFECTOR_POINTS_NO_TARGET, \
         END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, IMAGE_FEAT, CONDITION_DATA
 
 from gps.sample.sample import Sample
@@ -288,8 +288,6 @@ class AgentMuJoCo(Agent):
             imageio.mimsave(record_gif, images, fps=record_gif_fps)
 
         new_sample.set(ACTION, U)
-        if self._hyperparams['record_reward']:
-            new_sample.set(GYM_REWARD, R)
         if save:
             self._samples[condition].append(new_sample)
         return new_sample

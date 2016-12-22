@@ -256,12 +256,8 @@ class GPSMain(object):
             i: Sample number.
         Returns: None
         """
-        if self.algorithm._hyperparams['sample_on_policy'] and (self.algorithm.iteration_count > 0 or \
-            self.algorithm._hyperparams['init_demo_policy']):
-            if not self.algorithm._hyperparams['multiple_policy']:
-                pol = self.algorithm.policy_opt.policy
-            else:
-                pol = self.algorithm.policy_opts[cond / self.algorithm.num_policies].policy
+        if self.algorithm._hyperparams['sample_on_policy'] and self.algorithm.iteration_count > 0:
+            pol = self.algorithm.policy_opt.policy
         else:
             pol = self.algorithm.cur[cond].traj_distr
 
@@ -354,19 +350,13 @@ class GPSMain(object):
         # TODO: Take at all conditions for GUI?
         # TODO: Take N samples per condition rather than just one
         for cond in idx:
-            if not self.algorithm._hyperparams['multiple_policy']:
-                if testing:
-                    pol_samples[cond][0] = self.test_agent.sample(
-                        self.algorithm.policy_opt.policy, idx[cond],
-                        verbose=True, save=False, noisy=True)
-                else:
-                    pol_samples[cond][0] = self.agent.sample(
-                        self.algorithm.policy_opt.policy, idx[cond],
-                        verbose=True, save=False, noisy=True)
-            else:
-                pol = self.algorithm.policy_opts[cond / self.algorithm.num_policies].policy
+            if testing:
                 pol_samples[cond][0] = self.test_agent.sample(
-                    pol, idx[cond],
+                    self.algorithm.policy_opt.policy, idx[cond],
+                    verbose=True, save=False, noisy=True)
+            else:
+                pol_samples[cond][0] = self.agent.sample(
+                    self.algorithm.policy_opt.policy, idx[cond],
                     verbose=True, save=False, noisy=True)
         return [SampleList(samples) for samples in pol_samples]
 

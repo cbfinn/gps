@@ -384,8 +384,7 @@ class GPSTrainingGUI(object):
             # pol_sample_lists is a list of singletons
             samples = [sl[0] for sl in pol_sample_lists]
             if not eval_pol_gt:
-                if 'global_cost' in algorithm._hyperparams and algorithm._hyperparams['global_cost'] and \
-                        type(algorithm.cost) != list:
+                if type(algorithm.cost) != list:
                     pol_costs = [np.sum(algorithm.cost.eval(s)[0])
                             for s in samples]
                 else:

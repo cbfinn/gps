@@ -270,18 +270,15 @@ def construct_quad_cost_net(dim_hidden=None, dim_input=27, T=100,
                              param=[dict(lr_mult=1), dict(lr_mult=1)])
         n.Z = L.Exp(n.logZ, base=2.6)
 
-        if ioc_loss == 'XENTGAN':
-            pass
-        elif ioc_loss== 'IOCGAN':
-            layer_name = 'IOCLossMod'
-        else:
+        if ioc_loss == 'ICML':
             layer_name = 'IOCLoss'
+        else:
+            raise NotImplementedError("Other type of losses not implemented.")
         n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, n.Z, loss_weight=1.0,
                          python_param=dict(module='ioc_layers',
                                            layer=layer_name))
     elif phase == 'supervised':
         n.out = L.EuclideanLoss(n.all_costs, n.cost_labels)
-
 
     return n.to_proto()
 
@@ -480,9 +477,6 @@ def construct_nn_cost_net(num_hidden=3, dim_hidden=None, dim_input=27, T=100,
         n.mono_reg = L.Python(n.demo_slope_reshape, loss_weight=mono_reg_weight,
                               python_param=dict(module='ioc_layers', layer='L2MonotonicLoss'))
 
-        # n.gp_prior_reg = L.Python(demo_sample_preu, n.net_input, n.l, loss_weight=gp_reg_weight,
-        #                       python_param=dict(module='ioc_layers', layer='GaussianProcessPriors'))
-
         n.dummy = L.DummyData(ntop=1, shape=dict(dim=[1]), data_filler=dict(type='constant',value=0))
         # init logZ or Z to 1, only learn the bias
         # (also might be good to reduce lr on bias)
@@ -492,46 +486,12 @@ def construct_nn_cost_net(num_hidden=3, dim_hidden=None, dim_input=27, T=100,
                              param=[dict(lr_mult=1), dict(lr_mult=1)])
         n.Z = L.Exp(n.logZ, base=2.6)
 
-        # TODO - removed loss weights, changed T, batching, num samples
-        # demo cond, num demos, etc.
-        if ioc_loss == 'XENTGAN':
-            # make multiple logZs
-            n.logZs = L.InnerProduct(n.logZ, num_output=demo_batch_size+sample_batch_size, axis=0,
-                                     weight_filler=dict(type='constant', value=1),
-                                     bias_filler=dict(type='constant', value=0),
-                                     param=[dict(lr_mult=0), dict(lr_mult=0)])
-            n.all_costs_sumT = L.InnerProduct(n.all_costs, num_output=1, axis=1,
-                                     weight_filler=dict(type='constant', value=1),
-                                     bias_filler=dict(type='constant', value=0),
-                                     param=[dict(lr_mult=0), dict(lr_mult=0)])
-
-
-            n.demo_targets = L.DummyData(ntop=1, shape=dict(dim=[demo_batch_size, 1]), data_filler=dict(type='constant', value=1))
-            n.sample_targets = L.DummyData(ntop=1, shape=dict(dim=[sample_batch_size, 1]), data_filler=dict(type='constant', value=0))
-            n.all_log_iw = L.Concat(n.d_log_iw, n.s_log_iw, axis=0)
-            n.all_targets = L.Concat(n.demo_targets, n.sample_targets, axis=0)
-
-            #n.all_log_iw = L.Reshape(n.all_log_iw, shape=dict(dim=[10,1]))
-            n.all_costs_sumT = L.Reshape(n.all_costs_sumT, shape=dict(dim=[10,1]))
-            n.logZs = L.Reshape(n.logZs, shape=dict(dim=[10,1]))  # TODO - why is this necessary??
-
-            # cost = 0.5*all_costs (as used to be done in the ioc loss layer
-            n.all_scores = L.Eltwise(n.all_costs_sumT, n.all_log_iw, n.logZs, operation=EltwiseParameter.SUM, coeff=[-0.5,-1, -1])
-            # TODO - we don't need to add demos to samples, right?
-            n.out = L.SigmoidCrossEntropyLoss(n.all_scores, n.all_targets)
-        elif ioc_loss == 'IOCGAN':
-            n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, n.Z, loss_weight=1.0,
-                             python_param=dict(module='ioc_layers',
-                                               layer='IOCLossMod'))
-        elif ioc_loss== 'MPF':  # MPF
-            n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, loss_weight=1.0,
-                             python_param=dict(module='ioc_layers',
-                                               layer='LogMPFLoss'))
-        else:
+       if ioc_loss == 'ICML':
             n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, n.Z, loss_weight=1.0,
                              python_param=dict(module='ioc_layers',
                                                layer='IOCLoss'))
-
+        else:
+            raise NotImplementedError("Other type of losses not implemented.")
     net = n.to_proto()
     if phase == 'forward_feat':
       net.force_backward = True
@@ -721,48 +681,14 @@ def construct_fp_cost_net(num_hidden=1, dim_hidden=None, dim_input=27, T=100,
                              param=[dict(lr_mult=1), dict(lr_mult=1)])
         n.Z = L.Exp(n.logZ, base=2.6)
 
-        # TODO - removed loss weights, changed T, batching, num samples
-        # demo cond, num demos, etc.
-        if ioc_loss == 'XENTGAN':
-            # make multiple logZs
-            n.logZs = L.InnerProduct(n.logZ, num_output=demo_batch_size+sample_batch_size, axis=0,
-                                     weight_filler=dict(type='constant', value=1),
-                                     bias_filler=dict(type='constant', value=0),
-                                     param=[dict(lr_mult=0), dict(lr_mult=0)])
-            n.all_costs_sumT = L.InnerProduct(n.all_costs, num_output=1, axis=1,
-                                     weight_filler=dict(type='constant', value=1),
-                                     bias_filler=dict(type='constant', value=0),
-                                     param=[dict(lr_mult=0), dict(lr_mult=0)])
-
-
-            n.demo_targets = L.DummyData(ntop=1, shape=dict(dim=[demo_batch_size, 1]), data_filler=dict(type='constant', value=1))
-            n.sample_targets = L.DummyData(ntop=1, shape=dict(dim=[sample_batch_size, 1]), data_filler=dict(type='constant', value=0))
-            n.all_log_iw = L.Concat(n.d_log_iw, n.s_log_iw, axis=0)
-            n.all_targets = L.Concat(n.demo_targets, n.sample_targets, axis=0)
-
-            #n.all_log_iw = L.Reshape(n.all_log_iw, shape=dict(dim=[10,1]))
-            n.all_costs_sumT = L.Reshape(n.all_costs_sumT, shape=dict(dim=[10,1]))
-            n.logZs = L.Reshape(n.logZs, shape=dict(dim=[10,1]))  # TODO - why is this necessary??
-
-            # cost = 0.5*all_costs (as used to be done in the ioc loss layer
-            n.all_scores = L.Eltwise(n.all_costs_sumT, n.all_log_iw, n.logZs, operation=EltwiseParameter.SUM, coeff=[-0.5,-1, -1])
-            # TODO - we don't need to add demos to samples, right?
-            n.out = L.SigmoidCrossEntropyLoss(n.all_scores, n.all_targets)
-        elif ioc_loss == 'IOCGAN':
-            n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, n.Z, loss_weight=1.0,
-                             python_param=dict(module='ioc_layers',
-                                               layer='IOCLossMod'))
-        elif ioc_loss== 'MPF':  # MPF
-            n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, loss_weight=1.0,
-                             python_param=dict(module='ioc_layers',
-                                               layer='LogMPFLoss'))
-        else:
+       if ioc_loss == 'ICML':
             n.out = L.Python(n.demo_costs, n.sample_costs, n.d_log_iw, n.s_log_iw, n.Z, loss_weight=1.0,
                              python_param=dict(module='ioc_layers',
                                                layer='IOCLoss'))
+        else:
+            raise NotImplementedError("Other type of losses not implemented.")
 
     net = n.to_proto()
     if phase == 'forward_feat':
       net.force_backward = True
     return net
-

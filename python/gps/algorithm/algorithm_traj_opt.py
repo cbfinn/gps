@@ -7,7 +7,7 @@ import numpy as np
 from gps.algorithm.algorithm import Algorithm
 from gps.sample.sample_list import SampleList
 from gps.utility import ColorLogger
-from gps.utility.demo_utils import extract_samples
+from gps.utility.demo_utils import extract_samples, compute_distance
 from gps.algorithm.traj_opt.traj_opt_utils import traj_distr_kl
 from gps.utility.demo_utils import extract_samples
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
@@ -17,14 +17,10 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
 
 LOGGER = ColorLogger(__name__)
 
-
 class AlgorithmTrajOpt(Algorithm):
     """ Sample-based trajectory optimization. """
     def __init__(self, hyperparams):
         Algorithm.__init__(self, hyperparams)
-        # self.policy_opt = self._hyperparams['policy_opt']['type'](
-        #         self._hyperparams['policy_opt'], self.dO, self.dU
-        #         )
 
     def iteration(self, sample_lists):
         """
@@ -73,14 +69,8 @@ class AlgorithmTrajOpt(Algorithm):
                     target_position = self._hyperparams['target_end_effector'][i][:3]
                 else:
                     target_position = self._hyperparams['target_end_effector'][:3]
-                cur_samples = sample_lists[i].get_samples()
-                sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
-                #'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[i], np.array([0., 0., 0.])])
-                #            for i in xrange(TOTAL_CONDITIONS)],
-                dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2, axis = 1)), axis = 0) \
-                         for i in xrange(len(cur_samples))]
-                self.min_sample = cur_samples[dists.index(min(dists))]
-                self.dists_to_target[itr].append(sum(dists) / len(cur_samples))
+                dists = compute_distance(target_position, sample_lists[i])
+                self.dists_to_target[itr].append(sum(dists) / sample_lists[i].num_samples())
         self._advance_iteration_variables()
 
     def _update_step_size(self):
@@ -157,7 +147,6 @@ class AlgorithmTrajOpt(Algorithm):
 
         self._set_new_mult(predicted_impr, actual_impr, m)
 
-
     def compute_costs(self, m, eta):
         """ Compute cost estimates used in the LQR backward pass. """
         # TODO generate synethic samples here if desired? (or somewhere else)?
@@ -186,4 +175,3 @@ class AlgorithmTrajOpt(Algorithm):
             ])
 
         return fCm, fcv
-    

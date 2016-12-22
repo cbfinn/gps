@@ -83,5 +83,3 @@ AGENT_MUJOCO = {
 AGENT_BOX2D = {
     'render': True,
 }
-
-AGENT_OPENAI = {}

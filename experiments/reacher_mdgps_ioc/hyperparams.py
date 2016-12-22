@@ -131,7 +131,6 @@ algorithm = {
     'max_ent_traj': 1.0,
     'num_demos': 10,
     'synthetic_cost_samples': 100,
-    'global_cost': True,
     'demo_var_mult': 1.0,
     'conditions': common['conditions'],  # NON IOC STUFF HERE
     'train_conditions': common['train_conditions'],
