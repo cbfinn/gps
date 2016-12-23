@@ -1,32 +1,19 @@
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS, RGB_IMAGE
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
-from mpl_toolkits.mplot3d import Axes3D
-import logging
-import imp
-import os
-import os.path
-import sys
-import copy
-import argparse
-import threading
-import time
-import scipy.io
 
 TRIALS = 20
 THRESH = {'reacher': 0.05, 'pointmass': 0.1}
 
-def compare_samples_curve(gps, N, agent_config, three_dim=True, weight_varying=False, experiment='peg'):
+def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment='reacher'):
     """
     Compare samples between IOC and demo policies and visualize them in a plot.
     Args:
         gps: GPS object.
         N: number of samples taken from the policy for comparison
         config: Configuration of the agent to sample.
-        three_dim: whether the plot is 3D or 2D.
         weight_varying: whether the experiment is weight-varying or not.
-        experiment: whether the experiment is peg, reacher or pointmass.
+        experiment: whether the experiment is reacher or pointmass.
     """
     pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
     algorithm_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
@@ -87,33 +74,19 @@ def compare_samples_curve(gps, N, agent_config, three_dim=True, weight_varying=F
     print "demo: " + repr(success_rate_demo)
     print "oracle: " + repr(success_rate_oracle)
 
-    from matplotlib.patches import Rectangle
-
     plt.close('all')
     fig = plt.figure(figsize=(8, 5))
 
-    if three_dim:
-        ax = Axes3D(fig)
-        ax.scatter(all_success_zip[0], all_success_zip[1], all_success_zip[2], c='y', marker='o')
-        ax.scatter(all_failed_zip[0], all_failed_zip[1], all_failed_zip[2], c='r', marker='x')
-        ax.scatter(only_ioc_zip[0], only_ioc_zip[1], only_ioc_zip[2], c='g', marker='^')
-        ax.scatter(only_demo_zip[0], only_demo_zip[1], only_demo_zip[2], c='r', marker='v')
-        training_positions = zip(*pos_body_offset)
-        ax.scatter(training_positions[0], training_positions[1], training_positions[2], s=40, c='b', marker='*')
-        box = ax.get_position()
-    else:
-        subplt = plt.subplot()
-        subplt.plot(ioc_conditions, success_rate_ioc, '-rx')
-        subplt.plot(ioc_conditions, success_rate_sup, '-gx')
-        subplt.plot(ioc_conditions, success_rate_demo, '-bx')
-        subplt.plot(ioc_conditions, success_rate_oracle, '-yx')
-        ax = plt.gca()
-        if experiment == 'peg':
-            ax.add_patch(Rectangle((-0.1, -0.1), 0.2, 0.2, fill = False, edgecolor = 'blue')) # peg
-        ax.xaxis.set_ticks_position('bottom')
-        ax.yaxis.set_ticks_position('left')
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
+    subplt = plt.subplot()
+    subplt.plot(ioc_conditions, success_rate_ioc, '-rx')
+    subplt.plot(ioc_conditions, success_rate_sup, '-gx')
+    subplt.plot(ioc_conditions, success_rate_demo, '-bx')
+    subplt.plot(ioc_conditions, success_rate_oracle, '-yx')
+    ax = plt.gca()
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
     ax.legend(['S3G', 'cost regr', 'RL policy', 'oracle'], loc='lower left')
     plt.ylabel('Success Rate', fontsize=22)
     plt.xlabel('Log Mass', fontsize=22, labelpad=-4)
@@ -165,59 +138,3 @@ def visualize_samples(gps, N, agent_config, experiment='reacher'):
                     record_gif=gif_name, record_gif_fps=gif_fps
                     )
                 samples[k].append(sample)
-
-def get_comparison_hyperparams(hyperparam_file, itr):
-    """ 
-    Make the iteration number the same as the experiment data directory index.
-    Args:
-        hyperparam_file: the hyperparam file to be changed for two different experiments for comparison.
-    """
-    hyperparams = imp.load_source('hyperparams', hyperparams_file)
-    hyperparams.config['plot']['itr'] = itr
-    return hyperparams
-
-def compare_experiments(mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
-                                success_rates_2_dict, pol_iter, exp_dir, hyperparams_compare, \
-                                hyperparams):
-    """ 
-    Compare the performance of two experiments and plot their mean distance to target effector and success rate.
-    Args:
-        mean_dists_1_dict: mean distance dictionary for one of two experiments to be compared.
-        mean_dists_2_dict: mean distance dictionary for one of two experiments to be compared.
-        success_rates_1_dict: success rates dictionary for one of the two experiments to be compared.
-        success_rates_2_dict: success rates dictionary for one of the two experiments to be compared.
-        pol_iter: number of iterations of the algorithm.
-        exp_dir: directory of the experiment.
-        hyperparams_compare: the hyperparams of the control group.
-        hyperparams: the hyperparams of the experimental group.
-    """
-    plt.close('all')
-    avg_dists_1 = [float(sum(mean_dists_1_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
-    avg_succ_rate_1 = [float(sum(success_rates_1_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
-    avg_dists_2 = [float(sum(mean_dists_2_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
-    avg_succ_rate_2 = [float(sum(success_rates_2_dict[i][j] for i in seeds))/3 for j in xrange(pol_iter)]
-    plt.plot(range(pol_iter), avg_dists_1, '-x', color='red')
-    plt.plot(range(pol_iter), avg_dists_2, '-x', color='green')
-    for i in seeds:
-        plt.plot(range(pol_iter), mean_dists_1_dict[i], 'ko')
-        plt.plot(range(pol_iter), mean_dists_2_dict[i], 'co')
-    avg_legend, legend, avg_compare_legend, compare_legend = hyperparams_compare['plot']['avg_legend'], \
-            hyperparams_compare['plot']['legend'], hyperparams_compare['plot']['avg_legend_compare'], \
-            hyperparams_compare['plot']['legend_compare']
-    plt.legend([avg_legend, legend, avg_compare_legend, compare_legend], loc='upper right', ncol=2)
-    plt.title(hyperparams_compare['plot']['mean_dist_title'])
-    plt.xlabel(hyperparams_compare['plot']['xlabel'])
-    plt.ylabel(hyperparams_compare['plot']['ylabel'])
-    plt.savefig(exp_dir + hyperparams_compare['plot']['mean_dist_plot_name'])
-    plt.close()
-    plt.plot(range(pol_iter), avg_succ_rate_1, '-x', color='red')
-    plt.plot(range(pol_iter), avg_succ_rate_2, '-x', color='green')
-    for i in seeds:
-        plt.plot(range(pol_iter), success_rates_1_dict[i], 'ko')
-        plt.plot(range(pol_iter), success_rates_2_dict[i], 'co')
-    plt.legend([avg_legend, legend, avg_compare_legend, compare_legend], loc='upper right', ncol=2)
-    plt.xlabel(hyperparams_compare['plot']['xlabel'])
-    plt.ylabel(hyperparams_compare['plot']['ylabel'])
-    plt.title(hyperparams_compare['success_title'])
-    plt.savefig(exp_dir + hyperparams_compare['plot']['success_plot_name'])
-    plt.close()

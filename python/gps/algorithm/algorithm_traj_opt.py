@@ -3,17 +3,12 @@ import logging
 
 import numpy as np
 
-
 from gps.algorithm.algorithm import Algorithm
 from gps.sample.sample_list import SampleList
 from gps.utility import ColorLogger
 from gps.utility.demo_utils import extract_samples, compute_distance
 from gps.algorithm.traj_opt.traj_opt_utils import traj_distr_kl
 from gps.utility.demo_utils import extract_samples
-from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
-        END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, \
-        END_EFFECTOR_POINT_JACOBIANS, ACTION, RGB_IMAGE, RGB_IMAGE_SIZE, \
-        CONTEXT_IMAGE, CONTEXT_IMAGE_SIZE
 
 LOGGER = ColorLogger(__name__)
 

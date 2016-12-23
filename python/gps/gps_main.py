@@ -25,8 +25,7 @@ from gps.sample.sample_list import SampleList
 from gps.utility.general_utils import disable_caffe_logs, Timer, mkdir_p
 from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
                                     measure_distance_and_success_peg, get_demos, extract_samples
-from gps.utility.visualization import get_comparison_hyperparams, compare_experiments, \
-                                        compare_samples_curve, visualize_samples
+from gps.utility.visualization import compare_samples_curve, visualize_samples
 
 
 class GPSMain(object):
@@ -451,8 +450,6 @@ def main():
                         help='quit GUI automatically when finished')
     parser.add_argument('--dry_run', nargs=2, type=int, default=None,
                         help='Condition to dry-run the policy')
-    parser.add_argument('-c', '--compare', metavar='N', type=int,
-                    help='compare two experiments')
     parser.add_argument('-m', '--measure', metavar='N', type=int,
                     help='measure policy samples to see how they are doing')
     parser.add_argument('-v', '--visualize', metavar='N', type=int,
@@ -467,7 +464,6 @@ def main():
     exp_name = args.experiment
     resume_training_itr = args.resume
     test_policy_N = args.policy
-    compare = args.compare
     measure = args.measure
     visualize = args.visualize
 
@@ -581,30 +577,11 @@ def main():
     elif measure:
         gps = GPSMain(hyperparams.config)
         agent_config = gps._hyperparams['agent']
-        compare_samples_curve(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
+        compare_samples_curve(gps, measure, agent_config, weight_varying=True, experiment='reacher')
     elif visualize:
         gps = GPSMain(hyperparams.config)
         agent_config = gps._hyperparams['agent']
-        visualize_samples(gps, visualize, agent_config, experiment='reacher')
-    elif compare:
-        mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
-            success_rates_2_dict = {}, {}, {}, {}
-        seeds = [0, 1, 2]
-        for itr in seeds:
-            random.seed(itr)
-            np.random.seed(itr)
-            hyperparams_compare = get_comparison_hyperparams(hyperparams_file_compare, itr)
-            gps = GPSMain(hyperparams.config)
-            gps.run()
-            plt.close()
-            mean_dists_1_dict[itr], success_rates_1_dict[itr] = measure_distance_and_success_peg(gps) # For peg only
-            gps_classic = GPSMain(hyperparams_compare.config)
-            gps.run()
-            plt.close()
-            mean_dists_2_dict[itr], success_rates_2_dict[itr] = measure_distance_and_success_peg(gps) # For peg only
-        compare_experiments(mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
-                                success_rates_2_dict, gps._hyperparams['algorithm']['iterations'], \
-                                exp_dir, hyperparams_compare.config, hyperparams.config)
+        visualize_samples(gps, visualize, agent_config, experiment='reacher') # Recording the video of reacher experiment
     else:
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:

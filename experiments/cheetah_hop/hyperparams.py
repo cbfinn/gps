@@ -134,10 +134,8 @@ algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
 }
 
-
 algorithm['policy_prior'] = {
 }
-
 
 config = {
     'iterations': algorithm['iterations'],
