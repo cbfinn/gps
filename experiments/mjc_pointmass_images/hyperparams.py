@@ -12,11 +12,9 @@ from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_fk import CostFK
-#from gps.algorithm.cost.cost_fk_blocktouch import CostFKBlock
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_sum import CostSum
-#from gps.algorithm.cost.cost_gym import CostGym
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
@@ -93,9 +91,7 @@ agent = {
     'conditions': common['conditions'],
     'T': 100,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, IMAGE_FEAT],
-    #'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, RGB_IMAGE],
-    #'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'target_idx': np.array(list(range(4,6))),
     'meta_include': [RGB_IMAGE_SIZE],
     'image_width': IMAGE_WIDTH,
@@ -107,24 +103,6 @@ agent = {
     'point_linear': True,
 }
 
-
-"""
-algorithm = {
-    'type': AlgorithmMDGPS,
-    #'type': AlgorithmTrajOpt,
-    'max_ent_traj': 1.0,
-    'conditions': common['conditions'],
-    'iterations': 13,
-    'kl_step': 1.0, # TODO was 1.0
-    'min_step_mult': 0.1, # TODO was 0.5, maybe try 0.1
-    'max_step_mult': 3.0, # TODO was 3.0, maybe try 2.0
-    'policy_sample_mode': 'replace',
-    'sample_on_policy': True,
-    'plot_dir': EXP_DIR,
-    'step_rule': 'laplace',
-    'target_end_effector': target_pos,
-}
-"""
 
 algorithm = {
     'type': AlgorithmBADMM,

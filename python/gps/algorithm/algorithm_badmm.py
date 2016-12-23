@@ -13,7 +13,6 @@ from gps.utility.general_utils import Timer
 
 LOGGER = logging.getLogger(__name__)
 
-
 class AlgorithmBADMM(Algorithm):
     """
     Sample-based joint policy learning and trajectory optimization with
@@ -54,7 +53,6 @@ class AlgorithmBADMM(Algorithm):
                 self.sample_list[m] = SampleList(prev_samples)
                 self.N += len(sample_lists[m])
 
-
         with Timer('SetInterpValues'):
             self._set_interp_values()
         with Timer('UpdateDynamics'):
@@ -62,7 +60,7 @@ class AlgorithmBADMM(Algorithm):
         with Timer('UpdateStepSize'):
             self._update_step_size()  # KL Divergence step size.
 
-        if self._hyperparams['ioc'] and not self._hyperparams['init_demo_policy']:
+        if self._hyperparams['ioc']:
             if self._hyperparams['ioc_maxent_iter'] == -1 or itr < self._hyperparams['ioc_maxent_iter']:
                 # copy conv layers from policy to cost here, at all iterations.
                 with Timer('UpdateCost'):
@@ -353,7 +351,6 @@ class AlgorithmBADMM(Algorithm):
             ent, prev_mc_obj, new_mc_obj, prev_mc_kl_sum, new_mc_kl_sum
         )
 
-
         # Compute predicted and actual improvement.
         predicted_impr = np.sum(prev_laplace_obj) + prev_laplace_kl_sum - \
                 np.sum(new_pred_laplace_obj) - new_pred_laplace_kl_sum
@@ -545,8 +542,8 @@ class AlgorithmBADMM(Algorithm):
             ])
             wt = pol_info.pol_wt[t]
             fCm[t, :, :] = (Cm[t, :, :] + TKLm[t, :, :] * eta +
-                            PKLm[t, :, :] * wt) / (eta + wt)
+                            PKLm[t, :, :] * wt) / (eta + wt + multiplier)
             fcv[t, :] = (cv[t, :] + TKLv[t, :] * eta +
-                         PKLv[t, :] * wt) / (eta + wt)
+                         PKLv[t, :] * wt) / (eta + wt + multiplier)
 
         return fCm, fcv

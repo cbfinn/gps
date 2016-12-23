@@ -317,17 +317,8 @@ class GPSTrainingGUI(object):
                 fps = []
                 for sample in samples:
                     fp = sample.get(IMAGE_FEAT, 0)
-                    #fp = fp.reshape(-1, 2).T.reshape(-1)
                     fps.append(fp)
-                    #fp1 = sample.get(IMAGE_FEAT, 1)
-                    #fp2 = sample.get(IMAGE_FEAT, 2)
-                    #img = sample.get(RGB_IMAGE, 0)
                 self._update_feature_visualization(img, fps)
-                    #images = sample.get(RGB_IMAGE)
-                #for image in images:
-                   # img.append(image.reshape(size).transpose((2, 1, 0)))
-                   # feature_points = algorithm.policy_opt.fp_vals
-                   # idx = np.random.randint(len(img))
 
         costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
         if algorithm._hyperparams['ioc']:
@@ -367,9 +358,6 @@ class GPSTrainingGUI(object):
             condition_titles += ' | %8s %9s %-7d' % ('', 'condition', m)
             itr_data_fields  += ' | %8s %8s %8s' % ('  cost  ', '  step  ', 'entropy ')
 
-            #if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
-            #    condition_titles += ' %8s' % ('')
-            #    itr_data_fields  += ' %8s' % ('kl_div')
             if 'target_end_effector' in algorithm._hyperparams:
                 condition_titles += ' %8s' % ('')
                 itr_data_fields  += ' %8s' % ('mean_dist')
@@ -397,12 +385,10 @@ class GPSTrainingGUI(object):
         pol_costs = [-123 for _ in range(algorithm.M)]
         if pol_sample_lists is not None:
             test_idx = algorithm._hyperparams['test_conditions']
-            # import pdb; pdb.set_trace()
             # pol_sample_lists is a list of singletons
             samples = [sl[0] for sl in pol_sample_lists]
             if not eval_pol_gt:
-                if 'global_cost' in algorithm._hyperparams and algorithm._hyperparams['global_cost'] and \
-                        type(algorithm.cost) != list:
+                if type(algorithm.cost) != list:
                     pol_costs = [np.sum(algorithm.cost.eval(s)[0])
                             for s in samples]
                 else:
@@ -425,29 +411,6 @@ class GPSTrainingGUI(object):
             itr_data += ' | %8.2f %8.2f %8.2f' % (cost, step, entropy)
             #if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
             #    itr_data += ' %8.2f' % (algorithm.kl_div[itr][m])
-
-
-            # COMPUTE DISTANCES:
-            if 'compute_distances' in algorithm._hyperparams:
-                distance_options = algorithm._hyperparams['compute_distances']
-                filter_type = distance_options.get('type', 'min')
-                targets = distance_options['targets'][m]
-                pos_idx = distance_options['state_idx']
-                cur_samples = algorithm.prev[m].sample_list
-                sample_end_effectors = [cur_samples[i].get_X()[:,pos_idx] for i in xrange(len(cur_samples))]
-                dists = [(np.sqrt(np.sum((sample_end_effectors[i] - targets.reshape(1, -1))**2,
-                                         axis=1))) for i in xrange(len(cur_samples))]
-                dists_all = []
-                for i, distance in enumerate(dists):
-                    if filter_type == 'last':
-                        dist_single = distance[-1]
-                    elif filter_type == 'min':
-                        dist_single = min(distance)
-                    else:
-                        raise ValueError('unrecognized filter type:', filter_type)
-                    dists_all.append(dist_single)
-                itr_data += ' %8.2f' % (sum(dists_all) / len(cur_samples))
-
 
             if pol_sample_lists is None:
                 if algorithm.dists_to_target:

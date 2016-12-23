@@ -19,10 +19,9 @@ ALG = {
     # Flag if we estimate the demo distribution empirically.
     'demo_distr_empest': True,
     # Flag if the algorithm is using IOC
-    'ioc': None,  # ICML, MPF, IOCGAN, XENTGAN
-    'ioc_maxent_iter': -1, # number of iterations to run maxent and IOC for (-1 if all iters)
-    # Flag if the algorithm is learning from prior experience
-    'learning_from_prior': False,
+    'ioc': None,  # ICML
+    # number of iterations to run maxent and IOC for (-1 if all iters)
+    'ioc_maxent_iter': -1,
     # Dynamics hyperaparams.
     'dynamics': None,
     # Costs.
@@ -43,26 +42,9 @@ ALG = {
     'synthetic_cost_samples': 0,
     # Whether or not to sample with neural net policy (only for badmm/mdgps).
     'sample_on_policy': False,
-    # Flag if the algorithm is using global cost.
-    'global_cost': True,
-    # Use demo neural net policy to initialize policy.
-    'init_demo_policy': False,
     # Number of samples taken in the first iteration.
     'init_samples': 5,
-    # Evaluate importance weights using nn policy.
-    'policy_eval': False,
-    # Make successful samples in each iteration become demos.
-    'bootstrap': False,
-    # Use 3 policies.
-    'multiple_policy': False,
-    # Number of nn policies used.
-    'num_policies': 1,
 }
-
-# Good indices.
-good_indices = range(35)
-good_indices.extend(range(36, 40))
-ALG['good_indices'] = good_indices
 
 # AlgorithmBADMM
 ALG_BADMM = {

@@ -15,9 +15,7 @@ from gps.sample.sample_list import SampleList
 from gps.utility.general_utils import logsum
 from gps.algorithm.algorithm_utils import fit_emp_controller
 
-
 LOGGER = ColorLogger(__name__)
-
 
 class Algorithm(object):
     """ Algorithm superclass. """
@@ -49,21 +47,12 @@ class Algorithm(object):
         init_traj_distr['x0'] = agent.x0
         init_traj_distr['dX'] = agent.dX
         init_traj_distr['dU'] = agent.dU
-        # TODO: figure out the use of these two lines.
-        # if self._hyperparams['ioc']:
-        #     init_traj_distr['x0'] = np.zeros(self.dX)
         del self._hyperparams['agent']  # Don't want to pickle this.
 
         # IterationData objects for each condition.
         self.cur = [IterationData() for _ in range(self.M)]
         self.prev = [IterationData() for _ in range(self.M)]
-        if not self._hyperparams['policy_eval']:
-            self.traj_distr = {self.iteration_count: []}
-        else:
-            self.policy_opts = {self.iteration_count: None}
-            # self.linear_policies = {self.iteration_count: []}
-        if self._hyperparams['bootstrap']:
-            self.demo_traj = {self.iteration_count: {}}
+        self.policy_opts = {self.iteration_count: None}
         self.traj_info = {self.iteration_count: []}
         self.kl_div = {self.iteration_count:[]}
         self.dists_to_target = {self.iteration_count:[]}
@@ -78,26 +67,19 @@ class Algorithm(object):
             )
             init_traj_distr['condition'] = m
             self.cur[m].traj_distr = init_traj_distr['type'](init_traj_distr)
-            if not self._hyperparams['policy_eval']:
-                self.traj_distr[self.iteration_count].append(self.cur[m].traj_distr)
             self.traj_info[self.iteration_count].append(self.cur[m].traj_info)
 
         self.traj_opt = self._hyperparams['traj_opt']['type'](
             self._hyperparams['traj_opt']
         )
 
-        if self._hyperparams['global_cost']:
-            if type(hyperparams['cost']) == list:
-                self.cost = [
-                    hyperparams['cost'][i]['type'](hyperparams['cost'][i])
-                    for i in range(hyperparams['conditions'])]
-            else:
-                self.cost = self._hyperparams['cost']['type'](self._hyperparams['cost'])
-        else:
+        if type(hyperparams['cost']) == list:
             self.cost = [
-                self._hyperparams['cost']['type'](self._hyperparams['cost'])
-                for _ in range(self.M)
-            ]
+                hyperparams['cost'][i]['type'](hyperparams['cost'][i])
+                for i in range(hyperparams['conditions'])]
+        else:
+            self.cost = self._hyperparams['cost']['type'](self._hyperparams['cost'])
+
         if type(self._hyperparams['cost']) is dict and self._hyperparams['cost'].get('agent', False):
             del self._hyperparams['cost']['agent']
 
@@ -118,7 +100,6 @@ class Algorithm(object):
     def iteration(self, sample_list):
         """ Run iteration of the algorithm. """
         raise NotImplementedError("Must be implemented in subclass")
-
 
     def _update_dynamics(self):
         """
@@ -212,7 +193,7 @@ class Algorithm(object):
                 else:
                     cost = self.gt_cost
 
-            if self._hyperparams['global_cost'] and type(self.cost) != list:
+            if type(self.cost) != list:
                 l, lx, lu, lxx, luu, lux = cost.eval(sample)
             else:
                 l, lx, lu, lxx, luu, lux = cost[cond].eval(sample)
@@ -259,8 +240,7 @@ class Algorithm(object):
         if self._hyperparams['ioc']:
             self.cur[cond].cgt = cgt[synN:]
 
-
-    def _advance_iteration_variables(self, store_prev=True):
+    def _advance_iteration_variables(self, store_prev=False):
         """
         Move all 'cur' variables to 'prev', and advance iteration
         counter.
@@ -275,19 +255,13 @@ class Algorithm(object):
             else:
                 self.prev[m].sample_list = True # don't pickle this.
         self.cur = [IterationData() for _ in range(self.M)]
-        if not self._hyperparams['policy_eval']:
-            self.traj_distr[self.iteration_count] = []
-        else:
-            with Timer('Algorithm._advance_iteration_variables policy_opt_copy'):
-                new_policy_opt = self.policy_opt.copy()
-            self.policy_opts[self.iteration_count] = new_policy_opt
-            # self.linear_policies[self.iteration_count] = []
-        if self._hyperparams['bootstrap']:
-            self.demo_traj[self.iteration_count] = {}
+        with Timer('Algorithm._advance_iteration_variables policy_opt_copy'):
+            new_policy_opt = self.policy_opt.copy()
+        self.policy_opts[self.iteration_count] = new_policy_opt
         self.traj_info[self.iteration_count] = []
         self.kl_div[self.iteration_count] = []
         self.dists_to_target[self.iteration_count] = []
-        if self._hyperparams['global_cost'] and self._hyperparams['ioc']:
+        if self._hyperparams['ioc']:
             with Timer('Algorithm._advance_iteration_variables cost_copy'):
                 self.previous_cost = self.cost.copy()
         else:
@@ -298,14 +272,9 @@ class Algorithm(object):
             self.cur[m].step_mult = self.prev[m].step_mult
             self.cur[m].eta = self.prev[m].eta
             self.cur[m].traj_distr = self.new_traj_distr[m]
-            if not self._hyperparams['policy_eval']:
-                self.traj_distr[self.iteration_count].append(self.new_traj_distr[m])
             self.traj_info[self.iteration_count].append(self.cur[m].traj_info)
             if self._hyperparams['ioc']:
               self.cur[m].prevcost_traj_info = TrajectoryInfo()
-              if not self._hyperparams['global_cost'] and self._hyperparams['ioc']:
-                with Timer('Algorithm._advance_iteration_variables cost_copy'):
-                    self.previous_cost.append(self.cost[m].copy())
         delattr(self, 'new_traj_distr')
         del self.traj_info[self.iteration_count-1]
 
@@ -322,18 +291,12 @@ class Algorithm(object):
         new_mult = predicted_impr / (2.0 * max(1e-4,
                                                predicted_impr - actual_impr))
         new_mult = max(0.1, min(5.0, new_mult))
-        # if self._hyperparams['ioc_maxent_iter'] == -1 or self.iteration_count < self._hyperparams['ioc_maxent_iter']:
         new_step = max(
             min(new_mult * self.cur[m].step_mult,
                 self._hyperparams['max_step_mult']),
             self._hyperparams['min_step_mult']
         )
-        # else:
-        #     new_step = max(
-        #         min(new_mult * self.cur[m].step_mult,
-        #             self._hyperparams['max_step_mult_no_ioc']),
-        #         self._hyperparams['min_step_mult_no_ioc']
-        #     )
+        
         self.cur[m].step_mult = new_step
 
         if new_mult > 1:
@@ -415,19 +378,13 @@ class Algorithm(object):
         samples_logiw = {i: samples_logiw[i].reshape((-1, 1)) for i in xrange(M)}
         demos_logiw = {i: demos_logiw[i].reshape((-1, 1)) for i in xrange(M)}
         # TODO - make these changes in other algorithm objects too.
-        if not self._hyperparams['global_cost']:
-            for i in xrange(M):
-                self.cost[i].update(self.demoU, self.demoO, demos_logiw[i], self.sample_list[i].get_U(),
-                                self.sample_list[i].get_obs(), samples_logiw[i], itr=self.iteration_count)
-        else:
-            sampleU_arr = np.vstack((self.sample_list[i].get_U() for i in xrange(M)))
-            sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
-            samples_logiw_arr = np.hstack([samples_logiw[i] for i in xrange(M)]).reshape((-1, 1))
-            # TODO - this is a weird hack that is wrong, and has been in the code for awhile.
-            demos_logiw_arr = demos_logiw[0].reshape((-1, 1))  # np.hstack([demos_logiw[i] for i in xrange(Md)]).reshape((-1, 1))
-            self.cost.update(self.demoU, self.demoO, demos_logiw_arr, sampleU_arr,
-                                                        sampleO_arr, samples_logiw_arr, itr=self.iteration_count)
-
+        sampleU_arr = np.vstack((self.sample_list[i].get_U() for i in xrange(M)))
+        sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
+        samples_logiw_arr = np.hstack([samples_logiw[i] for i in xrange(M)]).reshape((-1, 1))
+        # TODO - this is a weird hack that is wrong, and has been in the code for awhile.
+        demos_logiw_arr = demos_logiw[0].reshape((-1, 1))  # np.hstack([demos_logiw[i] for i in xrange(Md)]).reshape((-1, 1))
+        self.cost.update(self.demoU, self.demoO, demos_logiw_arr, sampleU_arr,
+                                                    sampleO_arr, samples_logiw_arr, itr=self.iteration_count)
 
     def importance_weights(self):
         """
@@ -460,14 +417,12 @@ class Algorithm(object):
         #        demoX[m][samp, :,-dF:] = demoFeat
         self.demo_traj = {}
 
-
         # estimate demo distributions empirically when not initializing from demo policy
         for i in xrange(Md):  # always 1
             if self._hyperparams['demo_distr_empest']:
                 # Why does this not use the dynamics?
                 # Answer: demoU is estimated using the dynamics if demoU are unknown. (But this is unimplemented)
                 self.demo_traj[i] = fit_emp_controller(demoX[i], demoU[i])
-
 
         for i in xrange(M):
             # This code assumes a fixed number of samples per iteration/controller
@@ -477,7 +432,6 @@ class Algorithm(object):
             else:
                 samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
                 demos_logprob[i] = np.zeros((itr + Md + 1, self.T, demoX[i].shape[0]))
-
 
             sample_i_X = self.sample_list[i].get_X()
             sample_i_U = self.sample_list[i].get_U()

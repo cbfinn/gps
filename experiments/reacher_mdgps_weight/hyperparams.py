@@ -16,7 +16,6 @@ from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy.lin_gauss_init import init_lqr, init_pd
-# from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
 from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
@@ -38,27 +37,24 @@ SENSOR_DIMS = {
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
+SEED = 0
 
 np.random.seed(47)
-TRAIN_CONDITIONS = 6 # 4
-TEST_CONDITIONS = 0 # 9
+TRAIN_CONDITIONS = 4
+TEST_CONDITIONS = 0
 TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
 pos_body_offset = []
 np.random.seed(13)
 for _ in range(TOTAL_CONDITIONS):
     pos_body_offset.append(np.array([-0.2, 0.2, 0.0])) # fixed for weight-varying experiment
-#pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
-#pos_body_offset.append(np.array([0.05, 0.2, 0.0]))
-# for _ in range(TOTAL_CONDITIONS):
-#     pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
+
+density_range = [1e-4, 1e-3, 1e5, 1e6]
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
-    # 'data_files_dir': EXP_DIR + 'data_files_arm/',
-    # 'data_files_dir': EXP_DIR + 'data_files_oracle/',
-    'data_files_dir': EXP_DIR + 'data_files_arm_oracle/',
+    'data_files_dir': EXP_DIR + 'data_files/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': TOTAL_CONDITIONS,
@@ -69,34 +65,8 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    # 'filename': './mjc_models/reacher_img.xml',
-    # 'models': [weighted_reacher(finger_density=1e-8),
-    #     weighted_reacher(finger_density=1e-7),
-    #     weighted_reacher(finger_density=1e7),
-    #     weighted_reacher(finger_density=1e8),
-    #     ],
-    # 'models': [weighted_reacher(finger_density=1e-10),
-    #     weighted_reacher(finger_density=1e-9),
-    #     weighted_reacher(finger_density=1e8),
-    #     weighted_reacher(finger_density=1e9),
-    #     ],
-    # 'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
-    #     weighted_reacher(arm_density=1e-4, finger_density=1e-4),
-    #     weighted_reacher(arm_density=1e6, finger_density=1e6),
-    #     weighted_reacher(arm_density=1e7, finger_density=1e7),
-    #     ],
-    # 'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
-    #     weighted_reacher(arm_density=1e-4, finger_density=1e-4),
-    #     weighted_reacher(arm_density=1e5, finger_density=1e5),
-    #     weighted_reacher(arm_density=1e6, finger_density=1e6),
-    #     ],
-    'models': [weighted_reacher(arm_density=1e-5, finger_density=1e-5),
-        weighted_reacher(arm_density=1e-4, finger_density=1e-4),
-        weighted_reacher(arm_density=1e5, finger_density=1e5),
-        weighted_reacher(arm_density=1e6, finger_density=1e6),
-        weighted_reacher(arm_density=1e7, finger_density=1e7),
-        weighted_reacher(arm_density=1e8, finger_density=1e8),
-        ],
+    'models': [weighted_reacher(arm_density=density_range[i], finger_density=density_range[i]) \
+                for i in xrange(common['conditions'])],
     'x0': np.zeros(4),
     'dt': 0.05,
     'substeps': 5,
@@ -110,27 +80,17 @@ agent = {
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, \
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
-    'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    'camera_pos': np.array([0., 0., 1.5, 0., 0., 0.]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[i], np.array([0., 0., 0.])])
         for i in range(TOTAL_CONDITIONS)],
     'render':True,
 }
 
+# Test trained policy on different conditions
 test_agent = {
     'type': AgentMuJoCo,
-    # 'filename': './mjc_models/reacher_img.xml',
-    # 'models': [weighted_reacher(finger_density=1e-51),
-    #     weighted_reacher(finger_density=1e-50),
-    #     weighted_reacher(finger_density=1e10),
-    #     weighted_reacher(finger_density=1e11),
-    #     ],
-    'models': [weighted_reacher(arm_density=1.0, finger_density=1.0),
-        weighted_reacher(arm_density=1e1, finger_density=1e1),
-        weighted_reacher(arm_density=1e6, finger_density=1e6),
-        weighted_reacher(arm_density=1e7, finger_density=1e7),
-        weighted_reacher(arm_density=1e8, finger_density=1e8),
-        weighted_reacher(arm_density=1e9, finger_density=1e9),
-        ],
+    'models': [weighted_reacher(arm_density=density_range[i], finger_density=density_range[i]) \
+                for i in xrange(common['conditions'])],
     'x0': np.zeros(4),
     'dt': 0.05,
     'substeps': 5,
@@ -144,7 +104,7 @@ test_agent = {
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, \
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
-    'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
+    'camera_pos': np.array([0., 0., 1.5, 0., 0., 0.]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[i], np.array([0., 0., 0.])])
         for i in range(TOTAL_CONDITIONS)],
     'render':True,
@@ -191,39 +151,6 @@ algorithm['cost'] = [{
 }  for i in range(common['conditions'])]
 
 
-# Cost function
-#torque_cost = {
-    #'type': CostAction,
-    #'wu': np.ones(2),
-#}
-#
-
-#state_cost = {
-    #'type': CostState,
-    #'data_types': [END_EFFECTOR_POINTS],
-    #'A' : np.c_[np.eye(3), -np.eye(3)],
-    #'l1': 1.0,
-    #'l2': 0.0,
-    #'alpha': 0.0,
-    #'evalnorm': evall1l2term,
-#}
-
-#algorithm['cost'] = {
-    #'type': CostSum,
-    #'costs': [torque_cost, state_cost],
-    #'weights': [2.0, 1.0],
-#}
-
-#algorithm['cost'] = {
-#    'type': CostGym,
-#}
-
-# algorithm['policy_opt'] = {
-#     'type': PolicyOptCaffe,
-#     'iterations': 5000,
-#     'weights_file_prefix': common['data_files_dir'] + 'policy',
-# }
-
 algorithm['policy_opt'] = {
     'type': PolicyOptTf,
     'network_params': {
@@ -232,10 +159,9 @@ algorithm['policy_opt'] = {
         'sensor_dims': SENSOR_DIMS,
     },
     'network_model': example_tf_network,
-    # 'fc_only_iterations': 5000,
-    # 'init_iterations': 1000,
     'iterations': 1000,  # was 100
     'weights_file_prefix': common['data_files_dir'] + 'policy',
+    'random_seed': SEED,
 }
 
 algorithm['init_traj_distr'] = {
@@ -254,7 +180,7 @@ algorithm['dynamics'] = {
         'type': DynamicsPriorGMM,
         'max_clusters': 30,
         'min_samples_per_cluster': 40,
-        'max_samples': 10, #len(common['train_conditions']),
+        'max_samples': 10,
     },
 }
 
@@ -283,7 +209,7 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
-    'random_seed': 1,
+    'random_seed': SEED,
 }
 
 common['info'] = generate_experiment_info(config)

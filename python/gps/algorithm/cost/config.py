@@ -32,9 +32,6 @@ COST_STATE = {
     'l2': 1.0,
     'alpha': 1e-2,
     'wp_final_multiplier': 1.0,  # Weight multiplier on final time step.
-    # 'data_type': None, # must be set
-    # 'A': None, # must be set
-    # 'target': 0.0,
     'data_types': {
         'JointAngle': {
             'target_state': None,  # Target state - must be set.

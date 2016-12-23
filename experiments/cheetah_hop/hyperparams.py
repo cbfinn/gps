@@ -46,8 +46,6 @@ x0 = []
 for _ in range(CONDITIONS):
     x0.append(np.concatenate((0.2*np.random.rand(9)-0.1, 0.1*np.random.randn(9))))
 
-# x0 = [np.zeros(18)]
-
 common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
@@ -76,8 +74,6 @@ agent = {
     'dt': 0.05,
     'substeps': 5,
     'conditions': common['conditions'],
-    #'train_conditions': common['train_conditions'],
-    #'test_conditions': common['test_conditions'],
     'T': 200,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],
@@ -192,10 +188,8 @@ algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
 }
 
-
 algorithm['policy_prior'] = {
 }
-
 
 config = {
     'iterations': algorithm['iterations'],

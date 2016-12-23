@@ -57,34 +57,6 @@ for _ in range(DEMO_CONDITIONS):
     demo_pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
 pos_body_offset = demo_pos_body_offset
 
-#CONDITIONS = 20
-#np.random.seed(15)
-#for _ in range(CONDITIONS):
-#    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
-
-#demo_pos_body_offset = []
-#for _ in range(DEMO_CONDITIONS):
-#    demo_pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
-
-#TRAIN_CONDITIONS = 9
-
-#np.random.seed(47)
-#DEMO_CONDITIONS = 20
-#TEST_CONDITIONS = 9
-#TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
-
-#demo_pos_body_offset = []
-#for _ in range(DEMO_CONDITIONS):
-#    demo_pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
-
-#pos_body_offset = []
-#for _ in range(TOTAL_CONDITIONS):
-#    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
-
-#CONDITIONS = 1 #TRAIN_CONDITIONS
-#pos_body_offset = [pos_body_offset[1]]
-#pos_body_offset = []
-#pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
 
 
 common = {
@@ -98,8 +70,6 @@ common = {
     'nn_demo': False,
     'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_11.pkl',
     'conditions': CONDITIONS,
-    #'train_conditions': range(TRAIN_CONDITIONS),
-    #'test_conditions': range(TRAIN_CONDITIONS, TOTAL_CONDITIONS),
     'demo_conditions': DEMO_CONDITIONS,
     'NN_demo_file': EXP_DIR + 'data_files/pol_demos.pkl',
     'LG_demo_file': EXP_DIR + 'data_files/lg_demos.pkl',
@@ -126,7 +96,6 @@ agent = {
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
     'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
-    #'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(CONDITIONS)],
     'render': True,
@@ -149,7 +118,6 @@ demo_agent = {
             END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
     'meta_include': [],
     'camera_pos': np.array([0., 0., 3., 0., 0., 0.]),
-    #'camera_pos': np.array([0., 0., 2., 0., 0.2, 0.5]),
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ demo_pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(DEMO_CONDITIONS)],
     'success_upper_bound': 0.01,
@@ -157,26 +125,6 @@ demo_agent = {
 }
 
 
-#algorithm = {
-#    'type': AlgorithmTrajOpt,
-#    'ioc' : 'ICML',
-#    'max_ent_traj': 0.001,
-#    'conditions': common['conditions'],
-#    #'train_conditions': common['train_conditions'],
-#    #'test_conditions': common['test_conditions'],
-#    'kl_step': 0.5,
-#    'min_step_mult': 0.05,
-#    'max_step_mult': 2.0,
-#    'demo_cond': demo_agent['conditions'],
-#    'num_demos': 2,
-#    'demo_var_mult': 1.0,
-#    'synthetic_cost_samples': 100,
-#    'iterations': 15,
-#    'plot_dir': EXP_DIR,
-#    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
-#                            for i in xrange(CONDITIONS)],
-#    #'demo_conditions': [],
-#}
 
 algorithm = {
     'type': AlgorithmMDGPS,
@@ -185,8 +133,6 @@ algorithm = {
     'max_ent_traj': 1.0,
     'conditions': common['conditions'],
     'policy_sample_mode': 'replace',
-    #'train_conditions': common['train_conditions'],
-    #'test_conditions': common['test_conditions'],
     'kl_step': 0.5,
     'min_step_mult': 0.05,
     'max_step_mult': 2.0,
@@ -198,8 +144,6 @@ algorithm = {
     'plot_dir': EXP_DIR,
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
                             for i in xrange(CONDITIONS)],
-    #'demo_conditions': [],
-    'global_cost': True,
 }
 
 PR2_GAINS = np.array([1.0, 1.0])
@@ -261,49 +205,6 @@ algorithm['cost'] = {
 }
 
 
-#algorithm['cost'] = {
-#    'type': CostIOCSupervised,
-#    'weight_dir': common['data_files_dir'],
-#    'agent': demo_agent,
-#    'gt_cost': gt_costs,
-#    'demo_file': os.path.join(common['data_files_dir'], 'demos_nn_MaxEnt_4_cond_z_0.05_noise_seed1.pkl'),
-#    'finetune': False,
-#
-#    'wu': 1 / PR2_GAINS,
-#    'T': agent['T'],
-#    'dO': 16,
-#    'iterations': 1000,
-#    'init_iterations': 10000,
-#    'demo_batch_size': 5,
-#    'sample_batch_size': 5,
-#    'ioc_loss': algorithm['ioc'],
-#    'smooth_reg_weight': 0.0,
-#    'mono_reg_weight': 100.0,
-#    'learn_wu': False,
-#}
-
-
-"""
-algorithm['cost'] = {
-    'type': CostIOCWrapper,
-    'wrapped_cost': algorithm['gt_cost']
-}
-"""
-
-
-
-#algorithm['init_traj_distr'] = {
-#    'type': init_demo,
-#    'init_gains':  1.0 / PR2_GAINS,
-#    'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-#    'init_var': 5.0,
-#    'stiffness': 1.0,
-##    'stiffness_vel': 0.5,
-#    'final_weight': 50.0,
-#    'dt': agent['dt'],
-#    'T': agent['T'],
-#}
-
 algorithm['init_traj_distr'] = {
     'type': init_lqr,
     'init_gains':  100.0 * np.ones(SENSOR_DIMS[ACTION]),
@@ -330,11 +231,6 @@ algorithm['traj_opt'] = {
     'max_eta': 1.0,
 }
 
-#algorithm['policy_opt'] = {
-#    'type': PolicyOptCaffe,
-#    'iterations': 5000,
-#    'weights_file_prefix': common['data_files_dir'] + 'policy',
-#}
 
 algorithm['policy_opt'] = {
     'type': PolicyOptTf,
@@ -345,8 +241,6 @@ algorithm['policy_opt'] = {
         'sensor_dims': SENSOR_DIMS,
     },
     'network_model': example_tf_network,
-    #'fc_only_iterations': 5000,
-    #'init_iterations': 1000,
     'iterations': 1000,  # was 100
     'weights_file_prefix': EXP_DIR + 'policy',
 }
@@ -363,7 +257,6 @@ config = {
     'iterations': algorithm['iterations'],
     'num_samples': 10,
     'verbose_trials': 1,
-    #'verbose_policy_trials': 5,
     'common': common,
     'agent': agent,
     'demo_agent': demo_agent,

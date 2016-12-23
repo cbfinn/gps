@@ -11,7 +11,6 @@ from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 from gps.utility.data_logger import DataLogger
 from gps.utility.general_utils import flatten_lists
 
-
 def generate_pos_body_offset(conditions):
 	""" Generate position body offset for all conditions. """
 	pos_body_offset = []
@@ -41,7 +40,7 @@ def extract_samples(itr, sample_file):
     """ Extract samples from iteration 0 up to iteration itr. """
     sample_list = {}
     for i in xrange(itr):
-        sample_file_i = sample_file + '_%2d' % itr + '.pkl'
+        sample_file_i = sample_file + '_%02d' % itr + '.pkl'
         samples = DataLogger().unpickle(sample_file_i)
         sample_list[i] = samples[0]
     return sample_list
@@ -64,7 +63,6 @@ def eval_demos(agent, demo_file, costfn, n=10):
     demoX = demos['demoX']
     demoU = demos['demoU']
     return eval_demos_xu(agent, demoX, demoU, costfn, n=n)
-
 
 def eval_demos_xu(agent, demoX, demoU, costfn, n=-1):
     num_demos = demoX.shape[0]
@@ -97,7 +95,6 @@ def compute_distance(target_end_effector, sample_list, end_effector_idxs=range(0
                 axis=1))) for i in xrange(len(cur_samples))]
     return dists
 
-
 def compute_distance_cost_plot(algorithm, agent, sample_list):
     if 'target_end_effector' not in algorithm._hyperparams:
         return None
@@ -123,16 +120,11 @@ def measure_distance_and_success_peg(gps):
         None
     Returns: the mean distance and the success rate
     """
-
     pol_iter = gps._hyperparams['algorithm']['iterations']
     peg_height = gps._hyperparams['demo_agent']['peg_height']
     mean_dists = []
     success_rates = []
     for i in xrange(pol_iter):
-        # if 'sample_on_policy' in gps._hyperparams['algorithm'] and \
-        #     gps._hyperparams['algorithm']['sample_on_policy']:
-        #     pol_samples_file = gps._data_files_dir + 'pol_sample_itr_%02d.pkl' % i
-        # else:
         pol_samples_file = gps._data_files_dir + 'traj_sample_itr_%02d.pkl.gz' % i
         pol_sample_lists = gps.data_logger.unpickle(pol_samples_file)
         if pol_sample_lists is None:
@@ -177,20 +169,19 @@ def get_demos(gps):
     gps._hyperparams['algorithm']['init_traj_distr']['init_demo_u'] = np.mean(demos['demoU'], 0)
     gps.algorithm = gps._hyperparams['algorithm']['type'](gps._hyperparams['algorithm'])
 
-    if gps.algorithm._hyperparams.get('init_demo_policy', False):
-        demo_algorithm_file = gps._hyperparams['common']['demo_controller_file']
-        demo_algorithm = gps.data_logger.unpickle(demo_algorithm_file)
-        if demo_algorithm is None:
-            print("Error: cannot find '%s.'" % algorithm_file)
-            os._exit(1) # called instead of sys.exit(), since t
-        var_mult = gps.algorithm._hyperparams['init_var_mult']
-        gps.algorithm.policy_opt.var = demo_algorithm.policy_opt.var.copy() * var_mult
-        gps.algorithm.policy_opt.policy = demo_algorithm.policy_opt.copy().policy
-        gps.algorithm.policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(gps.algorithm.policy_opt.var))
-        gps.algorithm.policy_opt.solver.net.share_with(gps.algorithm.policy_opt.policy.net)
+    demo_algorithm_file = gps._hyperparams['common']['demo_controller_file']
+    demo_algorithm = gps.data_logger.unpickle(demo_algorithm_file)
+    if demo_algorithm is None:
+        print("Error: cannot find '%s.'" % algorithm_file)
+        os._exit(1) # called instead of sys.exit(), since t
+    var_mult = gps.algorithm._hyperparams['init_var_mult']
+    gps.algorithm.policy_opt.var = demo_algorithm.policy_opt.var.copy() * var_mult
+    gps.algorithm.policy_opt.policy = demo_algorithm.policy_opt.copy().policy
+    gps.algorithm.policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(gps.algorithm.policy_opt.var))
+    gps.algorithm.policy_opt.solver.net.share_with(gps.algorithm.policy_opt.policy.net)
 
-        var_mult = gps.algorithm._hyperparams['demo_var_mult']
-        gps.algorithm.demo_policy_opt = demo_algorithm.policy_opt.copy()
-        gps.algorithm.demo_policy_opt.var = demo_algorithm.policy_opt.var.copy() * var_mult
-        gps.algorithm.demo_policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(gps.algorithm.demo_policy_opt.var))
+    var_mult = gps.algorithm._hyperparams['demo_var_mult']
+    gps.algorithm.demo_policy_opt = demo_algorithm.policy_opt.copy()
+    gps.algorithm.demo_policy_opt.var = demo_algorithm.policy_opt.var.copy() * var_mult
+    gps.algorithm.demo_policy_opt.policy.chol_pol_covar = np.diag(np.sqrt(gps.algorithm.demo_policy_opt.var))
     return demos

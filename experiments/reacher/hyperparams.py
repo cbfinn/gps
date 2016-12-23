@@ -14,7 +14,6 @@ from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_state import CostState
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_sum import CostSum
-#from gps.algorithm.cost.cost_gym import CostGym
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
@@ -42,12 +41,9 @@ BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
 
-CONDITIONS = 2
-#CONDITIONS = 4
+CONDITIONS = 20
 np.random.seed(14)
 pos_body_offset = []
-#pos_body_offset.append(np.array([-0.1, 0.2, 0.0]))
-#pos_body_offset.append(np.array([0.05, 0.2, 0.0]))
 for _ in range(CONDITIONS):
     pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1 ,0]))
 
@@ -105,18 +101,6 @@ algorithm = {
 }
 
 
-#algorithm = {
-#    'type': AlgorithmMDGPS,
-#    'max_ent_traj': 0.001,
-#    'sample_on_policy': True,
-#    'conditions': common['conditions'],
-#    'iterations': 12,
-#    'kl_step': 1.0,
-#    'min_step_mult': 0.2,
-#    'max_step_mult': 2.0,
-#    'policy_sample_mode': 'replace',
-#}
-
 PR2_GAINS = np.array([1.0, 1.0])
 torque_cost_1 = [{
     'type': CostAction,
@@ -141,39 +125,6 @@ algorithm['cost'] = [{
 }  for i in range(common['conditions'])]
 
 
-# Cost function
-#torque_cost = {
-    #'type': CostAction,
-    #'wu': np.ones(2),
-#}
-
-
-#state_cost = {
-    #'type': CostState,
-    #'data_types': [END_EFFECTOR_POINTS],
-    #'A' : np.c_[np.eye(3), -np.eye(3)],
-    #'l1': 1.0,
-    #'l2': 0.0,
-    #'alpha': 0.0,
-    #'evalnorm': evall1l2term,
-#}
-
-#algorithm['cost'] = {
-    #'type': CostSum,
-    #'costs': [torque_cost, state_cost],
-    #'weights': [2.0, 1.0],
-#}
-
-#algorithm['cost'] = {
-#    'type': CostGym,
-#}
-
-#algorithm['policy_opt'] = {
-#    'type': PolicyOptCaffe,
-#    'iterations': 5000,
-#    'weights_file_prefix': common['data_files_dir'] + 'policy',
-#}
-
 algorithm['policy_opt'] = {
     'type': PolicyOptTf,
     'network_params': {
@@ -183,8 +134,6 @@ algorithm['policy_opt'] = {
         'sensor_dims': SENSOR_DIMS,
     },
     'network_model': example_tf_network,
-    #'fc_only_iterations': 5000,
-    #'init_iterations': 1000,
     'iterations': 1000,  # was 100
     'weights_file_prefix': EXP_DIR + 'policy',
 }
@@ -205,7 +154,7 @@ algorithm['dynamics'] = {
         'type': DynamicsPriorGMM,
         'max_clusters': 30,
         'min_samples_per_cluster': 40,
-        'max_samples': 10, #len(common['train_conditions']),
+        'max_samples': 10,
     },
 }
 

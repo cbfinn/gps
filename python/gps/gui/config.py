@@ -95,7 +95,7 @@ config = {
     'image_overlay_alpha': 0.3,
 
     # Both GUIs
-    'figsize': (12, 12),
+    'figsize': (30, 16), #(12, 12)
 
     # Target Setup
     'num_targets': 10,

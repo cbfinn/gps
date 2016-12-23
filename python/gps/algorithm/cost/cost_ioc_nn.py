@@ -219,22 +219,10 @@ class CostIOCNN(Cost):
                          i, average_loss / 500)
             average_loss = 0
 
-
         # Keep track of Caffe iterations for loading solver states.
         self.caffe_iter += self._hyperparams['iterations']
         self.solver.test_nets[0].share_with(self.solver.net)
         self.solver.test_nets[1].share_with(self.solver.net)
-        # DEBUGGING
-        #import pdb; pdb.set_trace()
-        #debug=False
-        #if debug:
-        #    old_net = self.solver.net  # test_nets[0]
-        #    self._hyperparams['ioc_loss'] = 'MPF'
-        #    self._init_solver()
-        #    self.solver.net.share_with(old_net)
-        #    # TODO = also need to change algorithm._hyperparams['ioc'] to MPF
-        # END DEBUGGING
-
 
 
     def _init_solver(self, sample_batch_size=None):
@@ -352,12 +340,8 @@ class CostIOCNN(Cost):
             LOGGER.debug('Caffe iteration %d, average loss %f',
                          i, average_loss / 500)
             average_loss = 0
-        import pdb; pdb.set_trace()
-
 
         # Keep track of Caffe iterations for loading solver states.
         self.caffe_iter += self._hyperparams['iterations']
         self.solver.test_nets[0].share_with(self.solver.net)
         self.solver.test_nets[1].share_with(self.solver.net)
-
-

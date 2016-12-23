@@ -22,13 +22,10 @@ sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
 from gps.gui.gps_training_gui import GPSTrainingGUI, NUM_DEMO_PLOTS
 from gps.utility.data_logger import DataLogger, open_zip
 from gps.sample.sample_list import SampleList
-# from gps.utility.generate_demo import GenDemo
 from gps.utility.general_utils import disable_caffe_logs, Timer, mkdir_p
 from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
                                     measure_distance_and_success_peg, get_demos, extract_samples
-from gps.utility.visualization import get_comparison_hyperparams, compare_experiments, compare_samples, \
-                                        manual_compare_samples, manual_compare_samples_curve, \
-                                        manual_compare_samples_curve_hard, visualize_samples
+from gps.utility.visualization import compare_samples_curve, visualize_samples
 
 
 class GPSMain(object):
@@ -45,8 +42,10 @@ class GPSMain(object):
         self._hyperparams = config
         self._conditions = config['common']['conditions']
         if 'train_conditions' in config['common']:
-            self._train_idx = config['common']['train_conditions']
-            self._test_idx = config['common']['test_conditions']
+            self._train_idx = range(config['common']['train_conditions'])
+            self._test_idx = range(config['common']['test_conditions'])
+            if not self._test_idx:
+                self._test_idx = self._train_idx
         else:
             self._train_idx = range(self._conditions)
             config['common']['train_conditions'] = config['common']['conditions']
@@ -137,8 +136,6 @@ class GPSMain(object):
                         pol_sample_lists = self._take_policy_samples(idx=self._train_idx)
                     self._log_data(itr, traj_sample_lists, pol_sample_lists)
                 else:
-                    #for i in range(self._hyperparams['num_samples']):
-                    #    self._take_sample(itr, cond, i)
                     self._log_data(itr, traj_sample_lists)
         self._end()
         return None
@@ -183,19 +180,9 @@ class GPSMain(object):
             all_dists.append(dists)
         print [np.mean(dist) for dist in all_dists]
 
-        import pdb; pdb.set_trace()
-
         for cond in range(len(self._train_idx)):
             for i in range(N):
                 self.agent.visualize_sample(traj_sample_lists[cond][i], cond)
-
-        # Code for looking at demo policy.
-        # demo_controller = self.data_logger.unpickle(self._hyperparams['common']['demo_controller_file'][0])
-        # demo_policy = demo_controller.policy_opt.policy
-        # sample = self.agent.sample(demo_policy, 0)
-        # self.agent.visualize_sample(sample, 0)
-
-        import pdb; pdb.set_trace()
 
         pol_sample_lists = self._take_policy_samples(N, testing, self._test_idx)
         self.data_logger.pickle(
@@ -243,8 +230,6 @@ class GPSMain(object):
                         ('pol_sample_itr_%02d.pkl' % itr_load))
                 else:
                     pol_sample_lists = None
-                #self.gui.update(itr_load, self.algorithm, self.agent,
-                #    traj_sample_lists, pol_sample_lists)
                 self.gui.set_status_text(
                     ('Resuming training from algorithm state at iteration %d.\n' +
                     'Press \'go\' to begin.') % itr_load)
@@ -275,12 +260,8 @@ class GPSMain(object):
             i: Sample number.
         Returns: None
         """
-        if self.algorithm._hyperparams['sample_on_policy'] and (self.algorithm.iteration_count > 0 or \
-            self.algorithm._hyperparams['init_demo_policy']):
-            if not self.algorithm._hyperparams['multiple_policy']:
-                pol = self.algorithm.policy_opt.policy
-            else:
-                pol = self.algorithm.policy_opts[cond / self.algorithm.num_policies].policy
+        if self.algorithm._hyperparams['sample_on_policy'] and self.algorithm.iteration_count > 0:
+            pol = self.algorithm.policy_opt.policy
         else:
             pol = self.algorithm.cur[cond].traj_distr
 
@@ -374,19 +355,13 @@ class GPSMain(object):
         # TODO: Take at all conditions for GUI?
         # TODO: Take N samples per condition rather than just one
         for cond in idx:
-            if not self.algorithm._hyperparams['multiple_policy']:
-                if testing:
-                    pol_samples[cond][0] = self.test_agent.sample(
-                        self.algorithm.policy_opt.policy, idx[cond],
-                        verbose=True, save=False, noisy=True)
-                else:
-                    pol_samples[cond][0] = self.agent.sample(
-                        self.algorithm.policy_opt.policy, idx[cond],
-                        verbose=True, save=False, noisy=True)
-            else:
-                pol = self.algorithm.policy_opts[cond / self.algorithm.num_policies].policy
+            if testing:
                 pol_samples[cond][0] = self.test_agent.sample(
-                    pol, idx[cond],
+                    self.algorithm.policy_opt.policy, idx[cond],
+                    verbose=True, save=False, noisy=True)
+            else:
+                pol_samples[cond][0] = self.agent.sample(
+                    self.algorithm.policy_opt.policy, idx[cond],
                     verbose=True, save=False, noisy=True)
         return [SampleList(samples) for samples in pol_samples]
 
@@ -399,7 +374,6 @@ class GPSMain(object):
             pol_sample_lists: policy samples as SampleList object
         Returns: None
         """
-
         with Timer('Updating GUI'):
             if False: #self.using_ioc():
                 # Produce time vs cost plots
@@ -430,12 +404,7 @@ class GPSMain(object):
             if 'no_sample_logging' in self._hyperparams['common']:
                 return
 
-        # if itr == self.algorithm._hyperparams['iterations'] - 1 or itr == self.algorithm._hyperparams['ioc_maxent_iter'] - 1: # Just save the last iteration of the algorithm file
-        # if ((itr+1) % 5 == 0) or itr == self.algorithm._hyperparams['iterations'] - 1: # Just save the last iteration of the algorithm file
-        log_data = itr>0 and (itr%5 == 0) or (itr==self._hyperparams['iterations']-1)
-        # TODO: still save samples for every iteration?
-        # if log_data:
-        if log_data:
+        if True:
             with Timer('saving algorithm file'):
                 self.algorithm.demo_policy = None
                 copy_alg = copy.copy(self.algorithm)
@@ -469,7 +438,6 @@ class GPSMain(object):
     def using_ioc(self):
         return 'ioc' in self._hyperparams['algorithm'] and self._hyperparams['algorithm']['ioc']
 
-
 def main():
     """ Main function to be run. """
     parser = argparse.ArgumentParser(description='Run the Guided Policy Search algorithm.')
@@ -489,8 +457,6 @@ def main():
                         help='quit GUI automatically when finished')
     parser.add_argument('--dry_run', nargs=2, type=int, default=None,
                         help='Condition to dry-run the policy')
-    parser.add_argument('-c', '--compare', metavar='N', type=int,
-                    help='compare two experiments')
     parser.add_argument('-m', '--measure', metavar='N', type=int,
                     help='measure policy samples to see how they are doing')
     parser.add_argument('-v', '--visualize', metavar='N', type=int,
@@ -499,14 +465,12 @@ def main():
                     help='evaluate the ground truth cost of the last policy')
     parser.add_argument('-x', '--extendtesting', metavar='N', type=int,
                     help='testing the policy performance on a larger domain')
-    # TODO: make these subparsers
 
     args = parser.parse_args()
 
     exp_name = args.experiment
     resume_training_itr = args.resume
     test_policy_N = args.policy
-    compare = args.compare
     measure = args.measure
     visualize = args.visualize
 
@@ -597,7 +561,6 @@ def main():
         algorithm_filenames = [f for f in data_filenames if f.startswith(algorithm_prefix)]
         current_algorithm = sorted(algorithm_filenames, reverse=True)[0]
         current_itr = int(current_algorithm[len(algorithm_prefix):len(algorithm_prefix)+2])
-
         gps = GPSMain(hyperparams.config, test_pol=True)
         if hyperparams.config['gui_on']:
             if type(test_policy_N) is int:
@@ -620,37 +583,13 @@ def main():
         else:
             gps.test_policy(itr=current_itr, N=test_policy_N, testing=args.extendtesting, eval_pol_gt=args.eval)
     elif measure:
-        for i in xrange(1):
-            random.seed(i)
-            np.random.seed(i)
-            gps = GPSMain(hyperparams.config)
-            agent_config = gps._hyperparams['agent']
-            # compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
-            # manual_compare_samples(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
-            manual_compare_samples_curve_hard(gps, measure, agent_config, three_dim=False, weight_varying=True, experiment='reacher')
+        gps = GPSMain(hyperparams.config)
+        agent_config = gps._hyperparams['agent']
+        compare_samples_curve(gps, measure, agent_config, weight_varying=True, experiment='reacher')
     elif visualize:
         gps = GPSMain(hyperparams.config)
         agent_config = gps._hyperparams['agent']
-        visualize_samples(gps, visualize, agent_config, experiment='reacher')
-    elif compare:
-        mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
-            success_rates_2_dict = {}, {}, {}, {}
-        seeds = [0, 1, 2]
-        for itr in seeds:
-            random.seed(itr)
-            np.random.seed(itr)
-            hyperparams_compare = get_comparison_hyperparams(hyperparams_file_compare, itr)
-            gps = GPSMain(hyperparams.config)
-            gps.run()
-            plt.close()
-            mean_dists_1_dict[itr], success_rates_1_dict[itr] = measure_distance_and_success_peg(gps) # For peg only
-            gps_classic = GPSMain(hyperparams_compare.config)
-            gps.run()
-            plt.close()
-            mean_dists_2_dict[itr], success_rates_2_dict[itr] = measure_distance_and_success_peg(gps) # For peg only
-        compare_experiments(mean_dists_1_dict, mean_dists_2_dict, success_rates_1_dict, \
-                                success_rates_2_dict, gps._hyperparams['algorithm']['iterations'], \
-                                exp_dir, hyperparams_compare.config, hyperparams.config)
+        visualize_samples(gps, visualize, agent_config, experiment='reacher') # Recording the video of reacher experiment
     else:
         gps = GPSMain(hyperparams.config)
         if hyperparams.config['gui_on']:

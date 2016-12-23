@@ -17,7 +17,6 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES,\
 
 LOGGER = logging.getLogger(__name__)
 
-
 class CostIOCTF(Cost):
     """ Set up weighted neural network norm loss with learned parameters. """
     def __init__(self, hyperparams):
@@ -31,8 +30,10 @@ class CostIOCTF(Cost):
         self.demo_batch_size = self._hyperparams['demo_batch_size']
         self.sample_batch_size = self._hyperparams['sample_batch_size']
         self.approximate_lxx = self._hyperparams['approximate_lxx']
-
+        
+        tf.set_random_seed(self._hyperparams['random_seed'])
         self.graph = tf.Graph()
+
         with self.graph.as_default():
             self._init_solver()
 
@@ -66,7 +67,6 @@ class CostIOCTF(Cost):
         lx = np.concatenate(lx)
         dfdx = np.concatenate(dfdx)
         return lx, dfdx
-
 
     def get_ATA(self):
         with self.graph.as_default():
@@ -117,7 +117,6 @@ class CostIOCTF(Cost):
         lu = wu_mult * self._hyperparams['wu'] * sample_u
         luu = wu_mult * np.tile(np.diag(self._hyperparams['wu']), [T, 1, 1])
 
-
         if self.use_jacobian and END_EFFECTOR_POINT_JACOBIANS in sample._data:
             jnt_idx = sample.agent.get_idx_x(JOINT_ANGLES)
             vel_idx = sample.agent.get_idx_x(JOINT_VELOCITIES)
@@ -151,7 +150,6 @@ class CostIOCTF(Cost):
         d_sampler = BatchSampler([demoO, demo_torque_norm, d_log_iw])
         s_sampler = BatchSampler([sampleO, sample_torque_norm, s_log_iw])
 
-        tot_ioc_loss = 0
         for i, (d_batch, s_batch) in enumerate(
                 izip(d_sampler.with_replacement(batch_size=self.demo_batch_size), \
                     s_sampler.with_replacement(batch_size=self.sample_batch_size))):
@@ -162,14 +160,11 @@ class CostIOCTF(Cost):
                                       sample_obs = s_batch[0],
                                       sample_torque_norm = s_batch[1],
                                       sample_iw = s_batch[2])
-            tot_ioc_loss += ioc_loss
-            if i>0 and i%200 == 0:
-                LOGGER.debug("Iteration %d loss: %f", i, tot_ioc_loss/200)
-                tot_ioc_loss = 0
+            if i%200 == 0:
+                LOGGER.debug("Iteration %d loss: %f", i, ioc_loss)
 
             if i > self._hyperparams['iterations']:
                 break
-
 
     def _init_solver(self, sample_batch_size=None):
         """ Helper method to initialize the solver. """
@@ -214,6 +209,7 @@ class CostIOCTF(Cost):
 
     def run(self, targets, **feeds):
         with self.graph.as_default():
+            tf.set_random_seed(self._hyperparams['random_seed'])
             feed_dict = {self.input_dict[k]:v for (k,v) in feeds.iteritems()}
             result = self.session.run(targets, feed_dict=feed_dict)
         return result
@@ -246,4 +242,3 @@ class CostIOCTF(Cost):
             f.write(state['wts'])
             f.seek(0)
             self.restore_model(f.name)
-

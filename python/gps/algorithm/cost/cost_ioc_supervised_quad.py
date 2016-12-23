@@ -15,7 +15,6 @@ from gps.utility.demo_utils import xu_to_sample_list, extract_demos
 
 LOGGER = logging.getLogger(__name__)
 
-
 class CostIOCSupervisedQuad(CostIOCQuadratic):
     """ Set up weighted neural network norm loss with learned parameters. """
     def __init__(self, hyperparams):
@@ -47,7 +46,6 @@ class CostIOCSupervisedQuad(CostIOCQuadratic):
         solver = self.init_solver(phase='multi_objective' if self.multi_objective_wt else TRAIN)
         solver.net.share_with(sup_solver.net)
         solver.test_nets[0].share_with(sup_solver.net)
-        #solver.net.copy_from(self.weight_file)  # Load weights into train net
 
         self.finetune = hyperparams.get('finetune', False)
         if self._hyperparams.get('agent', False):
@@ -82,7 +80,6 @@ class CostIOCSupervisedQuad(CostIOCQuadratic):
                     super(CostIOCSupervisedQuad, self).update(demoU, demoO, d_log_iw, sampleU, sampleO, s_log_iw, itr=itr)
         else:
             return
-
 
     def init_supervised_demos(self, solver, demo_file, traj_files):
         X, U, O, cond = extract_demos(demo_file)
@@ -144,24 +141,15 @@ class CostIOCSupervisedQuad(CostIOCQuadratic):
             solver.net.blobs[blob_names[2]].data[:] = sample_costs[s_idx_i]
             solver.step(2)
             train_loss = solver.net.blobs[blob_names[-1]].data
-            # test_loss = solver.test_nets[0].blobs[blob_names[-1]].data
             average_loss += train_loss
             if i % heartbeat == 0 and i != 0:
                 LOGGER.debug('Caffe iteration %d, average loss %f',
                              i, average_loss / heartbeat)
-                # print 'test_loss:', test_loss
                 print 'train_loss:', train_loss
                 average_loss = 0
         # Keep track of Caffe iterations for loading solver states.
-        # self.caffe_iter += self._hyperparams['iterations']
         solver.test_nets[0].share_with(solver.net)
 
-        # supervised_losses = []
-        # for n in range(Ns):
-        #    l, _, _, _, _, _ = self.eval(sample_list[n])
-        #    supervised_losses.append(l)
-        # supervised_losses = np.array(supervised_losses)
-        # supervised_losses = np.expand_dims(supervised_losses, -1)
         if False:
             import matplotlib.pyplot as plt
             test_costs = []
@@ -185,8 +173,6 @@ class CostIOCSupervisedQuad(CostIOCQuadratic):
                 plt.plot(np.arange(T), 2 * supervised_test[i], color='blue', linestyle=linestyles[i % len(linestyles)])
             plt.show()
 
-        #solver.net.save(self.weight_file)
-
     def init_solver(self, phase=TRAIN, sample_batch_size=None):
         """ Helper method to initialize the solver. """
         solver_param = SolverParameter()
@@ -209,11 +195,6 @@ class CostIOCSupervisedQuad(CostIOCQuadratic):
             network_arch_params['sample_batch_size'] = sample_batch_size
         network_arch_params['T'] = self._T
         network_arch_params['ioc_loss'] = self._hyperparams['ioc_loss']
-        # network_arch_params['Nq'] = self._iteration_count
-        # network_arch_params['smooth_reg_weight'] = self._hyperparams['smooth_reg_weight']
-        # network_arch_params['mono_reg_weight'] = self._hyperparams['mono_reg_weight']
-        # network_arch_params['gp_reg_weight'] = self._hyperparams['gp_reg_weight']
-        # network_arch_params['learn_wu'] = self._hyperparams['learn_wu']
         network_arch_params['phase'] = phase
         if self.multi_objective_wt:
             network_arch_params['multi_obj_supervised_wt'] = self.multi_objective_wt
@@ -227,19 +208,10 @@ class CostIOCSupervisedQuad(CostIOCQuadratic):
             self._hyperparams['network_model'](**network_arch_params)
         )
 
-        # network_arch_params['phase'] = 'forward_feat'
-        # solver_param.test_net_param.add().CopyFrom(
-        #     self._hyperparams['network_model'](**network_arch_params)
-        # )
-
         # These are required by Caffe to be set, but not used.
         solver_param.test_iter.append(1)
-        # solver_param.test_iter.append(1)
         solver_param.test_interval = 1000000
 
-        #f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
-        #f.write(MessageToString(solver_param))
-        #f.close()
         with open(self.params_file+'.'+str(phase), 'w+') as f:
             f.write(MessageToString(solver_param))
             fname = f.name

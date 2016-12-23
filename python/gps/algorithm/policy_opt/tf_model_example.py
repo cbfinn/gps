@@ -6,7 +6,9 @@ import numpy as np
 
 
 def init_weights(shape, name=None):
-    return tf.get_variable(name, initializer=tf.random_normal(shape, stddev=0.01))
+    shape = tuple(shape)
+    weights = np.random.normal(scale=0.01, size=shape).astype('f')
+    return tf.get_variable(name, list(shape), initializer=tf.constant_initializer(weights))
 
 
 def init_bias(shape, name=None):

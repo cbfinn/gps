@@ -124,7 +124,6 @@ class ScatterPlot(object):
         self._ax.clear()
 
     def add_data(self, x, y, color='blue'):
-        #import pdb; pdb.set_trace()
         if not self._init:
             self.init()
 
@@ -160,4 +159,3 @@ class ScatterPlot(object):
             self._ax.draw_artist(item)
         self._fig.canvas.update()
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
-
