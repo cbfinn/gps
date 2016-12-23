@@ -426,12 +426,11 @@ class Algorithm(object):
 
         for i in xrange(M):
             # This code assumes a fixed number of samples per iteration/controller
-            if self._hyperparams['ioc'] != 'ICML':
-                samples_logprob[i] = np.zeros((itr + 1, self.T, (self.N / M) * itr + init_samples))
-                demos_logprob[i] = np.zeros((itr + 1, self.T, demoX[i].shape[0]))
-            else:
+            if self._hyperparams['ioc'] == 'ICML':
                 samples_logprob[i] = np.zeros((itr + Md + 1, self.T, (self.N / M) * itr + init_samples))
                 demos_logprob[i] = np.zeros((itr + Md + 1, self.T, demoX[i].shape[0]))
+            else:
+                raise NotImplementedError("Other type of ioc losses not implemented.")
 
             sample_i_X = self.sample_list[i].get_X()
             sample_i_U = self.sample_list[i].get_U()
@@ -454,6 +453,8 @@ class Algorithm(object):
                                 self.demo_traj[m].K[t, :, :].dot(sample_i_X[j, t, :]) - sample_i_U[j, t, :]
                         samples_logprob[i][itr + 1 + m, t, j] = -0.5 * np.sum(diff * (self.demo_traj[m].inv_pol_covar[t, :, :].dot(diff))) - \
                                                     np.sum(np.log(np.diag(self.demo_traj[m].chol_pol_covar[t, :, :])))
+            else:
+                raise NotImplementedError("Other type of ioc losses not implemented.")
             # Sum over the distributions and time.
             samples_logiw[i] = logsum(np.sum(samples_logprob[i], 1), 0)
 
@@ -478,6 +479,8 @@ class Algorithm(object):
                                 self.demo_traj[m].K[t, :, :].dot(demoX[idx][j, t, :]) - demoU[idx][j, t, :]
                         demos_logprob[i][itr + 1 + m, t, j] = -0.5 * np.sum(diff * (self.demo_traj[m].inv_pol_covar[t, :, :].dot(diff)), 0) - \
                                                         np.sum(np.log(np.diag(self.demo_traj[m].chol_pol_covar[t, :, :])))
+            else:
+                raise NotImplementedError("Other type of ioc losses not implemented.")
             demos_logiw[i] = logsum(np.sum(demos_logprob[i], 1), 0)
 
         return demos_logiw, samples_logiw
