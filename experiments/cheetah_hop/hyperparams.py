@@ -54,8 +54,6 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': CONDITIONS,
-    #'train_conditions': range(CONDITIONS),
-    #'test_conditions': range(CONDITIONS),
     'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
     'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
     'nn_demo': False,
@@ -68,7 +66,6 @@ agent = {
     'type': AgentMuJoCo,
     'models': [
         half_cheetah_hop(wall_height=0.2, wall_pos=1.8, gravity=1.0)
-        #half_cheetah_hop_fix_grav(wall_height=0.2, wall_pos=1.8, mult=10.0)
     ],
     'x0': x0[:CONDITIONS],
     'dt': 0.05,
@@ -87,19 +84,11 @@ agent = {
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
-    #'train_conditions': common['train_conditions'],
-    #'test_conditions': common['test_conditions'],
     'iterations': 60,
     'kl_step': 1.0,
     'min_step_mult': 0.1,
     'max_step_mult': 10.0,
     'max_ent_traj': 0.1,
-    #'policy_sample_mode': 'replace',
-    #'num_clusters': 0,
-    #'cluster_method': 'kmeans',
-    #'sample_on_policy': True,
-    #'max_ent_mult': 1E-2,
-    #'max_ent_decay': 0.3,
 
     'compute_distances': {
         'type': 'min',
@@ -119,18 +108,6 @@ algorithm['init_traj_distr'] = {
     'dt': agent['dt'],
     'T': agent['T'],
 }
-
-"""
-algorithm['init_traj_distr'] = {
-    'type': load_from_file,
-    'init_gains':  np.zeros(SENSOR_DIMS[ACTION]),
-    'init_acc': np.zeros(SENSOR_DIMS[ACTION]),
-    'init_var': 1e-2,
-    'dt': agent['dt'],
-    'T': agent['T'],
-    'algorithm_file': EXP_DIR+'../cheetah_hop_run/data_files/rl_2.pkl'
-}
-"""
 
 torque_cost_1 = {
     'type': CostAction,
@@ -201,9 +178,7 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
-    #'train_conditions': common['train_conditions'],
-    #'test_conditions': common['test_conditions'],
-    'arecord_gif': {
+    'record_gif': {
         'gif_dir': os.path.join(common['data_files_dir'], 'gifs'),
         'gifs_per_condition': 1,
         'record_every': 5,
