@@ -362,6 +362,10 @@ class GPSTrainingGUI(object):
                 condition_titles += ' %8s' % ('')
                 itr_data_fields  += ' %8s' % ('mean_dist')
 
+            if 'compute_distances' in algorithm._hyperparams:
+                condition_titles += ' %8s' % ('')
+                itr_data_fields  += ' %8s' % ('distance')
+
             if isinstance(algorithm, AlgorithmBADMM):
                 condition_titles += ' %8s %8s %8s' % ('', '', '')
                 itr_data_fields  += ' %8s %8s %8s' % ('pol_cost', 'kl_div_i', 'kl_div_f')
@@ -405,6 +409,9 @@ class GPSTrainingGUI(object):
             entropy = 2*np.sum(np.log(np.diagonal(algorithm.prev[m].traj_distr.chol_pol_covar,
                     axis1=1, axis2=2)))
             itr_data += ' | %8.2f %8.2f %8.2f' % (cost, step, entropy)
+            #if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
+            #    itr_data += ' %8.2f' % (algorithm.kl_div[itr][m])
+
             if pol_sample_lists is None:
                 if algorithm.dists_to_target:
                     if itr in algorithm.dists_to_target and algorithm.dists_to_target[itr]:

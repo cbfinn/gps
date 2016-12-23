@@ -114,24 +114,31 @@ class GenDemo(object):
                             demo_idx_conditions.append(i)
 
             # Filter failed demos
-            if agent_config.get('filter_demos', False): # USED FOR PR2
-                filter_type = agent_config.get('filter_type', 'last')
-                max_per_condition = agent_config.get('max_demos_per_condition', 999)
-                target_position = agent_config['target_end_effector']
-                dist_threshold = agent_config.get('success_upper_bound', 0.01)
-                dists = compute_distance(target_position, SampleList(demos), agent_config['filter_end_effector_idxs'])
+            if 'filter_demos' in  agent_config:
+                filter_options = agent_config['filter_demos']
+                filter_type = filter_options.get('type', 'min')
+                targets = filter_options['target']
+                pos_idx = filter_options['state_idx']
+                max_per_condition = filter_options.get('max_demos_per_condition', 999)
+                dist_threshold = filter_options.get('success_upper_bound', 0.01)
+                cur_samples = SampleList(demos)
+                sample_end_effectors = [cur_samples[i].get_X()[:,pos_idx] for i in xrange(len(cur_samples))]
+                dists = [(np.sqrt(np.sum((sample_end_effectors[i] - targets.reshape(1, -1))**2,
+                                         axis=1))) for i in xrange(len(cur_samples))]
                 failed_idx = []
                 for i, distance in enumerate(dists):
                     if filter_type == 'last':
-                        distance = distance[-1]
+                        dist_single = distance[-1]
                     elif filter_type == 'min':
-                        distance = min(distance)
+                        dist_single = min(distance)
                     else:
                         raise NotImplementedError()
 
                     print distance
                     if (distance > dist_threshold):
                         failed_idx.append(i)
+
+
                 LOGGER.debug("Removing %d failed demos: %s", len(failed_idx), str(failed_idx))
                 demos_filtered = [demo for (i, demo) in enumerate(demos) if i not in failed_idx]
                 demo_idx_conditions = [cond for (i, cond) in enumerate(demo_idx_conditions) if i not in failed_idx]

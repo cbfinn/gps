@@ -138,3 +138,4 @@ def visualize_samples(gps, N, agent_config, experiment='reacher'):
                     record_gif=gif_name, record_gif_fps=gif_fps
                     )
                 samples[k].append(sample)
+

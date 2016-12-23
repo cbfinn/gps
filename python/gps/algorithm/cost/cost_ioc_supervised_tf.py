@@ -21,7 +21,7 @@ class CostIOCSupervised(CostIOCTF):
         self.gt_cost = self.gt_cost['type'](self.gt_cost)
 
         self.eval_gt = hyperparams.get('eval_gt', False)
-        self.multi_objective_wt = hyperparams.get('multi_objective', 0.0)
+        self.multi_objective_wt = hyperparams.get('multi_objective', 1.0)
         self.finetune = hyperparams.get('finetune', False)
         self.multiobj = hyperparams.get('multiobj', False)
 
@@ -174,3 +174,10 @@ class CostIOCSupervised(CostIOCTF):
 
             if i > self._hyperparams['iterations']:
                 break
+
+    def __getstate__(self):
+        return {}
+
+    def __setstate__(self, state):
+        raise NotImplementedError()
+
