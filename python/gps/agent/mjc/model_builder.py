@@ -69,6 +69,12 @@ class MJCModel(object):
     def close(self):
         self.file.close()
 
+    def __getstate__(self):
+        return {}
+
+    def __setstate__(self, state):
+        pass
+
 
 class MJCModelRegen(MJCModel):
     def __init__(self, name, regen_fn):

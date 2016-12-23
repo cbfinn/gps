@@ -68,14 +68,19 @@ class GPSMain(object):
         config['algorithm']['agent'] = self.agent
 
         if self.using_ioc() and not test_pol:
-            with Timer('loading demos'):
-                demos = get_demos(self)
-                self.algorithm.demoX = demos['demoX']
-                self.algorithm.demoU = demos['demoU']
-                self.algorithm.demoO = demos['demoO']
-                if 'demo_conditions' in demos.keys() and 'failed_conditions' in demos.keys():
-                    self.algorithm.demo_conditions = demos['demo_conditions']
-                    self.algorithm.failed_conditions = demos['failed_conditions']
+            if config['demo_agent'].get('eval_only', False):
+                from gps.utility.visualization import run_alg
+                record_gif = config.get('record_gif', None)
+                run_alg(config['demo_agent'], config['demo_agent']['algorithm_file'], record_gif=record_gif, verbose=True)
+            else:
+                with Timer('loading demos'):
+                    demos = get_demos(self)
+                    self.algorithm.demoX = demos['demoX']
+                    self.algorithm.demoU = demos['demoU']
+                    self.algorithm.demoO = demos['demoO']
+                    if 'demo_conditions' in demos.keys() and 'failed_conditions' in demos.keys():
+                        self.algorithm.demo_conditions = demos['demo_conditions']
+                        self.algorithm.failed_conditions = demos['failed_conditions']
         else:
             with Timer('init algorithm'):
                 self.algorithm = config['algorithm']['type'](config['algorithm'])
@@ -264,11 +269,12 @@ class GPSMain(object):
         gif_fps = None
         if 'record_gif' in self._hyperparams:
             gif_config = self._hyperparams['record_gif']
-            gif_fps = gif_config.get('fps', None)
-            gif_dir = gif_config.get('gif_dir', self._hyperparams['common']['data_files_dir'])
-            mkdir_p(gif_dir)
-            if i < gif_config.get('gifs_per_condition', float('inf')):
-                gif_name = os.path.join(gif_dir,'itr%d.cond%d.samp%d.gif' % (itr, cond, i))
+            if itr % gif_config.get('record_every', 1) == 0:
+                gif_fps = gif_config.get('fps', None)
+                gif_dir = gif_config.get('gif_dir', self._hyperparams['common']['data_files_dir'])
+                mkdir_p(gif_dir)
+                if i < gif_config.get('gifs_per_condition', float('inf')):
+                    gif_name = os.path.join(gif_dir,'itr%d.cond%d.samp%d.gif' % (itr, cond, i))
 
         if self.gui:
             self.gui.set_image_overlays(cond)   # Must call for each new cond.
@@ -407,6 +413,7 @@ class GPSMain(object):
                     self._data_files_dir + ('algorithm_itr_%02d.pkl' % itr),
                     copy_alg
                 )
+
             with Timer('saving traj samples'):
                 self.data_logger.pickle(
                     self._data_files_dir + ('traj_sample_itr_%02d.pkl' % itr),
@@ -531,8 +538,9 @@ def main():
     import random
     import numpy as np
 
-    random.seed(0)
-    np.random.seed(0)
+    SEED = hyperparams.seed
+    random.seed(SEED)
+    np.random.seed(SEED)
 
     if args.targetsetup:
         try:
