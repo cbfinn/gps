@@ -21,7 +21,6 @@ from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.policy_opt.policy_opt_tf import PolicyOptTf
 from gps.algorithm.policy_opt.tf_model_example import example_tf_network
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
-from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
 from gps.algorithm.policy.lin_gauss_init import init_pd
 from gps.algorithm.policy.policy_prior import PolicyPrior
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
@@ -44,7 +43,6 @@ target_pos = np.array([1.3, 0.0, 0.])
 wall_1_center = np.array([0.5, -0.8, 0.])
 wall_2_center = np.array([0.5, 0.8, 0.])
 wall_height = 2.8
-
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -70,10 +68,6 @@ agent = {
     'exp_name': 'pointmass_wall',
     'models': [
         obstacle_pointmass(target_pos, wall_center=0.4, hole_height=0.2, control_limit=20, delete_top=True),
-        #obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.25, control_limit=30),
-        #obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.25, control_limit=30),
-        #obstacle_pointmass(target_pos, wall_center=0.4, hole_height=0.25, control_limit=30),
-        #obstacle_pointmass(target_pos, wall_center=0.5, hole_height=0.25, control_limit=30),
     ],
     'x0': np.array([-1., 0., 0., 0.]),
     'dt': 0.05,
@@ -96,7 +90,6 @@ demo_agent = {
         obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.2, delete_top=True, control_limit=20),
     ],
     'x0': np.array([-1., 0., 0., 0.]),
-    # 'x0': [np.array([-1., 1., 0., 0.])],
     'dt': 0.05,
     'substeps': 1,
     'conditions': common['demo_conditions'],
@@ -117,7 +110,6 @@ demo_agent = {
     },
 }
 
-
 algorithm = {
     'type': AlgorithmTrajOpt,
     'ioc' : 'ICML',
@@ -130,8 +122,6 @@ algorithm = {
     'max_ent_traj': 1.0,
     'num_demos': 20,
     'target_end_effector': np.array([1.3, 0.5, 0.]),
-    #'sample_on_policy': True,
-    #'step_rule': 'laplace',
 }
 
 algorithm['init_traj_distr'] = {
@@ -144,11 +134,8 @@ algorithm['init_traj_distr'] = {
     'T': agent['T'],
 }
 
-
 algorithm['cost'] = {
-    #'type': CostIOCQuadratic,
     'type': CostIOCTF,
-    #'wu': np.array([1e-5, 1e-5]),
     'wu': np.array([1, 1])*1e-3,
     'dO': 10,
     'T': agent['T'],
@@ -168,10 +155,6 @@ algorithm['gt_cost'] = {
             'wp': np.ones(SENSOR_DIMS[ACTION]),
             'target_state': target_pos[:2],
         },
-        # JOINT_VELOCITIES: {
-        #     'wp': np.ones(SENSOR_DIMS[ACTION]),
-        #     'target_state': target_pos,
-        # },
     },
 }
 
@@ -194,7 +177,6 @@ algorithm['policy_opt'] = {
     'type': PolicyOptTf,
     'network_params': {
         'obs_include': agent['obs_include'],
-        #'obs_vector_data': agent['obs_include'],
         'n_layers': 3,
         'dim_hidden': 40,
         'sensor_dims': SENSOR_DIMS,

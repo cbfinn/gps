@@ -43,7 +43,7 @@ DEMO_DIR = BASE_DIR + '/../experiments/reacher_mdgps_weight/'
 SUPERVISED_DIR = BASE_DIR + '/../experiments/reacher_mdgps_weight_supervised/'
 
 TRAIN_CONDITIONS = 6
-SEED = 0
+seed = 0
 
 np.random.seed(47)
 DEMO_CONDITIONS = 4 #20
@@ -242,7 +242,7 @@ algorithm['policy_opt'] = {
     'network_model': example_tf_network,
     'iterations': 1000,  # was 100
     'weights_file_prefix': common['data_files_dir'] + 'policy',
-    'random_seed': SEED,
+    'random_seed': seed,
 }
 
 algorithm['policy_prior'] = {
@@ -268,7 +268,7 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
-    'random_seed': SEED,
+    'random_seed': seed,
 }
 
 common['info'] = generate_experiment_info(config)

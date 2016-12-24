@@ -37,7 +37,7 @@ SENSOR_DIMS = {
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
-SEED = 0
+seed = 0
 
 np.random.seed(47)
 TRAIN_CONDITIONS = 4
@@ -161,7 +161,7 @@ algorithm['policy_opt'] = {
     'network_model': example_tf_network,
     'iterations': 1000,  # was 100
     'weights_file_prefix': common['data_files_dir'] + 'policy',
-    'random_seed': SEED,
+    'random_seed': seed,
 }
 
 algorithm['init_traj_distr'] = {
@@ -209,7 +209,7 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
-    'random_seed': SEED,
+    'random_seed': seed,
 }
 
 common['info'] = generate_experiment_info(config)

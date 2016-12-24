@@ -8,9 +8,7 @@ import operator
 from gps import __file__ as gps_filepath
 from gps.agent.mjc.agent_mjc import AgentMuJoCo
 from gps.agent.mjc.mjc_models import half_cheetah_hop
-from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_traj_opt import AlgorithmTrajOpt
-from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 from gps.algorithm.cost.cost_fk import CostFK
 from gps.algorithm.cost.cost_action import CostAction
 from gps.algorithm.cost.cost_ioc_tf import CostIOCTF
@@ -47,8 +45,6 @@ x0 = []
 for _ in range(CONDITIONS):
     x0.append(np.concatenate((0.2*np.random.rand(9)-0.1, 0.1*np.random.randn(9))))
 
-# x0 = [np.zeros(18)]
-
 common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
@@ -57,8 +53,6 @@ common = {
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': CONDITIONS,
-    #'train_conditions': range(CONDITIONS),
-    #'test_conditions': range(CONDITIONS),
     'demo_conditions': 1,
     'demo_exp_dir': DEMO_DIR,
     'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_30.pkl',
@@ -73,16 +67,13 @@ if not os.path.exists(common['data_files_dir']):
 agent = {
     'type': AgentMuJoCo,
     'models': [
-        half_cheetah_hop(wall_height=0.5, wall_pos=1.8, gravity=1.0), #, wall_sample_range=[0.5,1.2])
+        half_cheetah_hop(wall_height=0.5, wall_pos=1.8, gravity=1.0),
     ],
     'x0': x0[:CONDITIONS],
     'dt': 0.05,
     'substeps': 5,
     'conditions': common['conditions'],
-    #'train_conditions': common['train_conditions'],
-    #'test_conditions': common['test_conditions'],
     'T': 200,
-    #'randomize_world': True,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
@@ -94,16 +85,12 @@ agent = {
 demo_agent = {
     'type': AgentMuJoCo,
     'models': [
-        #half_cheetah_hop(wall_height=0.4, wall_pos=1.8, gravity=1.0),
-        #half_cheetah_hop(wall_height=0.3, wall_pos=1.8, gravity=1.0),
         half_cheetah_hop(wall_height=0.2, wall_pos=1.8, gravity=1.0)
     ],
     'x0': x0,
     'dt': 0.05,
     'substeps': 5,
     'conditions': common['demo_conditions'],
-    #'train_conditions': common['train_conditions'],
-    #'test_conditions': common['test_conditions'],
     'T': 200,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],
@@ -123,8 +110,6 @@ demo_agent = {
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
-    #'train_conditions': common['train_conditions'],
-    #'test_conditions': common['test_conditions'],
     'iterations': 60,
     'kl_step': 0.1,
     'min_step_mult': 1.0,
@@ -133,12 +118,6 @@ algorithm = {
     'ioc' : 'ICML',
     'num_demos': 20,
     'init_samples': 20,
-    #'policy_sample_mode': 'replace',
-    #'num_clusters': 0,
-    #'cluster_method': 'kmeans',
-    #'sample_on_policy': True,
-    #'max_ent_mult': 1E-2,
-    #'max_ent_decay': 0.3,
 
     'compute_distances': {
         'type': 'min',
@@ -176,10 +155,6 @@ state_cost = {
             'target_state': np.array([TARGET_X, TARGET_Z]+[0.0]*7),
             'wp': np.array([1.0, 0.0] + [0.0]*7)
         },
-        #JOINT_VELOCITIES: {
-        #    'target_state': np.array([2.0]+[0.0]*8),
-        #    'wp': np.array([1.0] + [0.0]*8)
-        #},
     },
 
 }
@@ -191,7 +166,6 @@ algorithm['gt_cost'] = {
 }
 
 algorithm['cost'] = {
-    #'type': CostIOCQuadratic,
     'type': CostIOCTF,
     'wu': np.ones(6)*1e-4,
     'dO': np.sum([SENSOR_DIMS[dtype] for dtype in agent['obs_include']]),
@@ -218,10 +192,8 @@ algorithm['traj_opt'] = {
     'type': TrajOptLQRPython,
 }
 
-
 algorithm['policy_prior'] = {
 }
-
 
 config = {
     'iterations': algorithm['iterations'],
@@ -234,9 +206,7 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
-    #'train_conditions': common['train_conditions'],
-    #'test_conditions': common['test_conditions'],
-    'arecord_gif': {
+    'record_gif': {
         'gif_dir': os.path.join(common['data_files_dir'], 'gifs'),
         'gifs_per_condition': 1,
         'record_every': 5,

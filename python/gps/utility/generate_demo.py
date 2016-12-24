@@ -138,7 +138,6 @@ class GenDemo(object):
                     if (distance > dist_threshold):
                         failed_idx.append(i)
 
-
                 LOGGER.debug("Removing %d failed demos: %s", len(failed_idx), str(failed_idx))
                 demos_filtered = [demo for (i, demo) in enumerate(demos) if i not in failed_idx]
                 demo_idx_conditions = [cond for (i, cond) in enumerate(demo_idx_conditions) if i not in failed_idx]

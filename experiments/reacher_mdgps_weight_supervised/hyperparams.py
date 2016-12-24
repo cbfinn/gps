@@ -43,7 +43,7 @@ DEMO_DIR = BASE_DIR + '/../experiments/reacher_mdgps_weight/'
 
 TRAIN_CONDITIONS = 6
 
-SEED = 0
+seed = 0
 
 np.random.seed(47)
 DEMO_CONDITIONS = 4
@@ -203,7 +203,7 @@ algorithm['cost'] = {
     'gt_cost': algorithm['gt_cost'],
     'agent': demo_agent,
     'lr': 5e-4,
-    'random_seed': SEED,
+    'random_seed': seed,
 }
 
 
@@ -268,7 +268,7 @@ config = {
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
-    'random_seed': SEED,
+    'random_seed': seed,
 }
 
 common['info'] = generate_experiment_info(config)

@@ -80,7 +80,6 @@ agent = {
     'record_reward': False,
 }
 
-
 algorithm = {
     'type': AlgorithmTrajOpt,
     'conditions': common['conditions'],
