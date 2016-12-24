@@ -75,12 +75,12 @@ class AlgorithmMDGPS(Algorithm):
                 # Compute mean distance to target. For peg experiment only.
                 if 'target_end_effector' in self._hyperparams:
                     for i in xrange(self.M):
-                    if type(self._hyperparams['target_end_effector']) is list:
-                        target_position = self._hyperparams['target_end_effector'][i][:3]
-                    else:
-                        target_position = self._hyperparams['target_end_effector'][:3]
-                    dists = compute_distance(target_position, sample_lists[i])
-                    self.dists_to_target[itr].append(sum(dists) / sample_lists[i].num_samples())
+                        if type(self._hyperparams['target_end_effector']) is list:
+                            target_position = self._hyperparams['target_end_effector'][i][:3]
+                        else:
+                            target_position = self._hyperparams['target_end_effector'][:3]
+                        dists = compute_distance(target_position, sample_lists[i])
+                        self.dists_to_target[itr].append(sum(dists) / sample_lists[i].num_samples())
 
         # On the first iteration we need to make sure that the policy somewhat
         # matches the init controller. Otherwise the LQR backpass starts with
@@ -119,7 +119,7 @@ class AlgorithmMDGPS(Algorithm):
                 with Timer('stepadjust'):
                     self._stepadjust()
             except OverflowError:
-                import ; .set_trace()
+                import pdb; pdb.set_trace()
         with Timer('UpdateTrajectories'):
             self._update_trajectories()
 

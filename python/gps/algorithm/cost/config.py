@@ -3,13 +3,6 @@ import numpy as np
 import os
 
 from gps.algorithm.cost.cost_utils import RAMP_CONSTANT, evallogl2term
-try:
-  from gps.algorithm.cost.cost_utils import construct_quad_cost_net
-  from gps.algorithm.cost.cost_utils import construct_nn_cost_net, construct_fp_cost_net
-except ImportError:
-  construct_quad_cost_net = None
-  construct_nn_cost_net = None
-
 
 # CostFK
 COST_FK = {
@@ -23,7 +16,6 @@ COST_FK = {
     'target_end_effector': None,  # Target end-effector position.
     'evalnorm': evallogl2term,
 }
-
 
 # CostState
 COST_STATE = {
@@ -40,13 +32,11 @@ COST_STATE = {
     },
 }
 
-
 # CostSum
 COST_SUM = {
     'costs': [],  # A list of hyperparam dictionaries for each cost.
     'weights': [],  # Weight multipliers for each cost.
 }
-
 
 # CostAction
 COST_ACTION = {
@@ -68,7 +58,7 @@ IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
     'weight_decay': 0.0,  # Weight decay.
     'random_seed': 1,  # Random seed.
     # Set gpu usage.
-    'use_gpu': 1,  # Whether or not to use the GPU for caffe training.
+    'use_gpu': 1,  # Whether or not to use the GPU for training.
     'gpu_id': 0,
     'smooth_reg_weight': 0.0,
     'mono_reg_weight': 100,
@@ -79,20 +69,6 @@ IOC_CONFIG = {  # TODO - maybe copy this from policy_opt/config
     'use_jacobian': False,
     'network_arch_params': {},  # includes info to construct model
 }
-
-#CostIOCQuadratic
-COST_IOC_QUADRATIC = {
-    'network_model': construct_quad_cost_net,
-}
-
-COST_IOC_QUADRATIC.update(IOC_CONFIG)
-
-#CostIOCNN
-COST_IOC_NN = {
-    'network_model': construct_nn_cost_net,
-}
-
-COST_IOC_NN.update(IOC_CONFIG)
 
 checkpoint_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                '..', 'cost/tf_checkpoint/cost_checkpoint.ckpt'))
