@@ -198,7 +198,7 @@ algorithm['cost'] = {
     'sample_batch_size': 5,
     'ioc_loss': algorithm['ioc'],
     'approximate_lxx': False,
-    'random_seed': SEED,
+    'random_seed': seed,
 }
 
 

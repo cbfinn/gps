@@ -52,7 +52,7 @@ class Algorithm(object):
         # IterationData objects for each condition.
         self.cur = [IterationData() for _ in range(self.M)]
         self.prev = [IterationData() for _ in range(self.M)]
-        self.policy_opts = {self.iteration_count: None}
+        self.traj_distr = {self.iteration_count: []}
         self.traj_info = {self.iteration_count: []}
         self.kl_div = {self.iteration_count:[]}
         self.dists_to_target = {self.iteration_count:[]}
@@ -67,6 +67,7 @@ class Algorithm(object):
             )
             init_traj_distr['condition'] = m
             self.cur[m].traj_distr = init_traj_distr['type'](init_traj_distr)
+            self.traj_distr[self.iteration_count].append(self.cur[m].traj_distr)
             self.traj_info[self.iteration_count].append(self.cur[m].traj_info)
 
         self.traj_opt = self._hyperparams['traj_opt']['type'](
@@ -255,9 +256,7 @@ class Algorithm(object):
             else:
                 self.prev[m].sample_list = True # don't pickle this.
         self.cur = [IterationData() for _ in range(self.M)]
-        with Timer('Algorithm._advance_iteration_variables policy_opt_copy'):
-            new_policy_opt = self.policy_opt.copy()
-        self.policy_opts[self.iteration_count] = new_policy_opt
+        self.traj_distr[self.iteration_count] = []
         self.traj_info[self.iteration_count] = []
         self.kl_div[self.iteration_count] = []
         self.dists_to_target[self.iteration_count] = []
@@ -272,6 +271,7 @@ class Algorithm(object):
             self.cur[m].step_mult = self.prev[m].step_mult
             self.cur[m].eta = self.prev[m].eta
             self.cur[m].traj_distr = self.new_traj_distr[m]
+            self.traj_distr[self.iteration_count].append(self.new_traj_distr[m])
             self.traj_info[self.iteration_count].append(self.cur[m].traj_info)
             if self._hyperparams['ioc']:
               self.cur[m].prevcost_traj_info = TrajectoryInfo()
@@ -484,27 +484,3 @@ class Algorithm(object):
             demos_logiw[i] = logsum(np.sum(demos_logprob[i], 1), 0)
 
         return demos_logiw, samples_logiw
-
-    """
-    def __getstate__(self):
-        print 'Getting state algorithm'
-        for key in ['init_traj_distr', 'cost', 'gt_cost']:
-            if key in self._hyperparams:
-                del self._hyperparams[key]
-        return {'traj_distr': self.traj_distr,
-                'cur': self.cur,
-                'prev': self.prev,
-                '_hyperparams': self._hyperparams}
-
-    def __setstate__(self, state):
-        #import pdb; pdb.set_trace()
-        #type(self).__init__(self, state['_hyperparams'])
-        self._hyperparams = state['_hyperparams']
-        self.traj_distr = state['traj_distr']
-        self.cur = state['cur']
-        self.prev = state['prev']
-    """
-
-
-
-

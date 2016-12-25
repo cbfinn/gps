@@ -97,12 +97,8 @@ class AlgorithmMDGPS(Algorithm):
         with Timer('UpdateDynamics'):
             self._update_dynamics()
 
-        # Move this after line 78 if using random initializarion.
-        if self._hyperparams['ioc']:
-            raise ValueError("haven't supported this with vision and dynamics fit has moved.")
-
-        if self._hyperparams['ioc']:
-            if self._hyperparams['ioc_maxent_iter'] == -1 or itr < self._hyperparams['ioc_maxent_iter']:
+        if self._hyperparams['ioc'] and (self._hyperparams['ioc_maxent_iter'] == -1 or \
+                                        itr < self._hyperparams['ioc_maxent_iter']):
                 with Timer('UpdateCost'):
                     self._update_cost()
 

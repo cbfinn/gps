@@ -111,7 +111,7 @@ agent = {
 demo_agent = {
     'type': AgentMuJoCo,
     'models': [weighted_reacher(arm_density=demo_density_range[i], finger_density=demo_density_range[i]) \
-                for i in xrange(common['conditions'])],
+                for i in xrange(DEMO_CONDITIONS)],
     'exp_name': 'reacher',
     'x0': np.zeros(4),
     'dt': 0.05,
@@ -247,7 +247,7 @@ algorithm['policy_opt'] = {
     'network_model': example_tf_network,
     'iterations': 1000,  # was 100
     'weights_file_prefix': common['data_files_dir'] + 'policy',
-    'random_seed': SEED,
+    'random_seed': seed,
 }
 
 algorithm['policy_prior'] = {

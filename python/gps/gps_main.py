@@ -42,8 +42,12 @@ class GPSMain(object):
         self._hyperparams = config
         self._conditions = config['common']['conditions']
         if 'train_conditions' in config['common']:
-            self._train_idx = range(config['common']['train_conditions'])
-            self._test_idx = range(config['common']['test_conditions'])
+            if type(config['common']['train_conditions']) is list:
+                self._train_idx = config['common']['train_conditions']
+                self._test_idx = config['common']['test_conditions']
+            else:
+                self._train_idx = range(config['common']['train_conditions'])
+                self._test_idx = range(config['common']['test_conditions'])
             if not self._test_idx:
                 self._test_idx = self._train_idx
         else:
