@@ -4,23 +4,9 @@ try:
    import cPickle as pickle
 except:
    import pickle
-import gzip
-import contextlib
 
 
 LOGGER = logging.getLogger(__name__)
-
-@contextlib.contextmanager
-def open_zip(filename, mode='r'):
-    """
-    Open a file; if filename ends with .gz, opens as a gzip file
-    """
-    if filename.endswith('.gz'):
-        openfn = gzip.open
-    else:
-        openfn = open
-    yield openfn(filename, mode)
-
 
 
 class DataLogger(object):
@@ -36,15 +22,12 @@ class DataLogger(object):
 
     def pickle(self, filename, data):
         """ Pickle data into file specified by filename. """
-        with open_zip(filename, 'wb') as f:
-            pickle.dump(data, f)
+        pickle.dump(data, open(filename, 'wb'))
 
     def unpickle(self, filename):
         """ Unpickle data from file specified by filename. """
         try:
-            with open_zip(filename, 'rb') as f:
-                result = pickle.load(f)
-            return result
+            return pickle.load(open(filename, 'rb'))
         except IOError:
             LOGGER.debug('Unpickle error. Cannot find file: %s', filename)
             return None

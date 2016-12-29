@@ -42,6 +42,7 @@ NUM_DEMO_PLOTS = 5
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 
+
 class GPSTrainingGUI(object):
 
     def __init__(self, hyperparams, gui_on=True):

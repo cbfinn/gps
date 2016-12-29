@@ -6,7 +6,7 @@ import scipy as sp
 from gps.algorithm.dynamics.dynamics_utils import guess_dynamics
 from gps.algorithm.policy.lin_gauss_policy import LinearGaussianPolicy
 from gps.algorithm.policy.config import INIT_LG_PD, INIT_LG_LQR, INIT_LG_DEMO
-from gps.utility.data_logger import DataLogger, open_zip
+from gps.utility.data_logger import DataLogger
 import cPickle
 
 def init_lqr(hyperparams):
@@ -201,7 +201,7 @@ def load_from_file(hyperparams):
     config.update(hyperparams)
 
     alg_file = config['algorithm_file']
-    with open_zip(alg_file, 'rb') as pklf:
+    with open(alg_file, 'rb') as pklf:
         ss = pklf.read()
     algorithm = cPickle.loads(ss)
     controller = algorithm.cur[config['condition']].traj_distr

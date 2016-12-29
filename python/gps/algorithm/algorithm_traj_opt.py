@@ -6,11 +6,12 @@ import numpy as np
 from gps.algorithm.algorithm import Algorithm
 from gps.sample.sample_list import SampleList
 from gps.utility import ColorLogger
-from gps.utility.demo_utils import extract_samples, compute_distance
-from gps.algorithm.traj_opt.traj_opt_utils import traj_distr_kl
+from gps.utility.general_utils import compute_distance
 from gps.utility.demo_utils import extract_samples
+from gps.algorithm.traj_opt.traj_opt_utils import traj_distr_kl
 
 LOGGER = ColorLogger(__name__)
+
 
 class AlgorithmTrajOpt(Algorithm):
     """ Sample-based trajectory optimization. """

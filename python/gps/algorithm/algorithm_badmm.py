@@ -13,6 +13,7 @@ from gps.utility.general_utils import Timer
 
 LOGGER = logging.getLogger(__name__)
 
+
 class AlgorithmBADMM(Algorithm):
     """
     Sample-based joint policy learning and trajectory optimization with

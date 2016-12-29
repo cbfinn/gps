@@ -4,6 +4,8 @@ import matplotlib as mpl
 
 mpl.use('Qt4Agg')
 #mpl.use('Pdf')  # for EC2
+import matplotlib.pyplot as plt
+import random
 
 import logging
 import imp
@@ -20,9 +22,9 @@ import numpy as np
 # Add gps/python to path so that imports work.
 sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
 from gps.gui.gps_training_gui import GPSTrainingGUI, NUM_DEMO_PLOTS
-from gps.utility.data_logger import DataLogger, open_zip
+from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
-from gps.utility.general_utils import disable_caffe_logs, Timer, mkdir_p
+from gps.utility.general_utils import disable_caffe_logs, Timer, mkdir_p, compute_distance
 from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
                                     measure_distance_and_success_peg, get_demos, extract_samples
 from gps.utility.visualization import compare_samples_curve, visualize_samples
@@ -174,13 +176,10 @@ class GPSMain(object):
         ]
 
         all_dists = []
-        from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
         for cond in range(len(self._train_idx)):
             target_position = target_positions[cond][:3]
             cur_samples = traj_sample_lists[cond]
-            sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
-            dists = [np.nanmin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - target_position.reshape(1, -1))**2,
-                     axis = 1)), axis = 0) for i in xrange(len(cur_samples))]
+            dists = compute_distance(target_position, cur_samples)
             all_dists.append(dists)
         print [np.mean(dist) for dist in all_dists]
 
@@ -537,10 +536,6 @@ def main():
         pass
     disable_caffe_logs(unset)
     hyperparams = imp.load_source('hyperparams', hyperparams_file)
-
-    import matplotlib.pyplot as plt
-    import random
-    import numpy as np
 
     SEED = hyperparams.seed
     random.seed(SEED)

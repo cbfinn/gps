@@ -131,9 +131,7 @@ class TfPolicy(Policy):
         a checkpointed policy.
         """
         from tensorflow.python.framework import ops
-        #ops.reset_default_graph()  # we need to destroy the default graph before re_init or checkpoint won't restore.
         pol_dict = pickle.load(open(policy_dict_path, "rb"))
-
 
         graph = tf.Graph()
         sess = tf.Session(graph=graph)
@@ -156,4 +154,3 @@ class TfPolicy(Policy):
             cls_init.bias = pol_dict['bias']
             cls_init.x_idx = pol_dict['x_idx']
             return cls_init
-

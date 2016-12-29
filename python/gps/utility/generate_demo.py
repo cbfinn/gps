@@ -1,19 +1,7 @@
 """ This file generates for a point mass for 4 starting positions and a single goal position. """
 
-import matplotlib as mpl
-from mpl_toolkits.mplot3d import Axes3D
-
-mpl.use('Qt4Agg')
-
-import sys
-import os
-import os.path
 import logging
 import copy
-import argparse
-import time
-import threading
-import numpy as np
 import scipy as sp
 import scipy.io
 import numpy.matlib
@@ -21,15 +9,13 @@ import random
 import pickle
 from random import shuffle
 
-# Add gps/python to path so that imports work.
-sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
 from gps.agent.mjc.agent_mjc import AgentMuJoCo
-from gps.utility.data_logger import DataLogger, open_zip
-from gps.utility.demo_utils import compute_distance
+from gps.utility.data_logger import DataLogger
+from gps.utility.general_utils import compute_distance
 from gps.sample.sample_list import SampleList
-from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 
 LOGGER = logging.getLogger(__name__)
+
 
 class GenDemo(object):
         """ Generator of demos. """
@@ -46,12 +32,12 @@ class GenDemo(object):
         def load_algorithms(self):
             algorithm_files = self._algorithm_files_dir
             if isinstance(algorithm_files, basestring):
-                with open_zip(algorithm_files, 'r') as f:
+                with open(algorithm_files, 'r') as f:
                     algorithms = [pickle.load(f)]
             else:
                 algorithms = []
                 for filename in algorithm_files:
-                    with open_zip(filename, 'r') as f:
+                    with open(filename, 'r') as f:
                         algorithms.append(pickle.load(f))
             return algorithms
 
@@ -112,9 +98,23 @@ class GenDemo(object):
                                 )
                             demos.append(demo)
                             demo_idx_conditions.append(i)
+            self.filter(demos, demo_idx_conditions, agent_config, ioc_agent, demo_file)
 
+        def filter(self, demos, demo_idx_conditions, agent_config, ioc_agent, demo_file):
+            """
+            Filter out failed demos.
+            Args:
+                demos: generated demos
+                demo_idx_conditions: the conditions of generated demos
+                agent_config: config of the demo agent
+                ioc_agent: the agent for ioc
+                demo_file: the path to save demos
+            """
+            M = agent_config['conditions']
+            N = self._hyperparams['algorithm']['num_demos']
+            
             # Filter failed demos
-            if 'filter_demos' in  agent_config:
+            if 'filter_demos' in agent_config:
                 filter_options = agent_config['filter_demos']
                 filter_type = filter_options.get('type', 'min')
                 targets = filter_options['target']
@@ -122,18 +122,9 @@ class GenDemo(object):
                 max_per_condition = filter_options.get('max_demos_per_condition', 999)
                 dist_threshold = filter_options.get('success_upper_bound', 0.01)
                 cur_samples = SampleList(demos)
-                sample_end_effectors = [cur_samples[i].get_X()[:,pos_idx] for i in xrange(len(cur_samples))]
-                dists = [(np.sqrt(np.sum((sample_end_effectors[i] - targets.reshape(1, -1))**2,
-                                         axis=1))) for i in xrange(len(cur_samples))]
+                dists = compute_distance(targets, cur_samples, filter_type=filter_type)
                 failed_idx = []
                 for i, distance in enumerate(dists):
-                    if filter_type == 'last':
-                        dist_single = distance[-1]
-                    elif filter_type == 'min':
-                        dist_single = min(distance)
-                    else:
-                        raise NotImplementedError()
-
                     print distance
                     if (distance > dist_threshold):
                         failed_idx.append(i)
@@ -170,9 +161,8 @@ class GenDemo(object):
                     for i in range(N):
                       index = m*N + i
                       demo = demos[index]
-                      demo_ee = demos[index].get(END_EFFECTOR_POINTS)
-                      dists.append(np.min(np.sqrt(np.sum((demo_ee[:, :3] - target_position.reshape(1, -1))**2, axis=1))))
-                      if dists[index] >= success_thresh: #agent_config['success_upper_bound']:
+                      dists.append(compute_distance(target_position, SampleList([demo]))[0])
+                      if dists[index] >= success_thresh:
                         failed_indices.append(index)
                 good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
                 self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
@@ -198,3 +188,4 @@ class GenDemo(object):
                 demo_file,
                 copy.copy(demo_store)
             )
+            

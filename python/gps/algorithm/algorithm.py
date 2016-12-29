@@ -17,6 +17,7 @@ from gps.algorithm.algorithm_utils import fit_emp_controller
 
 LOGGER = ColorLogger(__name__)
 
+
 class Algorithm(object):
     """ Algorithm superclass. """
     __metaclass__ = abc.ABCMeta

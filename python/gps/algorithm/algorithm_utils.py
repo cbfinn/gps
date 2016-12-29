@@ -5,6 +5,7 @@ from gps.utility.general_utils import BundleType
 from gps.algorithm.policy.lin_gauss_policy import LinearGaussianPolicy
 from gps.utility.math_utils import solve_psd
 
+
 class IterationData(BundleType):
     """ Collection of iteration variables. """
     def __init__(self):
@@ -25,6 +26,7 @@ class IterationData(BundleType):
         }
         BundleType.__init__(self, variables)
 
+
 class TrajectoryInfo(BundleType):
     """ Collection of trajectory-related variables. """
     def __init__(self):
@@ -38,6 +40,7 @@ class TrajectoryInfo(BundleType):
             'last_kl_step': float('inf'),  # KL step of the previous iteration.
         }
         BundleType.__init__(self, variables)
+
 
 class PolicyInfo(BundleType):
     """ Collection of policy-related variables. """
@@ -73,6 +76,7 @@ class PolicyInfo(BundleType):
         return LinearGaussianPolicy(self.pol_K, self.pol_k, self.pol_S,
                 self.chol_pol_S, inv_pol_S)
 
+
 def estimate_moments(X, mu, covar):
     """ Estimate the moments for a given linearized policy. """
     N, T, dX = X.shape
@@ -89,6 +93,7 @@ def estimate_moments(X, mu, covar):
             covar_pad = np.vstack([pad1, np.hstack([pad2, covar[n, t, :, :]])])
             em[n, t, :, :] = np.outer(Xmu[n, t, :], Xmu[n, t, :]) + covar_pad
     return ev, em
+
 
 def gauss_fit_joint_prior(pts, mu0, Phi, m, n0, dwts, dX, dU, sig_reg):
     """ Perform Gaussian fit to data with a prior. """
@@ -114,6 +119,7 @@ def gauss_fit_joint_prior(pts, mu0, Phi, m, n0, dwts, dX, dU, sig_reg):
     dynsig = sigma[dX:dX+dU, dX:dX+dU] - fd.dot(sigma[:dX, :dX]).dot(fd.T)
     dynsig = 0.5 * (dynsig + dynsig.T)
     return fd, fc, dynsig
+
 
 def fit_emp_controller(demo_x, demo_u):
     """ Fit the conditional covariance of u|x of a set of demonstrations. """

@@ -6,6 +6,7 @@ import time
 import traceback as tb
 
 from gps.utility import color_string
+from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 
 
 class BundleType(object):
@@ -185,6 +186,26 @@ def sample_params(sampling_range, prohibited_ranges):
                 break
     return sampled_point
 
+def compute_distance(target_end_effector, sample_list, end_effector_idxs=range(0,3), filter_type='min'):
+    target_position = target_end_effector
+    if type(sample_list) is not list:
+        cur_samples = sample_list.get_samples()
+    else:
+        cur_samples = []
+        for m in xrange(len(pol_sample_lists)):
+            samples = pol_sample_lists[m].get_samples()
+            for sample in samples:
+                cur_samples.append(sample)
+    sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
+    if filter_type == 'min':
+        dists = [np.nanmin((np.sqrt(np.sum((sample_end_effectors[i][:, end_effector_idxs] - target_position.reshape(1, -1))**2,
+                axis=1))), axis=0) for i in xrange(len(cur_samples))]
+    elif filter_type == 'last':
+        dists = [np.sqrt(np.sum((sample_end_effectors[i][:, end_effector_idxs] - target_position.reshape(1, -1))**2,
+                axis=1))[-1] for i in xrange(len(cur_samples))]
+    else:
+        raise NotImplementedError()
+    return dists
 
 class BatchSampler(object):
     """ Samples data """

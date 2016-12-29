@@ -22,8 +22,6 @@ enum SampleType {
   RGB_IMAGE_SIZE = 15;
   CONTEXT_IMAGE = 16; //initial image of the agent's environment.
   CONTEXT_IMAGE_SIZE = 17;
-  GYM_DATA = 18;
-  GYM_REWARD = 19;
   IMAGE_FEAT = 20;
   CONDITION_DATA = 21; //A constant specific to each condition
   TOTAL_DATA_TYPES = 22;

@@ -13,6 +13,7 @@ from gps.algorithm.cost.cost_ioc_tf import CostIOCTF
 
 LOGGER = logging.getLogger(__name__)
 
+
 class CostIOCSupervised(CostIOCTF):
     """ Set up weighted neural network norm loss with learned parameters. """
     def __init__(self, hyperparams, train_samples=None, test_samples=None, train_costs=None):

@@ -12,10 +12,10 @@ from gps.algorithm.config import ALG_MDGPS
 from gps.sample.sample_list import SampleList
 from gps.utility import ColorLogger
 
-from gps.utility.general_utils import Timer
-from gps.utility.demo_utils import compute_distance
+from gps.utility.general_utils import Timer, compute_distance
 
 LOGGER = ColorLogger(__name__)
+
 
 class AlgorithmMDGPS(Algorithm):
     """

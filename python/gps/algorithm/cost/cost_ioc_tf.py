@@ -17,6 +17,7 @@ from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES,\
 
 LOGGER = logging.getLogger(__name__)
 
+
 class CostIOCTF(Cost):
     """ Set up weighted neural network norm loss with learned parameters. """
     def __init__(self, hyperparams):

@@ -7,15 +7,16 @@ from gps.sample.sample import Sample
 
 from gps.sample.sample import Sample
 from gps.sample.sample_list import SampleList
-from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
+
 from gps.utility.data_logger import DataLogger
-from gps.utility.general_utils import flatten_lists
+from gps.utility.general_utils import flatten_lists, compute_distance
+
 
 def generate_pos_body_offset(conditions):
 	""" Generate position body offset for all conditions. """
 	pos_body_offset = []
 	for i in xrange(conditions):
-		# Make the uniform distribution to be [-0.12, 0.12] for learning from prior. For peg ioc, this should be [-0.1, -0.1].
+		# Make the uniform distribution to be [-0.15, 0.15] for learning from prior.
 		pos_body_offset.append((0.3 * (np.random.rand(1, 3) - 0.5)).reshape((3, )))
 	return pos_body_offset
 
@@ -87,14 +88,6 @@ def get_target_end_effector(algorithm, condition=0):
         target_position = target_dict[:3]
     return target_position
 
-def compute_distance(target_end_effector, sample_list, end_effector_idxs=range(0,3)):
-    target_position = target_end_effector
-    cur_samples = sample_list.get_samples()
-    sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
-    dists = [(np.sqrt(np.sum((sample_end_effectors[i][:, end_effector_idxs] - target_position.reshape(1, -1))**2,
-                axis=1))) for i in xrange(len(cur_samples))]
-    return dists
-
 def compute_distance_cost_plot(algorithm, agent, sample_list):
     if 'target_end_effector' not in algorithm._hyperparams:
         return None
@@ -130,17 +123,11 @@ def measure_distance_and_success_peg(gps):
         if pol_sample_lists is None:
             print("Error: cannot find '%s.'" % pol_samples_file)
             os._exit(1) # called instead of sys.exit(), since t
-        samples = []
-        for m in xrange(len(pol_sample_lists)):
-            curSamples = pol_sample_lists[m].get_samples()
-            for sample in curSamples:
-                samples.append(sample)
         if type(gps.algorithm._hyperparams['target_end_effector']) is list:
                 target_position = gps.algorithm._hyperparams['target_end_effector'][m][:3]
         else:
             target_position = gps.algorithm._hyperparams['target_end_effector'][:3]
-        dists_to_target = [np.nanmin(np.sqrt(np.sum((sample.get(END_EFFECTOR_POINTS)[:, :3] - \
-                            target_position.reshape(1, -1))**2, axis = 1)), axis = 0) for sample in samples]
+        dists_to_target = compute_distance(target_position, pol_sample_lists)
         mean_dists.append(sum(dists_to_target)/len(dists_to_target))
         success_rates.append(float(sum(1 for dist in dists_to_target if dist <= peg_height))/ \
                                 len(dists_to_target))

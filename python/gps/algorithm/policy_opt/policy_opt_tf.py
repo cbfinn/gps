@@ -66,8 +66,6 @@ class PolicyOptTf(PolicyOpt):
             else:
                 self.x_idx = self.x_idx + list(range(i, i+dim))
             i += dim
-        # self.policy.scale = np.eye(len(self.x_idx))
-        # self.policy.bias = np.zeros(len(self.x_idx))
         with self.graph.as_default():
             init_op = tf.initialize_all_variables()
         self.run(init_op)
@@ -178,7 +176,6 @@ class PolicyOptTf(PolicyOpt):
         average_loss = 0
         np.random.shuffle(idx)
 
-        #if iter_count != None and iter_count > 0:
         if True:
             feed_dict = {self.obs_tensor: obs}
             num_values = obs.shape[0]
@@ -351,7 +348,6 @@ class PolicyOptTf(PolicyOpt):
     # For unpickling.
     def __setstate__(self, state):
         from tensorflow.python.framework import ops
-        #ops.reset_default_graph()  # we need to destroy the default graph before re_init or checkpoint won't restore.
         self.__init__(state['hyperparams'], state['dO'], state['dU'])
         self.policy.scale = state['scale']
         self.policy.bias = state['bias']
@@ -362,4 +358,3 @@ class PolicyOptTf(PolicyOpt):
             f.write(state['wts'])
             f.seek(0)
             self.restore_model(f.name)
-

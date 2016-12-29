@@ -4,6 +4,7 @@ import os
 
 from gps.algorithm.cost.cost_utils import RAMP_CONSTANT, evallogl2term
 
+
 # CostFK
 COST_FK = {
     'ramp_option': RAMP_CONSTANT,  # How target cost ramps over time.

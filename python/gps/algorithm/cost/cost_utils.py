@@ -1,9 +1,5 @@
 """ This file defines utility classes and functions for costs. """
-import json
 import numpy as np
-import sys
-
-from gps.algorithm.cost import __file__ as current_path
 
 RAMP_CONSTANT = 1
 RAMP_LINEAR = 2
