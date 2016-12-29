@@ -20,12 +20,13 @@ def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment
         experiment: whether the experiment is reacher or pointmass.
     """
     pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
-    algorithm_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
-    algorithm_sup = gps.data_logger.unpickle(gps._hyperparams['common']['supervised_exp_dir'] + \
+    alg_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
+    alg_sup = gps.data_logger.unpickle(gps._hyperparams['common']['supervised_exp_dir'] + \
                                             'data_files/algorithm_itr_%02d' % pol_iter + '.pkl')
-    algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_controller_file'])
-    algorithm_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + \
+    alg_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_controller_file'])
+    alg_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + \
                                             'data_files_oracle/algorithm_itr_09.pkl')
+    algorithms = [alg_ioc, alg_sup, alg_demo, alg_oracle]
     if not weight_varying:
         pos_body_offset = gps._hyperparams['agent']['pos_body_offset']
     M = agent_config['conditions']
@@ -34,11 +35,7 @@ def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment
         for m in range(M):
             self.agent.reset_initial_body_offset(m)
 
-    pol_ioc = algorithm_ioc.policy_opt.policy
-    pol_sup = algorithm_sup.policy_opt.policy
-    pol_demo = algorithm_demo.policy_opt.policy
-    pol_oracle = algorithm_oracle.policy_opt.policy
-    policies = [pol_ioc, pol_sup, pol_demo, pol_oracle]
+    policies = [alg.policy_opt.policy for alg in algorithms]
     successes = {i: np.zeros((TRIALS, M)) for i in xrange(len(policies))}
     agent = agent_config['type'](agent_config)
     if not weight_varying:
@@ -74,10 +71,10 @@ def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment
     fig = plt.figure(figsize=(8, 5))
 
     subplt = plt.subplot()
-    subplt.plot(ioc_conditions, success_rate_ioc, '-rx')
-    subplt.plot(ioc_conditions, success_rate_sup, '-gx')
-    subplt.plot(ioc_conditions, success_rate_demo, '-bx')
-    subplt.plot(ioc_conditions, success_rate_oracle, '-yx')
+    subplt.plot(ioc_conditions, success_rates[0], '-rx')
+    subplt.plot(ioc_conditions, success_rates[1], '-gx')
+    subplt.plot(ioc_conditions, success_rates[2], '-bx')
+    subplt.plot(ioc_conditions, success_rates[3], '-yx')
     ax = plt.gca()
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
@@ -100,14 +97,13 @@ def visualize_samples(gps, N, agent_config, experiment='reacher'):
         experiment: whether the experiment is peg, reacher or pointmass.
     """
     pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
-    algorithm_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
-    algorithm_sup = gps.data_logger.unpickle(gps._hyperparams['common']['supervised_exp_dir'] + \
+    alg_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
+    alg_sup = gps.data_logger.unpickle(gps._hyperparams['common']['supervised_exp_dir'] + \
                                             'data_files/algorithm_itr_%02d' % pol_iter + '.pkl')
-    algorithm_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + \
-                                            'data_files/algorithm_itr_09.pkl')
-    algorithm_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + \
+    alg_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_controller_file'])
+    alg_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + \
                                             'data_files_oracle/algorithm_itr_09.pkl')
-    algorithms = [algorithm_ioc, algorithm_sup, algorithm_demo, algorithm_oracle]
+    algorithms = [alg_ioc, alg_sup, alg_demo, alg_oracle]
     M = agent_config['conditions']
     policies = [alg.policy_opt.policy for alg in algorithms]
     samples = {i: [] for i in xrange(len(policies))}
