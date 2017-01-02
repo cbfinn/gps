@@ -57,105 +57,17 @@ def jacobian(y, x):
     assert_shape(jac, [dY, dX])
     return jac
 
-def multimodal_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
-                             demo_batch_size=5, sample_batch_size=5, phase=None, ioc_loss='ICML',
-                             Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, gp_reg_weight=0.0,
-                             multi_obj_supervised_wt=1.0, learn_wu=False, x_idx=None, img_idx=None,
-                              num_filters=[15,15,15]):
-    """ Construct cost net with images and robot config.
-    Args:
-        ...
-        x_idx is required, and should indicate the indices corresponding to the robot config
-        img_idx is required, and should indicate the indices corresponding to the imagej
-    """
-    inputs = {}
-    inputs['demo_obs'] = demo_obs = tf.placeholder(tf.float32, shape=(demo_batch_size, T, dim_input))
-    inputs['demo_torque_norm'] = demo_torque_norm = tf.placeholder(tf.float32, shape=(demo_batch_size, T, 1))
-    inputs['demo_iw'] = demo_imp_weight = tf.placeholder(tf.float32, shape=(demo_batch_size, 1))
-    inputs['sample_obs'] = sample_obs = tf.placeholder(tf.float32, shape=(sample_batch_size, T, dim_input))
-    inputs['sample_torque_norm'] = sample_torque_norm = tf.placeholder(tf.float32, shape=(sample_batch_size, T, 1))
-    inputs['sample_iw'] = sample_imp_weight = tf.placeholder(tf.float32, shape=(sample_batch_size, 1))
-    sup_batch_size = sample_batch_size+demo_batch_size
-    inputs['sup_obs'] = sup_obs = tf.placeholder(tf.float32, shape=(sup_batch_size, T, dim_input))
-    inputs['sup_torque_norm'] = sup_torque_norm = tf.placeholder(tf.float32, shape=(sup_batch_size, T, 1))
-    inputs['sup_cost_labels'] = sup_cost_labels = tf.placeholder(tf.float32, shape=(sup_batch_size, T, 1))
-
-    # Inputs for single eval test runs
-    inputs['test_obs'] = test_obs = tf.placeholder(tf.float32, shape=(T, dim_input), name='test_obs')
-    inputs['test_torque_norm'] = test_torque_norm = tf.placeholder(tf.float32, shape=(T, 1), name='test_torque_u')
-
-    inputs['test_obs_single'] = test_obs_single = tf.placeholder(tf.float32, shape=(dim_input), name='test_obs_single')
-    inputs['test_torque_single'] = test_torque_single = tf.placeholder(tf.float32, shape=(1), name='test_torque_u_single')
-
-    x_idx = tf.constant(x_idx)
-    img_idx = tf.constant(img_idx)
-
-
-    _, test_imgfeat, _, test_cost  = nn_vis_forward(test_obs, test_torque_norm, num_hidden=num_hidden, learn_wu=learn_wu, dim_hidden=dim_hidden, x_idx=x_idx, img_idx=img_idx, num_filters=num_filters)
-    demo_cost_preu, _, _, demo_costs = nn_vis_forward(demo_obs, demo_torque_norm, num_hidden=num_hidden, learn_wu=learn_wu, dim_hidden=dim_hidden, x_idx=x_idx, img_idx=img_idx, num_filters=num_filters)
-    sample_cost_preu, _, _, sample_costs = nn_vis_forward(sample_obs, sample_torque_norm, num_hidden=num_hidden,learn_wu=learn_wu, dim_hidden=dim_hidden, x_idx=x_idx, img_idx=img_idx, num_filters=num_filters)
-    sup_cost_preu, _, _, sup_costs = nn_vis_forward(sup_obs, sup_torque_norm, num_hidden=num_hidden,learn_wu=learn_wu, dim_hidden=dim_hidden, x_idx=x_idx, img_idx=img_idx, num_filters=num_filters)
-
-    # Build a differentiable test cost by feeding each timestep individually
-    test_obs_single = tf.expand_dims(test_obs_single, 0)
-    test_torque_single = tf.expand_dims(test_torque_single, 0)
-
-    test_cost_single_preu, test_X_single, test_feat_single, _ = nn_vis_forward(test_obs_single, test_torque_single, num_hidden=num_hidden, dim_hidden=dim_hidden, learn_wu=learn_wu, x_idx=x_idx, img_idx=img_idx)
-    test_cost_single = tf.squeeze(test_cost_single_preu)
-
-    sup_loss = tf.nn.l2_loss(sup_costs - sup_cost_labels)*multi_obj_supervised_wt
-
-    demo_sample_preu = tf.concat(0, [demo_cost_preu, sample_cost_preu])
-    sample_demo_size = sample_batch_size+demo_batch_size
-    assert_shape(demo_sample_preu, [sample_demo_size, T, 1])
-    costs_prev = tf.slice(demo_sample_preu, begin=[0, 0,0], size=[sample_demo_size, T-2, -1])
-    costs_next = tf.slice(demo_sample_preu, begin=[0, 2,0], size=[sample_demo_size, T-2, -1])
-    costs_cur = tf.slice(demo_sample_preu, begin=[0, 1,0], size=[sample_demo_size, T-2, -1])
-    # cur-prev
-    slope_prev = costs_cur-costs_prev
-    # next-cur
-    slope_next = costs_next-costs_cur
-
-    if smooth_reg_weight > 0:
-        # regularization
-        """
-        """
-        raise NotImplementedError("Smoothness reg not implemented")
-
-    if mono_reg_weight > 0:
-        demo_slope = tf.slice(slope_next, begin=[0,0,0], size=[demo_batch_size, -1, -1])
-        slope_reshape = tf.reshape(demo_slope, shape=[-1,1])
-        mono_reg = l2_mono_loss(slope_reshape)*mono_reg_weight
-    else:
-        mono_reg = 0
-
-    # init logZ or Z to 1, only learn the bias
-    # (also might be good to reduce lr on bias)
-    logZ = safe_get('Wdummy', initializer=tf.ones(1))
-    Z = tf.exp(logZ) # TODO: What does this do?
-
-    # TODO - removed loss weights, changed T, batching, num samples
-    # demo cond, num demos, etc.
-    ioc_loss = icml_loss(demo_costs, sample_costs, demo_imp_weight, sample_imp_weight, Z)
-    ioc_loss += mono_reg
-
-    outputs = {
-        'multiobj_loss': sup_loss+ioc_loss,
-        'sup_loss': sup_loss,
-        'ioc_loss': ioc_loss,
-        'test_loss': test_cost,
-        'test_imgfeat': test_imgfeat,
-        'test_loss_single': test_cost_single,
-        'test_X_single': test_X_single,
-        'test_feat_single': test_feat_single,
-    }
-    return inputs, outputs
-
-
 def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
                              demo_batch_size=5, sample_batch_size=5, phase=None, ioc_loss='ICML',
                              Nq=1, smooth_reg_weight=0.0, mono_reg_weight=0.0, gp_reg_weight=0.0,
-                             multi_obj_supervised_wt=1.0, learn_wu=False):
+                             multi_obj_supervised_wt=1.0, learn_wu=False, x_idx=None, img_idx=None,
+                             num_filters=[15,15,15]):
+    """ Construct cost net (with images and robot config).
+    Args:
+        ...
+        if with images, x_idx is required, and should indicate the indices corresponding to the robot config
+        if with images, img_idx is required, and should indicate the indices corresponding to the imagej
+    """
 
     inputs = {}
     inputs['demo_obs'] = demo_obs = tf.placeholder(tf.float32, shape=(demo_batch_size, T, dim_input))
@@ -176,16 +88,27 @@ def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
     inputs['test_obs_single'] = test_obs_single = tf.placeholder(tf.float32, shape=(dim_input), name='test_obs_single')
     inputs['test_torque_single'] = test_torque_single = tf.placeholder(tf.float32, shape=(1), name='test_torque_u_single')
 
-    _, test_cost  = nn_forward(test_obs, test_torque_norm, num_hidden=num_hidden, learn_wu=learn_wu, dim_hidden=dim_hidden)
-    demo_cost_preu, demo_costs = nn_forward(demo_obs, demo_torque_norm, num_hidden=num_hidden, learn_wu=learn_wu, dim_hidden=dim_hidden)
-    sample_cost_preu, sample_costs = nn_forward(sample_obs, sample_torque_norm, num_hidden=num_hidden,learn_wu=learn_wu, dim_hidden=dim_hidden)
-    sup_cost_preu, sup_costs = nn_forward(sup_obs, sup_torque_norm, num_hidden=num_hidden,learn_wu=learn_wu, dim_hidden=dim_hidden)
+    if x_idx is not None:
+        x_idx = tf.constant(x_idx)
+        img_idx = tf.constant(img_idx)
+        _, test_imgfeat, _, test_cost  = nn_vis_forward(test_obs, test_torque_norm, num_hidden=num_hidden, learn_wu=learn_wu, dim_hidden=dim_hidden, x_idx=x_idx, img_idx=img_idx, num_filters=num_filters)
+        demo_cost_preu, _, _, demo_costs = nn_vis_forward(demo_obs, demo_torque_norm, num_hidden=num_hidden, learn_wu=learn_wu, dim_hidden=dim_hidden, x_idx=x_idx, img_idx=img_idx, num_filters=num_filters)
+        sample_cost_preu, _, _, sample_costs = nn_vis_forward(sample_obs, sample_torque_norm, num_hidden=num_hidden,learn_wu=learn_wu, dim_hidden=dim_hidden, x_idx=x_idx, img_idx=img_idx, num_filters=num_filters)
+        sup_cost_preu, _, _, sup_costs = nn_vis_forward(sup_obs, sup_torque_norm, num_hidden=num_hidden,learn_wu=learn_wu, dim_hidden=dim_hidden, x_idx=x_idx, img_idx=img_idx, num_filters=num_filters)
+    else:
+        _, test_cost  = nn_forward(test_obs, test_torque_norm, num_hidden=num_hidden, learn_wu=learn_wu, dim_hidden=dim_hidden)
+        demo_cost_preu, demo_costs = nn_forward(demo_obs, demo_torque_norm, num_hidden=num_hidden, learn_wu=learn_wu, dim_hidden=dim_hidden)
+        sample_cost_preu, sample_costs = nn_forward(sample_obs, sample_torque_norm, num_hidden=num_hidden,learn_wu=learn_wu, dim_hidden=dim_hidden)
+        sup_cost_preu, sup_costs = nn_forward(sup_obs, sup_torque_norm, num_hidden=num_hidden,learn_wu=learn_wu, dim_hidden=dim_hidden)
 
     # Build a differentiable test cost by feeding each timestep individually
     test_obs_single = tf.expand_dims(test_obs_single, 0)
     test_torque_single = tf.expand_dims(test_torque_single, 0)
-    test_feat_single = compute_feats(test_obs_single, num_hidden=num_hidden, dim_hidden=dim_hidden)
-    test_cost_single_preu, _ = nn_forward(test_obs_single, test_torque_single, num_hidden=num_hidden, dim_hidden=dim_hidden, learn_wu=learn_wu)
+    if x_idx is not None:
+        test_cost_single_preu, test_X_single, test_feat_single, _ = nn_vis_forward(test_obs_single, test_torque_single, num_hidden=num_hidden, dim_hidden=dim_hidden, learn_wu=learn_wu, x_idx=x_idx, img_idx=img_idx)
+    else:
+        test_feat_single = compute_feats(test_obs_single, num_hidden=num_hidden, dim_hidden=dim_hidden)
+        test_cost_single_preu, _ = nn_forward(test_obs_single, test_torque_single, num_hidden=num_hidden, dim_hidden=dim_hidden, learn_wu=learn_wu)
     test_cost_single = tf.squeeze(test_cost_single_preu)
 
     sup_loss = tf.nn.l2_loss(sup_costs - sup_cost_labels)*multi_obj_supervised_wt
@@ -217,10 +140,8 @@ def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
     # init logZ or Z to 1, only learn the bias
     # (also might be good to reduce lr on bias)
     logZ = safe_get('Wdummy', initializer=tf.ones(1))
-    Z = tf.exp(logZ) # TODO: What does this do?
+    Z = tf.exp(logZ)
 
-    # TODO - removed loss weights, changed T, batching, num samples
-    # demo cond, num demos, etc.
     ioc_loss = icml_loss(demo_costs, sample_costs, demo_imp_weight, sample_imp_weight, Z)
     ioc_loss += mono_reg
 
@@ -232,7 +153,13 @@ def construct_nn_cost_net_tf(num_hidden=3, dim_hidden=42, dim_input=27, T=100,
         'test_loss_single': test_cost_single,
         'test_feat_single': test_feat_single,
     }
+    
+    if x_idx is not None:
+        outputs['test_imgfeat'] = test_imgfeat
+        outputs['test_X_single'] = test_X_single
+
     return inputs, outputs
+
 
 def compute_feats(net_input, num_hidden=1, dim_hidden=42):
     len_shape = len(net_input.get_shape())

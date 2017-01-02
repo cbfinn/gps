@@ -4,6 +4,8 @@ import numpy as np
 import os
 import time
 import traceback as tb
+from collections import Mapping, Container
+from sys import getsizeof
 
 from gps.utility import color_string
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
@@ -54,6 +56,8 @@ def flatten_lists(lists):
     """
     Flattens a list of lists into a single list
     """
+    if type(lists[0]) is not list:
+        return lists
     return [obj for sublist in lists for obj in sublist]
 
 
@@ -186,7 +190,7 @@ def sample_params(sampling_range, prohibited_ranges):
                 break
     return sampled_point
 
-def compute_distance(target_end_effector, sample_list, end_effector_idxs=range(0,3), filter_type='min'):
+def compute_distance(target_end_effector, sample_list, state_idxs=range(4, 7), end_effector_idxs=range(0,3), filter_type='min'):
     target_position = target_end_effector
     if type(sample_list) is not list:
         cur_samples = sample_list.get_samples()
@@ -196,13 +200,23 @@ def compute_distance(target_end_effector, sample_list, end_effector_idxs=range(0
             samples = pol_sample_lists[m].get_samples()
             for sample in samples:
                 cur_samples.append(sample)
-    sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
+    sample_end_effectors = [cur_samples[i].get_X() for i in xrange(len(cur_samples))]
     if filter_type == 'min':
-        dists = [np.nanmin((np.sqrt(np.sum((sample_end_effectors[i][:, end_effector_idxs] - target_position.reshape(1, -1))**2,
-                axis=1))), axis=0) for i in xrange(len(cur_samples))]
+        if type(target_position) is not list:
+            dists = [np.nanmin((np.sqrt(np.sum((sample_end_effectors[i][:, state_idxs] - target_position[end_effector_idxs].reshape(1, -1))**2,
+                    axis=1))), axis=0) for i in xrange(len(cur_samples))]
+        else:
+            N = len(cur_samples)/len(target_position)
+            dists = [np.nanmin((np.sqrt(np.sum((sample_end_effectors[i][:, state_idxs] - target_position[i/N][end_effector_idxs].reshape(1, -1))**2,
+                    axis=1))), axis=0) for i in xrange(len(cur_samples))]
     elif filter_type == 'last':
-        dists = [np.sqrt(np.sum((sample_end_effectors[i][:, end_effector_idxs] - target_position.reshape(1, -1))**2,
-                axis=1))[-1] for i in xrange(len(cur_samples))]
+        if type(target_position) is not list:
+            dists = [np.sqrt(np.sum((sample_end_effectors[i][:, state_idxs] - target_position[end_effector_idxs].reshape(1, -1))**2,
+                    axis=1))[-1] for i in xrange(len(cur_samples))]
+        else:
+            N = len(cur_samples)/len(target_position)
+            dists = [np.sqrt(np.sum((sample_end_effectors[i][:, state_idxs] - target_position[i/N][end_effector_idxs].reshape(1, -1))**2,
+                    axis=1))[-1] for i in xrange(len(cur_samples))]
     else:
         raise NotImplementedError()
     return dists
@@ -229,8 +243,6 @@ class BatchSampler(object):
         raise NotImplementedError()
 
 
-from collections import Mapping, Container
-from sys import getsizeof
 def deep_getsizeof(o, ids):
     """Find the memory footprint of a Python object
 

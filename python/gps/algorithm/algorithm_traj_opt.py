@@ -7,7 +7,7 @@ from gps.algorithm.algorithm import Algorithm
 from gps.sample.sample_list import SampleList
 from gps.utility import ColorLogger
 from gps.utility.general_utils import compute_distance
-from gps.utility.demo_utils import extract_samples
+from gps.utility.demo_utils import extract_samples, get_target_end_effector
 from gps.algorithm.traj_opt.traj_opt_utils import traj_distr_kl
 
 LOGGER = ColorLogger(__name__)
@@ -61,10 +61,7 @@ class AlgorithmTrajOpt(Algorithm):
 
         if 'target_end_effector' in self._hyperparams:
             for i in xrange(self.M):
-                if type(self._hyperparams['target_end_effector']) is list:
-                    target_position = self._hyperparams['target_end_effector'][i][:3]
-                else:
-                    target_position = self._hyperparams['target_end_effector'][:3]
+                target_position = get_target_end_effector(self, i)
                 dists = compute_distance(target_position, sample_lists[i])
                 self.dists_to_target[itr].append(sum(dists) / sample_lists[i].num_samples())
         self._advance_iteration_variables()

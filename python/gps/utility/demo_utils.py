@@ -50,36 +50,6 @@ def extract_demos(demo_file):
     demos = DataLogger().unpickle(demo_file)
     return demos['demoX'], demos['demoU'], demos['demoO'], demos.get('demoConditions', None)
 
-def xu_to_sample_list(agent, X, U):
-    num = X.shape[0]
-    samples = []
-    for demo_idx in range(num):
-        sample = Sample(agent)
-        sample.set_XU(X[demo_idx], U[demo_idx])
-        samples.append(sample)
-    return SampleList(samples)
-
-def eval_demos(agent, demo_file, costfn, n=10):
-    demos = DataLogger.unpickle(demo_file)
-    demoX = demos['demoX']
-    demoU = demos['demoU']
-    return eval_demos_xu(agent, demoX, demoU, costfn, n=n)
-
-def eval_demos_xu(agent, demoX, demoU, costfn, n=-1):
-    num_demos = demoX.shape[0]
-    losses = []
-    for demo_idx in range(num_demos):
-        sample = Sample(agent)
-        sample.set_XU(demoX[demo_idx], demoU[demo_idx])
-        if type(costfn) is list:
-            costfn = costfn[6]
-        l, _, _, _, _, _ = costfn.eval(sample)
-        losses.append(l)
-    if n>0:
-        return random.sample(losses, n)
-    else:
-        return losses
-
 def get_target_end_effector(algorithm, condition=0):
     target_dict = algorithm._hyperparams['target_end_effector']
     if type(target_dict) is list:
@@ -87,51 +57,6 @@ def get_target_end_effector(algorithm, condition=0):
     else:
         target_position = target_dict[:3]
     return target_position
-
-def compute_distance_cost_plot(algorithm, agent, sample_list):
-    if 'target_end_effector' not in algorithm._hyperparams:
-        return None
-    dists = compute_distance(get_target_end_effector(algorithm), sample_list)
-    costs = eval_demos_xu(agent, sample_list.get_X(), sample_list.get_U(), algorithm.cost)
-    return flatten_lists(dists), flatten_lists(costs)
-
-
-def compute_distance_cost_plot_xu(algorithm, agent, X, U):
-    if 'target_end_effector' not in algorithm._hyperparams:
-        return None
-    sample_list = xu_to_sample_list(agent, X, U)
-    dists = compute_distance(get_target_end_effector(algorithm), sample_list)
-    costs = eval_demos_xu(agent, sample_list.get_X(), sample_list.get_U(), algorithm.cost)
-    return flatten_lists(dists), flatten_lists(costs)
-
-def measure_distance_and_success_peg(gps):
-    """
-    Take the algorithm states for all iterations and extract the
-    mean distance to the target position and measure the success
-    rate of inserting the peg. (For the peg experiment only)
-    Args:
-        None
-    Returns: the mean distance and the success rate
-    """
-    pol_iter = gps._hyperparams['algorithm']['iterations']
-    peg_height = gps._hyperparams['demo_agent']['peg_height']
-    mean_dists = []
-    success_rates = []
-    for i in xrange(pol_iter):
-        pol_samples_file = gps._data_files_dir + 'traj_sample_itr_%02d.pkl.gz' % i
-        pol_sample_lists = gps.data_logger.unpickle(pol_samples_file)
-        if pol_sample_lists is None:
-            print("Error: cannot find '%s.'" % pol_samples_file)
-            os._exit(1) # called instead of sys.exit(), since t
-        if type(gps.algorithm._hyperparams['target_end_effector']) is list:
-                target_position = gps.algorithm._hyperparams['target_end_effector'][m][:3]
-        else:
-            target_position = gps.algorithm._hyperparams['target_end_effector'][:3]
-        dists_to_target = compute_distance(target_position, pol_sample_lists)
-        mean_dists.append(sum(dists_to_target)/len(dists_to_target))
-        success_rates.append(float(sum(1 for dist in dists_to_target if dist <= peg_height))/ \
-                                len(dists_to_target))
-    return mean_dists, success_rates
 
 def get_demos(gps):
     """

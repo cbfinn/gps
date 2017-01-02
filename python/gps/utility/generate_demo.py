@@ -118,14 +118,14 @@ class GenDemo(object):
                 filter_options = agent_config['filter_demos']
                 filter_type = filter_options.get('type', 'min')
                 targets = filter_options['target']
-                pos_idx = filter_options['state_idx']
+                pos_idx = filter_options.get('state_idx', range(4, 7))
+                end_effector_idx = filter_options.get('end_effector_idx', range(0, 3))
                 max_per_condition = filter_options.get('max_demos_per_condition', 999)
                 dist_threshold = filter_options.get('success_upper_bound', 0.01)
                 cur_samples = SampleList(demos)
-                dists = compute_distance(targets, cur_samples, filter_type=filter_type)
+                dists = compute_distance(targets, cur_samples, pos_idx, end_effector_idx, filter_type=filter_type)
                 failed_idx = []
                 for i, distance in enumerate(dists):
-                    print distance
                     if (distance > dist_threshold):
                         failed_idx.append(i)
 
@@ -149,35 +149,6 @@ class GenDemo(object):
                               'demoU': demo_list.get_U(),
                               'demoO': demo_list.get_obs(),
                               'demoConditions': demo_idx_conditions}
-            elif agent_config['type']==AgentMuJoCo and \
-                ('reacher' in agent_config.get('exp_name', []) or 'pointmass' in agent_config.get('exp_name', [])):
-                dists = []; failed_indices = []
-                success_thresh = agent_config['success_upper_bound'] # for reacher
-                for m in range(M):
-                    if type(agent_config['target_end_effector']) is list:
-                        target_position = agent_config['target_end_effector'][m][:3]
-                    else:
-                        target_position = agent_config['target_end_effector'][:3]
-                    for i in range(N):
-                      index = m*N + i
-                      demo = demos[index]
-                      dists.append(compute_distance(target_position, SampleList([demo]))[0])
-                      if dists[index] >= success_thresh:
-                        failed_indices.append(index)
-                good_indices = [i for i in xrange(len(demos)) if i not in failed_indices]
-                self._hyperparams['algorithm']['demo_cond'] = len(good_indices)
-                filtered_demos = []
-                filtered_demo_conditions = []
-                for i in good_indices:
-                    filtered_demos.append(demos[i])
-                    filtered_demo_conditions.append(demo_idx_conditions[i])
-
-                print 'Num demos:', len(filtered_demos)
-                shuffle(filtered_demos)
-                for demo in filtered_demos: demo.reset_agent(ioc_agent)
-                demo_list =  SampleList(filtered_demos)
-                demo_store = {'demoX': demo_list.get_X(), 'demoU': demo_list.get_U(), 'demoO': demo_list.get_obs(),
-                              'demoConditions': filtered_demo_conditions}
             else:
                 shuffle(demos)
                 for demo in demos: demo.reset_agent(ioc_agent)

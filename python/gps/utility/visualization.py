@@ -1,5 +1,6 @@
 from gps.proto.gps_pb2 import RGB_IMAGE
 from gps.utility.general_utils import compute_distance, mkdir_p
+from gps.utility.demo_utils import get_target_end_effector
 from gps.sample.sample_list import SampleList
 import numpy as np
 import random
@@ -44,7 +45,6 @@ def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment
         ioc_conditions = [np.log10(agent_config['density_range'][i])-4.0 \
                             for i in xrange(M)]
     pos_body_offset = gps.agent._hyperparams['pos_body_offset'][i]
-    target_position = np.array([.1,-.1,.01])+pos_body_offset
 
     for seed in xrange(TRIALS):
         random.seed(seed)
@@ -57,7 +57,14 @@ def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment
                         policies[k], i,
                         verbose=(i < gps._hyperparams['verbose_trials']), 
                         noisy=True)
-                    dists_to_target = compute_distance(target_position, SampleList([sample]))[0]
+                    if 'target_end_effector' in alg_ioc._hyperparams:
+                        target_position = get_target_end_effector(alg_ioc, i)
+                        dists_to_target = compute_distance(target_position, SampleList([sample]))[0]
+                    elif 'compute_distances' in alg_ioc._hyperparams:
+                        dist_dict = alg_ioc._hyperparams['compute_distances']
+                        target_position = dist_dict['targets']
+                        state_idx = dist_dict['state_idx']
+                        dists_to_target = compute_distance(target_position, SampleList([sample]), state_idx, state_idx)[0]
                     if dists_to_target <= THRESH[experiment]:
                         successes[k][seed, i] = 1.0
     

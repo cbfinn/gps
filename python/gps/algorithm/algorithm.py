@@ -336,7 +336,7 @@ class Algorithm(object):
             samps = np.random.randn(dX, N)
             sigma[t, :dX, :dX] = 0.5 * (sigma[t, :dX, :dX] + sigma[t, :dX, :dX].T)
             # Full version. Assuming policy synthetic samples distro fix bound is 2.
-            var_limit = 2 #self._hyperparams['policy_synthetic_samples_distro_fix_bound'] # Assuming to be 2
+            var_limit = 2
             pemp = np.maximum(np.mean(X[:, t, :] - mu[t, :dX], 0), 1e-3)
             sigt = np.diag(1 / np.sqrt(pemp)).dot(sigma[t, :dX, :dX]).dot(np.diag(1 / np.sqrt(pemp)))
             val, vec = np.linalg.eig(sigt)
@@ -345,7 +345,6 @@ class Algorithm(object):
             sigt = vec.dot(val).dot(vec.T)
             sigma[t, :dX, :dX] = np.diag(np.sqrt(pemp)).dot(sigt).dot(np.diag(np.sqrt(pemp)))
             # Fix small eigenvalues only.
-            # TODO - maybe symmetrize sigma?
             val, vec = np.linalg.eig(sigma[t, :dX, :dX])
             if np.any(val < 1e-6):
               val = np.maximum(np.real(val), 1e-6)
@@ -378,12 +377,10 @@ class Algorithm(object):
         assert Md == 1
         samples_logiw = {i: samples_logiw[i].reshape((-1, 1)) for i in xrange(M)}
         demos_logiw = {i: demos_logiw[i].reshape((-1, 1)) for i in xrange(M)}
-        # TODO - make these changes in other algorithm objects too.
         sampleU_arr = np.vstack((self.sample_list[i].get_U() for i in xrange(M)))
         sampleO_arr = np.vstack((self.sample_list[i].get_obs() for i in xrange(M)))
         samples_logiw_arr = np.hstack([samples_logiw[i] for i in xrange(M)]).reshape((-1, 1))
-        # TODO - this is a weird hack that is wrong, and has been in the code for awhile.
-        demos_logiw_arr = demos_logiw[0].reshape((-1, 1))  # np.hstack([demos_logiw[i] for i in xrange(Md)]).reshape((-1, 1))
+        demos_logiw_arr = demos_logiw[0].reshape((-1, 1))
         self.cost.update(self.demoU, self.demoO, demos_logiw_arr, sampleU_arr,
                                                     sampleO_arr, samples_logiw_arr, itr=self.iteration_count)
 
@@ -407,15 +404,6 @@ class Algorithm(object):
         demoO = {i: self.demoO for i in xrange(M)}
         demoX = {i: self.demoX for i in xrange(M)}
 
-        # For IOC+vision, recompute demoX here using self.cost. Assumes
-        # that the features are the last part of the state and that the dynamics
-        # are fit to the feature encoder in the cost.
-        #if 'get_features' in dir(self.cost):
-        #  for m in range(M):
-        #    for samp in range(demoO[m].shape[0]):
-        #        demoFeat = self.cost.get_features(demoO[m][samp])
-        #        dF = demoFeat.shape[1]
-        #        demoX[m][samp, :,-dF:] = demoFeat
         self.demo_traj = {}
 
         # estimate demo distributions empirically when not initializing from demo policy

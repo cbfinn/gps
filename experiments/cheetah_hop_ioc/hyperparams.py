@@ -22,8 +22,7 @@ from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
 from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_QUADRATIC, evall1l2term
 from gps.utility.data_logger import DataLogger
 
-from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, \
-        END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, RGB_IMAGE, RGB_IMAGE_SIZE, ACTION
+from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, ACTION
 from gps.gui.config import generate_experiment_info
 
 SENSOR_DIMS = {
@@ -102,6 +101,7 @@ demo_agent = {
     'filter_demos': {
         'type': 'min',
         'state_idx': range(0, 1),
+        'end_effector_idx': range(0, 1),
         'target': np.array([TARGET_X]),
         'success_upper_bound': 1.0,
     },

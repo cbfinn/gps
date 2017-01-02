@@ -11,7 +11,7 @@ from gps.algorithm.algorithm_utils import PolicyInfo
 from gps.algorithm.config import ALG_MDGPS
 from gps.sample.sample_list import SampleList
 from gps.utility import ColorLogger
-
+from gps.utility.demo_utils import get_target_end_effector
 from gps.utility.general_utils import Timer, compute_distance
 
 LOGGER = ColorLogger(__name__)
@@ -75,10 +75,7 @@ class AlgorithmMDGPS(Algorithm):
                 # Compute mean distance to target. For peg experiment only.
                 if 'target_end_effector' in self._hyperparams:
                     for i in xrange(self.M):
-                        if type(self._hyperparams['target_end_effector']) is list:
-                            target_position = self._hyperparams['target_end_effector'][i][:3]
-                        else:
-                            target_position = self._hyperparams['target_end_effector'][:3]
+                        target_position = get_target_end_effector(self, i)
                         dists = compute_distance(target_position, sample_lists[i])
                         self.dists_to_target[itr].append(sum(dists) / sample_lists[i].num_samples())
 

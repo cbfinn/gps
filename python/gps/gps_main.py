@@ -18,6 +18,7 @@ import threading
 import time
 import scipy.io
 import numpy as np
+import numpy.matlib
 
 # Add gps/python to path so that imports work.
 sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
@@ -25,8 +26,7 @@ from gps.gui.gps_training_gui import GPSTrainingGUI, NUM_DEMO_PLOTS
 from gps.utility.data_logger import DataLogger
 from gps.sample.sample_list import SampleList
 from gps.utility.general_utils import disable_caffe_logs, Timer, mkdir_p, compute_distance
-from gps.utility.demo_utils import eval_demos_xu, compute_distance_cost_plot, compute_distance_cost_plot_xu, \
-                                    measure_distance_and_success_peg, get_demos, extract_samples
+from gps.utility.demo_utils import get_demos, extract_samples
 from gps.utility.visualization import compare_samples_curve, visualize_samples
 
 
@@ -100,9 +100,6 @@ class GPSMain(object):
                 iteration, and resumes training at the next iteration.
         Returns: None
         """
-        import numpy as np
-        import numpy.matlib
-
         itr_start = self._initialize(itr_load)
         for itr in range(itr_start, self._hyperparams['iterations']):
             with Timer('_reset'):
@@ -137,7 +134,6 @@ class GPSMain(object):
 
             with Timer('_log_data'):
                 if self.algorithm._hyperparams['sample_on_policy']:
-                    # TODO - need to add these to lines back in when we move to mdgps
                     with Timer('take_policy_samples'):
                         pol_sample_lists = self._take_policy_samples(idx=self._train_idx)
                     self._log_data(itr, traj_sample_lists, pol_sample_lists)
@@ -194,8 +190,6 @@ class GPSMain(object):
         )
 
         if self.gui:
-            # Note - this update doesn't use the cost of the samples. It uses
-            # the cost stored in the algorithm object.
             self.gui.update(itr, self.algorithm, self.agent,
                 traj_sample_lists, pol_sample_lists, eval_pol_gt)
             self.gui.set_status_text(('Took %d policy sample(s) from ' +
@@ -378,29 +372,10 @@ class GPSMain(object):
         Returns: None
         """
         with Timer('Updating GUI'):
-            if False: #self.using_ioc():
-                # Produce time vs cost plots
-                sample_losses = self.algorithm.cur[6].cs
-                if sample_losses is None:
-                    sample_losses = self.algorithm.prev[6].cs
-                if sample_losses.shape[0] < NUM_DEMO_PLOTS:
-                    sample_losses = np.tile(sample_losses, [NUM_DEMO_PLOTS, 1])[:Fset__NUM_DEMO_PLOTS]
-                demo_losses = eval_demos_xu(self.agent, self.algorithm.demoX, self.algorithm.demoU, self.algorithm.cost, n=NUM_DEMO_PLOTS)
-
-                # Produce distance vs cost plots
-                dists_vs_costs = compute_distance_cost_plot(self.algorithm, self.agent, traj_sample_lists[6])
-                demo_dists_vs_costs = compute_distance_cost_plot_xu(self.algorithm, self.agent, self.algorithm.demoX, self.algorithm.demoU)
-
-            else:
-                demo_losses = None
-                sample_losses = None
-                dists_vs_costs = None
-                demo_dists_vs_costs = None
             if self.gui:
                 self.gui.set_status_text('Logging data and updating GUI.')
                 self.gui.update(itr, self.algorithm, self.agent,
-                    traj_sample_lists, pol_sample_lists, ioc_demo_losses=demo_losses, ioc_sample_losses=sample_losses,
-                                ioc_dist_cost=dists_vs_costs, ioc_demo_dist_cost=demo_dists_vs_costs)
+                    traj_sample_lists, pol_sample_lists)
                 self.gui.save_figure(
                     self._data_files_dir + ('figure_itr_%02d.pdf' % itr)
                 )
@@ -536,8 +511,11 @@ def main():
         pass
     disable_caffe_logs(unset)
     hyperparams = imp.load_source('hyperparams', hyperparams_file)
-
-    SEED = hyperparams.seed
+    
+    if hasattr(hyperparams, 'seed'):
+        SEED = hyperparams.seed
+    else:
+        SEED = 0
     random.seed(SEED)
     np.random.seed(SEED)
 

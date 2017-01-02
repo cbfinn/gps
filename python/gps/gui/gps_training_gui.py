@@ -31,6 +31,8 @@ from gps.gui.mean_plotter import MeanPlotter
 from gps.gui.plotter_3d import Plotter3D
 from gps.gui.image_visualizer import ImageVisualizer
 from gps.gui.util import buffered_axis_limits, load_data_from_npz
+from gps.utility.demo_utils import get_target_end_effector
+from gps.utility.general_utils import compute_distance
 
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS, RGB_IMAGE, RGB_IMAGE_SIZE, IMAGE_FEAT
 
@@ -293,8 +295,7 @@ class GPSTrainingGUI(object):
                 alpha=config['image_overlay_alpha'])
 
     # Iteration update functions
-    def update(self, itr, algorithm, agent, traj_sample_lists, pol_sample_lists, eval_pol_gt = False,
-               ioc_demo_losses=None, ioc_sample_losses=None, ioc_dist_cost=None, ioc_demo_dist_cost=None):
+    def update(self, itr, algorithm, agent, traj_sample_lists, pol_sample_lists, eval_pol_gt = False):
         """
         After each iteration, update the iteration data output, the cost plot,
         and the 3D trajectory visualizations (if end effector points exist).
@@ -333,11 +334,6 @@ class GPSTrainingGUI(object):
             self._update_trajectory_visualizations(algorithm, agent,
                     traj_sample_lists, pol_sample_lists)
 
-        if ioc_demo_losses:
-            self._update_ioc_demo_plot(ioc_demo_losses, ioc_sample_losses)
-        if ioc_dist_cost:
-            self._update_ioc_dist_plot(ioc_dist_cost, ioc_demo_dist_cost)
-
         if self.gui_on:
             self._fig.canvas.draw()
             self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
@@ -363,7 +359,7 @@ class GPSTrainingGUI(object):
                 condition_titles += ' %8s' % ('')
                 itr_data_fields  += ' %8s' % ('mean_dist')
 
-            if 'compute_distances' in algorithm._hyperparams:
+            elif 'compute_distances' in algorithm._hyperparams:
                 condition_titles += ' %8s' % ('')
                 itr_data_fields  += ' %8s' % ('distance')
 
@@ -410,8 +406,6 @@ class GPSTrainingGUI(object):
             entropy = 2*np.sum(np.log(np.diagonal(algorithm.prev[m].traj_distr.chol_pol_covar,
                     axis1=1, axis2=2)))
             itr_data += ' | %8.2f %8.2f %8.2f' % (cost, step, entropy)
-            #if algorithm._hyperparams['ioc'] and not algorithm._hyperparams['learning_from_prior']:
-            #    itr_data += ' %8.2f' % (algorithm.kl_div[itr][m])
 
             if pol_sample_lists is None:
                 if algorithm.dists_to_target:
@@ -419,17 +413,18 @@ class GPSTrainingGUI(object):
                         itr_data += ' %8.2f' % (algorithm.dists_to_target[itr][m])
             else:
                 if 'target_end_effector' in algorithm._hyperparams:
-                    from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
-                    if type(algorithm._hyperparams['target_end_effector']) is list:
-                        target_position = algorithm._hyperparams['target_end_effector'][m][:3]
+                    target_position = get_target_end_effector(algorithm, m)
+                    dists = compute_distance(target_position, pol_sample_lists[m])
+                    itr_data += ' %8.2f' % (sum(dists) / pol_sample_lists[m].num_samples())
+                elif 'compute_distancecs' in algorithm._hyperparams:
+                    dist_dict = algorithm._hyperparams['compute_distances']
+                    target_position = dist_dict['targets']
+                    state_idx = dist_dict['state_idx']
+                    if type(target_position) is not list:
+                        dists = compute_distance(target_position, pol_sample_lists[m], state_idx, state_idx)
                     else:
-                        target_position = algorithm._hyperparams['target_end_effector'][:3]
-                    cur_samples = pol_sample_lists[m].get_samples()
-                    sample_end_effectors = [cur_samples[i].get(END_EFFECTOR_POINTS) for i in xrange(len(cur_samples))]
-                    dists = [np.amin(np.sqrt(np.sum((sample_end_effectors[i][:, :3] - \
-                                target_position.reshape(1, -1))**2, axis = 1)), axis = 0)
-                                for i in xrange(len(cur_samples))]
-                    itr_data += ' %8.2f' % (sum(dists) / len(cur_samples))
+                        dists = compute_distance(target_position[m], pol_sample_lists[m], state_idx, state_idx)
+                    itr_data += ' %8.2f' % (sum(dists) / pol_sample_lists[m].num_samples())
             if isinstance(algorithm, AlgorithmBADMM):
                 kl_div_i = algorithm.cur[m].pol_info.init_kl.mean()
                 kl_div_f = algorithm.cur[m].pol_info.prev_kl.mean()
@@ -549,19 +544,6 @@ class GPSTrainingGUI(object):
             for i in range(ee_pt.shape[1]/3):
                 ee_pt_i = ee_pt[:, 3*i+0:3*i+3]
                 self._traj_visualizer.plot_3d_points(m, ee_pt_i, color=color, label=label)
-
-    def _update_ioc_demo_plot(self, demo_losses, sample_losses):
-        for i in range(len(demo_losses)):
-            self._demo_cost_plotter.set_sequence(i, demo_losses[i])
-
-        for i in range(max(NUM_DEMO_PLOTS, len(sample_losses))):
-            self._demo_cost_plotter.set_sequence(len(demo_losses)+i, sample_losses[i], style='--')
-            pass
-
-    def _update_ioc_dist_plot(self, dist_cost, demo_dist_cost):
-        self._scatter_cost_plotter.clear()
-        self._scatter_cost_plotter.add_data(dist_cost[0], dist_cost[1])
-        self._scatter_cost_plotter.add_data(demo_dist_cost[0], demo_dist_cost[1], color='red')
 
     def save_figure(self, filename):
         self._fig.savefig(filename)

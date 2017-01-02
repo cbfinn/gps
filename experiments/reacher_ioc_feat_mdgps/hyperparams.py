@@ -154,6 +154,13 @@ demo_agent = {
     'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ demo_pos_body_offset[i], np.array([0., 0., 0.])])
                             for i in xrange(DEMO_CONDITIONS)],
     'feature_encoder': common['demo_controller_file'][0], # initialize conv layers of policy
+    'filter_demos': {
+        'type': 'min',
+        'state_idx': range(4, 7),
+        'target': [np.concatenate([np.array([.1, -.1, .01])+ demo_pos_body_offset[i], np.array([0., 0., 0.])])
+                            for i in xrange(DEMO_CONDITIONS)],
+        'success_upper_bound': 0.05,
+    },
 }
 
 
