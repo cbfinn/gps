@@ -57,12 +57,6 @@ class AgentMuJoCo(Agent):
                 alg = pickle.load(f)
             self.feature_encoder = alg.policy_opt.policy
 
-        if self._hyperparams['hardcoded_linear_dynamics']:
-            dt = self._hyperparams['dt']
-            F = np.array([[ 1, 0, dt, 0, dt**2., 0], [0, 1, 0, dt, 0, dt**2.],
-                          [0, 0, 1, 0, dt, 0], [0, 0, 0, 1, 0, dt]])
-            self.F = F
-
 
     def _setup_conditions(self):
         """
@@ -127,7 +121,6 @@ class AgentMuJoCo(Agent):
         # Initialize x0.
         self.x0 = []
         for i in range(self._hyperparams['conditions']):
-            # TODO is this correct?
             if END_EFFECTOR_POINTS in self.x_data_types:
                 # TODO: this assumes END_EFFECTOR_VELOCITIES is also in datapoints right?
                 self._init(i)
@@ -270,10 +263,7 @@ class AgentMuJoCo(Agent):
                 self._world[condition].plot(mj_X)
             if (t + 1) < self.T:
                 for _ in range(self._hyperparams['substeps']):
-                    if 'hardcoded_linear_dynamics' in self._hyperparams and self._hyperparams['hardcoded_linear_dynamics']:
-                        mj_X = self.F.dot(np.r_[mj_X, mj_U])
-                    else:
-                        mj_X, _ = self._world[condition].step(mj_X, mj_U)
+                    mj_X, _ = self._world[condition].step(mj_X, mj_U)
                 #TODO: Some hidden state stuff will go here.
                 #TODO: Will it? This TODO has been here for awhile
                 self._data = self._world[condition].get_data()
