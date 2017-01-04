@@ -20,8 +20,7 @@ from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy.lin_gauss_init import init_lqr, init_pd, load_from_file
 from gps.algorithm.policy.policy_prior_gmm import PolicyPriorGMM
-from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_QUADRATIC, evall1l2term, \
-    RAMP_REVERSE_QUADRATIC
+from gps.algorithm.cost.cost_utils import RAMP_LINEAR, RAMP_FINAL_ONLY, RAMP_QUADRATIC, RAMP_REVERSE_QUADRATIC, evall1l2term
 from gps.utility.data_logger import DataLogger
 
 from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, ACTION
