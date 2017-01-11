@@ -362,7 +362,7 @@ class AgentMuJoCo(Agent):
                 sample.set(RGB_IMAGE_SIZE, [self._hyperparams['image_channels'],
                                             self._hyperparams['image_width'],
                                             self._hyperparams['image_height']], t=None)
-                if IMAGE_FEAT in self.obs_data_types:
+                if IMAGE_FEAT in self.obs_data_types or IMAGE_FEAT in self.x_data_types:
                     if feature_fn is not None:
                         sample.set(IMAGE_FEAT, feature_fn(sample.get(RGB_IMAGE, t=0))[0], t=0)
                         if RGB_IMAGE not in self.obs_data_types:
@@ -413,7 +413,7 @@ class AgentMuJoCo(Agent):
             img = self._world[condition].get_image_scaled(self._hyperparams['image_width'],
                                                           self._hyperparams['image_height'])
             sample.set(RGB_IMAGE, np.transpose(img["img"], (2, 1, 0)).flatten(), t=t+1)
-            if IMAGE_FEAT in self.obs_data_types:
+            if IMAGE_FEAT in self.obs_data_types or IMAGE_FEAT in self.x_data_types:
                 if feature_fn is not None:
                     sample.set(IMAGE_FEAT, feature_fn(sample.get(RGB_IMAGE, t=t+1))[0], t=t+1)
                     if RGB_IMAGE not in self.obs_data_types:
