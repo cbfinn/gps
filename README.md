@@ -62,7 +62,7 @@ python python/gps/gps_main.py reacher_images
 Run S3G and cost regression:
 ```Python
 python python/gps/gps_main.py reacher_ioc_feat_mdgps
-python python/gps/gps_main.pyreacher_iocsup_images
+python python/gps/gps_main.py reacher_iocsup_images
 ```
 
 Generate oracle policy: change hyperparams of agent in gps/experiments/reacher_images to be the same as gps/experiments/reacher_ioc_feat_mdgps and run:
