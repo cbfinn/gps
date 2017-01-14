@@ -23,7 +23,7 @@ python python/gps/gps_main.py mjc_pointmass_wall_example
 again to generate the oracle policy.
 To visualize the comparison between the 4 policies, we can run the following line of code:
 ```Python
-python python/gps/gps_main.py -m mjc_pointmass_wall_ioc_example
+python python/gps/gps_main.py -m [number of samples per condition] mjc_pointmass_wall_ioc_example
 ```
 Note you can change the conditions in test_xx_range in gps/experiments/mjc_pointmass_wall_ioc_example/hyperparam.py to be the test conditions that you desire and change the hyparameters in compare_samples_curve in gps/python/utility/visualization.py accordingly (now the default is taking 20 test conditions). 
 
@@ -48,7 +48,7 @@ python python/gps/gps_main.py reacher_mdgps_weight
 
 Visualize comparison: change test conditions in gps/experiments/reacher_mdgps_weight_ioc to be desired test conditions and run:
 ```Python
-python python/gps/gps_main.py -m reacher_mdgps_weight_ioc
+python python/gps/gps_main.py -m [number of samples per condition] reacher_mdgps_weight_ioc
 ```
 
 2-link reacher with vision
@@ -72,7 +72,7 @@ python python/gps/gps_main.py reacher_images
 
 Visualize comparison: change test conditions in gps/experiments/reacher_ioc_feat_mdgps to be desired test conditions and run:
 ```Python
-python python/gps/gps_main.py -m reacher_ioc_feat_mdgps
+python python/gps/gps_main.py -m [number of samples per condition] reacher_ioc_feat_mdgps
 ```
 
 
@@ -97,7 +97,7 @@ python python/gps/gps_main.py cheetah_hop
 
 Visualize comparison: change test conditions in gps/experiments/cheetah_hop_ioc to be desired test conditions and run:
 ```Python
-python python/gps/gps_main.py -m cheetah_hop_ioc
+python python/gps/gps_main.py -m [number of samples per condition] cheetah_hop_ioc
 ```
 Note: Due to the randomness of tensorflow, the result you get when you run S3G and cost regression might be different from the result we showed in the paper, but should still reveal the difference between these methods as we did in the paper.
 
