@@ -99,7 +99,7 @@ Visualize comparison: change test conditions in gps/experiments/cheetah_hop_ioc 
 ```Python
 python python/gps/gps_main.py -m cheetah_hop_ioc
 ```
-
+Note: Due to the randomness of tensorflow, the result you get when you run S3G and cost regression might be different from the result we showed in the paper, but should still reveal the difference between these methods as we did in the paper.
 
 GPS
 ======
