@@ -37,6 +37,15 @@ def generate_pos_idx(conditions):
 	""" Generate the indices of states. """
 	return [np.array([1]) for i in xrange(conditions)]
 
+def xu_to_sample_list(agent, X, U):
+    num = X.shape[0]
+    samples = []
+    for demo_idx in range(num):
+        sample = Sample(agent)
+        sample.set_XU(X[demo_idx], U[demo_idx])
+        samples.append(sample)
+    return SampleList(samples)
+
 def extract_samples(itr, sample_file):
     """ Extract samples from iteration 0 up to iteration itr. """
     sample_list = {}

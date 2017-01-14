@@ -561,7 +561,7 @@ def main():
             gps.test_policy(itr=current_itr, N=test_policy_N, testing=args.extendtesting, eval_pol_gt=args.eval)
     elif measure:
         gps = GPSMain(hyperparams.config)
-        agent_config = gps._hyperparams['agent']
+        agent_config = gps._hyperparams['unlabeled_agent']
         compare_samples_curve(gps, measure, agent_config, weight_varying=True, experiment='reacher')
     elif visualize:
         gps = GPSMain(hyperparams.config)

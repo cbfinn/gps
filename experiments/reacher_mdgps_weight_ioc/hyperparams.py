@@ -52,6 +52,8 @@ TEST_CONDITIONS = 0 # 4
 TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
 density_range = [1e-4, 1e-3, 1e5, 1e6, 1e7, 1e8] # range of density of arm and finger tip
 demo_density_range = [1e-4, 1e-3, 1e5, 1e6] # make sure that this should be same as the range trained for demo
+test_density_range = 10**(np.array([6.25, 6.375, 6.5, 6.625, 6.75, 6.875, 7, 7.125, \
+                        7.25, 7.375, 7.5, 7.625, 7.75, 7.875, 8, 8.1, 8.15, 8.2, 8.25, 8.3]))
 
 demo_pos_body_offset = []
 for _ in range(DEMO_CONDITIONS):
@@ -141,6 +143,32 @@ demo_agent = {
     },
 }
 
+unlabeled_agent = {
+    'type': AgentMuJoCo,
+    'models': [weighted_reacher(arm_density=test_density_range[i], finger_density=test_density_range[i]) \
+                for i in xrange(len(test_density_range))],
+    'density_range': test_density_range,
+    'x0': np.zeros(4),
+    'dt': 0.05,
+    'substeps': 5,
+    'randomly_sample_bodypos': False,
+    'sampling_range_bodypos': [np.array([-0.3,-0.1, 0.0]), np.array([0.1, 0.3, 0.0])], # Format is [lower_lim, upper_lim]
+    'prohibited_ranges_bodypos':[ [None, None, None, None] ],
+    'pos_body_offset': pos_body_offset,
+    'pos_body_idx': np.array([4]),
+    'conditions': len(test_density_range),
+    'T': 50,
+    'sensor_dims': SENSOR_DIMS,
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, \
+            END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, \
+            END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'meta_include': [],
+    'camera_pos': np.array([0., 0., 1.5, 0., 0., 0.]),
+    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ pos_body_offset[0], np.array([0., 0., 0.])])
+                            for i in xrange(len(test_density_range))],
+    'render': True,
+}
 
 algorithm = {
     'type': AlgorithmMDGPS,
@@ -272,6 +300,7 @@ config = {
     'common': common,
     'agent': agent,
     'demo_agent': demo_agent,
+    'unlabeled_agent': unlabeled_agent,
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
