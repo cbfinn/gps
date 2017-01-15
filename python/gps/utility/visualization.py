@@ -109,7 +109,7 @@ def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment
         plt.xlabel('Wall Height', fontsize=22, labelpad=-4)
         plt.title("Half-Cheetah", fontsize=25)
     else:
-        raise NotImplementedError()
+        raise NotImplementedError('Measure for policies of other experiments are not implemented!')
     plt.savefig(gps._data_files_dir + 'sample_conds_distr.png')
     plt.close('all')
 

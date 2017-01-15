@@ -562,7 +562,17 @@ def main():
     elif measure:
         gps = GPSMain(hyperparams.config)
         agent_config = gps._hyperparams['unlabeled_agent']
-        compare_samples_curve(gps, measure, agent_config, weight_varying=True, experiment='reacher')
+        if 'reacher' in exp_name:
+            if 'weight' in exp_name:
+                compare_samples_curve(gps, measure, agent_config, weight_varying=True, experiment='reacher')
+            else:
+                compare_samples_curve(gps, measure, agent_config, weight_varying=False, experiment='reacher')
+        elif 'pointmass' in exp_name:
+            compare_samples_curve(gps, measure, agent_config, weight_varying=False, experiment='pointmass')
+        elif 'cheetah' in exp_name:
+            compare_samples_curve(gps, measure, agent_config, weight_varying=False, experiment='cheetah')
+        else:
+            raise NotImplementedError('Measure for policies of other experiments are not implemented!')
     elif visualize:
         gps = GPSMain(hyperparams.config)
         agent_config = gps._hyperparams['agent']
