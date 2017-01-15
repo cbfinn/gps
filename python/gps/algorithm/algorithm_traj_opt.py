@@ -61,7 +61,7 @@ class AlgorithmTrajOpt(Algorithm):
 
         if 'target_end_effector' in self._hyperparams:
             for i in xrange(self.M):
-                target_position = get_target_end_effector(self, i)
+                target_position = get_target_end_effector(self._hyperparams, i)
                 dists = compute_distance(target_position, sample_lists[i])
                 self.dists_to_target[itr].append(sum(dists) / sample_lists[i].num_samples())
         self._advance_iteration_variables()

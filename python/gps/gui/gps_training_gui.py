@@ -413,7 +413,7 @@ class GPSTrainingGUI(object):
                         itr_data += ' %8.2f' % (algorithm.dists_to_target[itr][m])
             else:
                 if 'target_end_effector' in algorithm._hyperparams:
-                    target_position = get_target_end_effector(algorithm, m)
+                    target_position = get_target_end_effector(algorithm._hyperparams, m)
                     dists = compute_distance(target_position, pol_sample_lists[m])
                     itr_data += ' %8.2f' % (sum(dists) / pol_sample_lists[m].num_samples())
                 elif 'compute_distancecs' in algorithm._hyperparams:

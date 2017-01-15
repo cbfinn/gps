@@ -41,7 +41,7 @@ EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 seed = 0
 
 np.random.seed(47)
-TRAIN_CONDITIONS = 4
+TRAIN_CONDITIONS = 6 #4
 TEST_CONDITIONS = 0
 TOTAL_CONDITIONS = TRAIN_CONDITIONS+TEST_CONDITIONS
 pos_body_offset = []
@@ -49,13 +49,15 @@ np.random.seed(13)
 for _ in range(TOTAL_CONDITIONS):
     pos_body_offset.append(np.array([-0.2, 0.2, 0.0])) # fixed for weight-varying experiment
 
-density_range = [1e-4, 1e-3, 1e5, 1e6]
+# density_range = [1e-4, 1e-3, 1e5, 1e6]
+density_range = [1e-4, 1e-3, 1e5, 1e6, 1e7, 1e8]
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
             datetime.strftime(datetime.now(), '%m-%d-%y_%H-%M'),
     'experiment_dir': EXP_DIR,
-    'data_files_dir': EXP_DIR + 'data_files/',
+    # 'data_files_dir': EXP_DIR + 'data_files/',
+    'data_files_dir': EXP_DIR + 'data_files_oracle/',
     'target_filename': EXP_DIR + 'target.npz',
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': TOTAL_CONDITIONS,

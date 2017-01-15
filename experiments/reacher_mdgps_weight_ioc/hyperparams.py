@@ -154,7 +154,7 @@ unlabeled_agent = {
     'randomly_sample_bodypos': False,
     'sampling_range_bodypos': [np.array([-0.3,-0.1, 0.0]), np.array([0.1, 0.3, 0.0])], # Format is [lower_lim, upper_lim]
     'prohibited_ranges_bodypos':[ [None, None, None, None] ],
-    'pos_body_offset': pos_body_offset,
+    'pos_body_offset': [pos_body_offset[0] for i in xrange(len(test_density_range))],
     'pos_body_idx': np.array([4]),
     'conditions': len(test_density_range),
     'T': 50,

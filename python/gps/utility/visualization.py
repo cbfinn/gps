@@ -5,6 +5,9 @@ from gps.sample.sample_list import SampleList
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 TRIALS = 20
@@ -18,7 +21,7 @@ def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment
         N: number of samples taken from the policy for comparison
         config: Configuration of the agent to sample.
         weight_varying: whether the experiment is weight-varying or not.
-        experiment: whether the experiment is reacher or pointmass.
+        experiment: whether the experiment is reacher or pointmass or half-cheetah.
     """
     pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
     alg_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
@@ -44,7 +47,6 @@ def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment
     else:
         ioc_conditions = [np.log10(agent_config['density_range'][i])-4.0 \
                             for i in xrange(M)]
-    pos_body_offset = gps.agent._hyperparams['pos_body_offset'][i]
 
     for seed in xrange(TRIALS):
         random.seed(seed)
@@ -58,7 +60,7 @@ def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment
                         verbose=(i < gps._hyperparams['verbose_trials']), 
                         noisy=True)
                     if 'target_end_effector' in alg_ioc._hyperparams:
-                        target_position = get_target_end_effector(alg_ioc, i)
+                        target_position = get_target_end_effector(agent_config, i)
                         dists_to_target = compute_distance(target_position, SampleList([sample]))[0]
                     elif 'compute_distances' in alg_ioc._hyperparams:
                         dist_dict = alg_ioc._hyperparams['compute_distances']
@@ -68,11 +70,15 @@ def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment
                     if dists_to_target <= THRESH[experiment]:
                         successes[k][seed, i] = 1.0
     
-    success_rates = [np.mean(success, axis=0) for success in successes]
-    print 'ioc: ' + repr(success_rates[0].mean()) + ', ' + repr(success_rates[0])
-    print 'sup: ' + repr(success_rates[1].mean()) + ', ' + repr(success_rates[1])
-    print 'demo: ' + repr(success_rates[2].mean()) + ', ' + repr(success_rates[2])
-    print 'oracle: ' + repr(success_rates[3].mean()) + ', ' + repr(success_rates[3])
+    success_rates = [np.mean(successes[i], axis=0) for i in xrange(len(policies))]
+    LOGGER.debug('S3G: average success rate is %f', success_rates[0].mean())
+    LOGGER.debug('Cost regression: average success rate is %f', success_rates[1].mean())
+    LOGGER.debug('RL: average success rate is %f', success_rates[2].mean())
+    LOGGER.debug('Oracle: average success rate is %f', success_rates[3].mean())
+    # print 'ioc: ' + repr(success_rates[0].mean()) + ', ' + repr(success_rates[0])
+    # print 'sup: ' + repr(success_rates[1].mean()) + ', ' + repr(success_rates[1])
+    # print 'demo: ' + repr(success_rates[2].mean()) + ', ' + repr(success_rates[2])
+    # print 'oracle: ' + repr(success_rates[3].mean()) + ', ' + repr(success_rates[3])
 
     plt.close('all')
     fig = plt.figure(figsize=(8, 5))
@@ -89,8 +95,21 @@ def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment
     ax.spines['top'].set_visible(False)
     ax.legend(['S3G', 'cost regr', 'RL policy', 'oracle'], loc='lower left')
     plt.ylabel('Success Rate', fontsize=22)
-    plt.xlabel('Log Mass', fontsize=22, labelpad=-4)
-    plt.title("Generalization for 2-link reacher", fontsize=25)
+    if weight_varying:
+        plt.xlabel('Log Mass', fontsize=22, labelpad=-4)
+        plt.title("2-link reacher", fontsize=25)
+    elif experiment == 'reacher':
+        #TODO: what's the x axis for reacher with vision?
+        plt.xlabel('Log Mass', fontsize=22, labelpad=-4)
+        plt.title("2-link reacher", fontsize=25)
+    elif experiment == 'pointmass':
+        plt.xlabel('Wall Height', fontsize=22, labelpad=-4)
+        plt.title("Obstacle", fontsize=25)
+    elif experiment == 'cheetah':
+        plt.xlabel('Wall Height', fontsize=22, labelpad=-4)
+        plt.title("Half-Cheetah", fontsize=25)
+    else:
+        raise NotImplementedError()
     plt.savefig(gps._data_files_dir + 'sample_conds_distr.png')
     plt.close('all')
 

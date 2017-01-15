@@ -59,8 +59,8 @@ def extract_demos(demo_file):
     demos = DataLogger().unpickle(demo_file)
     return demos['demoX'], demos['demoU'], demos['demoO'], demos.get('demoConditions', None)
 
-def get_target_end_effector(algorithm, condition=0):
-    target_dict = algorithm._hyperparams['target_end_effector']
+def get_target_end_effector(hyperparams, condition=0):
+    target_dict = hyperparams['target_end_effector']
     if type(target_dict) is list:
         target_position = target_dict[condition][:3]
     else:
