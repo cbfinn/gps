@@ -1,5 +1,5 @@
 from gps.proto.gps_pb2 import RGB_IMAGE
-from gps.utility.general_utils import compute_distance, mkdir_p
+from gps.utility.general_utils import compute_distance, mkdir_p, load_final_algorithm
 from gps.utility.demo_utils import get_target_end_effector
 from gps.sample.sample_list import SampleList
 import numpy as np
@@ -23,13 +23,13 @@ def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment
         weight_varying: whether the experiment is weight-varying or not.
         experiment: whether the experiment is reacher or pointmass or half-cheetah.
     """
-    pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
-    alg_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
-    alg_sup = gps.data_logger.unpickle(gps._hyperparams['common']['supervised_exp_dir'] + \
-                                            'data_files/algorithm_itr_%02d' % pol_iter + '.pkl')
-    alg_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_controller_file'])
-    alg_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + \
-                                            'data_files_oracle/algorithm_itr_09.pkl')
+    alg_ioc = load_final_algorithm(gps._data_files_dir)
+    alg_sup = load_final_algorithm(gps._hyperparams['common']['supervised_exp_dir'] + \
+                                            'data_files/')
+    alg_demo = load_final_algorithm(gps._hyperparams['common']['demo_exp_dir'] + \
+                                            'data_files/')
+    alg_oracle = load_final_algorithm(gps._hyperparams['common']['demo_exp_dir'] + \
+                                            'data_files_oracle/')
     algorithms = [alg_ioc, alg_sup, alg_demo, alg_oracle]
     if not weight_varying:
         pos_body_offset = gps._hyperparams['agent']['pos_body_offset']
@@ -75,10 +75,6 @@ def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment
     LOGGER.debug('Cost regression: average success rate is %f', success_rates[1].mean())
     LOGGER.debug('RL: average success rate is %f', success_rates[2].mean())
     LOGGER.debug('Oracle: average success rate is %f', success_rates[3].mean())
-    # print 'ioc: ' + repr(success_rates[0].mean()) + ', ' + repr(success_rates[0])
-    # print 'sup: ' + repr(success_rates[1].mean()) + ', ' + repr(success_rates[1])
-    # print 'demo: ' + repr(success_rates[2].mean()) + ', ' + repr(success_rates[2])
-    # print 'oracle: ' + repr(success_rates[3].mean()) + ', ' + repr(success_rates[3])
 
     plt.close('all')
     fig = plt.figure(figsize=(8, 5))
@@ -122,13 +118,13 @@ def visualize_samples(gps, N, agent_config, experiment='reacher'):
         config: Configuration of the agent to sample.
         experiment: whether the experiment is peg, reacher or pointmass.
     """
-    pol_iter = gps._hyperparams['algorithm']['iterations'] - 1
-    alg_ioc = gps.data_logger.unpickle(gps._data_files_dir + 'algorithm_itr_%02d' % pol_iter + '.pkl')
-    alg_sup = gps.data_logger.unpickle(gps._hyperparams['common']['supervised_exp_dir'] + \
-                                            'data_files/algorithm_itr_%02d' % pol_iter + '.pkl')
-    alg_demo = gps.data_logger.unpickle(gps._hyperparams['common']['demo_controller_file'])
-    alg_oracle = gps.data_logger.unpickle(gps._hyperparams['common']['demo_exp_dir'] + \
-                                            'data_files_oracle/algorithm_itr_09.pkl')
+    alg_ioc = load_final_algorithm(gps._data_files_dir)
+    alg_sup = load_final_algorithm(gps._hyperparams['common']['supervised_exp_dir'] + \
+                                            'data_files/')
+    alg_demo = load_final_algorithm(gps._hyperparams['common']['demo_exp_dir'] + \
+                                            'data_files/')
+    alg_oracle = load_final_algorithm(gps._hyperparams['common']['demo_exp_dir'] + \
+                                            'data_files_oracle/')
     algorithms = [alg_ioc, alg_sup, alg_demo, alg_oracle]
     M = agent_config['conditions']
     policies = [alg.policy_opt.policy for alg in algorithms]

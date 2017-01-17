@@ -8,6 +8,7 @@ from collections import Mapping, Container
 from sys import getsizeof
 
 from gps.utility import color_string
+from gps.utility.data_logger import DataLogger
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 
 
@@ -191,6 +192,18 @@ def sample_params(sampling_range, prohibited_ranges):
     return sampled_point
 
 def compute_distance(target_end_effector, sample_list, state_idxs=range(4, 7), end_effector_idxs=range(0,3), filter_type='min'):
+    """
+    Function that computes the distance from the target end effector to the end effector of the sample.
+    Args:
+        target_end_effector: the target coordinates (assuming 6-dimensional)
+        sample_list: A sample list object, whose distance to the target end effector will be computed
+        state_idx: the index of end effector in the state representation of a sample
+        end_effector_idx: the index of effective end effector in the end effector representation (by default the first 3 dim)
+        filter_type: whether choose the distance by using the minimum distance over all time steps or just the distance
+        at the last time step.
+    Returns:
+        dists: a list of distance for each sample in the sample list
+    """
     target_position = target_end_effector
     if type(sample_list) is not list:
         cur_samples = sample_list.get_samples()
@@ -220,6 +233,27 @@ def compute_distance(target_end_effector, sample_list, state_idxs=range(4, 7), e
     else:
         raise NotImplementedError()
     return dists
+
+def load_final_algorithm(data_files_dir):
+    """
+    Loads the algorithm in the last iteration.
+    Args:
+        data_files_dir: the data files directory of the algorithm
+    Returns:
+
+    """
+    data_filenames = os.listdir(data_files_dir)
+    algorithm_prefix = 'algorithm_itr_'
+    algorithm_filenames = [f for f in data_filenames if f.startswith(algorithm_prefix)]
+    current_algorithm = sorted(algorithm_filenames, reverse=True)[0]
+    print 'Loading algorithm file.'
+    algorithm = DataLogger().unpickle(data_files_dir+current_algorithm)
+    print 'Done loading algorithm file.'
+    if algorithm is None:
+        print("Error: cannot find '%s.'" % current_algorithm)
+        os._exit(1) # called instead of sys.exit(), since t
+    else:
+        return algorithm
 
 class BatchSampler(object):
     """ Samples data """
