@@ -69,7 +69,15 @@ AGENT_MUJOCO = {
     'image_width': 640,
     'image_height': 480,
     'image_channels': 3,
-    'meta_include': []
+    'meta_include': [],
+    'save_sampled_bodypos': False,
+    'randomly_sample_x0': False,
+    'randomly_sample_bodypos': False,
+    'record_reward': False,
+    'render': True, # for EC2
+    'filename': None,
+    'hardcoded_linear_dynamics': False,
+    'randomize_world': False, # re-generate world on every sample
 }
 
 AGENT_BOX2D = {

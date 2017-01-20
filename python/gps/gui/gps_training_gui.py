@@ -16,10 +16,13 @@ For more detailed documentation, visit: rll.berkeley.edu/gps/gui
 """
 import time
 import threading
+import sys
 
 import numpy as np
+import scipy as sp
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import matplotlib.cm as cm
 
 from gps.gui.config import config
 from gps.gui.action_panel import Action, ActionPanel
@@ -28,22 +31,31 @@ from gps.gui.mean_plotter import MeanPlotter
 from gps.gui.plotter_3d import Plotter3D
 from gps.gui.image_visualizer import ImageVisualizer
 from gps.gui.util import buffered_axis_limits, load_data_from_npz
+from gps.utility.demo_utils import get_target_end_effector
+from gps.utility.general_utils import compute_distance
 
-from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
+from gps.proto.gps_pb2 import END_EFFECTOR_POINTS, RGB_IMAGE, RGB_IMAGE_SIZE, IMAGE_FEAT
+
+from gps.gui.line_plot import LinePlotter, ScatterPlot
+
+NUM_DEMO_PLOTS = 5
 
 # Needed for typechecks
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 
+
 class GPSTrainingGUI(object):
 
-    def __init__(self, hyperparams):
+    def __init__(self, hyperparams, gui_on=True):
         self._hyperparams = hyperparams
         self._log_filename = self._hyperparams['log_filename']
         if 'target_filename' in self._hyperparams:
             self._target_filename = self._hyperparams['target_filename']
         else:
             self._target_filename = None
+
+        self.gui_on = gui_on # whether or not to draw
 
         # GPS Training Status.
         self.mode = config['initial_mode']  # Modes: run, wait, end, request, process.
@@ -81,35 +93,49 @@ class GPSTrainingGUI(object):
                 wspace=0, hspace=0)
 
         # Assign GUI component locations.
-        self._gs = gridspec.GridSpec(16, 8)
-        self._gs_action_panel           = self._gs[0:2,  0:8]
-        self._gs_action_output          = self._gs[2:3,  0:4]
-        self._gs_status_output          = self._gs[3:4,  0:4]
-        self._gs_cost_plotter           = self._gs[2:4,  4:8]
-        self._gs_algthm_output          = self._gs[4:8,  0:8]
+        self._gs = gridspec.GridSpec(18, 8)
+        self._gs_action_panel           = self._gs[0:1,  0:8]
+        self._gs_action_output          = self._gs[1:2,  0:4]
+        self._gs_status_output          = self._gs[2:3,  0:4]
+        self._gs_cost_plotter           = self._gs[1:3,  4:8]
+        self._gs_gt_cost_plotter        = self._gs[7:9,  4:8]
+        self._gs_demo_cost_plotter      = self._gs[9:11,  4:8]
+        self._gs_dist_cost_plotter      = self._gs[9:11,  0:4]
+        self._gs_algthm_output          = self._gs[3:7,  0:4]
         if config['image_on']:
-            self._gs_traj_visualizer    = self._gs[8:16, 0:4]
-            self._gs_image_visualizer   = self._gs[8:16, 4:8]
+            self._gs_traj_visualizer    = self._gs[11:18, 0:4]
+            self._gs_image_visualizer   = self._gs[11:18, 4:8]
+        elif config['fp_on']:
+            self._gs_traj_visualizer = self._gs[8:16, 0:4]
+            self._gs_fp_visualizer = self._gs[8:16, 4:8]
         else:
-            self._gs_traj_visualizer    = self._gs[8:16, 0:8]
+            self._gs_traj_visualizer    = self._gs[11:18, 0:8]
 
         # Create GUI components.
         self._action_panel = ActionPanel(self._fig, self._gs_action_panel, 1, 4, actions_arr)
-        self._action_output = Textbox(self._fig, self._gs_action_output, border_on=True)
-        self._status_output = Textbox(self._fig, self._gs_status_output, border_on=False)
+        self._scatter_cost_plotter = ScatterPlot(self._fig, self._gs_dist_cost_plotter, xlabel='Dist', ylabel='Cost', gui_on=gui_on)
+        self._action_output = Textbox(self._fig, self._gs_action_output, border_on=True, gui_on=gui_on)
+        self._status_output = Textbox(self._fig, self._gs_status_output, border_on=False, gui_on=gui_on)
         self._algthm_output = Textbox(self._fig, self._gs_algthm_output,
                 max_display_size=config['algthm_output_max_display_size'],
                 log_filename=self._log_filename,
                 fontsize=config['algthm_output_fontsize'],
-                font_family='monospace')
+                font_family='monospace',
+                gui_on=gui_on)
         self._cost_plotter = MeanPlotter(self._fig, self._gs_cost_plotter,
-                color='blue', label='mean cost')
+                color='blue', label='mean cost', gui_on=gui_on)
+        self._gt_cost_plotter = MeanPlotter(self._fig, self._gs_gt_cost_plotter,
+                color='red', label='ground truth cost', gui_on=gui_on)
+        self._demo_cost_plotter = LinePlotter(self._fig, self._gs_demo_cost_plotter,
+                                         color='blue', label='demo cost', num_plots=NUM_DEMO_PLOTS*2, gui_on=gui_on)
         self._traj_visualizer = Plotter3D(self._fig, self._gs_traj_visualizer,
-                num_plots=self._hyperparams['conditions'])
+                num_plots=self._hyperparams['conditions'], gui_on=gui_on)
         if config['image_on']:
             self._image_visualizer = ImageVisualizer(self._fig,
                     self._gs_image_visualizer, cropsize=config['image_size'],
                     rostopic=config['image_topic'], show_overlay_buttons=True)
+        if config['fp_on']:
+            self._fp_visualizer = plt.subplot(self._gs_fp_visualizer)
 
         # Setup GUI components.
         self._algthm_output.log_text('\n')
@@ -131,7 +157,8 @@ class GPSTrainingGUI(object):
         self._traj_visualizer.add_legend(linestyle='-', marker='None',
                 color='red', label='LG Controller Distributions')
 
-        self._fig.canvas.draw()
+        if self.gui_on:
+            self._fig.canvas.draw()
 
         # Display calculating thread
         def display_calculating(delay, run_event):
@@ -221,22 +248,27 @@ class GPSTrainingGUI(object):
     def set_action_text(self, text):
         self._action_output.set_text(text)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def set_action_bgcolor(self, color, alpha=1.0):
         self._action_output.set_bgcolor(color, alpha)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def set_status_text(self, text):
         self._status_output.set_text(text)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def set_output_text(self, text):
         self._algthm_output.set_text(text)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def append_output_text(self, text):
         self._algthm_output.append_text(text)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        self._gt_cost_plotter.draw_ticklabels()
 
     def start_display_calculating(self):
         self._calculating_run.set()
@@ -263,7 +295,7 @@ class GPSTrainingGUI(object):
                 alpha=config['image_overlay_alpha'])
 
     # Iteration update functions
-    def update(self, itr, algorithm, agent, traj_sample_lists, pol_sample_lists):
+    def update(self, itr, algorithm, agent, traj_sample_lists, pol_sample_lists, eval_pol_gt = False):
         """
         After each iteration, update the iteration data output, the cost plot,
         and the 3D trajectory visualizations (if end effector points exist).
@@ -272,15 +304,39 @@ class GPSTrainingGUI(object):
             self._output_column_titles(algorithm)
             self._first_update = False
 
+        if config['fp_on']:
+            if RGB_IMAGE in agent.obs_data_types:
+                img = []
+                samples = []
+                images = []
+
+                for sample_list in traj_sample_lists:
+                    samples.append(sample_list.get_samples()[0])
+                    size = np.array(samples[0].get(RGB_IMAGE_SIZE))
+                    img = samples[0].get(RGB_IMAGE, 0) #fixed image
+                    img = img.reshape(size)
+
+                fps = []
+                for sample in samples:
+                    fp = sample.get(IMAGE_FEAT, 0)
+                    fps.append(fp)
+                self._update_feature_visualization(img, fps)
+
         costs = [np.mean(np.sum(algorithm.prev[m].cs, axis=1)) for m in range(algorithm.M)]
-        self._update_iteration_data(itr, algorithm, costs, pol_sample_lists)
+        if algorithm._hyperparams['ioc']:
+            gt_costs = [np.mean(np.sum(algorithm.prev[m].cgt, axis=1)) for m in range(algorithm.M)]
+            self._update_iteration_data(itr, algorithm, gt_costs, pol_sample_lists, eval_pol_gt)
+            self._gt_cost_plotter.update(gt_costs, t=itr)
+        else:
+            self._update_iteration_data(itr, algorithm, costs, pol_sample_lists)
         self._cost_plotter.update(costs, t=itr)
         if END_EFFECTOR_POINTS in agent.x_data_types:
             self._update_trajectory_visualizations(algorithm, agent,
                     traj_sample_lists, pol_sample_lists)
 
-        self._fig.canvas.draw()
-        self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
+        if self.gui_on:
+            self._fig.canvas.draw()
+            self._fig.canvas.flush_events() # Fixes bug in Qt4Agg backend
 
     def _output_column_titles(self, algorithm, policy_titles=False):
         """
@@ -298,6 +354,15 @@ class GPSTrainingGUI(object):
         for m in range(algorithm.M):
             condition_titles += ' | %8s %9s %-7d' % ('', 'condition', m)
             itr_data_fields  += ' | %8s %8s %8s' % ('  cost  ', '  step  ', 'entropy ')
+
+            if 'target_end_effector' in algorithm._hyperparams:
+                condition_titles += ' %8s' % ('')
+                itr_data_fields  += ' %8s' % ('mean_dist')
+
+            elif 'compute_distances' in algorithm._hyperparams:
+                condition_titles += ' %8s' % ('')
+                itr_data_fields  += ' %8s' % ('distance')
+
             if isinstance(algorithm, AlgorithmBADMM):
                 condition_titles += ' %8s %8s %8s' % ('', '', '')
                 itr_data_fields  += ' %8s %8s %8s' % ('pol_cost', 'kl_div_i', 'kl_div_f')
@@ -307,28 +372,59 @@ class GPSTrainingGUI(object):
         self.append_output_text(condition_titles)
         self.append_output_text(itr_data_fields)
 
-    def _update_iteration_data(self, itr, algorithm, costs, pol_sample_lists):
+    def _update_iteration_data(self, itr, algorithm, costs, pol_sample_lists, eval_pol_gt=False):
         """
         Update iteration data information: iteration, average cost, and for
         each condition the mean cost over samples, step size, linear Guassian
         controller entropies, and initial/final KL divergences for BADMM.
         """
         avg_cost = np.mean(costs)
+        pol_costs = [-123 for _ in range(algorithm.M)]
         if pol_sample_lists is not None:
             test_idx = algorithm._hyperparams['test_conditions']
             # pol_sample_lists is a list of singletons
             samples = [sl[0] for sl in pol_sample_lists]
-            pol_costs = [np.sum(algorithm.cost[idx].eval(s)[0])
-                    for s, idx in zip(samples, test_idx)]
+            if not eval_pol_gt:
+                if type(algorithm.cost) != list:
+                    pol_costs = [np.sum(algorithm.cost.eval(s)[0])
+                            for s in samples]
+                else:
+                    pol_costs = [np.sum(algorithm.cost[idx].eval(s)[0])
+                            for s, idx in zip(samples, test_idx)]
+            else:
+                assert algorithm._hyperparams['ioc']
+                pol_costs = [np.sum(algorithm.gt_cost[idx].eval(s)[0])
+                        for s, idx in zip(samples, test_idx)]
             itr_data = '%3d | %8.2f %12.2f' % (itr, avg_cost, np.mean(pol_costs))
         else:
+            test_idx = None
             itr_data = '%3d | %8.2f' % (itr, avg_cost)
+
         for m in range(algorithm.M):
             cost = costs[m]
             step = algorithm.prev[m].step_mult * algorithm.base_kl_step
             entropy = 2*np.sum(np.log(np.diagonal(algorithm.prev[m].traj_distr.chol_pol_covar,
                     axis1=1, axis2=2)))
             itr_data += ' | %8.2f %8.2f %8.2f' % (cost, step, entropy)
+
+            if pol_sample_lists is None:
+                if algorithm.dists_to_target:
+                    if itr in algorithm.dists_to_target and algorithm.dists_to_target[itr]:
+                        itr_data += ' %8.2f' % (algorithm.dists_to_target[itr][m])
+            else:
+                if 'target_end_effector' in algorithm._hyperparams:
+                    target_position = get_target_end_effector(algorithm._hyperparams, m)
+                    dists = compute_distance(target_position, pol_sample_lists[m])
+                    itr_data += ' %8.2f' % (sum(dists) / pol_sample_lists[m].num_samples())
+                elif 'compute_distancecs' in algorithm._hyperparams:
+                    dist_dict = algorithm._hyperparams['compute_distances']
+                    target_position = dist_dict['targets']
+                    state_idx = dist_dict['state_idx']
+                    if type(target_position) is not list:
+                        dists = compute_distance(target_position, pol_sample_lists[m], state_idx, state_idx)
+                    else:
+                        dists = compute_distance(target_position[m], pol_sample_lists[m], state_idx, state_idx)
+                    itr_data += ' %8.2f' % (sum(dists) / pol_sample_lists[m].num_samples())
             if isinstance(algorithm, AlgorithmBADMM):
                 kl_div_i = algorithm.cur[m].pol_info.init_kl.mean()
                 kl_div_f = algorithm.cur[m].pol_info.prev_kl.mean()
@@ -341,6 +437,38 @@ class GPSTrainingGUI(object):
                     itr_data += ' %8s' % ("N/A")
         self.append_output_text(itr_data)
 
+    def _update_feature_visualization(self, image, feature_points):
+        """
+        Update feature point visualization
+        """
+        self._fp_visualizer.cla()
+        IMAGE_SIZE = 64
+        image = sp.misc.imresize(image, (IMAGE_SIZE, IMAGE_SIZE, 3))
+        self._fp_visualizer.imshow(image)
+
+        print 'Feature Points:', feature_points
+
+        fp_x = []
+        fp_y = []
+        colors = []
+        condition_colors = cm.rainbow(np.linspace(0, 1, len(feature_points)))
+        for i, feature_point in enumerate(feature_points):
+            fp = (feature_point + 1.) * IMAGE_SIZE / 2
+            i_fp_x = fp[0::2]
+            i_fp_y = IMAGE_SIZE - fp[1::2]
+            N = len(i_fp_y)
+            i_colors = np.tile(condition_colors[i], [N, 1])
+            fp_x.append(i_fp_x)
+            fp_y.append(i_fp_y)
+            colors.append(i_colors)
+        fp_x = np.concatenate(fp_x)
+        fp_y = np.concatenate(fp_y)
+        colors = np.concatenate(colors)
+        print 'FP_X:', fp_x
+        print 'FP_Y:', fp_y
+        for i in range(N*len(feature_points)):
+            self._fp_visualizer.scatter(fp_x[i], fp_y[i], color=colors[i])
+
     def _update_trajectory_visualizations(self, algorithm, agent,
                 traj_sample_lists, pol_sample_lists):
         """
@@ -351,12 +479,13 @@ class GPSTrainingGUI(object):
         for m in range(algorithm.M):
             self._traj_visualizer.clear(m)
             self._traj_visualizer.set_lim(i=m, xlim=xlim, ylim=ylim, zlim=zlim)
-            if algorithm._hyperparams['fit_dynamics']:
-                self._update_linear_gaussian_controller_plots(algorithm, agent, m)                                
             self._update_samples_plots(traj_sample_lists, m, 'green', 'Trajectory Samples')
+            if algorithm._hyperparams['fit_dynamics']:
+                self._update_linear_gaussian_controller_plots(algorithm, agent, m)
             if pol_sample_lists:
                 self._update_samples_plots(pol_sample_lists,  m, 'blue',  'Policy Samples')
-        self._traj_visualizer.draw()    # this must be called explicitly
+        if self.gui_on:
+            self._traj_visualizer.draw()    # this must be called explicitly
 
     def _calculate_3d_axis_limits(self, traj_sample_lists, pol_sample_lists):
         """

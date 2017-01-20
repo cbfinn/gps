@@ -1,7 +1,7 @@
 """ This file defines the sample class. """
 import numpy as np
 
-from gps.proto.gps_pb2 import ACTION
+from gps.proto.gps_pb2 import ACTION, IMAGE_FEAT, RGB_IMAGE
 
 
 class Sample(object):
@@ -11,6 +11,14 @@ class Sample(object):
     Note: must be serializable for easy saving, no C++ references!
     """
     def __init__(self, agent):
+        # Dictionary containing the sample data from various sensors.
+        self._data = {}
+
+        self._feat_stale = True
+        self.reset_agent(agent)
+
+
+    def reset_agent(self, agent):
         self.agent = agent
 
         self.T = agent.T
@@ -19,9 +27,6 @@ class Sample(object):
         self.dO = agent.dO
         self.dM = agent.dM
 
-        # Dictionary containing the sample data from various sensors.
-        self._data = {}
-
         self._X = np.empty((self.T, self.dX))
         self._X.fill(np.nan)
         self._obs = np.empty((self.T, self.dO))
@@ -29,8 +34,11 @@ class Sample(object):
         self._meta = np.empty(self.dM)
         self._meta.fill(np.nan)
 
+
     def set(self, sensor_name, sensor_data, t=None):
         """ Set trajectory data for a particular sensor. """
+        if IMAGE_FEAT == sensor_name:
+            self._feat_stale = False
         if t is None:
             self._data[sensor_name] = sensor_data
             self._X.fill(np.nan)  # Invalidate existing X.
@@ -47,11 +55,16 @@ class Sample(object):
 
     def get(self, sensor_name, t=None):
         """ Get trajectory data for a particular sensor. """
+        if self._feat_stale and IMAGE_FEAT == sensor_name:
+            raise ValueError('Features stale, recompute them')
+
         return (self._data[sensor_name] if t is None
                 else self._data[sensor_name][t, :])
 
     def get_X(self, t=None):
         """ Get the state. Put it together if not precomputed. """
+        if self._feat_stale and self.agent is not None and IMAGE_FEAT in self.agent.x_data_types:
+            raise ValueError('Features stale, recompute them')
         X = self._X if t is None else self._X[t, :]
         if np.any(np.isnan(X)):
             for data_type in self._data:
@@ -90,6 +103,16 @@ class Sample(object):
                 data = self._data[data_type]
                 self.agent.pack_data_meta(meta, data, data_types=[data_type])
         return meta
+
+    def set_XU(self, X, U):
+        """ Helper method for setting sample data using state vector. """
+        for data_type in self.agent.x_data_types:
+            self.set(data_type, self.agent.unpack_data_x(X, [data_type]))
+        self.set(ACTION, U)
+
+    def update_features(self, policy):
+        """ Update the image features using the policy. """
+        self.set(IMAGE_FEAT, policy.get_image_features(self.get(RGB_IMAGE)))
 
     # For pickling.
     def __getstate__(self):

@@ -1,14 +1,14 @@
 """ This file defines the GMM prior for dynamics estimation. """
 import copy
-import logging
 
 import numpy as np
 
 from gps.algorithm.dynamics.config import DYN_PRIOR_GMM
+from gps.utility import ColorLogger
 from gps.utility.gmm import GMM
 
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = ColorLogger(__name__)
 
 
 class DynamicsPriorGMM(object):
@@ -95,7 +95,7 @@ class DynamicsPriorGMM(object):
         LOGGER.debug('Generating %d clusters for dynamics GMM.', K)
 
         # Update GMM.
-        self.gmm.update(xux, K)
+        self.gmm.update(xux, K, max_iterations=self._hyperparams['max_iters'])
 
     def eval(self, Dx, Du, pts):
         """

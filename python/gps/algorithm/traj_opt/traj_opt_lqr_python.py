@@ -13,8 +13,9 @@ from gps.algorithm.traj_opt.traj_opt_utils import \
 
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
+from gps.utility import ColorLogger
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = ColorLogger(__name__)
 
 class TrajOptLQRPython(TrajOpt):
     """ LQR trajectory optimization, Python implementation. """

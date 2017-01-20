@@ -38,7 +38,6 @@ class Agent(object):
             self._state_idx.append(list(range(i, i+dim)))
             i += dim
         self.dX = i
-
         # List of indices for each data type in observation.
         self._obs_idx, i = [], 0
         for sensor in self.obs_data_types:
@@ -227,8 +226,8 @@ class Agent(object):
                                  self.dX)
             insert_shape[axes[i]] = len(self._x_data_idx[data_types[i]])
         if tuple(insert_shape) != data_to_insert.shape:
-            raise ValueError('Data has shape %s. Expected %s',
-                             data_to_insert.shape, tuple(insert_shape))
+            raise ValueError('Data %s has shape %s. Expected %s',
+                             data_types, data_to_insert.shape, tuple(insert_shape))
 
         # Actually perform the slice.
         index = [slice(None) for _ in range(len(existing_mat.shape))]

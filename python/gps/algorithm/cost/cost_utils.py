@@ -1,11 +1,11 @@
 """ This file defines utility classes and functions for costs. """
 import numpy as np
 
-
 RAMP_CONSTANT = 1
 RAMP_LINEAR = 2
 RAMP_QUADRATIC = 3
-RAMP_FINAL_ONLY = 4
+RAMP_REVERSE_QUADRATIC = 4
+RAMP_FINAL_ONLY = 5
 
 
 def get_ramp_multiplier(ramp_option, T, wp_final_multiplier=1.0):
@@ -20,6 +20,9 @@ def get_ramp_multiplier(ramp_option, T, wp_final_multiplier=1.0):
         wpm = (np.arange(T, dtype=np.float32) + 1) / T
     elif ramp_option == RAMP_QUADRATIC:
         wpm = ((np.arange(T, dtype=np.float32) + 1) / T) ** 2
+    elif ramp_option == RAMP_REVERSE_QUADRATIC:
+        wpm = ((np.arange(T, dtype=np.float32) + 1) / T) ** 2
+        wpm = wpm[0]+1-wpm
     elif ramp_option == RAMP_FINAL_ONLY:
         wpm = np.zeros(T)
         wpm[T-1] = 1.0

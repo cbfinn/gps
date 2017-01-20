@@ -87,14 +87,15 @@ config = {
     'permuted_inverted_ps3_bindings': permuted_inverted_ps3_bindings,
 
     # Images
-    'image_on': True,
+    'image_on': False,
+    'fp_on': False,
     'image_topic': '/camera/rgb/image_color',
     'image_size': (240, 240),
     'image_overlay_actuator': 'trial_arm',
     'image_overlay_alpha': 0.3,
 
     # Both GUIs
-    'figsize': (12, 12),
+    'figsize': (30, 16), #(12, 12)
 
     # Target Setup
     'num_targets': 10,
@@ -105,7 +106,7 @@ config = {
     # GPS Training
     'initial_mode': 'run',
     'algthm_output_fontsize': 10,
-    'algthm_output_max_display_size': 15,
+    'algthm_output_max_display_size': 25,
 }
 
 def generate_experiment_info(config):
@@ -120,8 +121,7 @@ def generate_experiment_info(config):
         algorithm_cost_type = algorithm['cost'][0]['type'].__name__
         if (algorithm_cost_type) == 'CostSum':
             algorithm_cost_type += '(%s)' % ', '.join(
-                    map(lambda cost: cost['type'].__name__,
-                        algorithm['cost'][0]['costs']))
+                    map(lambda cost: cost['type'].__name__, algorithm['cost'][0]['costs']))
     else:
         algorithm_cost_type = algorithm['cost']['type'].__name__
         if (algorithm_cost_type) == 'CostSum':

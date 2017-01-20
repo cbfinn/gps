@@ -3,6 +3,10 @@ import numpy as np
 import scipy.ndimage as sp_ndimage
 
 
+class AgentConfigException(Exception):
+    def __init__(self, msg):
+        super(AgentConfigException, self).__init__(msg)
+
 def generate_noise(T, dU, hyperparams):
     """
     Generate a T x dU gaussian-distributed noise vector. This will
@@ -39,6 +43,7 @@ def setup(value, n):
             return [value.copy() for _ in range(n)]
         except AttributeError:
             return [value for _ in range(n)]
-    assert len(value) == n, \
-            'Number of elements must match number of conditions or 1.'
+    if len(value) != n:
+        raise AgentConfigException('Number of elements (%d) must match number of conditions (%d) or 1.' %
+                                   (len(value), n))
     return value

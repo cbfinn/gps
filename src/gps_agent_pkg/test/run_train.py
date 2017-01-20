@@ -20,8 +20,6 @@ THIS_FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 def setup_agent(T=100):
     defaults['agent']['T'] = T
-    #defaults['agent']['state_include'] = [JOINT_ANGLES, JOINT_VELOCITIES]
-    #sample_data = SampleData(defaults['sample_data'], defaults['common'], False)
     agent = AgentROS(defaults['agent'])
     r = rospy.Rate(1)
     r.sleep()
@@ -52,6 +50,5 @@ def run_offline():
                 n += 1
         algorithm.iteration([agent.get_samples(m, -n) for m in range(conditions)])
         print 'Finished itr ', itr
-    import pdb; pdb.set_trace()
 
 run_offline()
