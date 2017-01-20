@@ -22,11 +22,6 @@ To get the oracle policy, we can change the hyperparameters of agent of mjc_poin
 python python/gps/gps_main.py mjc_pointmass_wall_example
 ```
 again to generate the oracle policy.
-To visualize the comparison between the 4 policies, we can run the following line of code:
-```Python
-python python/gps/gps_main.py -m [number of samples per condition] mjc_pointmass_wall_ioc_example
-```
-Note you can change the conditions in test_xx_range in gps/experiments/mjc_pointmass_wall_ioc_example/hyperparam.py to be the test conditions that you desire and change the hyparameters in compare_samples_curve in gps/python/utility/visualization.py accordingly (now the default is taking 20 test conditions). 
 
 2-link reacher
 -----
@@ -48,13 +43,6 @@ Generate oracle policy: change hyperparams of agent in gps/experiments/reacher_m
 python python/gps/gps_main.py reacher_mdgps_weight
 ```
 
-Visualize comparison: change test conditions in gps/experiments/reacher_mdgps_weight_ioc to be desired test conditions and run:
-```Python
-python python/gps/gps_main.py -m [number of samples per condition] reacher_mdgps_weight_ioc
-```
-After running the above line of code, you could get the visualization of comparison between 4 policies like this:
-![](https://raw.githubusercontent.com/tianheyu927/gps/ssrl_work/images/sample_conds_distr.png)
-
 2-link reacher with vision
 -----
 <img src="https://ab9c5ab5-a-62cb3a1a-s-sites.googlegroups.com/site/semisupervisedrl/home/s3g8.gif?attachauth=ANoY7cplieTFzOcP90391rQD_arGGnbAllC6n0GrbcU6THoxV2pmlNDRgTdxZGerDsue02fb7J2KEYXGhopN4AbKYCOOW2kb3A8hXgw9uLRaoM99q3IMaYIC_8hpok7mTNpPJDTrGwEFUoelUuhshAn_peKGNur8SGbz_BLuysU5QPOr7EAYg-SRoLY2-ATTx0ZHriF0sCbNoWbPaKCOLfaiHkHmV8mrfQ%3D%3D&attredirects=0&width=200" width="400" height="400">
@@ -74,12 +62,6 @@ Generate oracle policy: change hyperparams of agent in gps/experiments/reacher_i
 ```Python
 python python/gps/gps_main.py reacher_images
 ```
-
-Visualize comparison: change test conditions in gps/experiments/reacher_ioc_feat_mdgps to be desired test conditions and run:
-```Python
-python python/gps/gps_main.py -m [number of samples per condition] reacher_ioc_feat_mdgps
-```
-
 
 half-cheetah
 -----
@@ -101,10 +83,6 @@ Generate oracle policy: change hyperparams of agent in gps/experiments/cheetah_h
 python python/gps/gps_main.py cheetah_hop
 ```
 
-Visualize comparison: change test conditions in gps/experiments/cheetah_hop_ioc to be desired test conditions and run:
-```Python
-python python/gps/gps_main.py -m [number of samples per condition] cheetah_hop_ioc
-```
 Note: Due to the randomness of tensorflow, the result you get when you run S3G and cost regression might be different from the result we showed in the paper, but should still reveal the difference between these methods as we did in the paper.
 
 GPS
