@@ -17,11 +17,10 @@ After finish running the RL algorithm, we can run our S3G and cost regression al
 python python/gps/gps_main.py mjc_pointmass_wall_ioc_example
 python python/gps/gps_main.py mjc_pointmass_wall_supervised
 ```
-To get the oracle policy, we can change the hyperparameters of agent of mjc_pointmass_wall_example in gps/experiments/mjc_pointmass_wall_example/hyperparam.py to be the same as the hyperparameters of agent of mjc_pointmass_wall_ioc_example in gps/experiments/mjc_pointmass_wall_ioc_example/hyperparam.py and run
+To get the oracle policy, we can change the hyperparameters of agent of mjc_pointmass_wall_example in gps/experiments/mjc_pointmass_wall_example/hyperparam.py to be the same as the hyperparameters of agent of mjc_pointmass_wall_ioc_example in gps/experiments/mjc_pointmass_wall_ioc_example/hyperparam.py and run again to generate the oracle policy.
 ```Python
 python python/gps/gps_main.py mjc_pointmass_wall_example
 ```
-again to generate the oracle policy.
 
 2-link reacher
 -----
