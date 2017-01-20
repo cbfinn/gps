@@ -16,8 +16,9 @@ from gps.gui.util import buffered_axis_limits
 
 class MeanPlotter:
 
-    def __init__(self, fig, gs, label='mean', color='black', alpha=1.0, min_itr=10):
+    def __init__(self, fig, gs, label='mean', color='black', alpha=1.0, min_itr=40, gui_on=True):
         self._fig = fig
+        self.gui_on = gui_on
         self._gs = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec=gs)
         self._ax = plt.subplot(self._gs[0])
 
@@ -38,8 +39,9 @@ class MeanPlotter:
 
         self._init = False
 
-        self._fig.canvas.draw()
-        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+        if self.gui_on:
+            self._fig.canvas.draw()
+            self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
 
     def init(self, data_len):
         """
@@ -83,9 +85,12 @@ class MeanPlotter:
 
         y_min, y_max = np.amin(self._data), np.amax(self._data)
         self._ax.set_ylim(buffered_axis_limits(y_min, y_max, buffer_factor=1.1))
-        self.draw()
+        if self.gui_on:
+            self.draw()
 
     def draw(self):
+        if not self.gui_on:
+            return
         self._ax.draw_artist(self._ax.patch)
         for plot in self._plots:
             self._ax.draw_artist(plot)
@@ -98,6 +103,8 @@ class MeanPlotter:
         Redraws the ticklabels. Used to redraw the ticklabels (since they are
         outside the axis) when something else is drawn over them.
         """
+        if not self.gui_on:
+            return
         for item in self._ax.get_xticklabels() + self._ax.get_yticklabels():
             self._ax.draw_artist(item)
         self._fig.canvas.update()

@@ -33,7 +33,6 @@ from gps.gui.config import generate_experiment_info
 IMAGE_WIDTH = 80
 IMAGE_HEIGHT = 64
 IMAGE_CHANNELS = 3
-NUM_FP = 15
 
 SENSOR_DIMS = {
     JOINT_ANGLES: 2,
@@ -45,7 +44,7 @@ SENSOR_DIMS = {
     ACTION: 2,
     RGB_IMAGE: IMAGE_WIDTH*IMAGE_HEIGHT*IMAGE_CHANNELS,
     RGB_IMAGE_SIZE: 3,
-    IMAGE_FEAT: NUM_FP * 2,  # affected by num_filters set below.
+    IMAGE_FEAT: 30,  # affected by num_filters set below.
 }
 
 PR2_GAINS = np.array([1.0, 1.0])
@@ -53,11 +52,13 @@ PR2_GAINS = np.array([1.0, 1.0])
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 
-CONDITIONS = 4
-np.random.seed(14)
-pos_body_offset = []
-for _ in range(CONDITIONS):
-    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1, 0]))
+# restrict to right triangle of space.
+CONDITIONS = 5
+pos_body_offset = [np.array([0.1,-0.1,0.0]),
+                   np.array([0.1,0.1,0.0]),
+                   np.array([0.1,0.3,0.0]),
+                   np.array([0.0,0.2,0.0]),
+                   np.array([0.0,0.0,0.0])]
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -68,7 +69,7 @@ common = {
     'log_filename': EXP_DIR + 'log.txt',
     'conditions': CONDITIONS,
     'train_conditions': range(CONDITIONS),
-    'test_conditions': range(CONDITIONS),
+    'test_conditions':  range(CONDITIONS),
 }
 
 if not os.path.exists(common['data_files_dir']):
@@ -76,16 +77,20 @@ if not os.path.exists(common['data_files_dir']):
 
 agent = {
     'type': AgentMuJoCo,
-    'filename': './mjc_models/reacher.xml',
+    'filename': './mjc_models/reacher_img.xml',
     'x0': np.zeros(4),
     'dt': 0.05,
     'substeps': 5,
+    'randomly_sample_bodypos': False,
+    'sampling_range_bodypos': [np.array([-0.3,-0.1, 0.0]), np.array([0.1, 0.3, 0.0])], # Format is [lower_lim, upper_lim]
+    'prohibited_ranges_bodypos':[ [None, None, None, None] ],
+    'modify_cost_on_sample': False,
     'pos_body_offset': pos_body_offset,
     'pos_body_idx': np.array([4]),
     'conditions': common['conditions'],
     'T': 50,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET,
-                      END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, IMAGE_FEAT],
+                      END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, IMAGE_FEAT],  # TODO - may want to include fp velocities.
     'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, RGB_IMAGE],
     'target_idx': np.array(list(range(3,6))),
     'meta_include': [RGB_IMAGE_SIZE],
@@ -100,12 +105,12 @@ agent = {
 
 algorithm = {
     'type': AlgorithmMDGPS,
+    'max_ent_traj': 0.001,
     'conditions': common['conditions'],
     'iterations': 13,
-    'kl_step': 1.0,
-    'min_step_mult': 0.1,
-    'max_step_mult': 3.0,
-    'max_ent_traj': 0.001,
+    'kl_step': 1.0, # TODO was 1.0
+    'min_step_mult': 0.1, # TODO was 0.5, maybe try 0.1
+    'max_step_mult': 3.0, # TODO was 3.0, maybe try 2.0
     'policy_sample_mode': 'replace',
     'sample_on_policy': True,
     'plot_dir': EXP_DIR,
@@ -119,7 +124,7 @@ algorithm = {
 algorithm['policy_opt'] = {
     'type': PolicyOptTf,
     'network_params': {
-        'num_filters': [15, 15, NUM_FP],
+        'num_filters': [15, 15, 15],
         'obs_include': agent['obs_include'],
         'obs_vector_data': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS_NO_TARGET, END_EFFECTOR_POINT_VELOCITIES_NO_TARGET],
         'obs_image_data': [RGB_IMAGE],
@@ -130,7 +135,8 @@ algorithm['policy_opt'] = {
     },
     'network_model': multi_modal_network_fp,
     'fc_only_iterations': 5000,
-    'iterations': 1000,
+    'init_iterations': 1000,
+    'iterations': 1000,  # was 100
     'weights_file_prefix': EXP_DIR + 'policy',
 }
 
@@ -191,8 +197,8 @@ NUM_SAMPLES = 5
 config = {
     'iterations': algorithm['iterations'],
     'num_samples': NUM_SAMPLES,
-    'verbose_trials': NUM_SAMPLES,
-    'verbose_policy_trials': 1,
+    'verbose_trials': 0,  # only show the first image.
+    'verbose_policy_trials': 0,
     'common': common,
     'agent': agent,
     'gui_on': True,

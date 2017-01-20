@@ -15,15 +15,16 @@ enum SampleType {
   END_EFFECTOR_ROTATIONS = 8;
   END_EFFECTOR_JACOBIANS = 9;
   END_EFFECTOR_HESSIANS = 10;
-  RGB_IMAGE = 11;
-  DEPTH_IMAGE = 12;
-  RGB_IMAGE_SIZE = 13;
-  CONTEXT_IMAGE = 14; //initial image of the agent's environment.
-  CONTEXT_IMAGE_SIZE = 15;
-  IMAGE_FEAT = 16;
-  END_EFFECTOR_POINTS_NO_TARGET = 17;
-  END_EFFECTOR_POINT_VELOCITIES_NO_TARGET = 18;
-  TOTAL_DATA_TYPES = 19;
+  END_EFFECTOR_POINTS_NO_TARGET = 11;
+  END_EFFECTOR_POINT_VELOCITIES_NO_TARGET = 12;
+  RGB_IMAGE = 13;
+  DEPTH_IMAGE = 14;
+  RGB_IMAGE_SIZE = 15;
+  CONTEXT_IMAGE = 16; //initial image of the agent's environment.
+  CONTEXT_IMAGE_SIZE = 17;
+  IMAGE_FEAT = 20;
+  CONDITION_DATA = 21; //A constant specific to each condition
+  TOTAL_DATA_TYPES = 22;
 }
 
 // Message containing the data for a single sample.

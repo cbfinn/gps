@@ -37,7 +37,6 @@ def listen_report(msg):
     eerotjac = np.array(eerotjac.data).reshape(eerotjac.shape)
 
     checkjac, checkr = check_eept_jacobian(eejac[0], eerot[0])
-    import pdb; pdb.set_trace();
 
 def check_eept_jacobian(eejac, eerot, ee_sites=EE_SITES):
     n_sites = ee_sites.shape[0]
@@ -59,24 +58,11 @@ def check_eept_jacobian(eejac, eerot, ee_sites=EE_SITES):
 
         # Compute site Jacobian.
         ovec = eerot.dot(ovec)
-        #"""
         Jx[site_start:site_end, iq] += \
             np.c_[Jr[site_start+1, iq].dot(ovec[2]) - Jr[site_start+2, iq].dot(ovec[1]) ,
              Jr[site_start+2, iq].dot(ovec[0]) - Jr[site_start, iq].dot(ovec[2]) ,
              Jr[site_start, iq].dot(ovec[1]) - Jr[site_start+1, iq].dot(ovec[0])].T
-        #"""
 
-        """
-        Jx[site_start:site_end, iq] += \
-            np.c_[Jr[site_start+1, iq]*ovec[2] - Jr[site_start+2, iq]*ovec[1] ,
-                  Jr[site_start+2, iq]*ovec[0] - Jr[site_start  , iq]*ovec[2] ,
-                  Jr[site_start  , iq]*ovec[1] - Jr[site_start+1, iq]*ovec[0]].T
-        """
-        #for k in range(n_actuator):
-        #Jx[site_start , iq]  += Jr[site_start+1, iq]*ovec[2] - Jr[site_start+2, iq]*ovec[1]
-        #Jx[site_start+1, iq] += Jr[site_start+2, iq]*ovec[0] - Jr[site_start  , iq]*ovec[2]
-        #Jx[site_start+2, iq] += Jr[site_start  , iq]*ovec[1] - Jr[site_start+1, iq]*ovec[0]
-        #"""
     return Jx, Jr
 
 def get_lin_gauss_test(T=50):
@@ -97,7 +83,6 @@ def main():
     test_pub = rospy.Publisher(TEST_TOPIC, Empty, queue_size=10)
     sub = rospy.Subscriber(POS_COM_TOPIC, TrialCommand, listen)
     sub2 = rospy.Subscriber(RESULT_TOPIC, SampleResult, listen_report)
-    #sub = rospy.Subscriber('/joint_states', JointState, listen)
 
     tc = TrialCommand()
     T = 1
@@ -110,10 +95,6 @@ def main():
     tc.ee_points = EE_SITES.reshape(EE_SITES.size).tolist()
 
     r = rospy.Rate(1)
-    #while not rospy.is_shutdown():
-    #    pub.publish(pc)
-    #    r.sleep()
-    #    print 'published!'
     r.sleep()
     test_pub.publish(Empty())
     pub.publish(tc)

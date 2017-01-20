@@ -5,8 +5,9 @@ import scipy as sp
 
 from gps.algorithm.dynamics.dynamics_utils import guess_dynamics
 from gps.algorithm.policy.lin_gauss_policy import LinearGaussianPolicy
-from gps.algorithm.policy.config import INIT_LG_PD, INIT_LG_LQR
-
+from gps.algorithm.policy.config import INIT_LG_PD, INIT_LG_LQR, INIT_LG_DEMO
+from gps.utility.data_logger import DataLogger
+import cPickle
 
 def init_lqr(hyperparams):
     """
@@ -140,3 +141,68 @@ def init_pd(hyperparams):
     invPSig = (1.0 / config['init_var']) * np.tile(np.eye(dU), [T, 1, 1])
 
     return LinearGaussianPolicy(K, k, PSig, cholPSig, invPSig)
+
+def init_demo(hyperparams):
+    """
+    Initialize the linear Gaussian controller with a demo.
+    """
+    config = copy.deepcopy(INIT_LG_LQR)
+    config.update(hyperparams)
+    dX, dU, T = config['dX'], config['dU'], config['T']
+    init_demo_x = config['init_demo_x']
+    init_demo_u = config['init_demo_u']
+
+    init_controller = init_lqr(config)
+    ref = np.hstack((init_demo_x, init_demo_u))
+    idx_x = slice(dX)  # Slices out state.
+    idx_u = slice(dX, dX+dU)  # Slices out actions.
+    for t in xrange(T):
+        init_controller.k[t, :] += -init_controller.K[t, :, :].dot(ref[t, idx_x]) + ref[t, idx_u]
+    return init_controller
+
+
+def init_demo_conditions(hyperparams):
+    """
+    Initialize the linear Gaussian controller with a demo, specific to 
+    each condition (uses the average of trajectories for each condition)
+    """
+    config = copy.deepcopy(INIT_LG_LQR)
+    config.update(hyperparams)
+    dX, dU, T = config['dX'], config['dU'], config['T']
+
+    demo_file = config['demo_file']
+    combine_conditions = config.get('combine_conditions', False)
+    data_logger = DataLogger()
+    demos = data_logger.unpickle(demo_file)
+    if combine_conditions:
+        demo_idxs = range(len(demos['demoConditions']))
+    else:
+        demo_idxs = [i for (i, cond) in enumerate(demos['demoConditions']) if cond==config['condition']]
+    assert len(demo_idxs) >= 1
+    init_demo_x = np.mean(demos['demoX'][demo_idxs], axis=0)
+    init_demo_u = np.mean(demos['demoU'][demo_idxs], axis=0)
+    ee_tgts = config['ee_tgts']
+    init_demo_x[:,config['ee_idx']] += ee_tgts
+
+    for t in range(T):
+        init_demo_x[t,:] -= config['x0']
+
+    init_controller = init_lqr(config)
+    ref = np.hstack((init_demo_x, init_demo_u))
+    idx_x = slice(dX)  # Slices out state.
+    idx_u = slice(dX, dX+dU)  # Slices out actions.
+    for t in xrange(T):
+        init_controller.k[t, :] += -init_controller.K[t, :, :].dot(ref[t, idx_x]) + ref[t, idx_u]
+    return init_controller
+
+
+def load_from_file(hyperparams):
+    config = copy.deepcopy(INIT_LG_LQR)
+    config.update(hyperparams)
+
+    alg_file = config['algorithm_file']
+    with open(alg_file, 'rb') as pklf:
+        ss = pklf.read()
+    algorithm = cPickle.loads(ss)
+    controller = algorithm.cur[config['condition']].traj_distr
+    return controller

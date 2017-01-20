@@ -1,11 +1,11 @@
 """ This file defines a Gaussian mixture model class. """
-import logging
 
 import numpy as np
 import scipy.linalg
+from color_print import color_string, ColorLogger
 
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = ColorLogger(__name__)
 
 
 def logsum(vec, axis=0, keepdims=True):

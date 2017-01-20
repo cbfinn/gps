@@ -7,4 +7,5 @@ DYN_PRIOR_GMM = {
     'max_clusters': 50,
     'max_samples': 20,
     'strength': 1.0,
+    'max_iters': 100,
 }

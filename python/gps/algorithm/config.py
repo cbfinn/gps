@@ -14,18 +14,39 @@ ALG = {
                               # objects for each condition.
     # Trajectory optimization.
     'traj_opt': None,
-    # Weight of maximum entropy term in trajectory optimization.
+    # Use maximum entropy term in trajectory optimization.
     'max_ent_traj': 0.0,
+    # Flag if we estimate the demo distribution empirically.
+    'demo_distr_empest': True,
+    # Flag if the algorithm is using IOC
+    'ioc': None,  # ICML
+    # number of iterations to run maxent and IOC for (-1 if all iters)
+    'ioc_maxent_iter': -1,
     # Dynamics hyperaparams.
     'dynamics': None,
     # Costs.
     'cost': None,  # A list of Cost objects for each condition.
+    # List of demonstrations of all conditions for the current iteration used in cost learning.
+    'demo_list': None,
+    # Number of demos per condition.
+    'num_demos': 10,
+    # Demo conditions.
+    'demo_cond': 4,
+    # variance multiplier for demos.
+    'demo_var_mult': 1.0,
+    # initial policy variance multiplier.
+    'init_var_mult': 1.0,
+    # Demo condition during training.
+    'demo_M': 1,
+    # Number of synthetic samples used to estimate the cost.
+    'synthetic_cost_samples': 0,
     # Whether or not to sample with neural net policy (only for badmm/mdgps).
     'sample_on_policy': False,
     # Inidicates if the algorithm requires fitting of the dynamics.
     'fit_dynamics': True,    
+    # Number of samples taken in the first iteration.
+    'init_samples': 5,
 }
-
 
 # AlgorithmBADMM
 ALG_BADMM = {
@@ -50,6 +71,8 @@ ALG_MDGPS = {
     'policy_sample_mode': 'add',
     # Whether to use 'laplace' or 'mc' cost in step adjusment
     'step_rule': 'laplace',
+    # algorithm file with policy to copy params from to cost.
+    'init_cost_params': None,
 }
 
 # AlgorithmTrajOptPi2

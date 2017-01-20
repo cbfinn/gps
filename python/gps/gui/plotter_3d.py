@@ -13,7 +13,7 @@ import matplotlib.gridspec as gridspec
 from mpl_toolkits.mplot3d import Axes3D
 
 class Plotter3D:
-    def __init__(self, fig, gs, num_plots, rows=None, cols=None):
+    def __init__(self, fig, gs, num_plots, rows=None, cols=None, gui_on=True):
         if cols is None:
             cols = int(np.floor(np.sqrt(num_plots)))
         if rows is None:
@@ -24,6 +24,7 @@ class Plotter3D:
         self._gs = gridspec.GridSpecFromSubplotSpec(8, 1, subplot_spec=gs)
         self._gs_legend = self._gs[0:1, 0]
         self._gs_plot   = self._gs[1:8, 0]
+        self.gui_on = gui_on
 
         self._ax_legend = plt.subplot(self._gs_legend)
         self._ax_legend.get_xaxis().set_visible(False)
@@ -33,6 +34,7 @@ class Plotter3D:
         self._axarr = [plt.subplot(self._gs_plots[i], projection='3d') for i in range(num_plots)]
         self._lims = [None for i in range(num_plots)]
         self._plots = [[] for i in range(num_plots)]
+        self._3D = [True for i in range(num_plots)]
 
         for ax in self._axarr:
             ax.tick_params(pad=0)
@@ -40,8 +42,9 @@ class Plotter3D:
             for item in (ax.get_xticklabels() + ax.get_yticklabels() + ax.get_zticklabels()):
                 item.set_fontsize(10)
 
-        self._fig.canvas.draw()
-        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+        if self.gui_on:
+            self._fig.canvas.draw()
+            self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
 
     def set_title(self, i, title):
         self._axarr[i].set_title(title)
@@ -62,10 +65,28 @@ class Plotter3D:
             zs[np.any(np.c_[zs < zlim[0], zs > zlim[1]], axis=1)] = np.nan
 
         # Create and add plot
-        plot = self._axarr[i].plot(xs, ys, zs=zs, linestyle=linestyle,
-                linewidth=linewidth, marker=marker, markersize=markersize,
-                markeredgewidth=markeredgewidth, color=color, alpha=alpha,
-                label=label)[0]
+        if np.any(zs):
+            plot = self._axarr[i].plot(xs, ys, zs=zs, linestyle=linestyle,
+                    linewidth=linewidth, marker=marker, markersize=markersize,
+                    markeredgewidth=markeredgewidth, color=color, alpha=alpha,
+                    label=label)[0]
+        else:
+            if self._3D[i]:
+                self._3D[i] = False
+                self._axarr[i] = plt.subplot(self._gs_plots[i])
+                for ax in self._axarr:
+                    ax.tick_params(pad=0)
+                    ax.locator_params(nbins=5)
+                    for item in (ax.get_xticklabels() + ax.get_yticklabels()):
+                        item.set_fontsize(10)
+                self.set_title(i, 'Condition %d' % (i))
+                if self.gui_on:
+                    self._fig.canvas.draw()
+                    self._fig.canvas.flush_events()
+            plot = self._axarr[i].plot(xs, ys, linestyle=linestyle,
+                    linewidth=linewidth, marker=marker, markersize=markersize,
+                    markeredgewidth=markeredgewidth, color=color, alpha=alpha,
+                    label=label)[0]
         self._plots[i].append(plot)
 
     def plot_3d_points(self, i, points, linestyle='-', linewidth=1.0,
@@ -126,5 +147,6 @@ class Plotter3D:
         for i in range(len(self._plots)):
             for plot in self._plots[i]:
                 self._axarr[i].draw_artist(plot)
-        self._fig.canvas.update()
-        self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
+        if self.gui_on:
+            self._fig.canvas.update()
+            self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
