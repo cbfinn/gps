@@ -1,4 +1,4 @@
-aSSRL
+SSRL
 =====
 
 This code in branch SSRL is an implementation of the paper Generalizing Skills with Semi-Supervised Reinforcement Learning (https://arxiv.org/abs/1612.00429). Here are the instructions to run our experiments shown in the paper.
