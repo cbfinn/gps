@@ -38,6 +38,7 @@ SENSOR_DIMS = {
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
 EXP_DIR = os.path.dirname(__file__)+'/'
 DEMO_DIR = BASE_DIR + '/../experiments/mjc_pointmass_wall_example/'
+SUPERVISED_DIR = BASE_DIR + '/../experiments/mjc_pointmass_wall_supervised/'
 DEMO_CONDITIONS = 4
 target_pos = np.array([1.3, 0.0, 0.])
 wall_1_center = np.array([0.5, -0.8, 0.])
@@ -51,6 +52,7 @@ common = {
     'data_files_dir': EXP_DIR + 'data_files/',
     'demo_exp_dir': DEMO_DIR,
     'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_24.pkl',
+    'supervised_exp_dir': SUPERVISED_DIR,
     'NN_demo_file': EXP_DIR + 'data_files/demo_NN.pkl',
     'LG_demo_file': EXP_DIR + 'data_files/demo_LG.pkl',
     'target_filename': EXP_DIR + 'target.npz',
@@ -110,12 +112,37 @@ demo_agent = {
     },
 }
 
+unlabeled_agent = {
+    'type': AgentMuJoCo,
+    'models': [
+        obstacle_pointmass(target_pos, wall_center=0.0, hole_height=0.2, delete_top=True, control_limit=20),
+        obstacle_pointmass(target_pos, wall_center=0.1, hole_height=0.2, delete_top=True, control_limit=20),
+        obstacle_pointmass(target_pos, wall_center=0.2, hole_height=0.2, delete_top=True, control_limit=20),
+        obstacle_pointmass(target_pos, wall_center=0.3, hole_height=0.2, delete_top=True, control_limit=20),
+        obstacle_pointmass(target_pos, wall_center=0.4, hole_height=0.2, delete_top=True, control_limit=20),
+        obstacle_pointmass(target_pos, wall_center=0.5, hole_height=0.2, delete_top=True, control_limit=20),
+    ],
+    'x0': np.array([-1., 0., 0., 0.]),
+    'dt': 0.05,
+    'substeps': 1,
+    'conditions': common['demo_conditions'],
+    'T': agent['T'],
+    'point_linear': True,
+    'sensor_dims': SENSOR_DIMS,
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES],
+    'smooth_noise': False,
+    'camera_pos': np.array([0., 0., 6., 0., 1., 0.]),
+    'target_end_effector': target_pos,
+    'pos_body_offset': [0,0.1,0.2,0.3,0.4,0.5]
+}
+
 algorithm = {
     'type': AlgorithmTrajOpt,
     'ioc' : 'ICML',
     'demo_distr_empest': True,
     'conditions': common['conditions'],
-    'iterations': 10,
+    'iterations': 20,
     'kl_step': 1.0,
     'min_step_mult': 0.01,
     'max_step_mult': 4.0,
@@ -203,6 +230,7 @@ config = {
     'common': common,
     'agent': agent,
     'demo_agent': demo_agent,
+    'unlabeled_agent': unlabeled_agent,
     'gui_on': True,
     'algorithm': algorithm,
     'arecord_gif': {
@@ -213,6 +241,6 @@ config = {
         'fps': 40,
     }
 }
-seed = 9
+seed = 2
 
 common['info'] = generate_experiment_info(config)
