@@ -78,11 +78,6 @@ Generate oracle policy: change hyperparams of agent in gps/experiments/reacher_i
 python python/gps/gps_main.py reacher_images
 ```
 
-Visualize comparison: change test conditions in gps/experiments/reacher_ioc_feat_mdgps to be desired test conditions and run:
-```Python
-python python/gps/gps_main.py -m [number of samples per condition] reacher_ioc_feat_mdgps
-```
-
 
 half-cheetah
 -----
