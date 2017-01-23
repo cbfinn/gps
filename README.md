@@ -108,10 +108,13 @@ Visualize comparison: change test conditions in gps/experiments/cheetah_hop_ioc 
 ```Python
 python python/gps/gps_main.py -m [number of samples per condition] cheetah_hop_ioc
 ```
-Note: Due to the randomness of tensorflow, the result you get when you run S3G and cost regression might be different from the result we showed in the paper, but should still reveal the difference between these methods as we did in the paper.
 
 After running the above line of code, you could get the visualization of comparison between 4 policies like this:
 ![](https://raw.githubusercontent.com/tianheyu927/gps/ssrl_work/images/cheetah_sample_conds_distr.png)
+
+Note
+--------
+Due to the randomness of tensorflow, the result you get when you run S3G and cost regression might be different from the result we showed in the paper, but should still reveal the difference between these methods as we did in the paper.
 
 GPS
 ======
