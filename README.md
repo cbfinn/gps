@@ -28,6 +28,9 @@ python python/gps/gps_main.py -m [number of samples per condition] mjc_pointmass
 ```
 Note you can change the conditions in test_xx_range in gps/experiments/mjc_pointmass_wall_ioc_example/hyperparam.py to be the test conditions that you desire and change the hyparameters in compare_samples_curve in gps/python/utility/visualization.py accordingly (now the default is taking 20 test conditions). 
 
+After running the above line of code, you could get the visualization of comparison between 4 policies like this:
+![](https://raw.githubusercontent.com/tianheyu927/gps/ssrl_work/images/obstacle_sample_conds_distr.png)
+
 2-link reacher
 -----
 <img src="https://ab9c5ab5-a-62cb3a1a-s-sites.googlegroups.com/site/semisupervisedrl/home/crop.pol0_cond4.gif?attachauth=ANoY7crkivCCQGSnu9wD24dlVks1zNSnFcEo3vZZv_aMiDP3Y1DW9z6gfoYN_A3KKGp8ilkC0nluNeqRolqWGGHzyosMgjIOj_CSx3dS33sLnRY_wcwx8DzWMlcIO5IinyoLCrzOlA3CpV7pC1KX3CQ1ZLar_N_T7CB7hdxSnTlXyHu6Lt1Mk-ATWcCA0iAEcMQPa2zDWjezYXuefRU5uHiUDTWv0XsFPOGwlTRlSqf5CMCDH7knGBE%3D&attredirects=0&height=200&width=200" width="400" height="400">
@@ -106,6 +109,9 @@ Visualize comparison: change test conditions in gps/experiments/cheetah_hop_ioc 
 python python/gps/gps_main.py -m [number of samples per condition] cheetah_hop_ioc
 ```
 Note: Due to the randomness of tensorflow, the result you get when you run S3G and cost regression might be different from the result we showed in the paper, but should still reveal the difference between these methods as we did in the paper.
+
+After running the above line of code, you could get the visualization of comparison between 4 policies like this:
+![](https://raw.githubusercontent.com/tianheyu927/gps/ssrl_work/images/cheetah_sample_conds_distr.png)
 
 GPS
 ======
