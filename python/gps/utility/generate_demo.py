@@ -13,6 +13,7 @@ from gps.agent.mjc.agent_mjc import AgentMuJoCo
 from gps.utility.data_logger import DataLogger
 from gps.utility.general_utils import compute_distance
 from gps.sample.sample_list import SampleList
+import numpy as np
 
 LOGGER = logging.getLogger(__name__)
 
@@ -133,6 +134,7 @@ class GenDemo(object):
                 demos_filtered = [demo for (i, demo) in enumerate(demos) if i not in failed_idx]
                 demo_idx_conditions = [cond for (i, cond) in enumerate(demo_idx_conditions) if i not in failed_idx]
                 demos = demos_filtered
+
 
                 # Filter max demos per condition
                 condition_to_demo = {

@@ -34,6 +34,7 @@ SENSOR_DIMS = {
 BASE_DIR = '/'.join(str.split(__file__, '/')[:-2])
 EXP_DIR = '/'.join(str.split(__file__, '/')[:-1]) + '/'
 DEMO_DIR = BASE_DIR + '/../experiments/cheetah_hop/'
+SUPERVISED_DIR = BASE_DIR + '/../experiments/cheetah_hop_supervised/'
 
 CONDITIONS = 1
 TARGET_X = 5.0
@@ -55,6 +56,7 @@ common = {
     'demo_conditions': 1,
     'demo_exp_dir': DEMO_DIR,
     'demo_controller_file': DEMO_DIR + 'data_files/algorithm_itr_30.pkl',
+    'supervised_exp_dir': SUPERVISED_DIR,
     'LG_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_LG.pkl'),
     'NN_demo_file': os.path.join(EXP_DIR, 'data_files', 'demos_NN.pkl'),
     'nn_demo': False,
@@ -79,6 +81,7 @@ agent = {
     'meta_include': [],
     'camera_pos': np.array([0., -12., 7., 0., 0., 0.]),
     'record_reward': False,
+    'pos_body_offset': [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2], # TODO: for visualization?
 }
 
 demo_agent = {
@@ -103,8 +106,33 @@ demo_agent = {
         'state_idx': range(0, 1),
         'end_effector_idx': range(0, 1),
         'target': np.array([TARGET_X]),
-        'success_upper_bound': 1.0,
+        'success_upper_bound': 2.0,
     },
+}
+
+unlabeled_agent = {
+    'type': AgentMuJoCo,
+    'models': [
+        half_cheetah_hop(wall_height=0.0, wall_pos=1.8, gravity=1.0),
+        half_cheetah_hop(wall_height=0.2, wall_pos=1.8, gravity=1.0),
+        half_cheetah_hop(wall_height=0.4, wall_pos=1.8, gravity=1.0),
+        half_cheetah_hop(wall_height=0.6, wall_pos=1.8, gravity=1.0),
+        half_cheetah_hop(wall_height=0.8, wall_pos=1.8, gravity=1.0),
+        half_cheetah_hop(wall_height=1.0, wall_pos=1.8, gravity=1.0),
+        half_cheetah_hop(wall_height=1.2, wall_pos=1.8, gravity=1.0),
+    ],
+    'x0': x0[:CONDITIONS],
+    'dt': 0.05,
+    'substeps': 5,
+    'conditions': common['conditions'],
+    'T': 200,
+    'sensor_dims': SENSOR_DIMS,
+    'state_include': [JOINT_ANGLES, JOINT_VELOCITIES],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES],
+    'meta_include': [],
+    'camera_pos': np.array([0., -12., 7., 0., 0., 0.]),
+    'record_reward': False,
+    'pos_body_offset': [0,0.2,0.4,0.6,0.8,1.0,1.2], # TODO: for visualization?
 }
 
 algorithm = {
@@ -118,6 +146,7 @@ algorithm = {
     'ioc' : 'ICML',
     'num_demos': 20,
     'init_samples': 20,
+    'demo_var_mult': 1.0,
 
     'compute_distances': {
         'type': 'min',
@@ -153,7 +182,7 @@ state_cost = {
     'data_types': {
         JOINT_ANGLES: {
             'target_state': np.array([TARGET_X, TARGET_Z]+[0.0]*7),
-            'wp': np.array([1.0, 0.0] + [0.0]*7)
+            'wp': np.array([1.0, 0.0] + [0.0]*7) * 1e-2
         },
     },
 
@@ -203,6 +232,7 @@ config = {
     'common': common,
     'agent': agent,
     'demo_agent': demo_agent,
+    'unlabeled_agent': unlabeled_agent,
     'gui_on': True,
     'algorithm': algorithm,
     'conditions': common['conditions'],
