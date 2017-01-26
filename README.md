@@ -17,16 +17,17 @@ After finish running the RL algorithm, we can run our S3G and cost regression al
 python python/gps/gps_main.py mjc_pointmass_wall_ioc_example
 python python/gps/gps_main.py mjc_pointmass_wall_supervised
 ```
-To get the oracle policy, we can change the hyperparameters of agent of mjc_pointmass_wall_example in gps/experiments/mjc_pointmass_wall_example/hyperparam.py to be the same as the hyperparameters of agent of mjc_pointmass_wall_ioc_example in gps/experiments/mjc_pointmass_wall_ioc_example/hyperparam.py and run
+
+To get the oracle policy, we can change the hyperparameters of the agent in experiments/mjc_pointmass_wall_example/hyperparam.py to experiments/mjc_pointmass_wall_ioc_example/hyperparam.py and run
 ```Python
 python python/gps/gps_main.py mjc_pointmass_wall_example
 ```
-again to generate the oracle policy.
+
 To visualize the comparison between the 4 policies, we can run the following line of code:
 ```Python
 python python/gps/gps_main.py -m [number of samples per condition] mjc_pointmass_wall_ioc_example
 ```
-Note you can change the conditions in test_xx_range in gps/experiments/mjc_pointmass_wall_ioc_example/hyperparam.py to be the test conditions that you desire and change the hyparameters in compare_samples_curve in gps/python/utility/visualization.py accordingly (now the default is taking 20 test conditions). 
+Note you can change the conditions in test_xx_range in experiments/mjc_pointmass_wall_ioc_example/hyperparam.py to be the test conditions that you desire and change the hyparameters in compare_samples_curve in python/utility/visualization.py accordingly (now the default is taking 20 test conditions). 
 
 After running the above line of code, you could get the visualization of comparison between 4 policies like this:
 ![](https://raw.githubusercontent.com/tianheyu927/gps/ssrl_work/images/obstacle_sample_conds_distr.png)
@@ -46,12 +47,12 @@ python python/gps/gps_main.py reacher_mdgps_weight_ioc
 python python/gps/gps_main.py reacher_mdgps_weight_supervised
 ```
 
-Generate oracle policy: change hyperparams of agent in gps/experiments/reacher_mdgps_weight to be the same as gps/experiments/reacher_mdgps_weight_ioc and run:
+Generate oracle policy: change hyperparams of the agent in experiments/reacher_mdgps_weight to experiments/reacher_mdgps_weight_ioc and run:
 ```Python
 python python/gps/gps_main.py reacher_mdgps_weight
 ```
 
-Visualize comparison: change test conditions in gps/experiments/reacher_mdgps_weight_ioc to be desired test conditions and run:
+Visualize comparison: change test conditions in experiments/reacher_mdgps_weight_ioc to be desired test conditions and run:
 ```Python
 python python/gps/gps_main.py -m [number of samples per condition] reacher_mdgps_weight_ioc
 ```
@@ -73,7 +74,7 @@ python python/gps/gps_main.py reacher_ioc_feat_mdgps
 python python/gps/gps_main.py reacher_iocsup_images
 ```
 
-Generate oracle policy: change hyperparams of agent in gps/experiments/reacher_images to be the same as gps/experiments/reacher_ioc_feat_mdgps and run:
+Generate oracle policy: change hyperparams of the agent in experiments/reacher_images to experiments/reacher_ioc_feat_mdgps and run:
 ```Python
 python python/gps/gps_main.py reacher_images
 ```
@@ -94,12 +95,12 @@ python python/gps/gps_main.py cheetah_hop_ioc
 python python/gps/gps_main.py cheetah_hop_supervised
 ```
 
-Generate oracle policy: change hyperparams of agent in gps/experiments/cheetah_hop to be the same as gps/experiments/cheetah_hop_ioc and run:
+Generate oracle policy: change hyperparams of the agent in experiments/cheetah_hop to experiments/cheetah_hop_ioc and run:
 ```Python
 python python/gps/gps_main.py cheetah_hop
 ```
 
-Visualize comparison: change test conditions in gps/experiments/cheetah_hop_ioc to be desired test conditions and run:
+Visualize comparison: change test conditions in experiments/cheetah_hop_ioc to be desired test conditions and run:
 ```Python
 python python/gps/gps_main.py -m [number of samples per condition] cheetah_hop_ioc
 ```
@@ -109,7 +110,7 @@ After running the above line of code, you could get the visualization of compari
 
 Note
 --------
-Due to the randomness of tensorflow, the result you get when you run S3G and cost regression might be different from the result we showed in the paper, but should still reveal the difference between these methods as we did in the paper.
+Due to the nondeterminism of tensorflow, the result you get when you run S3G and cost regression might be different from the result we showed in the paper, but should still reveal the difference between these methods as we did in the paper.
 
 GPS
 ======
