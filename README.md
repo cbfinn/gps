@@ -18,7 +18,7 @@ python python/gps/gps_main.py mjc_pointmass_wall_ioc_example
 python python/gps/gps_main.py mjc_pointmass_wall_supervised
 ```
 
-To get the oracle policy, we can change the hyperparameters of the agent in experiments/mjc_pointmass_wall_example/hyperparam.py to experiments/mjc_pointmass_wall_ioc_example/hyperparam.py and run
+To get the oracle policy, we can change the hyperparameters of the agent in experiments/mjc_pointmass_wall_example/hyperparam.py to those in experiments/mjc_pointmass_wall_ioc_example/hyperparam.py and run
 ```Python
 python python/gps/gps_main.py mjc_pointmass_wall_example
 ```
@@ -47,7 +47,7 @@ python python/gps/gps_main.py reacher_mdgps_weight_ioc
 python python/gps/gps_main.py reacher_mdgps_weight_supervised
 ```
 
-Generate oracle policy: change hyperparams of the agent in experiments/reacher_mdgps_weight to experiments/reacher_mdgps_weight_ioc and run:
+Generate oracle policy: change hyperparams of the agent in experiments/reacher_mdgps_weight to those in experiments/reacher_mdgps_weight_ioc and run:
 ```Python
 python python/gps/gps_main.py reacher_mdgps_weight
 ```
@@ -74,7 +74,7 @@ python python/gps/gps_main.py reacher_ioc_feat_mdgps
 python python/gps/gps_main.py reacher_iocsup_images
 ```
 
-Generate oracle policy: change hyperparams of the agent in experiments/reacher_images to experiments/reacher_ioc_feat_mdgps and run:
+Generate oracle policy: change hyperparams of the agent in experiments/reacher_images to those in experiments/reacher_ioc_feat_mdgps and run:
 ```Python
 python python/gps/gps_main.py reacher_images
 ```
@@ -95,7 +95,7 @@ python python/gps/gps_main.py cheetah_hop_ioc
 python python/gps/gps_main.py cheetah_hop_supervised
 ```
 
-Generate oracle policy: change hyperparams of the agent in experiments/cheetah_hop to experiments/cheetah_hop_ioc and run:
+Generate oracle policy: change hyperparams of the agent in experiments/cheetah_hop to those in experiments/cheetah_hop_ioc and run:
 ```Python
 python python/gps/gps_main.py cheetah_hop
 ```
