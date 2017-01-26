@@ -30,7 +30,7 @@ python python/gps/gps_main.py -m [number of samples per condition] mjc_pointmass
 Note you can change the conditions in test_xx_range in experiments/mjc_pointmass_wall_ioc_example/hyperparam.py to be the test conditions that you desire and change the hyparameters in compare_samples_curve in python/utility/visualization.py accordingly (now the default is taking 20 test conditions). 
 
 After running the above line of code, you could get the visualization of comparison between 4 policies like this:
-![](https://raw.githubusercontent.com/tianheyu927/gps/ssrl_work/images/obstacle_sample_conds_distr.png)
+<img src="https://raw.githubusercontent.com/tianheyu927/gps/ssrl_work/images/obstacle_sample_conds_distr.png" width="500" height="400">
 
 2-link reacher
 -----
@@ -57,7 +57,7 @@ Visualize comparison: change test conditions in experiments/reacher_mdgps_weight
 python python/gps/gps_main.py -m [number of samples per condition] reacher_mdgps_weight_ioc
 ```
 After running the above line of code, you could get the visualization of comparison between 4 policies like this:
-![](https://raw.githubusercontent.com/tianheyu927/gps/ssrl_work/images/sample_conds_distr.png)
+<img src="https://raw.githubusercontent.com/tianheyu927/gps/ssrl_work/images/sample_conds_distr.png" width="500" height="400">
 
 2-link reacher with vision
 -----
@@ -106,7 +106,7 @@ python python/gps/gps_main.py -m [number of samples per condition] cheetah_hop_i
 ```
 
 After running the above line of code, you could get the visualization of comparison between 4 policies like this:
-![](https://raw.githubusercontent.com/tianheyu927/gps/ssrl_work/images/cheetah_sample_conds_distr.png)
+<img src="https://raw.githubusercontent.com/tianheyu927/gps/ssrl_work/images/cheetah_sample_conds_distr.png" width="500" height="400">
 
 Note
 --------
