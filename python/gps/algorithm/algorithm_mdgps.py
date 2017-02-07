@@ -104,7 +104,6 @@ class AlgorithmMDGPS(Algorithm):
         trajectory.
         Args:
             m: Condition
-            init: Whether this is the initial fitting of the policy.
         """
         dX, dU, T = self.dX, self.dU, self.T
         # Choose samples to use.
