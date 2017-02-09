@@ -85,7 +85,7 @@ algorithm = {
     'kl_step': 1.0,
     'min_step_mult': 0.1,
     'max_step_mult': 10.0,
-    'max_ent_traj': 0.1,
+    'max_ent_traj': 1.0,
 
     'compute_distances': {
         'type': 'min',
@@ -135,7 +135,7 @@ jump_cost = {
     'data_types': {
         JOINT_VELOCITIES: {
             'target_state': np.array([5., 5.]+[0.0]*7),
-            'wp': np.array([1.0, 1.0] + [0.0]*7)
+            'wp': np.array([1.0, 1.0] + [0.0]*7) * 1e-2
         },
     },
 }
@@ -183,6 +183,6 @@ config = {
         'fps': 40,
     }
 }
-seed = 8
+seed = 2
 
 common['info'] = generate_experiment_info(config)

@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 TRIALS = 20
-THRESH = {'reacher': 0.05, 'pointmass': 0.1}
+THRESH = {'reacher': 0.05, 'pointmass': 0.1, 'cheetah': 1.0}
 
 def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment='reacher'):
     """
@@ -39,7 +39,10 @@ def compare_samples_curve(gps, N, agent_config, weight_varying=False, experiment
         for m in range(M):
             self.agent.reset_initial_body_offset(m)
 
-    policies = [alg.policy_opt.policy for alg in algorithms]
+    try:
+        policies = [alg.policy_opt.policy for alg in algorithms]
+    except AttributeError:
+        policies = [alg.cur[-1].traj_distr for alg in algorithms]
     successes = {i: np.zeros((TRIALS, M)) for i in xrange(len(policies))}
     agent = agent_config['type'](agent_config)
     if not weight_varying:
@@ -127,7 +130,10 @@ def visualize_samples(gps, N, agent_config, experiment='reacher'):
                                             'data_files_oracle/')
     algorithms = [alg_ioc, alg_sup, alg_demo, alg_oracle]
     M = agent_config['conditions']
-    policies = [alg.policy_opt.policy for alg in algorithms]
+    try:
+        policies = [alg.policy_opt.policy for alg in algorithms]
+    except AttributeError:
+        policies = [alg.cur[-1].traj_distr for alg in algorithms]
     samples = {i: [] for i in xrange(len(policies))}
     agent = agent_config['type'](agent_config)
     ioc_conditions = [np.array([np.log10(agent_config['density_range'][i]), 0.])

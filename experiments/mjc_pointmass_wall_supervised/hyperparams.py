@@ -123,6 +123,7 @@ algorithm = {
     'max_ent_traj': 1.0,
     'num_demos': 20,
     'target_end_effector': np.array([1.3, 0.5, 0.]),
+}
 
 
 algorithm['init_traj_distr'] = {
