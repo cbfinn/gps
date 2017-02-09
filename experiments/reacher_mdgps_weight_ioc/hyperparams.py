@@ -214,7 +214,7 @@ algorithm['gt_cost'] = [{
     'type': CostSum,
     'costs': [torque_cost_1[i], fk_cost_1[i]],
     'weights': [2.0, 1.0],
-}  for i in range(common['conditions'])][0]
+}  for i in range(common['conditions'])]
 
 
 algorithm['cost'] = {
