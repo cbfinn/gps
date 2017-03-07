@@ -57,7 +57,7 @@ CONDITIONS = 4
 np.random.seed(14)
 pos_body_offset = []
 for _ in range(CONDITIONS):
-    pos_body_offset.append(np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1, 0]))
+    pos_body_offset.append([np.array([0.4*np.random.rand()-0.3, 0.4*np.random.rand()-0.1, 0])])
 
 common = {
     'experiment_name': 'my_experiment' + '_' + \
@@ -109,9 +109,7 @@ algorithm = {
     'policy_sample_mode': 'replace',
     'sample_on_policy': True,
     'plot_dir': EXP_DIR,
-    'agent_pos_body_idx': agent['pos_body_idx'],
-    'agent_pos_body_offset': agent['pos_body_offset'],
-    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])])
+    'target_end_effector': [np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i][0], np.array([0., 0., 0.])])
                             for i in xrange(CONDITIONS)],
 }
 
@@ -150,7 +148,7 @@ torque_cost_1 = [{
 
 fk_cost_1 = [{
     'type': CostFK,
-    'target_end_effector': np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i], np.array([0., 0., 0.])]),
+    'target_end_effector': np.concatenate([np.array([.1, -.1, .01])+ agent['pos_body_offset'][i][0], np.array([0., 0., 0.])]),
     'wp': np.array([1, 1, 1, 0, 0, 0]),
     'l1': 1.0,
     'l2': 0.0,

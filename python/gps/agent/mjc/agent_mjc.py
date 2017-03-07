@@ -63,9 +63,8 @@ class AgentMuJoCo(Agent):
         for i in range(self._hyperparams['conditions']):
             for j in range(len(self._hyperparams['pos_body_idx'][i])):
                 idx = self._hyperparams['pos_body_idx'][i][j]
-                # TODO: this should actually add [i][j], but that would break things
                 self._model[i]['body_pos'][idx, :] += \
-                        self._hyperparams['pos_body_offset'][i]
+                        self._hyperparams['pos_body_offset'][i][j]
 
         self._joint_idx = list(range(self._model[0]['nq']))
         self._vel_idx = [i + self._model[0]['nq'] for i in self._joint_idx]
