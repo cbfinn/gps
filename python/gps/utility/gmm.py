@@ -86,10 +86,8 @@ class GMM(object):
         mu = np.sum(self.mu * wts, axis=0)
 
         # Compute overall covariance.
-        # For some reason this version works way better than the "right"
-        # one... could we be computing xxt wrong?
         diff = self.mu - np.expand_dims(mu, axis=0)
-        diff_expand = np.expand_dims(diff, axis=1) * \
+        diff_expand = np.expand_dims(self.mu, axis=1) * \
                 np.expand_dims(diff, axis=2)
         wts_expand = np.expand_dims(wts, axis=2)
         sigma = np.sum((self.sigma + diff_expand) * wts_expand, axis=0)
