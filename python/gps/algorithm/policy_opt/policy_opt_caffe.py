@@ -236,6 +236,7 @@ class PolicyOptCaffe(PolicyOpt):
             'scale': self.policy.scale,
             'bias': self.policy.bias,
             'caffe_iter': self.caffe_iter,
+            'var': self.var,
         }
 
     # For unpickling.
@@ -244,6 +245,8 @@ class PolicyOptCaffe(PolicyOpt):
         self.policy.scale = state['scale']
         self.policy.bias = state['bias']
         self.caffe_iter = state['caffe_iter']
+        self.var = state['var']
+        self.policy.chol_pol_covar = np.diag(np.sqrt(self.var))
         self.solver.restore(
             self._hyperparams['weights_file_prefix'] + '_iter_' +
             str(self.caffe_iter) + '.solverstate'
