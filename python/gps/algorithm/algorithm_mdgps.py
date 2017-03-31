@@ -201,9 +201,12 @@ class AlgorithmMDGPS(Algorithm):
         for m in range(self.M):
             self._set_new_mult(predicted_impr, actual_impr, m)
 
-    def compute_costs(self, m, eta):
+    def compute_costs(self, m, eta, augment=True):
         """ Compute cost estimates used in the LQR backward pass. """
         traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
+        if not augment:  # Whether to augment cost with term to penalize KL
+            return traj_info.Cm, traj_info.cv
+
         pol_info = self.cur[m].pol_info
         multiplier = self._hyperparams['max_ent_traj']
         T, dU, dX = traj_distr.T, traj_distr.dU, traj_distr.dX

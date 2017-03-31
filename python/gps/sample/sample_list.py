@@ -4,6 +4,8 @@ import logging
 
 import numpy as np
 
+from gps.proto.gps_pb2 import NOISE
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +26,12 @@ class SampleList(object):
         if idx is None:
             idx = range(len(self._samples))
         return np.asarray([self._samples[i].get_U() for i in idx])
+
+    def get_noise(self, idx=None):
+        """ Returns N x T x dU numpy array of noise generated during rollouts. """
+        if idx is None:
+            idx = range(len(self._samples))
+        return np.asarray([self._samples[i].get(NOISE) for i in idx])
 
     def get_obs(self, idx=None):
         """ Returns N x T x dO numpy array of features. """

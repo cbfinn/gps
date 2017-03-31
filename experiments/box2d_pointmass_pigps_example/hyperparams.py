@@ -16,7 +16,7 @@ from gps.algorithm.cost.cost_sum import CostSum
 from gps.algorithm.dynamics.dynamics_lr_prior import DynamicsLRPrior
 from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.policy_opt.policy_opt_caffe import PolicyOptCaffe
-from gps.algorithm.traj_opt.traj_opt_pi2 import TrajOptPi2
+from gps.algorithm.traj_opt.traj_opt_pi2 import TrajOptPI2
 from gps.algorithm.policy.policy_prior import PolicyPrior
 from gps.algorithm.policy.lin_gauss_init import init_pd
 from gps.proto.gps_pb2 import END_EFFECTOR_POINTS, END_EFFECTOR_POINT_VELOCITIES, ACTION
@@ -106,7 +106,7 @@ algorithm['cost'] = {
 }
 
 algorithm['traj_opt'] = {
-    'type': TrajOptPi2,
+    'type': TrajOptPI2,
     'kl_threshold': 2.0,
     'covariance_damping': 2.0,
     'min_temperature': 0.001,

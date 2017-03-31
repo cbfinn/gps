@@ -1,0 +1,111 @@
+<mujoco model="door">
+
+    <compiler inertiafromgeom="true" angle="radian" coordinate="local" />
+    <option timestep="0.01" gravity="0 0 0" iterations="20" integrator="RK4" />
+    <default>
+        <joint armature="0.04" damping="1" limited="true" />
+        <geom friction=".5 .1 .1" margin="0.002" condim="1" contype="0" conaffinity="0" />
+    </default>
+
+    <asset>
+        <texture type="skybox" builtin="gradient" width="100" height="100" rgb1=".4 .6 .8" rgb2="0 0 0"/>
+        <texture name="texgeom" type="cube" builtin="flat" mark="cross" width="127" height="1278" rgb1="0.8 0.6 0.4" rgb2="0.8 0.6 0.4" markrgb="1 1 1" random="0.01"/>
+        <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="100" height="100"/>
+
+        <material name='MatPlane' reflectance='0.5' texture="texplane" texrepeat="1 1" texuniform="true"/>
+        <material name='geom' texture="texgeom" texuniform="true"/>
+    </asset>
+
+    <worldbody>
+        <light directional='false' diffuse='.8 .8 .8' specular='0.3 0.3 0.3' pos='0 0 4.0' dir='0 0 -1'/>
+
+        <body name="r_shoulder_pan_link" pos="0.35 -0.35 0.5">
+            <geom name="e1" type="sphere" rgba="0.6 0.6 0.6 1" pos="-0.06 0.05 0.2" size="0.05" />
+            <geom name="e2" type="sphere" rgba="0.6 0.6 0.6 1" pos=" 0.06 0.05 0.2" size="0.05" />
+            <geom name="e1p" type="sphere" rgba="0.1 0.1 0.1 1" pos="-0.06 0.09 0.2" size="0.03" />
+            <geom name="e2p" type="sphere" rgba="0.1 0.1 0.1 1" pos=" 0.06 0.09 0.2" size="0.03" />
+            <geom name="sp" type="capsule" fromto="0 0 -0.4 0 0 0.2" size="0.1" />
+            <joint name="r_shoulder_pan_joint" type="hinge" pos="0 0 0" axis="0 0 1" range="-2.2854 1.714602" damping="1.0" />
+
+            <body name="r_shoulder_lift_link" pos="0.1 0 0" euler="0.0 -0.13 0.0">
+                <geom name="sl" type="capsule" fromto="0 -0.1 0 0 0.1 0" size="0.1" />
+                <joint name="r_shoulder_lift_joint" type="hinge" pos="0 0 0" axis="0 1 0" range="-0.5236 1.3963" damping="10.0" />
+
+                <body name="r_upper_arm_roll_link" pos="0 0 0">
+                    <geom name="uar" type="capsule" fromto="-0.1 0 0 0.1 0 0" size="0.02" />
+                    <joint name="r_upper_arm_roll_joint" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.9 0.8" damping="0.1" />
+
+                    <body name="r_upper_arm_link" pos="0 0 0">
+                        <geom name="ua" type="capsule" fromto="0 0 0 0.4 0 0" size="0.06" />
+
+                        <body name="r_elbow_flex_link" pos="0.4 0 0" >
+                            <geom name="ef" type="capsule" fromto="0 -0.02 0 0.0 0.02 0" size="0.06" />
+                            <joint name="r_elbow_flex_joint" type="hinge" pos="0 0 0" axis="0 1 0" range="-2.3213 0" damping="1.0" />
+
+                            <body name="r_forearm_roll_link" pos="0 0 0" euler="0.0 0.0 0.8">
+                                <geom name="fr" type="capsule" fromto="-0.1 0 0 0.1 0 0" size="0.02" contype="1" conaffinity="1" />
+
+                                <body name="r_forearm_link" pos="0 0 0">
+                                    <geom name="fa" type="capsule" fromto="0 0 0 0.321 0 0" size="0.05" contype="1" conaffinity="1" />
+
+                                    <body name="r_wrist_flex_link" pos="0.321 0 0">
+                                        <geom name="wf" type="capsule" fromto="0 -0.02 0 0 0.02 0" size="0.01" contype="1" conaffinity="1" />
+                                        <joint name="r_wrist_flex_joint" type="hinge" pos="0 0 0" axis="0 1 0" range="-2.094 0" damping=".1" />
+
+                                        <body name="r_wrist_roll_link" pos="0 0 0" euler="0.0 0.0 0.2">
+                                            <geom name="wr" type="capsule" fromto="-0.02 0 0 0.02 0 0" size="0.01" contype="1" conaffinity="1" />
+                                            <joint name="r_wrist_roll_joint" type="hinge" pos="0 0 0" axis="1 0 0" range="-0.04 0.04" damping="10.0" />
+
+                                            <body name="r_gripper_palm_link" pos="0 0 0">
+                                                <geom name="pl" type="capsule" fromto="0.05 0 -0.02 0.05 0 0.02" size="0.05" contype="1" conaffinity="1" />
+
+                                                <body name="r_gripper_l_finger_link" pos="0.08 0.0 0">
+                                                    <geom name="gf" type="capsule" fromto="0 0 0 0.15 0 0" size="0.015" contype="1" conaffinity="1" />
+
+                                                    <body name="r_gripper_l_finger_tip_link" pos="0.15 0.0 0.0">
+                                                        <geom name="gft" type="capsule" fromto="0 0 0 0 0.0 -0.15" size="0.015" contype="1" conaffinity="1" />
+                                                        <site name="link_top" pos="0.0 0.0 0.0" size="0.01" />
+                                                        <site name="link_bottom" pos="0.0 0.0 -0.15" size="0.01" />
+                                                    </body>
+                                                </body>
+                                            </body>
+                                        </body>
+                                    </body>
+                                </body>
+                            </body>
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+
+        <body name="door_frame" pos="0.35 0.50 0.30" euler="0.0 0.0 0.2">
+            <geom name="frame_left" rgba="0.3 0.3 0.3 1" type="box" size="0.05 0.02 0.60" pos="-0.555 0.0 0.00" contype="0" conaffinity="0" />
+            <geom name="frame_right" rgba="0.3 0.3 0.3 1" type="box" size="0.05 0.02 0.60" pos="0.555 0.0 0.00" contype="0" conaffinity="0" />
+            <geom name="frame_top" rgba="0.3 0.3 0.3 1" type="box" size="0.61 0.02 0.05" pos="0.0 0.0 0.655" contype="0" conaffinity="0" />
+        </body>
+
+        <body name="door" pos="0.35 0.50 0.30" euler="0.0 0.0 0.2">
+            <geom name="door" rgba="0.6 0.1 0.1 1" type="box" size="0.5 0.02 0.6" contype="1" conaffinity="1" />
+            <joint name="door_hinge" type="hinge" pos="-0.5 0.0 0.0" axis="0 0 1" range="-2.0 0.0" damping="5.0" />
+
+            <body name="door_handle" pos="0.15 -0.05 -0.25">
+                <geom name="handle_left" type="box" rgba="0.6 0.6 0.6 1" pos="0.08 0 0.2" size="0.02 0.08 0.02" contype="1" conaffinity="1" />
+                <geom name="handle_right" type="box" rgba="0.6 0.6 0.6 1" pos="0.27 0 0.2" size="0.02 0.08 0.02" contype="1" conaffinity="1" />
+                <geom name="handle_center" type="box" rgba="0.6 0.6 0.6 1" pos="0.175 -0.075 0.2" size="0.12 0.02 0.02" contype="1" conaffinity="1" />
+                <site name="above_handle" pos="0.175 0 0.25" size="0.01" />
+                <site name="handle" pos="0.175 0 0.10" size="0.01" />
+            </body>
+        </body>
+    </worldbody>
+
+    <actuator>
+        <motor joint="r_shoulder_pan_joint" ctrlrange="-100.0 100.0" ctrllimited="true" />
+        <motor joint="r_shoulder_lift_joint" ctrlrange="-100.0 100.0" ctrllimited="true" />
+        <motor joint="r_upper_arm_roll_joint" ctrlrange="-100.0 100.0" ctrllimited="true" />
+        <motor joint="r_elbow_flex_joint" ctrlrange="-100.0 100.0" ctrllimited="true" />
+        <motor joint="r_wrist_flex_joint" ctrlrange="-100.0 100.0" ctrllimited="true" />
+        <motor joint="r_wrist_roll_joint" ctrlrange="-100.0 100.0" ctrllimited="true" />
+    </actuator>
+
+</mujoco>

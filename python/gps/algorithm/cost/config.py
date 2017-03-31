@@ -33,6 +33,23 @@ COST_STATE = {
     },
 }
 
+# CostBinaryRegion
+COST_BINARY_REGION = {
+    'ramp_option': RAMP_CONSTANT,  # How target cost ramps over time.
+    'l1': 0.0,
+    'l2': 1.0,
+    'alpha': 1e-2,
+    'wp_final_multiplier': 1.0,  # Weight multiplier on final time step.
+    'data_types': {
+        'JointAngle': {
+            'target_state': None,  # Target state - must be set.
+            'wp': None,  # State weights - must be set.
+        },
+    },
+    'max_distance': 0.1,
+    'outside_cost': 1.0,
+    'inside_cost': 0.0,
+}
 
 # CostSum
 COST_SUM = {
@@ -44,4 +61,16 @@ COST_SUM = {
 # CostAction
 COST_ACTION = {
     'wu': np.array([]),  # Torque penalties, must be 1 x dU numpy array.
+}
+
+
+# CostLinWP
+COST_LIN_WP = {
+    'waypoint_time': np.array([1.0]),
+    'ramp_option': RAMP_CONSTANT,
+    'l1': 0.0,
+    'l2': 1.0,
+    'alpha': 1e-5,
+    'logalpha': 1e-5,
+    'log': 0.0,
 }

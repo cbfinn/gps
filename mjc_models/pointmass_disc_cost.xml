@@ -1,0 +1,34 @@
+<mujoco model="obstacle_course">
+    <!-- A 2D particle must first navigate toward the continous goal state, but 
+    then deviate towards the disconinuos goal region. -->
+
+    <compiler inertiafromgeom="true" angle="radian" coordinate="local" />
+    <option timestep="0.01" gravity="0 0 0" iterations="20" integrator="Euler" />
+    <default>
+        <joint limited="false" damping="1" />
+        <geom contype="2" conaffinity="1" condim="1" friction=".5 .1 .1" density="1000" margin="0.002" />
+    </default>
+
+    <worldbody>
+        <body name="particle" pos="0 0 0">
+            <geom name="particle_geom" type="capsule" fromto="-0.01 0 0 0.01 0 0" size="0.1" />
+            <site name="particle_site" pos="0 0 0" size="0.01" />
+            <joint name="ball_x" type="slide" pos="0 0 0" axis="1 0 0" />
+            <joint name="ball_y" type="slide" pos="0 0 0" axis="0 1 0" />
+        </body>
+        
+        <body name="disc_target" pos="2.5 0.5 0">
+            <geom name="disc_target_geom" type="capsule" fromto="-0.01 0 0 0.01 0 0" size="0.1" rgba="0.9 0 0.1 1"/>
+        </body>
+        
+        <body name="target" pos="3.0 0 0">
+            <geom name="target_geom" type="capsule" fromto="-0.01 0 0 0.01 0 0" size="0.1" rgba="0 0.9 0.1 1"/>
+        </body>
+
+    </worldbody>
+
+    <actuator>
+        <motor joint="ball_x" ctrlrange="-1.0 1.0" ctrllimited="true"/>
+        <motor joint="ball_y" ctrlrange="-1.0 1.0" ctrllimited="true"/>
+    </actuator>
+</mujoco>

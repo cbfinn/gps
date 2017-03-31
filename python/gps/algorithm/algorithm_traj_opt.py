@@ -98,9 +98,12 @@ class AlgorithmTrajOpt(Algorithm):
 
         self._set_new_mult(predicted_impr, actual_impr, m)
 
-    def compute_costs(self, m, eta):
+    def compute_costs(self, m, eta, augment=True):
         """ Compute cost estimates used in the LQR backward pass. """
         traj_info, traj_distr = self.cur[m].traj_info, self.cur[m].traj_distr
+        if not augment:  # Whether to augment cost with term to penalize KL
+            return traj_info.Cm, traj_info.cv
+
         multiplier = self._hyperparams['max_ent_traj']
         fCm, fcv = traj_info.Cm / (eta + multiplier), traj_info.cv / (eta + multiplier)
         K, ipc, k = traj_distr.K, traj_distr.inv_pol_covar, traj_distr.k

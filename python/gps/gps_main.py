@@ -12,6 +12,7 @@ import copy
 import argparse
 import threading
 import time
+import traceback
 
 # Add gps/python to path so that imports work.
 sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
@@ -58,26 +59,29 @@ class GPSMain(object):
                 iteration, and resumes training at the next iteration.
         Returns: None
         """
-        itr_start = self._initialize(itr_load)
+        try:
+            itr_start = self._initialize(itr_load)
 
-        for itr in range(itr_start, self._hyperparams['iterations']):
-            for cond in self._train_idx:
-                for i in range(self._hyperparams['num_samples']):
-                    self._take_sample(itr, cond, i)
+            for itr in range(itr_start, self._hyperparams['iterations']):
+                for cond in self._train_idx:
+                    for i in range(self._hyperparams['num_samples']):
+                        self._take_sample(itr, cond, i)
 
-            traj_sample_lists = [
-                self.agent.get_samples(cond, -self._hyperparams['num_samples'])
-                for cond in self._train_idx
-            ]
+                traj_sample_lists = [
+                    self.agent.get_samples(cond, -self._hyperparams['num_samples'])
+                    for cond in self._train_idx
+                ]
 
-            # Clear agent samples.
-            self.agent.clear_samples()
+                # Clear agent samples.
+                self.agent.clear_samples()
 
-            self._take_iteration(itr, traj_sample_lists)
-            pol_sample_lists = self._take_policy_samples()
-            self._log_data(itr, traj_sample_lists, pol_sample_lists)
-
-        self._end()
+                self._take_iteration(itr, traj_sample_lists)
+                pol_sample_lists = self._take_policy_samples()
+                self._log_data(itr, traj_sample_lists, pol_sample_lists)
+        except Exception as e:
+            traceback.print_exception(*sys.exc_info())
+        finally:
+            self._end()
 
     def test_policy(self, itr, N):
         """

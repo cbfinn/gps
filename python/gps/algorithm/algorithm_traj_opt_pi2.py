@@ -6,7 +6,7 @@ from gps.algorithm.algorithm import Algorithm
 from gps.algorithm.config import ALG_PI2
 
 
-class AlgorithmTrajOptPi2(Algorithm):
+class AlgorithmTrajOptPI2(Algorithm):
     """ Sample-based trajectory optimization with PI2. """
     def __init__(self, hyperparams):
         config = copy.deepcopy(ALG_PI2)
