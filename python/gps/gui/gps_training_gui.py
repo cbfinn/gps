@@ -366,7 +366,7 @@ class GPSTrainingGUI(object):
         all_eept = np.empty((0, 3))
         sample_lists = traj_sample_lists
         if pol_sample_lists:
-            sample_lists += traj_sample_lists
+            sample_lists += pol_sample_lists
         for sample_list in sample_lists:
             for sample in sample_list.get_samples():
                 ee_pt = sample.get(END_EFFECTOR_POINTS)
